@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "tnum" on;
+  }
+
+  .font-arabic {
+    font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+    direction: rtl;
+    unicode-bidi: isolate;
+    line-height: 1.9;
+  }
+
+  .font-display {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif;
+  }
+}
+
+/* 3D Perspective & Tactile Card Flip Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.card-3d-tilt {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+
+.card-3d-tilt:hover {
+  transform: translateY(-3px) rotateX(2deg);
+  box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.14);
+}
+
+/* Continuous Flag Fluttering */
+@keyframes gentle-sway {
+  0%, 100% {
+    transform: perspective(600px) rotateY(-6deg) skewY(-1deg);
+  }
+  50% {
+    transform: perspective(600px) rotateY(8deg) skewY(2deg);
+  }
+}
+
+.flag-wave {
+  animation: gentle-sway 2.8s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+/* Always-On Plant & Palm Tree Breeze Swaying */
+@keyframes sway-plant {
+  0%, 100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+.animate-sway-plant {
+  animation: sway-plant 3.4s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.animate-sway-plant-slow {
+  animation: sway-plant 4.5s ease-in-out infinite reverse;
+  transform-origin: bottom center;
+}
+
+/* Always-On Drifting Sky Clouds */
+@keyframes drift-cloud {
+  0% {
+    transform: translateX(-18px);
+  }
+  50% {
+    transform: translateX(18px);
+  }
+  100% {
+    transform: translateX(-18px);
+  }
+}
+
+.animate-drift-cloud {
+  animation: drift-cloud 9s ease-in-out infinite;
+}
+
+/* Always-On Gentle Ocean Wave Motion */
+@keyframes wave-glide {
+  0%, 100% {
+    transform: translateX(-10px) translateY(0px);
+  }
+  50% {
+    transform: translateX(10px) translateY(-2px);
+  }
+}
+
+.animate-wave-glide {
+  animation: wave-glide 3.2s ease-in-out infinite;
+}
+
+@keyframes float-bob {
+  0%, 100% {
+    transform: translateY(0px) rotate(-1.5deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+.animate-float-bob {
+  animation: float-bob 2.8s ease-in-out infinite;
+}
+
+@keyframes twinkle-star {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.85) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.22) rotate(18deg);
+  }
+}
+
+.animate-twinkle {
+  animation: twinkle-star 2.4s ease-in-out infinite;
+}
+
+@keyframes glitter-drop {
+  0% {
+    opacity: 1;
+    transform: translateY(-10px) scale(0.7) rotate(0deg);
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(115px) scale(1.15) rotate(240deg);
+  }
+}
+
+.animate-glitter-drop {
+  animation: glitter-drop 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flag-wave,
+  .animate-sway-plant,
+  .animate-sway-plant-slow,
+  .animate-drift-cloud,
+  .animate-wave-glide,
+  .animate-float-bob,
+  .animate-twinkle,
+  .animate-glitter-drop,
+  .card-3d-tilt:hover {
+    animation: none;
+    transform: none;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #certificate-print-area,
+  #certificate-print-area * {
+    visibility: visible;
+  }
+  #certificate-print-area {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+  }
+}

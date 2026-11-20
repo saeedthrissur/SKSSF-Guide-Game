@@ -1,0 +1,1120 @@
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Award,
+  BarChart3,
+  BookOpen,
+  CheckCircle2,
+  Compass,
+  Gift,
+  Settings,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
+import { L1Tab, Level1Story } from './components/Level1Story';
+import { L2GameTab, Level2Ecosystem } from './components/Level2Ecosystem';
+import { L3Tab, Level3Organizer } from './components/Level3Organizer';
+import { L4Tab, Level4Strategy } from './components/Level4Strategy';
+import {
+  StoryPrologueTheater,
+  VisualStoryboardArena,
+} from './components/StoryIntroAndBoard';
+import { SkssfPovJourneyGame } from './components/SkssfPovJourneyGame';
+import { ShareableBadgeStudio } from './components/ShareableBadgeStudio';
+import {
+  AudioLoadingFloatBadge,
+  EASTER_EGG_ITEMS,
+  EasterEggItem,
+  ScoreComparisonModal,
+  SettingsModal,
+  StoryNarrationStrip,
+  SurpriseGiftChestModal,
+  UnseenLessonBanner,
+} from './components/GameEffects';
+import {
+  ALL_LESSONS,
+  getAllUnseenLessons,
+  getSkippedUnseenLessonsBefore,
+  loadCompletedLessonIds,
+  saveCompletedLessonIds,
+} from './utils/lessonTracker';
+import {
+  archiveRunToHistory,
+  clearAllAppStorage,
+  clearSavedGameState,
+  loadRunHistory,
+  loadSavedGameState,
+  QuizAnswerMap,
+  RunHistoryEntry,
+  saveGameState,
+} from './utils/gameStorage';
+import { sound } from './utils/sound';
+import { narrator } from './utils/narrator';
+import {
+  GameLivesProvider,
+  GameOverResetModal,
+  HeaderHeartsBar,
+  HeartBreakEvent,
+  HeartBreakFlightOverlay,
+} from './utils/gameLivesContext';
+
+type LevelNumber = 1 | 2 | 3 | 4;
+type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
+
+const LEVEL_META: { id: LevelNumber; short: string; full: string; introSpeech: string }[] = [
+  {
+    id: 1,
+    short: '⛵ 1. യൂണിറ്റ് തലം',
+    full: 'ഘട്ടം 1 · യൂണിറ്റ് തലം — ചരിത്ര വേരുകളും ഔദ്യോഗിക പതാകകളും',
+    introSpeech:
+      'യൂണിറ്റ് തലത്തിലേക്ക് സ്വാഗതം! ചരിത്ര യാത്രയിലെ 5 വ്യത്യസ്ത ഗെയിമുകളിലൂടെ സമസ്തയുടെ പാരമ്പര്യവും ഔദ്യോഗിക പതാകകളും പഠിക്കാം!',
+  },
+  {
+    id: 2,
+    short: '🏛️ 2. ക്ലസ്റ്റർ & മേഖല',
+    full: 'ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം — യൂണിറ്റ്–കമ്മിറ്റി രൂപീകരണവും 17 വിങ്ങുകളും',
+    introSpeech:
+      'ക്ലസ്റ്റർ, മേഖലാ തലത്തിലേക്ക് സ്വാഗതം! ഇവിടെ യൂണിറ്റ് എങ്ങനെ കൊണ്ടുനടക്കണം, കമ്മിറ്റിയിലെ സ്ഥാനങ്ങൾ എന്തെല്ലാം, 17 വിങ്ങുകളുടെ ദൗത്യങ്ങൾ എന്തെല്ലാം എന്ന് പരിചയപ്പെടാം!',
+  },
+  {
+    id: 3,
+    short: '🎈 3. ജില്ലാ തലം',
+    full: 'ഘട്ടം 3 · ജില്ലാ തലം — ആദർശ കവചം, ജ്ഞാനച്ചുരുൾ, ഓഫീസ് ഡെസ്ക് & ന്യൂസ്‌റൂം',
+    introSpeech:
+      'ജില്ലാ തലത്തിലേക്ക് സ്വാഗതം! നല്ല ഗുണങ്ങൾ പിടിച്ചെടുക്കാം, ഒരു യൂണിറ്റ് ഓഫീസ് ഡെസ്കിലെ ഉത്തരവാദിത്തങ്ങളും ന്യൂസ്‌റൂം കലയും പഠിക്കാം!',
+  },
+  {
+    id: 4,
+    short: '🦒 4. സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    full: 'ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം — ശാഖ മുതൽ SIC വരെ, സൈബർ ഷീൽഡ് & സാക്ഷ്യപത്രം',
+    introSpeech:
+      'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലത്തിലേക്ക് സ്വാഗതം! ശാഖ മുതൽ ഗ്ലോബൽ വരെയുള്ള ഘടന കയറി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം സ്വന്തമാക്കൂ!',
+  },
+];
+
+function getInitialTabForLesson<T extends string>(
+  lessonId: string | undefined,
+  stage: AppStage,
+  level?: LevelNumber
+): T | undefined {
+  if (!lessonId) return undefined;
+  const match = ALL_LESSONS.find((l) => l.id === lessonId);
+  if (!match || match.stage !== stage) return undefined;
+  if (level && match.level !== level) return undefined;
+  return match.tab as T | undefined;
+}
+
+export default function App() {
+  const [savedInit] = useState(() => loadSavedGameState());
+
+  const [stage, setStage] = useState<AppStage>(() => savedInit?.stage ?? 'prologue');
+  const [currentLevel, setCurrentLevel] = useState<LevelNumber>(
+    () => savedInit?.currentLevel ?? 1
+  );
+  const [unlockedLevels, setUnlockedLevels] = useState<LevelNumber[]>(() =>
+    savedInit?.unlockedLevels?.length
+      ? (savedInit.unlockedLevels.filter((n) => n >= 1 && n <= 4) as LevelNumber[])
+      : [1]
+  );
+  const [completedLevels, setCompletedLevels] = useState<LevelNumber[]>(() =>
+    savedInit?.completedLevels?.length
+      ? (savedInit.completedLevels.filter((n) => n >= 1 && n <= 4) as LevelNumber[])
+      : []
+  );
+  const [xp, setXp] = useState<number>(() => savedInit?.xp ?? 0);
+  const [awardedActions, setAwardedActions] = useState<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    savedInit?.awardedActions?.forEach((k) => {
+      map[k] = true;
+    });
+    return map;
+  });
+  const [badges, setBadges] = useState<string[]>(() => savedInit?.badges ?? []);
+  const [muted, setMuted] = useState<boolean>(() => sound.getSnapshot().muted);
+  const [ambiencePlaying, setAmbiencePlaying] = useState<boolean>(
+    () => sound.getSnapshot().ambiencePlaying
+  );
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [scoreModalOpen, setScoreModalOpen] = useState<boolean>(false);
+  const [badgeStudioOpen, setBadgeStudioOpen] = useState<boolean>(false);
+  const [badgeStudioPreset, setBadgeStudioPreset] = useState<string>('starter_member');
+  const [collectedEggs, setCollectedEggs] = useState<string[]>(
+    () => savedInit?.collectedEggs ?? []
+  );
+  const [giftChestOpen, setGiftChestOpen] = useState<boolean>(false);
+  const [celebrationEgg, setCelebrationEgg] = useState<EasterEggItem | null>(null);
+  const [quizAnswers, setQuizAnswers] = useState<QuizAnswerMap>(
+    () => savedInit?.quizAnswers ?? {}
+  );
+  const [lives, setLives] = useState<number>(() =>
+    typeof savedInit?.lives === 'number' ? Math.max(0, Math.min(3, savedInit.lives)) : 3
+  );
+  const [heartBreakEvent, setHeartBreakEvent] = useState<HeartBreakEvent | null>(null);
+  const [activeFlightEvent, setActiveFlightEvent] = useState<HeartBreakEvent | null>(null);
+  const [gameOverOpen, setGameOverOpen] = useState<boolean>(() =>
+    typeof savedInit?.lives === 'number' ? savedInit.lives <= 0 : false
+  );
+  const [runNumber, setRunNumber] = useState<number>(() => savedInit?.runNumber ?? 1);
+  const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>(() => loadRunHistory());
+  const [attemptKey, setAttemptKey] = useState<number>(0);
+  const [showResumeToast, setShowResumeToast] = useState<boolean>(() =>
+    Boolean(
+      savedInit &&
+        (savedInit.xp > 0 ||
+          savedInit.completedLessonIds.length > 0 ||
+          Object.keys(savedInit.quizAnswers || {}).length > 0)
+    )
+  );
+
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() =>
+    savedInit?.completedLessonIds?.length ? savedInit.completedLessonIds : loadCompletedLessonIds()
+  );
+  const [activeLessonId, setActiveLessonId] = useState<string>(
+    () => savedInit?.activeLessonId ?? 'prologue_curiosity'
+  );
+  const [prologueInitialMode, setPrologueInitialMode] = useState<
+    'curiosity' | 'story' | undefined
+  >(() => getInitialTabForLesson<'curiosity' | 'story'>(savedInit?.activeLessonId, 'prologue'));
+  const [l1InitialTab, setL1InitialTab] = useState<L1Tab | undefined>(() =>
+    getInitialTabForLesson<L1Tab>(savedInit?.activeLessonId, 'world', 1)
+  );
+  const [l2InitialTab, setL2InitialTab] = useState<L2GameTab | undefined>(() =>
+    getInitialTabForLesson<L2GameTab>(savedInit?.activeLessonId, 'world', 2)
+  );
+  const [l3InitialTab, setL3InitialTab] = useState<L3Tab | undefined>(() =>
+    getInitialTabForLesson<L3Tab>(savedInit?.activeLessonId, 'world', 3)
+  );
+  const [l4InitialTab, setL4InitialTab] = useState<L4Tab | undefined>(() =>
+    getInitialTabForLesson<L4Tab>(savedInit?.activeLessonId, 'world', 4)
+  );
+
+  // Sync completed lessons to legacy key & auto-save full progress to browser localStorage
+  useEffect(() => {
+    saveCompletedLessonIds(completedLessonIds);
+  }, [completedLessonIds]);
+
+  useEffect(() => {
+    saveGameState({
+      version: 2,
+      stage,
+      currentLevel,
+      activeLessonId,
+      xp,
+      awardedActions: Object.keys(awardedActions).filter((k) => awardedActions[k]),
+      badges,
+      unlockedLevels,
+      completedLevels,
+      completedLessonIds,
+      collectedEggs,
+      quizAnswers,
+      lives,
+      runNumber,
+      savedAt: Date.now(),
+    });
+  }, [
+    stage,
+    currentLevel,
+    activeLessonId,
+    xp,
+    awardedActions,
+    badges,
+    unlockedLevels,
+    completedLevels,
+    completedLessonIds,
+    collectedEggs,
+    quizAnswers,
+    lives,
+    runNumber,
+  ]);
+
+  const handleMarkLessonCompleted = useCallback((lessonId: string) => {
+    setCompletedLessonIds((prev) => (prev.includes(lessonId) ? prev : [...prev, lessonId]));
+  }, []);
+
+  const skippedUnseenBefore = useMemo(
+    () => getSkippedUnseenLessonsBefore(activeLessonId, completedLessonIds),
+    [activeLessonId, completedLessonIds]
+  );
+
+  const allUnseenLessons = useMemo(
+    () => getAllUnseenLessons(completedLessonIds),
+    [completedLessonIds]
+  );
+
+  const quizStats = useMemo(() => {
+    const entries = Object.values(quizAnswers);
+    return {
+      answered: entries.length,
+      correct: entries.filter((e) => e.isCorrect).length,
+    };
+  }, [quizAnswers]);
+
+  const storyboardUnlocked =
+    stage === 'storyboard' ||
+    stage === 'pov' ||
+    stage === 'world' ||
+    completedLessonIds.includes('prologue_story') ||
+    completedLessonIds.includes('storyboard') ||
+    completedLessonIds.includes('pov_journey') ||
+    unlockedLevels.length > 1;
+
+  const povUnlocked =
+    stage === 'pov' ||
+    stage === 'world' ||
+    completedLessonIds.includes('storyboard') ||
+    completedLessonIds.includes('pov_journey') ||
+    completedLevels.length > 0 ||
+    unlockedLevels.length > 1;
+
+  const world1Unlocked =
+    stage === 'world' ||
+    completedLessonIds.includes('pov_journey') ||
+    completedLevels.length > 0 ||
+    unlockedLevels.length > 1;
+
+  const handleJumpToLesson = useCallback((lessonId: string) => {
+    const target = ALL_LESSONS.find((l) => l.id === lessonId);
+    if (!target) return;
+    sound.unlockAudio();
+    sound.playClick();
+    if (target.stage === 'prologue') {
+      setPrologueInitialMode(target.tab === 'story' ? 'story' : 'curiosity');
+      setStage('prologue');
+    } else if (target.stage === 'storyboard') {
+      setStage('storyboard');
+    } else if (target.stage === 'pov') {
+      setStage('pov');
+    } else if (target.stage === 'world' && target.level) {
+      const lvl = target.level;
+      setUnlockedLevels((prev) => (prev.includes(lvl) ? prev : [...prev, lvl]));
+      if (lvl === 1 && target.tab) setL1InitialTab(target.tab as L1Tab);
+      if (lvl === 2 && target.tab) setL2InitialTab(target.tab as L2GameTab);
+      if (lvl === 3 && target.tab) setL3InitialTab(target.tab as L3Tab);
+      if (lvl === 4 && target.tab) setL4InitialTab(target.tab as L4Tab);
+      setStage('world');
+      setCurrentLevel(lvl);
+    }
+    setActiveLessonId(target.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const currentRank = useMemo(() => {
+    if (xp >= 550 || completedLevels.includes(4)) return '🏆 SKSSF ഗൈഡ് താരം';
+    if (xp >= 340 || completedLevels.includes(3)) return '🛡️ നല്ല പ്രവർത്തകൻ';
+    if (xp >= 150 || completedLevels.includes(2)) return '🧭 സജീവ കൂട്ടുകാരൻ';
+    return '🌱 പുതിയ കൂട്ടുകാരൻ';
+  }, [xp, completedLevels]);
+
+  const handleAwardXp = useCallback((amount: number, actionId: string) => {
+    setAwardedActions((prev) => {
+      if (prev[actionId]) return prev;
+      setXp((curr) => curr + amount);
+      return { ...prev, [actionId]: true };
+    });
+  }, []);
+
+  const handleQuizAnswered = useCallback(
+    (lessonId: string, selectedIdx: number, isCorrect: boolean) => {
+      setQuizAnswers((prev) => {
+        if (prev[lessonId]) return prev;
+        return {
+          ...prev,
+          [lessonId]: {
+            selectedIdx,
+            isCorrect,
+            answeredAt: Date.now(),
+          },
+        };
+      });
+
+      if (isCorrect) {
+        handleAwardXp(15, `quiz_${lessonId}`);
+      } else {
+        // Deduct 1 global heart, play dramatic heartbreak-to-header flight animation!
+        // On 3rd mistake (lives === 0), reset ALL lessons back to Lesson 1 from the beginning!
+        setLives((prevLives) => {
+          const nextLives = Math.max(0, prevLives - 1);
+          const ev: HeartBreakEvent = {
+            id: Date.now(),
+            brokenIndex: nextLives, // 2 -> 1 -> 0 (rightmost intact heart breaks first!)
+            remaining: nextLives,
+          };
+          setHeartBreakEvent(ev);
+          setActiveFlightEvent(ev);
+          if (nextLives <= 0) {
+            window.setTimeout(() => {
+              setGameOverOpen(true);
+            }, 1450);
+          }
+          return nextLives;
+        });
+      }
+    },
+    [handleAwardXp]
+  );
+
+  const handleUnlockBadge = (badge: string) => {
+    setBadges((prev) => (prev.includes(badge) ? prev : [...prev, badge]));
+  };
+
+  const handleClaimEasterEgg = (egg: EasterEggItem) => {
+    sound.unlockAudio();
+    sound.playUnlock();
+    if (!collectedEggs.includes(egg.id)) {
+      setCollectedEggs((prev) => [...prev, egg.id]);
+      handleAwardXp(25, `easter_${egg.id}`);
+      handleUnlockBadge(egg.badge);
+    }
+    setCelebrationEgg(egg);
+    setGiftChestOpen(true);
+    narrator.speak(egg.speech, `${egg.emoji} ${egg.title}`);
+  };
+
+  const handleCompleteLevel = (level: LevelNumber) => {
+    setCompletedLevels((prev) => (prev.includes(level) ? prev : [...prev, level]));
+    if (level < 4) {
+      const next = (level + 1) as LevelNumber;
+      setUnlockedLevels((prev) => (prev.includes(next) ? prev : [...prev, next]));
+      setStage('world');
+      setCurrentLevel(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleSwitchLevel = (lvlId: LevelNumber) => {
+    if (lvlId === 1 && !world1Unlocked) return;
+    if (lvlId > 1 && !unlockedLevels.includes(lvlId)) return;
+    sound.unlockAudio();
+    sound.playClick();
+    setStage('world');
+    setCurrentLevel(lvlId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStartNewAttempt = () => {
+    const highestLevel = Math.max(1, ...unlockedLevels);
+    const updatedHistory = archiveRunToHistory({
+      runNumber,
+      finishedAt: Date.now(),
+      xp,
+      completedLessons: completedLessonIds.length,
+      totalLessons: ALL_LESSONS.length,
+      quizzesAnswered: quizStats.answered,
+      quizzesCorrect: quizStats.correct,
+      badgesCount: badges.length,
+      eggsCount: collectedEggs.length,
+      highestLevel,
+      reachedCertificate: completedLevels.includes(4),
+    });
+    setRunHistory(updatedHistory);
+    clearSavedGameState();
+    saveCompletedLessonIds([]);
+
+    const nextRun = runNumber + 1;
+    setRunNumber(nextRun);
+    setStage('prologue');
+    setCurrentLevel(1);
+    setUnlockedLevels([1]);
+    setCompletedLevels([]);
+    setXp(0);
+    setAwardedActions({});
+    setBadges([]);
+    setCollectedEggs([]);
+    setCompletedLessonIds([]);
+    setQuizAnswers({});
+    setLives(3);
+    setHeartBreakEvent(null);
+    setActiveFlightEvent(null);
+    setGameOverOpen(false);
+    setActiveLessonId('prologue_curiosity');
+    setPrologueInitialMode('curiosity');
+    setL1InitialTab(undefined);
+    setL2InitialTab(undefined);
+    setL3InitialTab(undefined);
+    setL4InitialTab(undefined);
+    setShowResumeToast(false);
+    setAttemptKey((k) => k + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleResetCurrentGame = () => {
+    clearSavedGameState();
+    saveCompletedLessonIds([]);
+    setStage('prologue');
+    setCurrentLevel(1);
+    setUnlockedLevels([1]);
+    setCompletedLevels([]);
+    setXp(0);
+    setAwardedActions({});
+    setBadges([]);
+    setCollectedEggs([]);
+    setCompletedLessonIds([]);
+    setQuizAnswers({});
+    setLives(3);
+    setHeartBreakEvent(null);
+    setActiveFlightEvent(null);
+    setGameOverOpen(false);
+    setActiveLessonId('prologue_curiosity');
+    setPrologueInitialMode('curiosity');
+    setL1InitialTab(undefined);
+    setL2InitialTab(undefined);
+    setL3InitialTab(undefined);
+    setL4InitialTab(undefined);
+    setShowResumeToast(false);
+    setAttemptKey((k) => k + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleClearAllSavedData = async () => {
+    clearAllAppStorage();
+    sound.resetToDefaults();
+    await narrator.clearVoiceCache();
+    setRunHistory([]);
+    setRunNumber(1);
+    setStage('prologue');
+    setCurrentLevel(1);
+    setUnlockedLevels([1]);
+    setCompletedLevels([]);
+    setXp(0);
+    setAwardedActions({});
+    setBadges([]);
+    setCollectedEggs([]);
+    setCompletedLessonIds([]);
+    setQuizAnswers({});
+    setLives(3);
+    setHeartBreakEvent(null);
+    setActiveFlightEvent(null);
+    setGameOverOpen(false);
+    setActiveLessonId('prologue_curiosity');
+    setPrologueInitialMode('curiosity');
+    setL1InitialTab(undefined);
+    setL2InitialTab(undefined);
+    setL3InitialTab(undefined);
+    setL4InitialTab(undefined);
+    setShowResumeToast(false);
+    setAttemptKey((k) => k + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    return sound.subscribe((snap) => {
+      setMuted(snap.muted);
+      setAmbiencePlaying(snap.ambiencePlaying);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (stage === 'prologue' || (stage === 'world' && currentLevel === 1)) {
+      sound.setAmbienceScene('harbor');
+    } else if (stage === 'world' && currentLevel === 2) {
+      sound.setAmbienceScene('conference');
+    } else if (stage === 'world' && currentLevel === 3) {
+      sound.setAmbienceScene('study');
+    } else {
+      sound.setAmbienceScene('heritage');
+    }
+  }, [stage, currentLevel]);
+
+  const handleStartAdventure = () => {
+    sound.unlockAudio();
+    sound.playShipCreak();
+    setStage('world');
+    setCurrentLevel(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenStoryboard = () => {
+    sound.unlockAudio();
+    setStage('storyboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const toggleSound = () => {
+    const nextMuted = !muted;
+    setMuted(nextMuted);
+    sound.setMuted(nextMuted);
+    if (nextMuted) {
+      setAmbiencePlaying(false);
+      narrator.stop();
+    } else {
+      sound.unlockAudio();
+      sound.playClick();
+    }
+  };
+
+  const toggleAmbience = () => {
+    if (muted) {
+      setMuted(false);
+      sound.setMuted(false);
+    }
+    sound.unlockAudio();
+    const playing = sound.toggleAmbience();
+    setAmbiencePlaying(playing);
+  };
+
+  return (
+    <GameLivesProvider lives={lives} maxLives={3} lastBreakEvent={heartBreakEvent}>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {/* Clean Non-Overlapping Sticky Header */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-2xs">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 space-y-1.5 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between gap-x-3 gap-y-2">
+          {/* Row 1 on mobile (left + primary right controls on desktop) */}
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setStage('prologue');
+              }}
+              className="text-left shrink-0"
+            >
+              <h1 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-tight whitespace-nowrap">
+                ✨ SKSSF ഗൈഡ് ഗെയിം
+              </h1>
+            </button>
+
+            {/* Mobile-only right utility cluster (Settings + Mute) so title never overlaps hearts */}
+            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setSettingsOpen(true);
+                }}
+                aria-label="ശബ്ദ സെറ്റിംഗ്സ് തുറക്കുക"
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-[11px] font-extrabold"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>സെറ്റിംഗ്സ്</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleSound}
+                aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700"
+              >
+                {muted ? (
+                  <VolumeX className="w-4 h-4 text-slate-500" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-emerald-700" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <nav
+            aria-label="സംഘടനാ ഘട്ടങ്ങൾ"
+            className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-lg"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setStage('prologue');
+              }}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
+                stage === 'prologue'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-white'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>ആമുഖം</span>
+            </button>
+
+            {storyboardUnlocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setStage('storyboard');
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
+                  stage === 'storyboard'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'text-slate-700 hover:bg-white'
+                }`}
+              >
+                {completedLessonIds.includes('storyboard') && stage !== 'storyboard' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                ) : (
+                  <BookOpen className="w-3.5 h-3.5" />
+                )}
+                <span>സാഹചര്യങ്ങൾ</span>
+              </button>
+            )}
+
+            {povUnlocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setStage('pov');
+                }}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
+                  stage === 'pov'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-emerald-900 bg-emerald-50 hover:bg-white'
+                }`}
+              >
+                {completedLessonIds.includes('pov_journey') && stage !== 'pov' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                ) : null}
+                <span>🧭 POV യാത്ര</span>
+              </button>
+            )}
+
+            {LEVEL_META.map((lvl) => {
+              const unlocked = lvl.id === 1 ? world1Unlocked : unlockedLevels.includes(lvl.id);
+              if (!unlocked) return null;
+              const completed = completedLevels.includes(lvl.id);
+              const active = stage === 'world' && currentLevel === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  type="button"
+                  onClick={() => handleSwitchLevel(lvl.id)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
+                    active
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-700 hover:bg-white'
+                  }`}
+                >
+                  {completed && !active && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  )}
+                  <span>{lvl.short}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Compact Status & Action Strip (Clean Row 2 on Mobile, Right Cluster on Desktop — Zero Overlap!) */}
+          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5">
+              {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
+              <HeaderHeartsBar />
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setScoreModalOpen(true);
+                }}
+                aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-950 text-[11px] sm:text-xs font-extrabold hover:bg-sky-100 tabular-nums whitespace-nowrap"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+                <span>{xp} XP</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playPop();
+                  setBadgeStudioPreset('starter_member');
+                  setBadgeStudioOpen(true);
+                }}
+                aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ് & സോഷ്യൽ കാർഡ്"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold hover:bg-amber-300 whitespace-nowrap shadow-xs"
+              >
+                <Award className="w-3.5 h-3.5 shrink-0" />
+                <span>ഫോട്ടോ ബാഡ്ജ്</span>
+              </button>
+
+              {/* Surprise Gift Badge: ONLY shown after the user discovers at least 1 gift! */}
+              {collectedEggs.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    setCelebrationEgg(null);
+                    setGiftChestOpen(true);
+                  }}
+                  aria-label="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap"
+                >
+                  <Gift className="w-3.5 h-3.5 text-amber-600" />
+                  <span>
+                    {collectedEggs.length}/{EASTER_EGG_ITEMS.length}
+                  </span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setSettingsOpen(true);
+                }}
+                aria-label="ശബ്ദ സെറ്റിംഗ്സ് തുറക്കുക"
+                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs font-extrabold hover:bg-emerald-100 whitespace-nowrap"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>സെറ്റിംഗ്സ്</span>
+              </button>
+              <button
+                type="button"
+                onClick={toggleSound}
+                aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
+                className="hidden sm:inline-flex p-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              >
+                {muted ? (
+                  <VolumeX className="w-4 h-4 text-slate-500" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-emerald-700" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Non-blocking Floating Top-Right Audio Loader */}
+      <AudioLoadingFloatBadge />
+
+      {/* Mobile / Tablet Switcher — Only Shows Previously Unlocked Stages (Zero Future Links on Page 1!) */}
+      {(storyboardUnlocked || povUnlocked || world1Unlocked) && (
+        <div className="lg:hidden bg-white border-b border-slate-200 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setStage('prologue');
+              }}
+              className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
+                stage === 'prologue'
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              🚐 തുടക്കം
+            </button>
+            {storyboardUnlocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setStage('storyboard');
+                }}
+                className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
+                  stage === 'storyboard'
+                    ? 'bg-amber-400 text-slate-950'
+                    : 'bg-amber-50 text-amber-900'
+                }`}
+              >
+                സാഹചര്യ ബോർഡ്
+              </button>
+            )}
+            {povUnlocked && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setStage('pov');
+                }}
+                className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
+                  stage === 'pov'
+                    ? 'bg-emerald-700 text-white'
+                    : 'bg-emerald-50 text-emerald-900'
+                }`}
+              >
+                🧭 POV യാത്ര
+              </button>
+            )}
+            {LEVEL_META.map((lvl) => {
+              const unlocked = lvl.id === 1 ? world1Unlocked : unlockedLevels.includes(lvl.id);
+              if (!unlocked) return null;
+              const active = stage === 'world' && currentLevel === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  type="button"
+                  onClick={() => handleSwitchLevel(lvl.id)}
+                  className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
+                    active ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  ഘട്ടം {lvl.id}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Main Game Workspace */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6">
+        {showResumeToast && (
+          <div className="mb-3 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-emerald-950">
+            <span>
+              💾 നിങ്ങളുടെ മുൻ പുരോഗതി പുനഃസ്ഥാപിച്ചു (ശ്രമം #{runNumber} · {xp} XP · പാഠങ്ങൾ{' '}
+              {completedLessonIds.length}/{ALL_LESSONS.length})
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setScoreModalOpen(true)}
+                className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 font-extrabold"
+              >
+                📊 സ്കോർ കാണാം
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowResumeToast(false)}
+                className="px-2 py-1 rounded-lg text-emerald-700 hover:bg-emerald-100 font-extrabold"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        <StoryNarrationStrip
+          ambiencePlaying={ambiencePlaying}
+          ambienceLabel={sound.getSceneLabel()}
+          onToggleAmbience={toggleAmbience}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+
+        <UnseenLessonBanner
+          unseenLessons={skippedUnseenBefore}
+          onJumpToLesson={handleJumpToLesson}
+        />
+
+        {stage === 'prologue' && (
+          <StoryPrologueTheater
+            key={`prologue_${attemptKey}`}
+            xp={xp}
+            badgesCount={badges.length}
+            onStartAdventure={handleStartAdventure}
+            onOpenStoryboard={handleOpenStoryboard}
+            onOpenBadgeStudio={(presetId) => {
+              setBadgeStudioPreset(presetId);
+              setBadgeStudioOpen(true);
+            }}
+            onAwardXp={handleAwardXp}
+            awardedActions={awardedActions}
+            collectedEggs={collectedEggs}
+            onClaimEasterEgg={handleClaimEasterEgg}
+            initialMode={prologueInitialMode}
+            onActiveLessonChange={setActiveLessonId}
+            onMarkLessonCompleted={handleMarkLessonCompleted}
+            completedLessonIds={completedLessonIds}
+            quizAnswers={quizAnswers}
+            onQuizAnswered={handleQuizAnswered}
+          />
+        )}
+
+        {stage === 'pov' && (
+          <SkssfPovJourneyGame
+            key={`pov_${attemptKey}`}
+            onAwardXp={handleAwardXp}
+            awardedActions={awardedActions}
+            completedLessonIds={completedLessonIds}
+            onUnlockBadge={handleUnlockBadge}
+            onOpenBadgeStudio={(presetId) => {
+              setBadgeStudioPreset(presetId);
+              setBadgeStudioOpen(true);
+            }}
+            onActiveLessonChange={setActiveLessonId}
+            quizAnswers={quizAnswers}
+            onQuizAnswered={handleQuizAnswered}
+            onCompletePovStage={() => {
+              handleMarkLessonCompleted('pov_journey');
+              handleStartAdventure();
+            }}
+          />
+        )}
+
+        {stage === 'storyboard' && (
+          <VisualStoryboardArena
+            key={`storyboard_${attemptKey}`}
+            onAwardXp={handleAwardXp}
+            onUnlockBadge={handleUnlockBadge}
+            onGoToMission1={() => {
+              handleMarkLessonCompleted('storyboard');
+              setStage('pov');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            collectedEggs={collectedEggs}
+            onClaimEasterEgg={handleClaimEasterEgg}
+            onActiveLessonChange={setActiveLessonId}
+            onMarkLessonCompleted={handleMarkLessonCompleted}
+            completedLessonIds={completedLessonIds}
+            quizAnswers={quizAnswers}
+            onQuizAnswered={handleQuizAnswered}
+          />
+        )}
+
+        {stage === 'world' && (
+          <>
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+              <p className="font-semibold">{LEVEL_META[currentLevel - 1].full}</p>
+              {badges.length > 0 && (
+                <p className="font-bold text-emerald-800">
+                  ബാഡ്ജുകൾ: {badges.join(' · ')}
+                </p>
+              )}
+            </div>
+
+            {currentLevel === 1 && (
+              <Level1Story
+                key={`l1_${attemptKey}`}
+                isCompleted={completedLevels.includes(1)}
+                onAwardXp={handleAwardXp}
+                onUnlockBadge={handleUnlockBadge}
+                onCompleteLevel={() => handleCompleteLevel(1)}
+                collectedEggs={collectedEggs}
+                onClaimEasterEgg={handleClaimEasterEgg}
+                initialTab={l1InitialTab}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                completedLessonIds={completedLessonIds}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+              />
+            )}
+
+            {currentLevel === 2 && (
+              <Level2Ecosystem
+                key={`l2_${attemptKey}`}
+                isCompleted={completedLevels.includes(2)}
+                onAwardXp={handleAwardXp}
+                onUnlockBadge={handleUnlockBadge}
+                onCompleteLevel={() => handleCompleteLevel(2)}
+                collectedEggs={collectedEggs}
+                onClaimEasterEgg={handleClaimEasterEgg}
+                initialTab={l2InitialTab}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                completedLessonIds={completedLessonIds}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+                onOpenBadgeStudio={(presetId) => {
+                  setBadgeStudioPreset(presetId);
+                  setBadgeStudioOpen(true);
+                }}
+              />
+            )}
+
+            {currentLevel === 3 && (
+              <Level3Organizer
+                key={`l3_${attemptKey}`}
+                isCompleted={completedLevels.includes(3)}
+                onAwardXp={handleAwardXp}
+                onUnlockBadge={handleUnlockBadge}
+                onCompleteLevel={() => handleCompleteLevel(3)}
+                collectedEggs={collectedEggs}
+                onClaimEasterEgg={handleClaimEasterEgg}
+                initialTab={l3InitialTab}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                completedLessonIds={completedLessonIds}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+              />
+            )}
+
+            {currentLevel === 4 && (
+              <Level4Strategy
+                key={`l4_${attemptKey}`}
+                xp={xp}
+                rank={currentRank}
+                badges={badges}
+                isCompleted={completedLevels.includes(4)}
+                onAwardXp={handleAwardXp}
+                onUnlockBadge={handleUnlockBadge}
+                onCompleteLevel={() => handleCompleteLevel(4)}
+                collectedEggs={collectedEggs}
+                onClaimEasterEgg={handleClaimEasterEgg}
+                initialTab={l4InitialTab}
+                unseenLessons={allUnseenLessons}
+                onJumpToLesson={handleJumpToLesson}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                completedLessonIds={completedLessonIds}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+                onOpenBadgeStudio={(presetId) => {
+                  setBadgeStudioPreset(presetId);
+                  setBadgeStudioOpen(true);
+                }}
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      <SettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onResetProgress={handleResetCurrentGame}
+        onClearAllData={handleClearAllSavedData}
+      />
+      <ScoreComparisonModal
+        isOpen={scoreModalOpen}
+        onClose={() => setScoreModalOpen(false)}
+        runNumber={runNumber}
+        xp={xp}
+        rank={currentRank}
+        completedLessonsCount={completedLessonIds.length}
+        totalLessonsCount={ALL_LESSONS.length}
+        quizzesAnswered={quizStats.answered}
+        quizzesCorrect={quizStats.correct}
+        badgesCount={badges.length}
+        eggsCount={collectedEggs.length}
+        runHistory={runHistory}
+        onStartNewAttempt={handleStartNewAttempt}
+      />
+      <ShareableBadgeStudio
+        isOpen={badgeStudioOpen}
+        onClose={() => setBadgeStudioOpen(false)}
+        xp={xp}
+        rank={currentRank}
+        initialBadgeId={badgeStudioPreset}
+        completedLessonIds={completedLessonIds}
+        completedLevels={completedLevels}
+        awardedActions={awardedActions}
+      />
+      <SurpriseGiftChestModal
+        isOpen={giftChestOpen}
+        onClose={() => setGiftChestOpen(false)}
+        collectedEggIds={collectedEggs}
+        activeCelebrationEgg={celebrationEgg}
+      />
+
+      {/* DRAMATIC CENTER-TO-HEADER HEART-BREAK FLIGHT ANIMATION */}
+      <HeartBreakFlightOverlay
+        event={activeFlightEvent}
+        onComplete={() => setActiveFlightEvent(null)}
+      />
+
+      {/* 3-HEART LOSS FULL GAME RESET MODAL */}
+      <GameOverResetModal
+        isOpen={gameOverOpen}
+        onRestartFromStart={handleResetCurrentGame}
+      />
+
+      <footer className="border-t border-slate-200 bg-white py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
+        <p>
+          SKSSF ഗൈഡ് ഗെയിം · നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? · “വിജ്ഞാനം, വിനയം, സേവനം”
+        </p>
+      </footer>
+    </div>
+    </GameLivesProvider>
+  );
+}

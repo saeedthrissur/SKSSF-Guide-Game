@@ -1,0 +1,310 @@
+export type LessonStage = 'prologue' | 'storyboard' | 'pov' | 'world';
+
+export interface LessonDescriptor {
+  id: string;
+  stage: LessonStage;
+  level?: 1 | 2 | 3 | 4;
+  tab?: string;
+  emoji: string;
+  groupLabel: string;
+  title: string;
+}
+
+export const ALL_LESSONS: LessonDescriptor[] = [
+  {
+    id: 'prologue_curiosity',
+    stage: 'prologue',
+    tab: 'curiosity',
+    emoji: '✨',
+    groupLabel: 'ആമുഖം',
+    title: 'നമ്മൾ ആരാണ്? (ദൗത്യ പരിചയം)',
+  },
+  {
+    id: 'prologue_story',
+    stage: 'prologue',
+    tab: 'story',
+    emoji: '📖',
+    groupLabel: 'ആമുഖം',
+    title: 'പ്രപഞ്ചം · പ്രവാചക മാതൃക ﷺ · സമസ്തയുടെ കഥ',
+  },
+  {
+    id: 'storyboard',
+    stage: 'storyboard',
+    emoji: '🧭',
+    groupLabel: 'സാഹചര്യങ്ങൾ',
+    title: 'നന്മയുടെ തിരഞ്ഞെടുപ്പ് (സാഹചര്യ ബോർഡ്)',
+  },
+  {
+    id: 'pov_journey',
+    stage: 'pov',
+    emoji: '🚩',
+    groupLabel: 'POV യാത്ര (നിർബന്ധം)',
+    title: 'എന്റെ SKSSF യാത്ര — മദ്രസ → സിയാറത്ത് → യൂണിറ്റ് → മീറ്റിംഗ് → മേഖല',
+  },
+  // ഘട്ടം 1 · യൂണിറ്റ് തലം
+  {
+    id: 'l1_timeline',
+    stage: 'world',
+    level: 1,
+    tab: 'timeline',
+    emoji: '⛵',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: 'സമസ്തയുടെ ചരിത്ര യാത്ര',
+  },
+  {
+    id: 'l1_flags',
+    stage: 'world',
+    level: 1,
+    tab: 'flags',
+    emoji: '🚩',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: 'പതാക നിർമ്മാണ ശാല (SKJU & SKSSF)',
+  },
+  {
+    id: 'l1_cosmic',
+    stage: 'world',
+    level: 1,
+    tab: 'cosmic',
+    emoji: '🌱',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: 'പ്രപഞ്ച സൃഷ്ടാവ് — വിശ്വാസ ശൃംഖല',
+  },
+  {
+    id: 'l1_roots',
+    stage: 'world',
+    level: 1,
+    tab: 'roots',
+    emoji: '📚',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: 'സമസ്തയുടെ വേരുകൾ & ചരിത്ര കാർഡുകൾ',
+  },
+  // ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം
+  {
+    id: 'l2_memory',
+    stage: 'world',
+    level: 2,
+    tab: 'memory',
+    emoji: '🃏',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'പതാക മെമ്മറി ഗെയിം',
+  },
+  {
+    id: 'l2_madrasa_board',
+    stage: 'world',
+    level: 2,
+    tab: 'madrasa_board',
+    emoji: '🏫',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'സമസ്ത മദ്രസ ബോർഡ് നിർമ്മാണം',
+  },
+  {
+    id: 'l2_tiers',
+    stage: 'world',
+    level: 2,
+    tab: 'tiers',
+    emoji: '🏛️',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: '5 ഘടക ഘടന (15/19/21/25/31)',
+  },
+  {
+    id: 'l2_election_roles',
+    stage: 'world',
+    level: 2,
+    tab: 'election_roles',
+    emoji: '🗳️',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'കമ്മിറ്റി രൂപീകരണവും സ്ഥാനങ്ങളും',
+  },
+  {
+    id: 'l2_centres',
+    stage: 'world',
+    level: 2,
+    tab: 'centres',
+    emoji: '🕌',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'ഇസ്‌ലാമിക് സെന്ററുകളും ഹോസ്റ്റലുകളും',
+  },
+  {
+    id: 'l2_dispatch',
+    stage: 'world',
+    level: 2,
+    tab: 'dispatch',
+    emoji: '🚑',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: '17 സബ് വിങ്ങുകളും സേവന ദൗത്യവും',
+  },
+  {
+    id: 'l2_dawa_age',
+    stage: 'world',
+    level: 2,
+    tab: 'dawa_age',
+    emoji: '🎯',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'പ്രായപരിധിയും സംഘടനാ പ്രവർത്തനവും',
+  },
+  {
+    id: 'l2_dawa_lanterns',
+    stage: 'world',
+    level: 2,
+    tab: 'dawa_lanterns',
+    emoji: '🏮',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'നാട്ടിലെ 5 ദഅ്‌വത്ത് വിളക്കുകൾ',
+  },
+  {
+    id: 'l2_vault',
+    stage: 'world',
+    level: 2,
+    tab: 'vault',
+    emoji: '📰',
+    groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
+    title: 'പത്രങ്ങളും വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളും',
+  },
+  // ഘട്ടം 3 · ജില്ലാ തലം
+  {
+    id: 'l3_sky_catcher',
+    stage: 'world',
+    level: 3,
+    tab: 'sky_catcher',
+    emoji: '🎈',
+    groupLabel: 'ജില്ലാ തലം',
+    title: 'നന്മയും കെണിയും (സ്കൈ ക്യാച്ചർ)',
+  },
+  {
+    id: 'l3_scrolls',
+    stage: 'world',
+    level: 3,
+    tab: 'scrolls',
+    emoji: '📜',
+    groupLabel: 'ജില്ലാ തലം',
+    title: 'പ്രവാചക മാതൃക ﷺ — ജ്ഞാനച്ചുരുൾ',
+  },
+  {
+    id: 'l3_mind_chain',
+    stage: 'world',
+    level: 3,
+    tab: 'mind_chain',
+    emoji: '🪜',
+    groupLabel: 'ജില്ലാ തലം',
+    title: 'മനസ്സിന്റെ 5 വളർച്ചാ പടവുകൾ',
+  },
+  {
+    id: 'l3_unit_desks',
+    stage: 'world',
+    level: 3,
+    tab: 'unit_desks',
+    emoji: '📋',
+    groupLabel: 'ജില്ലാ തലം',
+    title: 'യൂണിറ്റ് ഓഫീസും ചുമതലകളും',
+  },
+  {
+    id: 'l3_newsroom',
+    stage: 'world',
+    level: 3,
+    tab: 'newsroom',
+    emoji: '🫧',
+    groupLabel: 'ജില്ലാ തലം',
+    title: 'മാധ്യമ & വാർത്താ പരിശീലനം',
+  },
+  // ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം
+  {
+    id: 'l4_climb',
+    stage: 'world',
+    level: 4,
+    tab: 'climb',
+    emoji: '🗼',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'ശാഖ മുതൽ ഗ്ലോബൽ വരെ',
+  },
+  {
+    id: 'l4_viqaya_van',
+    stage: 'world',
+    level: 4,
+    tab: 'viqaya_van',
+    emoji: '🚑',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'വിഖായ & ഗ്ലോബൽ സേവന വാഹനം',
+  },
+  {
+    id: 'l4_compass',
+    stage: 'world',
+    level: 4,
+    tab: 'compass',
+    emoji: '🧭',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സംഘാടക വഴികാട്ടി സൂത്രങ്ങൾ',
+  },
+  {
+    id: 'l4_bag',
+    stage: 'world',
+    level: 4,
+    tab: 'bag',
+    emoji: '🎒',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സമ്മേളന ഒരുക്ക ബാഗ്',
+  },
+  {
+    id: 'l4_crisis',
+    stage: 'world',
+    level: 4,
+    tab: 'crisis',
+    emoji: '🤝',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'പ്രതിസന്ധി നേരിടൽ പരിശീലനം',
+  },
+  {
+    id: 'l4_cyber_shield',
+    stage: 'world',
+    level: 4,
+    tab: 'cyber_shield',
+    emoji: '📱',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സൈബർ മര്യാദ & പ്രതിരോധം',
+  },
+];
+
+const STORAGE_KEY = 'skssf_guide_completed_lessons_v1';
+
+export function loadCompletedLessonIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveCompletedLessonIds(ids: string[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+  } catch {
+    // Ignore private mode storage limits
+  }
+}
+
+/**
+ * Returns ONLY lessons that appear BEFORE `currentLessonId` in the curriculum
+ * and have NOT yet been seen/completed by the user.
+ * Completed lessons NEVER appear here.
+ */
+export function getSkippedUnseenLessonsBefore(
+  currentLessonId: string,
+  completedIds: string[]
+): LessonDescriptor[] {
+  const idx = ALL_LESSONS.findIndex((l) => l.id === currentLessonId);
+  if (idx <= 0) return [];
+  const completedSet = new Set(completedIds);
+  return ALL_LESSONS.slice(0, idx).filter((l) => !completedSet.has(l.id));
+}
+
+/**
+ * Returns ALL lessons across the entire game that have not yet been completed/seen.
+ */
+export function getAllUnseenLessons(completedIds: string[]): LessonDescriptor[] {
+  const completedSet = new Set(completedIds);
+  return ALL_LESSONS.filter((l) => !completedSet.has(l.id));
+}
