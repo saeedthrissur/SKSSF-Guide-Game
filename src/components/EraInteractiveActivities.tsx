@@ -662,7 +662,7 @@ const MadrasaLanternSweepGame: React.FC<{
       >
         {/* Subtle Heritage Backdrop — COMPLETELY HIDDEN in pitch black outside lantern beam */}
         <img
-          src="/src/assets/images/era_madrasa_lantern_1794953898224.jpg"
+          src="./src/assets/images/era_madrasa_lantern_1794953898224.jpg"
           alt="മദ്രസാ വിളക്ക് വെളിച്ചം"
           className="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none"
           referrerPolicy="no-referrer"

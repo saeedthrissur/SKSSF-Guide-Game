@@ -7,32 +7,32 @@ export const QURAN_TRACKS: { id: QuranTrackId; label: string; url: string; durat
   {
     id: 'fatiha',
     label: 'സൂറത്തുൽ ഫാതിഹ',
-    url: '/assets/audio/quran_fatiha.mp3',
+    url: './assets/audio/quran_fatiha.mp3',
     duration: '0:56',
   },
   {
     id: 'ikhlas',
     label: 'സൂറത്തുൽ ഇഖ്‌ലാസ്',
-    url: '/assets/audio/quran_ikhlas.mp3',
+    url: './assets/audio/quran_ikhlas.mp3',
     duration: '0:21',
   },
 ];
 
 const SCENE_TRACKS: Record<AmbienceScene, { primary: string; label: string }> = {
   harbor: {
-    primary: '/assets/audio/birds_morning.mp3',
+    primary: './assets/audio/birds_morning.mp3',
     label: '🐦 പ്രഭാത പ്രകൃതി',
   },
   heritage: {
-    primary: '/assets/audio/birds_morning.mp3',
+    primary: './assets/audio/birds_morning.mp3',
     label: '🐦 പൈതൃക പ്രഭാതം',
   },
   conference: {
-    primary: '/assets/audio/birds_morning.mp3',
+    primary: './assets/audio/birds_morning.mp3',
     label: '🌿 സമ്മേളന ശാന്തത',
   },
   study: {
-    primary: '/assets/audio/birds_morning.mp3',
+    primary: './assets/audio/birds_morning.mp3',
     label: '🌿 പഠന ശാന്തത',
   },
 };
@@ -483,7 +483,7 @@ class SoundEngine {
 
   private getSelectedAmbienceUrl(): string {
     if (this.backgroundMode === 'ocean') {
-      return '/assets/audio/ocean_waves.mp3';
+      return './assets/audio/ocean_waves.mp3';
     }
     return SCENE_TRACKS[this.currentScene].primary;
   }
@@ -491,9 +491,10 @@ class SoundEngine {
   private startSceneAudio() {
     if (typeof window === 'undefined' || this.muted || this.backgroundMode === 'off') return;
     const trackUrl = this.getSelectedAmbienceUrl();
+    const normalizedTrack = trackUrl.replace(/^\.\//, '');
 
     if (this.ambienceAudio) {
-      if (this.ambienceAudio.src.endsWith(trackUrl)) {
+      if (this.ambienceAudio.src.endsWith(normalizedTrack)) {
         this.ambienceAudio.volume = this.getEffectiveAmbienceGain();
         if (this.ambienceAudio.paused) {
           this.ambienceAudio.play().catch(() => {});
@@ -666,7 +667,7 @@ class SoundEngine {
       this.adhanAudio = null;
     }
 
-    const audio = new Audio('/assets/audio/adhan_full.mp3');
+    const audio = new Audio('./assets/audio/adhan_full.mp3');
     audio.loop = true;
     audio.volume = this.getEffectiveSpiritualGain();
     audio.onended = () => {
@@ -758,31 +759,31 @@ class SoundEngine {
   }
 
   public playSeagull() {
-    this.playRealSfx('/assets/audio/seagull_cry.mp3', 0.65);
+    this.playRealSfx('./assets/audio/seagull_cry.mp3', 0.65);
   }
 
   public playShipCreak() {
-    this.playRealSfx('/assets/audio/wooden_ship.mp3', 0.65, 2800);
+    this.playRealSfx('./assets/audio/wooden_ship.mp3', 0.65, 2800);
   }
 
   public playOceanBreeze() {
-    this.playRealSfx('/assets/audio/ocean_waves.mp3', 0.45, 3200);
+    this.playRealSfx('./assets/audio/ocean_waves.mp3', 0.45, 3200);
   }
 
   public playBirdsChime() {
-    this.playRealSfx('/assets/audio/birds_morning.mp3', 0.72, 3600);
+    this.playRealSfx('./assets/audio/birds_morning.mp3', 0.72, 3600);
   }
 
   public playWriting() {
-    this.playRealSfx('/assets/audio/ink_writing.mp3', 0.8, 1800);
+    this.playRealSfx('./assets/audio/ink_writing.mp3', 0.8, 1800);
   }
 
   public playApplause() {
-    this.playRealSfx('/assets/audio/crowd_applause.mp3', 0.7);
+    this.playRealSfx('./assets/audio/crowd_applause.mp3', 0.7);
   }
 
   public playAdhan() {
-    this.playRealSfx('/assets/audio/adhan_call.mp3', 0.75, 4200);
+    this.playRealSfx('./assets/audio/adhan_call.mp3', 0.75, 4200);
   }
 
   // ==================== TACTILE UI SOUND EFFECTS ====================

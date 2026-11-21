@@ -1105,14 +1105,14 @@ export const MadrasaBoardActivity: React.FC<{
             {placed.arch_flag ? (
               <>
                 <img
-                  src="/assets/official/flag_111154.jpg"
+                  src="./assets/official/flag_111154.jpg"
                   alt="സമസ്ത പതാക"
                   referrerPolicy="no-referrer"
                   className="w-8 h-8 object-contain rounded"
                 />
                 <span className="text-xs sm:text-sm font-extrabold">🌙 സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ</span>
                 <img
-                  src="/assets/official/flag_111138.jpg"
+                  src="./assets/official/flag_111138.jpg"
                   alt="SKSSF പതാക"
                   referrerPolicy="no-referrer"
                   className="w-8 h-8 object-contain rounded"

@@ -564,7 +564,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
       {/* Garden Sanctuary Header with Swaying Plants & Flags */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4 sm:p-5">
         <img
-          src="/src/assets/images/world_heart_garden_1794946533326.jpg"
+          src="./src/assets/images/world_heart_garden_1794946533326.jpg"
           alt="ഹൃദയ തോട്ടവും കാര്യാലയവും"
           className="absolute inset-0 w-full h-full object-cover opacity-35"
           referrerPolicy="no-referrer"
@@ -727,7 +727,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
 
           <div className="relative w-full h-80 sm:h-96 rounded-2xl border-2 border-emerald-300 overflow-hidden shadow-md bg-sky-900">
             <img
-              src="/src/assets/images/world_sky_rainbow_1794953897546.jpg"
+              src="./src/assets/images/world_sky_rainbow_1794953897546.jpg"
               alt="സ്കൈ ക്യാച്ചർ മഴവില്ല് ആകാശ ഗെയിം"
               className="absolute inset-0 w-full h-full object-cover opacity-90"
               referrerPolicy="no-referrer"
@@ -974,7 +974,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="relative h-28 sm:h-32 rounded-2xl overflow-hidden border border-amber-200">
             <img
-              src="/src/assets/images/world_newsroom_desk_1794953899783.jpg"
+              src="./src/assets/images/world_newsroom_desk_1794953899783.jpg"
               alt="യൂണിറ്റ് ഓഫീസ് ഡെസ്ക്"
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"

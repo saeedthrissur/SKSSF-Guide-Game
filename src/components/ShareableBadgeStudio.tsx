@@ -237,8 +237,8 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
     const liveQr = qrDataUrl || (await generateAppQrDataUrl(220));
     const [samasthaFlag, skssfFlag, userImg, qrImg] = await Promise.all([
-      loadImg('/assets/official/flag_111154.jpg'),
-      loadImg('/assets/official/flag_111138.jpg'),
+      loadImg('./assets/official/flag_111154.jpg'),
+      loadImg('./assets/official/flag_111138.jpg'),
       photoDataUrl ? loadImg(photoDataUrl) : Promise.resolve(null),
       liveQr ? loadImg(liveQr) : Promise.resolve(null),
     ]);
@@ -686,7 +686,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 {/* Official Flags Row */}
                 <div className="flex items-center justify-between gap-2">
                   <img
-                    src="/assets/official/flag_111154.jpg"
+                    src="./assets/official/flag_111154.jpg"
                     alt="സമസ്ത പതാക"
                     referrerPolicy="no-referrer"
                     className="w-12 h-12 object-contain"
@@ -698,7 +698,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                     </p>
                   </div>
                   <img
-                    src="/assets/official/flag_111138.jpg"
+                    src="./assets/official/flag_111138.jpg"
                     alt="SKSSF ഔദ്യോഗിക പതാക"
                     referrerPolicy="no-referrer"
                     className="w-12 h-12 object-contain"

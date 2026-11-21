@@ -397,7 +397,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
       {/* Tower Sky Header with Always-On Scenic Animations */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4 sm:p-5">
         <img
-          src="/src/assets/images/world_tower_sky_1794946534081.jpg"
+          src="./src/assets/images/world_tower_sky_1794946534081.jpg"
           alt="ജിറാഫും ഏണിയും സ്വർണ്ണ ഗോപുരവും"
           className="absolute inset-0 w-full h-full object-cover opacity-35"
           referrerPolicy="no-referrer"

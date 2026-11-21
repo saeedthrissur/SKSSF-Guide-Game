@@ -422,7 +422,7 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
 
             {beat.id === 'p4' && (
               <img
-                src="/src/assets/images/intro_heritage_harbor_1794947412830.jpg"
+                src="./src/assets/images/intro_heritage_harbor_1794947412830.jpg"
                 alt="SKSSF ഗൈഡ് ഗെയിം ചരിത്ര കപ്പലും നിധി പെട്ടിയും"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
@@ -703,7 +703,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
     emoji: '🌱',
     tag: 'കഥ 01 · സൃഷ്ടാവും പ്രവാചക മാർഗ്ഗവും & വഖഫ് പള്ളികളും',
     title: 'വഖഫ് പള്ളികളും നബി ﷺ വഴിയും: നമ്മൾ ആരുടെ കൂടെ നിൽക്കും?',
-    sceneImage: '/src/assets/images/story4_mosque_heritage_1794948791130.jpg',
+    sceneImage: './src/assets/images/story4_mosque_heritage_1794948791130.jpg',
     sceneImageAlt: 'ഖുർആൻ റഹലും മുളച്ചുവരുന്ന വിത്തും ആറ്റങ്ങളും പൈതൃക പള്ളിയും',
     storyText:
       'കൂട്ടുകാരേ, വിത്തും മഴയും സൂര്യനും നമ്മുടെ ഹൃദയമിടിപ്പുമെല്ലാം സൃഷ്ടിച്ച അല്ലാഹു, നമുക്ക് ശരിയായ വഴി ജീവിച്ചു കാണിക്കാൻ മുഹമ്മദ് നബി ﷺ-യെ അയച്ചു. നബി ﷺ നമുക്ക് ഖുർആനും ഹദീസും ശരിയായ രീതിയിൽ പഠിപ്പിച്ചു തന്നു; സ്വഹാബികൾ പോലും പ്രവാചകർ ﷺ പഠിപ്പിച്ചതനുസരിച്ചാണ് ഖുർആൻ മനസ്സിലാക്കിയതും വ്യാഖ്യാനിച്ചതും. ആ ശുദ്ധമായ അറിവ് തലമുറകളിലൂടെ നമ്മുടെ പണ്ഡിതന്മാർ നമുക്ക് പഠിപ്പിച്ചു തന്നു. എന്നാൽ പിന്നീട് ചിലർ ഈ പണ്ഡിത പരമ്പരയെ മാറ്റിനിർത്തി ഖുർആനും ഹദീസും സ്വന്തം തോന്നൽപോലെ വ്യാഖ്യാനിക്കാൻ തുടങ്ങി! അതിന്റെ ഫലമായി, നമ്മുടെ പൂർവികന്മാർ നാടിനായി വഖഫ് ചെയ്ത പള്ളികളിലെ മൗലിദും ഹദ്ദാദ് റാതീബും ദിക്ർ സദസ്സുകളും ആരാധനാ പാരമ്പര്യങ്ങളും നിർത്താൻ ചിലർ ശ്രമിക്കുന്നു.',
@@ -717,7 +717,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceLabel:
           'പണ്ഡിതന്മാരോടൊപ്പം നിന്ന് ശരിയായ വിശ്വാസവും വഖഫ് പള്ളികളും മൗലിദ്-റാതീബ്-ദിക്ർ പാരമ്പര്യവും സംരക്ഷിക്കുക',
         isPositive: true,
-        outcomeImage: '/src/assets/images/story4_pros_mosque_clean_1794948809302.jpg',
+        outcomeImage: './src/assets/images/story4_pros_mosque_clean_1794948809302.jpg',
         outcomeImageAlt: 'പ്രകാശമാനമായി സംരക്ഷിക്കപ്പെട്ട കേരള പള്ളിയും പൂന്തോട്ടവും',
         outcomeTitle: 'ഗുണഫലം: ശരിയായ വിശ്വാസവും ആത്മീയ പൈതൃകവും പൂത്തുലയുന്നു!',
         outcomeStory:
@@ -735,7 +735,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceLabel:
           'പണത്തിന്റെയോ സ്വയം-വ്യാഖ്യാനത്തിന്റെയോ പേരിൽ പണ്ഡിത പാരമ്പര്യവും സദസ്സുകളും നിർത്തലാക്കുക',
         isPositive: false,
-        outcomeImage: '/src/assets/images/story4_cons_divide_1794948792657.jpg',
+        outcomeImage: './src/assets/images/story4_cons_divide_1794948792657.jpg',
         outcomeImageAlt: 'വിളക്കുകൾ അണഞ്ഞ ഇരുണ്ട പൈതൃക അങ്കണം',
         outcomeTitle: 'ദോഷഫലം: വിശ്വാസ തെളിമയും മുൻഗാമികളുടെ അമാനത്തും നഷ്ടപ്പെടുന്നു!',
         outcomeStory:
@@ -753,7 +753,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
     emoji: '🕌',
     tag: 'കഥ 02 · 1995 ടാഗോർ ഹാൾ ചരിത്രം',
     title: 'രണ്ടു വഴികളുടെ കവല: ശാന്തതയോ ദേഷ്യത്തിന്റെ വഴിയോ?',
-    sceneImage: '/src/assets/images/story1_crossroads_1794947415371.jpg',
+    sceneImage: './src/assets/images/story1_crossroads_1794947415371.jpg',
     sceneImageAlt: 'തീരുമാനത്തിന്റെ രണ്ട് വഴികൾ കാണിക്കുന്ന കഥാ ചിത്രം',
     storyText:
       '1992-ന് ശേഷമുള്ള പ്രയാസമുള്ള കാലം! “നാട്ടിൽ പള്ളികൾ തകർക്കും, നമുക്ക് ദേഷ്യത്തോടെ തിരിച്ചടിക്കാം” എന്ന് ചിലർ യുവാക്കളെ വിളിക്കുന്നു. പക്ഷേ ശംസുൽ ഉലമ ഇ.കെ. അബൂബക്കർ മുസ്‌ലിയാർ (نَوَّرَ اللهُ مَرْقَدَهُ) 1995-ൽ കോഴിക്കോട് ടാഗോർ ഹാളിൽ സമാധാനത്തിന്റെയും അറിവിന്റെയും വഴിയാണ് നബി ﷺ പഠിപ്പിച്ചതെന്ന് ഓർമ്മിപ്പിച്ചു!',
@@ -766,7 +766,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '🕊️',
         choiceLabel: 'വിജ്ഞാനത്തിന്റെയും ജനാധിപത്യ സമാധാനത്തിന്റെയും പാത തിരഞ്ഞെടുക്കുക',
         isPositive: true,
-        outcomeImage: '/src/assets/images/story1_pros_peace_1794947415950.jpg',
+        outcomeImage: './src/assets/images/story1_pros_peace_1794947415950.jpg',
         outcomeImageAlt: 'സമാധാനവും വളർച്ചയും കാണിക്കുന്ന അനന്തരഫല ചിത്രം',
         outcomeTitle: 'ഗുണഫലം: സ്നേഹവും അറിവും എങ്ങും വളരുന്നു!',
         outcomeStory:
@@ -783,7 +783,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '⚡',
         choiceLabel: 'വൈകാരിക ആവേശത്തിൽപ്പെട്ട് പ്രകോപന-തീവ്രവാദ വഴിയിൽ ചേരുക',
         isPositive: false,
-        outcomeImage: '/src/assets/images/story1_cons_storm_1794947415821.jpg',
+        outcomeImage: './src/assets/images/story1_cons_storm_1794947415821.jpg',
         outcomeImageAlt: 'കൊടുങ്കാറ്റും പാലം തകർച്ചയും കാണിക്കുന്ന ദോഷഫല ചിത്രം',
         outcomeTitle: 'ദോഷഫലം: വിശ്വാസവും ഐക്യവും തകരുന്നു!',
         outcomeStory:
@@ -801,7 +801,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
     emoji: '🌙',
     tag: 'കഥ 03 · ഉമർ رضي الله عنه & ഇഖ്‌ലാസ്',
     title: 'രാത്രിയിലെ മൺകുടം: അല്ലാഹു അറിയാനോ ആളുകൾ പുകഴ്ത്താനോ?',
-    sceneImage: '/src/assets/images/story2_oasis_night_1794947416911.jpg',
+    sceneImage: './src/assets/images/story2_oasis_night_1794947416911.jpg',
     sceneImageAlt: 'നക്ഷത്രരാത്രിയിൽ മരുപ്പച്ചയും കുടിവെള്ള കുടവും',
     storyText:
       'ചൂടുള്ള പകലിൽ നടന്ന് ക്ഷീണിച്ച യാത്രക്കാർക്ക് രാത്രിയിൽ ആരും കാണാതെ തണുത്ത കുടിവെള്ളം കൊണ്ടുകൊടുത്ത ഉമർ ബ്ൻ ഖത്താബ് رضي الله عنه-ന്റെ മനോഹരമായ കഥ കേട്ടിട്ടുണ്ടോ? പിറ്റേന്ന് “രാത്രി വെള്ളം തന്ന ആ നല്ല മനുഷ്യനെക്കുറിച്ച് നാളെ ഖലീഫ ഉമറിനോട് പറയാം” എന്ന് യാത്രക്കാർ സംസാരിക്കുന്നു.',
@@ -814,7 +814,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '💧',
         choiceLabel: 'പേര് പറയാതെ ഇഖ്‌ലാസോടെ (അല്ലാഹുവിനായി മാത്രം) മടങ്ങിപ്പോകുക',
         isPositive: true,
-        outcomeImage: '/src/assets/images/story2_pros_blessing_1794947433790.jpg',
+        outcomeImage: './src/assets/images/story2_pros_blessing_1794947433790.jpg',
         outcomeImageAlt: 'അനുഗ്രഹീതമായ സ്വർണ്ണ നീരുറവയും ബറകത്തും കാണിക്കുന്ന ചിത്രം',
         outcomeTitle: 'ഗുണഫലം: അറ്റമില്ലാത്ത ബറകത്തിന്റെ നീരുറവ!',
         outcomeStory:
@@ -831,7 +831,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '📣',
         choiceLabel: '“ഞാനാണ് ഖലീഫ!” എന്ന് വിളിച്ച് സ്വന്തം പേരും പുകഴ്ചയും വാങ്ങുക',
         isPositive: false,
-        outcomeImage: '/src/assets/images/story2_cons_mirage_1794947434405.jpg',
+        outcomeImage: './src/assets/images/story2_cons_mirage_1794947434405.jpg',
         outcomeImageAlt: 'വരണ്ട മരുഭൂമിയും വീണുപോയ മൺകുടവും കാണിക്കുന്ന ചിത്രം',
         outcomeTitle: 'ദോഷഫലം: രിയാഅ് എന്ന മരീചികയിൽ നന്മ വറ്റിപ്പോകുന്നു!',
         outcomeStory:
@@ -849,7 +849,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
     emoji: '📱',
     tag: 'കഥ 04 · ഫോണിലെ സൈബർ കെണി',
     title: 'കളിയാക്കുന്ന വീഡിയോ കണ്ടപ്പോൾ: കമന്റ് യുദ്ധമോ ഡിജിറ്റൽ കവചമോ?',
-    sceneImage: '/src/assets/images/story3_cyber_crossroads_1794947434980.jpg',
+    sceneImage: './src/assets/images/story3_cyber_crossroads_1794947434980.jpg',
     sceneImageAlt: 'രണ്ട് ഡിജിറ്റൽ സ്ക്രീനുകൾ കാണിക്കുന്ന കഥാ ചിത്രം',
     storyText:
       'നമ്മുടെ വിശ്വാസത്തെ കളിയാക്കുന്ന ഒരു ദേഷ്യം പിടിപ്പിക്കുന്ന വീഡിയോ ഫോണിൽ വരുന്നു! താഴെ ആളുകൾ ചീത്തവിളിച്ചും തർക്കിച്ചും കമന്റിടുന്നു. എന്നാൽ ഫോണിലെ അൽഗോരിതം നമ്മൾ ദേഷ്യപ്പെട്ട് കമന്റ് ഇടാൻ കാത്തിരിക്കുകയാണ്!',
@@ -862,7 +862,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '🛡️',
         choiceLabel: 'തർക്കിക്കാതെ “Do Not Recommend” നൽകി, നമ്മുടെ പേജിൽ നല്ല കാര്യങ്ങൾ പങ്കുവെക്കുക',
         isPositive: true,
-        outcomeImage: '/src/assets/images/story3_pros_shield_1794947434982.jpg',
+        outcomeImage: './src/assets/images/story3_pros_shield_1794947434982.jpg',
         outcomeImageAlt: 'പ്രകാശമാനമായ പച്ച ക്രിസ്റ്റൽ ഷീൽഡും ജ്ഞാന പൂന്തോട്ടവും',
         outcomeTitle: 'ഗുണഫലം: ഡിജിറ്റൽ കവചവും നല്ല സന്ദേശങ്ങളും!',
         outcomeStory:
@@ -879,7 +879,7 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
         choiceEmoji: '🌪️',
         choiceLabel: 'കമന്റ് ബോക്സിൽ കയറി ദേഷ്യത്തോടെ വഴക്കും തർക്കവും തുടങ്ങുക',
         isPositive: false,
-        outcomeImage: '/src/assets/images/story3_cons_whirlpool_1794947435150.jpg',
+        outcomeImage: './src/assets/images/story3_cons_whirlpool_1794947435150.jpg',
         outcomeImageAlt: 'ഇരുണ്ട ചുഴലിക്കാറ്റും തർക്ക കെണിയും കാണിക്കുന്ന ചിത്രം',
         outcomeTitle: 'ദോഷഫലം: അൽഗോരിതം ചുഴലിക്കാറ്റിൽ കുടുങ്ങി!',
         outcomeStory:

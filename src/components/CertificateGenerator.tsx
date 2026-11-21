@@ -125,8 +125,8 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
     const liveQr = qrDataUrl || (await generateAppQrDataUrl(220));
     const [samasthaFlag, skssfFlag, userPhoto, qrImg] = await Promise.all([
-      loadImage('/assets/official/flag_111154.jpg'),
-      loadImage('/assets/official/flag_111138.jpg'),
+      loadImage('./assets/official/flag_111154.jpg'),
+      loadImage('./assets/official/flag_111138.jpg'),
       photoDataUrl ? loadImage(photoDataUrl) : Promise.resolve(null),
       liveQr ? loadImage(liveQr) : Promise.resolve(null),
     ]);
@@ -527,7 +527,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           {/* Top Row: Samastha Flag + Center Photo/Crest + SKSSF Flag */}
           <div className="flex items-center justify-between gap-2 max-w-3xl mx-auto">
             <img
-              src="/assets/official/flag_111154.jpg"
+              src="./assets/official/flag_111154.jpg"
               alt="സമസ്ത ഔദ്യോഗിക പതാക"
               className="w-16 h-14 sm:w-24 sm:h-20 object-contain"
               referrerPolicy="no-referrer"
@@ -548,7 +548,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               </div>
             )}
             <img
-              src="/assets/official/flag_111138.jpg"
+              src="./assets/official/flag_111138.jpg"
               alt="SKSSF ഔദ്യോഗിക പതാക"
               className="w-16 h-14 sm:w-24 sm:h-20 object-contain"
               referrerPolicy="no-referrer"

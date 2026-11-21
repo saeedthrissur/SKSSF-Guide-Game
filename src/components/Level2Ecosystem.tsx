@@ -446,11 +446,11 @@ const SHORT_WING_CUES: Record<string, string> = {
 };
 
 const OFFICIAL_LOGOS_VAULT = [
-  { id: 'skju', title: '📰 SKJU · അൽ ബയാൻ · സുപ്രഭാതം', img: '/assets/official/logo_samastha.png' },
-  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: '/assets/official/logo_skimvb.png' },
-  { id: 'sys_smf', title: '🕌 SMF & SYS · സുന്നി അഫ്കാർ', img: '/assets/official/logo_smf.png' },
-  { id: 'sksbv', title: '🌟 SKSBV · മജ്‌ലിസുൽ മആരിഫ്', img: '/assets/official/logo_sksbv.png' },
-  { id: 'special_cells', title: '🌍 SKJQ · SEA · SLC · SPC · SIC', img: '/assets/official/logo_sic.png' },
+  { id: 'skju', title: '📰 SKJU · അൽ ബയാൻ · സുപ്രഭാതം', img: './assets/official/logo_samastha.png' },
+  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: './assets/official/logo_skimvb.png' },
+  { id: 'sys_smf', title: '🕌 SMF & SYS · സുന്നി അഫ്കാർ', img: './assets/official/logo_smf.png' },
+  { id: 'sksbv', title: '🌟 SKSBV · മജ്‌ലിസുൽ മആരിഫ്', img: './assets/official/logo_sksbv.png' },
+  { id: 'special_cells', title: '🌍 SKJQ · SEA · SLC · SPC · SIC', img: './assets/official/logo_sic.png' },
 ];
 
 const DAWA_AGE_PATHS = [
@@ -821,7 +821,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
       {/* Compact Visual Header Strip */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4">
         <img
-          src="/src/assets/images/world_festival_city_1794946532078.jpg"
+          src="./src/assets/images/world_festival_city_1794946532078.jpg"
           alt="SKSSF ക്ലസ്റ്റർ & മേഖലാ തലം"
           className="absolute inset-0 w-full h-full object-cover opacity-30"
           referrerPolicy="no-referrer"
@@ -1653,7 +1653,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 bg-emerald-950 text-white shadow-md">
             <img
-              src="/src/assets/images/dawa_community_lanterns_1794953898121.jpg"
+              src="./src/assets/images/dawa_community_lanterns_1794953898121.jpg"
               alt="നാട്ടിലെ ദീനീ ദഅ്‌വത്ത് ഗ്രാമവും വിളക്കുകളും"
               className="w-full h-40 sm:h-48 object-cover opacity-80"
               referrerPolicy="no-referrer"

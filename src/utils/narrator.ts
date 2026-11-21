@@ -107,6 +107,8 @@ class MaleStoryNarrator {
   private requestSeq: number = 0;
   private pendingSpeech: { text: string; caption?: string } | null = null;
   private gestureListenerAttached: boolean = false;
+  private serverTtsUnavailable: boolean = false;
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
 
   constructor() {
     sound.registerNarratorHooks({
@@ -122,6 +124,13 @@ class MaleStoryNarrator {
       },
     });
     this.attachGestureUnlocker();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.getVoices();
+      } catch {
+        // Ignore
+      }
+    }
   }
 
   private attachGestureUnlocker() {
@@ -201,6 +210,14 @@ class MaleStoryNarrator {
       URL.revokeObjectURL(this.currentObjectUrl);
       this.currentObjectUrl = null;
     }
+    this.activeUtterance = null;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Ignore speechSynthesis cancel errors
+      }
+    }
     this.speaking = false;
     this.loading = false;
     sound.setAmbienceDucked(false);
@@ -242,51 +259,60 @@ class MaleStoryNarrator {
     }
 
     // 2. Live strictly-male native Malayalam TTS via server /api/tts (ml-IN-MidhunNeural)
-    const controller = new AbortController();
-    this.abortController = controller;
-    this.loading = true;
-    this.speaking = false;
-    sound.setAmbienceDucked(true);
-    this.emit();
+    if (!this.serverTtsUnavailable) {
+      const controller = new AbortController();
+      this.abortController = controller;
+      this.loading = true;
+      this.speaking = false;
+      sound.setAmbienceDucked(true);
+      this.emit();
 
-    try {
-      const res = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanText }),
-        signal: controller.signal,
-      });
+      try {
+        const res = await fetch('./api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: cleanText }),
+          signal: controller.signal,
+        });
 
-      if (mySeq !== this.requestSeq || controller.signal.aborted) return;
-
-      if (res.ok) {
-        const data = (await res.json()) as {
-          audioBase64?: string;
-          mimeType?: string;
-          provider?: string;
-        };
         if (mySeq !== this.requestSeq || controller.signal.aborted) return;
 
-        if (data.audioBase64) {
-          const mimeType = data.mimeType || 'audio/mpeg';
-          const blob = base64ToBlob(data.audioBase64, mimeType);
-          const entry: CachedAudioBlob = { blob, mimeType };
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
+          const data = (await res.json()) as {
+            audioBase64?: string;
+            mimeType?: string;
+            provider?: string;
+          };
+          if (mySeq !== this.requestSeq || controller.signal.aborted) return;
 
-          this.storeInMemory(keyHash, entry);
-          void writeIdbClip(keyHash, entry);
+          if (data.audioBase64) {
+            const mimeType = data.mimeType || 'audio/mpeg';
+            const blob = base64ToBlob(data.audioBase64, mimeType);
+            const entry: CachedAudioBlob = { blob, mimeType };
 
-          await this.playBlob(entry, cleanText, captionDisplay, mySeq);
-          return;
+            this.storeInMemory(keyHash, entry);
+            void writeIdbClip(keyHash, entry);
+
+            await this.playBlob(entry, cleanText, captionDisplay, mySeq);
+            return;
+          }
+        } else if (res.status === 404 || res.status === 405 || contentType.includes('text/html')) {
+          // Static host (e.g., GitHub Pages) has no /api/tts backend — switch smoothly to Google/Browser TTS
+          this.serverTtsUnavailable = true;
         }
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError' || mySeq !== this.requestSeq) return;
       }
-    } catch (err) {
-      if ((err as Error)?.name === 'AbortError' || mySeq !== this.requestSeq) return;
     }
 
     if (mySeq !== this.requestSeq) return;
 
-    // Never fall back to any female voice; silently clear loader if network is offline
-    this.finishSilentOnFailure(mySeq);
+    // 3. Static-host / GitHub Pages fallback: Google / Browser SpeechSynthesis Malayalam TTS
+    const spokeViaGoogleTts = this.speakWithBrowserGoogleTts(cleanText, mySeq);
+    if (!spokeViaGoogleTts) {
+      this.finishSilentOnFailure(mySeq);
+    }
   }
 
   private storeInMemory(keyHash: string, entry: CachedAudioBlob) {
@@ -305,70 +331,113 @@ class MaleStoryNarrator {
     this.emit();
   }
 
-  private async playDirectUrl(
-    url: string,
-    rawCleanText: string,
-    captionDisplay: string | undefined,
-    seq: number
-  ): Promise<boolean> {
-    if (seq !== this.requestSeq) return false;
+  private pickBestMalayalamVoice(): { voice: SpeechSynthesisVoice | null; isExplicitMale: boolean } {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      return { voice: null, isExplicitMale: false };
+    }
+    const voices = window.speechSynthesis.getVoices() || [];
+    const mlVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('ml'));
+    if (mlVoices.length === 0) return { voice: null, isExplicitMale: false };
+
+    // Prefer explicitly male Malayalam voices (e.g., Google Android ml-in-x-mlm / Midhun / Male)
+    const maleVoice = mlVoices.find((v) =>
+      /(midhun|male|man|mlm|ml-in-x-mlm)/i.test(`${v.name} ${v.voiceURI}`)
+    );
+    if (maleVoice) return { voice: maleVoice, isExplicitMale: true };
+
+    // Next prefer Google Malayalam TTS voice
+    const googleMl = mlVoices.find((v) => /google/i.test(`${v.name} ${v.voiceURI}`));
+    if (googleMl) return { voice: googleMl, isExplicitMale: false };
+
+    return { voice: mlVoices[0], isExplicitMale: false };
+  }
+
+  private splitSpeechChunks(text: string): string[] {
+    const parts = text
+      .split(/(?<=[.!?।,\n])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const chunks: string[] = [];
+    let buf = '';
+    for (const part of parts) {
+      if ((buf + ' ' + part).trim().length <= 165) {
+        buf = (buf ? `${buf} ` : '') + part;
+      } else {
+        if (buf) chunks.push(buf);
+        buf = part.slice(0, 180);
+      }
+    }
+    if (buf) chunks.push(buf);
+    return chunks.length > 0 ? chunks : [text.slice(0, 180)];
+  }
+
+  private speakWithBrowserGoogleTts(cleanText: string, seq: number): boolean {
+    if (
+      typeof window === 'undefined' ||
+      !('speechSynthesis' in window) ||
+      typeof SpeechSynthesisUtterance === 'undefined'
+    ) {
+      return false;
+    }
+
     try {
-      const audio = new Audio(url);
+      const synth = window.speechSynthesis;
+      synth.cancel();
+
+      const chunks = this.splitSpeechChunks(cleanText);
+      const { voice, isExplicitMale } = this.pickBestMalayalamVoice();
       const gain = sound.getNarratorGain();
-      audio.volume = gain;
-      audio.muted = gain <= 0.001;
-      this.currentAudio = audio;
-      this.loading = true;
-      this.speaking = false;
-      this.awaitingUnlock = false;
+
+      let idx = 0;
+      const speakNextChunk = () => {
+        if (seq !== this.requestSeq) return;
+        if (idx >= chunks.length) {
+          this.activeUtterance = null;
+          this.speaking = false;
+          this.loading = false;
+          sound.setAmbienceDucked(false);
+          this.emit();
+          return;
+        }
+
+        const utter = new SpeechSynthesisUtterance(chunks[idx]);
+        utter.lang = voice?.lang || 'ml-IN';
+        if (voice) utter.voice = voice;
+        utter.rate = 0.96;
+        utter.pitch = isExplicitMale ? 1.0 : 0.88;
+        utter.volume = Math.max(0, Math.min(1, gain));
+        this.activeUtterance = utter;
+
+        utter.onstart = () => {
+          if (seq !== this.requestSeq) return;
+          this.loading = false;
+          this.speaking = true;
+          sound.setAmbienceDucked(true);
+          this.emit();
+        };
+
+        utter.onend = () => {
+          if (seq !== this.requestSeq) return;
+          idx += 1;
+          speakNextChunk();
+        };
+
+        utter.onerror = () => {
+          if (seq !== this.requestSeq) return;
+          this.activeUtterance = null;
+          this.finishSilentOnFailure(seq);
+        };
+
+        synth.speak(utter);
+      };
+
+      this.loading = false;
+      this.speaking = true;
       sound.setAmbienceDucked(true);
       this.emit();
-
-      audio.onwaiting = () => {
-        if (seq !== this.requestSeq) return;
-        this.loading = true;
-        this.emit();
-      };
-      audio.onplaying = () => {
-        if (seq !== this.requestSeq) return;
-        this.loading = false;
-        this.speaking = true;
-        this.emit();
-      };
-      audio.onended = () => {
-        if (seq !== this.requestSeq) return;
-        this.speaking = false;
-        this.loading = false;
-        sound.setAmbienceDucked(false);
-        this.currentAudio = null;
-        this.emit();
-      };
-      audio.onerror = () => {
-        if (seq !== this.requestSeq) return;
-        this.finishSilentOnFailure(seq);
-      };
-
-      await audio.play();
-      if (seq === this.requestSeq) {
-        this.loading = false;
-        this.speaking = true;
-        this.emit();
-      }
+      speakNextChunk();
       return true;
-    } catch (playErr) {
-      if (seq !== this.requestSeq) return false;
-      const errName = (playErr as Error)?.name || '';
-      this.speaking = false;
-      this.loading = false;
-      sound.setAmbienceDucked(false);
-      this.currentAudio = null;
-
-      if (errName === 'NotAllowedError') {
-        this.pendingSpeech = { text: rawCleanText, caption: captionDisplay };
-        this.awaitingUnlock = true;
-        this.emit();
-        return true;
-      }
+    } catch {
       return false;
     }
   }

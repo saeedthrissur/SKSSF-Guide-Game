@@ -8,7 +8,7 @@ export const OfficialSamasthaFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="/assets/official/flag_111154.jpg"
+    src="./assets/official/flag_111154.jpg"
     alt="സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ (SKJU) ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
@@ -19,7 +19,7 @@ export const OfficialSkssfFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="/assets/official/flag_111138.jpg"
+    src="./assets/official/flag_111138.jpg"
     alt="SKSSF ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
@@ -30,7 +30,7 @@ export const OfficialSksbvFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="/assets/official/flag_111134.jpg"
+    src="./assets/official/flag_111134.jpg"
     alt="SKSBV ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
@@ -41,7 +41,7 @@ export const OfficialSkimvbLogoImg: React.FC<ImageFlagProps> = ({
   className = 'w-28 h-28 mx-auto',
 }) => (
   <img
-    src="/assets/official/logo_skimvb.png"
+    src="./assets/official/logo_skimvb.png"
     alt="SKIMVB ഔദ്യോഗിക ലോഗോ"
     className={`object-contain ${className}`}
     referrerPolicy="no-referrer"
