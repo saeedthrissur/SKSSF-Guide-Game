@@ -15,9 +15,13 @@ import {
   Users,
   Volume2,
 } from 'lucide-react';
+import {
+  CollapsibleLessonDrawer,
+  LessonProgressTrack,
+  LessonStepperNav,
+} from './GameEffects';
 import { LessonCheckQuiz } from './LessonCheckQuiz';
-import { GameFullscreenShell } from './GameFullscreenShell';
-import { OptionalLessonMiniGame } from './OptionalLessonMiniGames';
+import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
@@ -534,7 +538,26 @@ const MEETING_DESK_ITEMS: MeetingDeskItem[] = [
   },
 ];
 
+const POV_LESSON_META: {
+  chapterId: string;
+  lessonId: string;
+  gameKey: MiniGameLessonKey;
+  emoji: string;
+  shortLabel: string;
+}[] = [
+  { chapterId: 'pov_1_madrasa', lessonId: 'pov_1', gameKey: 'pov_1', emoji: '📚', shortLabel: 'ലൈബ്രറി അദബ്' },
+  { chapterId: 'pov_2_spiritual', lessonId: 'pov_2', gameKey: 'pov_2', emoji: '📜', shortLabel: 'മജ്‌ലിസുന്നൂർ & നോട്ടീസ്' },
+  { chapterId: 'pov_3_programs', lessonId: 'pov_3', gameKey: 'pov_3', emoji: '🖌️', shortLabel: 'ചുമരിലെഴുത്ത്' },
+  { chapterId: 'pov_4_obstacles', lessonId: 'pov_4', gameKey: 'pov_4', emoji: '🏗️', shortLabel: 'സ്റ്റേജ് നിർമ്മാണം' },
+  { chapterId: 'pov_5_unit', lessonId: 'pov_5', gameKey: 'pov_journey', emoji: '🚩', shortLabel: 'യൂണിറ്റ് പതാക' },
+  { chapterId: 'pov_6_meeting', lessonId: 'pov_6', gameKey: 'pov_6', emoji: '💰', shortLabel: 'വരവ്–ചെലവ് & ചീരണി' },
+  { chapterId: 'pov_7_cluster', lessonId: 'pov_7', gameKey: 'pov_7', emoji: '🏟️', shortLabel: 'സ്റ്റേഡിയം ശുചീകരണം' },
+  { chapterId: 'pov_8_state_circular', lessonId: 'pov_journey', gameKey: 'pov_8', emoji: '📋', shortLabel: 'അവലോകന റിപ്പോർട്ട്' },
+];
+
 export interface SkssfPovJourneyGameProps {
+  initialTab?: string;
+  devUnlocked?: boolean;
   onAwardXp: (amount: number, actionId: string) => void;
   awardedActions?: Record<string, boolean>;
   completedLessonIds?: string[];
@@ -542,11 +565,14 @@ export interface SkssfPovJourneyGameProps {
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
   onCompletePovStage?: () => void;
   onActiveLessonChange?: (lessonId: string) => void;
+  onMarkLessonCompleted?: (lessonId: string) => void;
   quizAnswers?: QuizAnswerMap;
   onQuizAnswered?: (lessonId: string, selectedIdx: number, isCorrect: boolean) => void;
 }
 
 export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
+  initialTab,
+  devUnlocked = false,
   onAwardXp,
   awardedActions = {},
   completedLessonIds = [],
@@ -554,38 +580,61 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
   onOpenBadgeStudio,
   onCompletePovStage,
   onActiveLessonChange,
+  onMarkLessonCompleted,
   quizAnswers = {},
   onQuizAnswered,
 }) => {
-  const povAlreadyCompleted = completedLessonIds.includes('pov_journey');
-  const [chapterIdx, setChapterIdx] = useState(0);
+  const resolveIdx = (tab?: string) => {
+    if (!tab) return 0;
+    const found = POV_LESSON_META.findIndex(
+      (m) => m.chapterId === tab || m.lessonId === tab
+    );
+    return found >= 0 ? found : 0;
+  };
+
+  const [chapterIdx, setChapterIdx] = useState(() => resolveIdx(initialTab));
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [doneDeskItems, setDoneDeskItems] = useState<string[]>([]);
   const [expandedDeskId, setExpandedDeskId] = useState<string | null>('agenda_roles');
   const [povLives, setPovLives] = useState(3);
-  const [povMiniDone, setPovMiniDone] = useState(false);
-  const [completedChapters, setCompletedChapters] = useState<string[]>(() => {
-    if (povAlreadyCompleted) return POV_CHAPTERS.map((c) => c.id);
-    return POV_CHAPTERS.filter(
+  const [doneGameKeys, setDoneGameKeys] = useState<string[]>([]);
+  const [completedChapters, setCompletedChapters] = useState<string[]>(() =>
+    POV_CHAPTERS.filter(
       (c) => Boolean(awardedActions[`pov_good_${c.id}`] || awardedActions[`pov_done_${c.id}`])
-    ).map((c) => c.id);
-  });
-
-  const chapter = POV_CHAPTERS[chapterIdx];
-  const chosenOptionId = selectedOptions[chapter.id];
-  const chosenOption = chapter.options.find((o) => o.id === chosenOptionId) || null;
-  const povFailed = povLives <= 0;
-  const allChaptersDone = povAlreadyCompleted || completedChapters.length === POV_CHAPTERS.length;
-  const povQuizDone = Boolean(quizAnswers.pov_journey);
-  const canProceedToLevel1 = povAlreadyCompleted || povQuizDone;
-  const trustPct = Math.min(
-    100,
-    12 + completedChapters.length * 10 + (doneDeskItems.length >= 4 ? 8 : 0)
+    ).map((c) => c.id)
   );
 
   useEffect(() => {
-    onActiveLessonChange?.('pov_journey');
-  }, [onActiveLessonChange]);
+    if (initialTab) {
+      setChapterIdx(resolveIdx(initialTab));
+    }
+  }, [initialTab]);
+
+  const chapter = POV_CHAPTERS[chapterIdx] ?? POV_CHAPTERS[0];
+  const meta = POV_LESSON_META[chapterIdx] ?? POV_LESSON_META[0];
+  const activeLessonId = meta.lessonId;
+  const activeGameKey = meta.gameKey;
+  const isLastPov = chapterIdx === POV_CHAPTERS.length - 1;
+
+  const chosenOptionId = selectedOptions[chapter.id];
+  const chosenOption = chapter.options.find((o) => o.id === chosenOptionId) || null;
+  const povFailed = povLives <= 0;
+
+  const currentLessonCompleted =
+    completedLessonIds.includes(activeLessonId) || completedLessonIds.includes('pov_journey');
+  const currentQuizDone = Boolean(quizAnswers[activeLessonId]);
+  const canAdvance = devUnlocked || currentLessonCompleted || currentQuizDone;
+  const currentGameDone = currentLessonCompleted || doneGameKeys.includes(activeGameKey);
+
+  useEffect(() => {
+    onActiveLessonChange?.(activeLessonId);
+  }, [activeLessonId, onActiveLessonChange]);
+
+  useEffect(() => {
+    if (currentQuizDone && !completedLessonIds.includes(activeLessonId)) {
+      onMarkLessonCompleted?.(activeLessonId);
+    }
+  }, [activeLessonId, currentQuizDone, completedLessonIds, onMarkLessonCompleted]);
 
   useEffect(() => {
     narrator.speak(chapter.speech, `${chapter.emoji} ${chapter.title}`);
@@ -646,488 +695,349 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
     sound.playClick();
     setPovLives(3);
     setSelectedOptions({});
-    setChapterIdx(0);
   };
+
+  const handleSelectPovIdx = (idx: number) => {
+    sound.unlockAudio();
+    sound.playClick();
+    setChapterIdx(idx);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAdvancePov = () => {
+    onMarkLessonCompleted?.(activeLessonId);
+    if (!isLastPov) {
+      handleSelectPovIdx(chapterIdx + 1);
+    } else {
+      sound.playHoist();
+      onMarkLessonCompleted?.('pov_journey');
+      onCompletePovStage?.();
+    }
+  };
+
+  const nextPovLabel = !isLastPov
+    ? POV_LESSON_META[chapterIdx + 1].shortLabel
+    : 'ഘട്ടം 1 · യൂണിറ്റ് തലം';
 
   return (
     <section className="space-y-4">
-      <GameFullscreenShell
-        title="🧭 എന്റെ SKSSF യാത്ര (POV ഗെയിം)"
-        isGameDone={allChaptersDone}
+      {/* 1. DEDICATED PRACTICAL GAME FIRST */}
+      <OptionalLessonMiniGame
+        key={`pov-game-${activeLessonId}-${activeGameKey}`}
+        lessonKey={activeGameKey}
+        onAwardXp={onAwardXp}
+        isCompleted={currentGameDone}
+        onComplete={() =>
+          setDoneGameKeys((prev) =>
+            prev.includes(activeGameKey) ? prev : [...prev, activeGameKey]
+          )
+        }
+      />
+
+      {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
+      {onQuizAnswered && (
+        <LessonCheckQuiz
+          key={`pov-quiz-${activeLessonId}`}
+          lessonId={activeLessonId}
+          title={`POV പാഠം ${chapterIdx + 1} · ക്വിസ്`}
+          savedAnswer={quizAnswers[activeLessonId]}
+          onAnswered={(lid, idx, ok) => {
+            onQuizAnswered(lid, idx, ok);
+            onMarkLessonCompleted?.(activeLessonId);
+          }}
+          onNextLesson={handleAdvancePov}
+          nextLessonLabel={!isLastPov ? `അടുത്ത പാഠം: ${nextPovLabel}` : 'ഘട്ടം 1 · യൂണിറ്റ് തലം'}
+        />
+      )}
+
+      {/* 3. SINGLE FLAT LESSON (COLLAPSED BY DEFAULT — NO NESTED CHAPTER SWITCHER!) */}
+      <CollapsibleLessonDrawer
+        key={`pov-lesson-${chapter.id}`}
+        emoji={chapter.emoji}
+        title={`പാഠം ${chapter.stepNo} · ${meta.shortLabel}`}
+        badgeText={`${chapter.stepNo}/${POV_CHAPTERS.length}`}
+        onSpeak={() => narrator.speak(chapter.speech, `${chapter.emoji} ${chapter.title}`)}
       >
         <div className="space-y-4">
-      {/* Live POV Status Bar */}
-      <div className="rounded-3xl bg-gradient-to-r from-emerald-950 via-teal-900 to-emerald-900 text-white p-4 sm:p-5 border-2 border-amber-300/80 shadow-md space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div>
-            <p className="text-xs font-extrabold text-amber-300">
-              🧭 പ്രായോഗിക പഠന ഘട്ടം · എന്റെ SKSSF യാത്ര (POV ഗെയിം · സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)
-            </p>
-            <h2 className="text-lg sm:text-2xl font-extrabold mt-0.5 leading-snug">
-              മദ്രസ → സിയാറത്ത് &amp; മജ്‌ലിസുന്നൂർ → യൂണിറ്റ് → മീറ്റിംഗ് → മേഖല!
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              sound.unlockAudio();
-              narrator.speak(chapter.speech, `${chapter.emoji} ${chapter.title}`);
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold whitespace-nowrap"
-          >
-            <Volume2 className="w-4 h-4" />
-            <span>കഥ വായിച്ചു കേൾക്കാം</span>
-          </button>
-        </div>
-
-        {/* Dynamic Role & Village Trust HUD */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-          <div className="px-3 py-2 rounded-xl bg-white/10 border border-white/15">
-            <span className="text-emerald-200 block text-[10px] font-bold">ഇപ്പോഴത്തെ പദവി</span>
-            <span className="font-extrabold text-amber-200 leading-snug">
-              {chapter.emoji} {chapter.roleTitle}
-            </span>
-          </div>
-          <div className="px-3 py-2 rounded-xl bg-white/10 border border-white/15">
-            <span className="text-emerald-200 block text-[10px] font-bold">നാട്ടിലെ യൂണിറ്റ് നില</span>
-            <span className="font-extrabold text-white leading-snug">{chapter.unitStatus}</span>
-          </div>
-          <div className="px-3 py-2 rounded-xl bg-white/10 border border-white/15">
-            <div className="flex items-center justify-between text-[10px] font-bold text-emerald-200 mb-1">
-              <span>പ്രായോഗിക പുരോഗതി ({completedChapters.length}/{POV_CHAPTERS.length})</span>
-              <span className="tabular-nums text-amber-200">
-                {'❤️'.repeat(Math.max(0, povLives))}
-                {'💔'.repeat(Math.max(0, 3 - povLives))} · {trustPct}%
-              </span>
-            </div>
-            <div className="h-2 rounded-full bg-slate-950/40 overflow-hidden">
-              <div
-                className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                style={{ width: `${trustPct}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {povFailed && (
-          <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-extrabold text-rose-200">
-                💔 3 തെറ്റായ തീരുമാനങ്ങൾ! POV യാത്ര പരാജയപ്പെട്ടു!
-              </p>
-              <p className="text-xs font-semibold text-rose-100 mt-0.5">
-                യൂണിറ്റ് പ്രവർത്തകൻ എപ്പോഴും ശൂറയും അച്ചടക്കവും വിനയവും പാലിക്കണം — ശരിയായ തീരുമാനങ്ങൾ എടുക്കാൻ വീണ്ടും ശ്രമിക്കാം!
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={resetPovMission}
-              className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700 whitespace-nowrap"
-            >
-              🔄 വീണ്ടും ശ്രമിക്കാം
-            </button>
-          </div>
-        )}
-
-        {/* 8-Chapter Quick Stepper (Zero Truncation!) */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          {POV_CHAPTERS.map((ch, idx) => {
-            const active = idx === chapterIdx;
-            const done = completedChapters.includes(ch.id);
-            return (
+          {povFailed && (
+            <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-extrabold text-rose-200">
+                  💔 3 തെറ്റായ തീരുമാനങ്ങൾ!
+                </p>
+                <p className="text-xs font-semibold text-rose-100 mt-0.5">
+                  യൂണിറ്റ് പ്രവർത്തകൻ എപ്പോഴും ശൂറയും അച്ചടക്കവും വിനയവും പാലിക്കണം — വീണ്ടും ശ്രമിക്കാം!
+                </p>
+              </div>
               <button
-                key={ch.id}
                 type="button"
-                onClick={() => {
-                  sound.playPop();
-                  setChapterIdx(idx);
-                }}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1 ${
-                  active
-                    ? 'bg-amber-400 text-slate-950 shadow-sm'
-                    : done
-                    ? 'bg-emerald-700 text-white border border-emerald-400/60'
-                    : 'bg-white/10 text-emerald-100 hover:bg-white/20'
-                }`}
+                onClick={resetPovMission}
+                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700 whitespace-nowrap"
               >
-                <span>{ch.emoji}</span>
-                <span>അദ്ധ്യായം {ch.stepNo}</span>
-                {done && <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" />}
+                🔄 വീണ്ടും ശ്രമിക്കാം
               </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main POV Chapter Card */}
-      <motion.div
-        key={chapter.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-3xl border-2 border-emerald-200 p-4 sm:p-6 shadow-md space-y-5"
-      >
-        {/* Setting & Story */}
-        <div className="space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-extrabold">
-              📍 {chapter.settingLabel}
-            </span>
-            <span className="text-xs font-bold text-slate-500">
-              അദ്ധ്യായം {chapter.stepNo} / {POV_CHAPTERS.length}
-            </span>
-          </div>
-
-          <h3 className="text-lg sm:text-2xl font-extrabold text-slate-950 leading-snug">
-            {chapter.emoji} {chapter.title}
-          </h3>
-
-          <p className="text-sm sm:text-base text-slate-800 leading-relaxed font-medium">
-            {chapter.story}
-          </p>
-
-          {/* Practical Field Guide Tips */}
-          {chapter.practicalTips && (
-            <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-200 space-y-2">
-              <p className="text-xs sm:text-sm font-extrabold text-emerald-950 flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>പ്രായോഗിക മാർഗ്ഗനിർദ്ദേശങ്ങൾ (മനസ്സിൽ സൂക്ഷിക്കാം):</span>
-              </p>
-              <ul className="space-y-1.5">
-                {chapter.practicalTips.map((tip) => (
-                  <li
-                    key={tip}
-                    className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed"
-                  >
-                    {tip}
-                  </li>
-                ))}
-              </ul>
             </div>
           )}
-        </div>
 
-        {/* CHAPTER 6 SPECIAL INTERACTIVE MEETING PROTOCOL DESK WITH REAL EXAMPLES */}
-        {chapter.hasMeetingDesk && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-300 space-y-3.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-extrabold text-amber-900 flex items-center gap-1.5">
-                  <ClipboardCheck className="w-4 h-4 shrink-0" />
-                  ആദ്യ യൂണിറ്റ് മീറ്റിംഗ് & ഔദ്യോഗിക രേഖാ പരിശീലനം ({doneDeskItems.length}/{MEETING_DESK_ITEMS.length})
-                </p>
-                <h4 className="text-sm sm:text-base font-extrabold text-slate-950 mt-0.5 leading-snug">
-                  ഓരോ രേഖയിലും തൊട്ട് ഉദാഹരണ സഹിതം വായിച്ചു പഠിക്കൂ!
-                </h4>
-              </div>
-              <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-amber-200 text-amber-950">
-                👆 ഓരോ കാർഡും തുറന്നു കാണാം
-              </span>
-            </div>
-
+          <motion.div
+            key={chapter.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl border border-emerald-200 p-4 sm:p-5 space-y-4"
+          >
             <div className="space-y-2.5">
-              {MEETING_DESK_ITEMS.map((item) => {
-                const done = doneDeskItems.includes(item.id);
-                const isOpen = expandedDeskId === item.id;
-                const nextPending =
-                  !done && MEETING_DESK_ITEMS.find((x) => !doneDeskItems.includes(x.id))?.id === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    className={`rounded-2xl border-2 overflow-hidden transition-all ${
-                      isOpen
-                        ? 'bg-white border-emerald-500 shadow-sm'
-                        : done
-                        ? 'bg-emerald-50/90 border-emerald-300'
-                        : nextPending
-                        ? 'bg-white border-amber-500 ring-2 ring-amber-200'
-                        : 'bg-white border-slate-200'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleDeskTap(item)}
-                      className="w-full p-3.5 text-left flex items-start justify-between gap-3"
-                    >
-                      <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                        <span className="text-2xl shrink-0">{item.emoji}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-extrabold text-slate-950 leading-snug break-words">
-                            {item.label}
-                          </p>
-                          <p className="text-xs font-semibold text-slate-600 mt-0.5 leading-snug break-words">
-                            {item.summary}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                        {done && <CheckCircle2 className="w-4 h-4 text-emerald-700" />}
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-[11px] font-extrabold">
-                          <span>{isOpen ? 'ചുരുക്കാം' : 'ഉദാഹരണം കാണാം'}</span>
-                          {isOpen ? (
-                            <ChevronUp className="w-3.5 h-3.5" />
-                          ) : (
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          )}
-                        </span>
-                      </div>
-                    </button>
-
-                    {isOpen && (
-                      <div className="px-4 pb-4 pt-1 border-t border-emerald-100 bg-emerald-50/50 space-y-2">
-                        <p className="text-xs font-extrabold text-emerald-900">
-                          📌 {item.exampleTitle}
-                        </p>
-                        <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-1.5">
-                          {item.exampleLines.map((line) => (
-                            <p
-                              key={line}
-                              className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed break-words"
-                            >
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* CHAPTER 8 SPECIAL STATE COMMITTEE CIRCULAR CARD */}
-        {chapter.circularItems && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-sky-50 border-2 border-sky-300 space-y-2.5">
-            <p className="text-xs sm:text-sm font-extrabold text-sky-950 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-sky-700 shrink-0" />
-              <span>📜 SKSSF സംസ്ഥാന കമ്മിറ്റി സർക്കുലർ — നാട്ടിൽ നടപ്പിലാക്കേണ്ട പദ്ധതികൾ:</span>
-            </p>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {chapter.circularItems.map((line) => (
-                <li
-                  key={line}
-                  className="p-2.5 rounded-xl bg-white border border-sky-200 text-xs sm:text-sm font-bold text-slate-900 leading-snug"
-                >
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* TWO REAL-WORLD DECISION CARDS (NO EXAM LOOK — EXPERIENCE PROS & CONS!) */}
-        <div className="space-y-2.5">
-          <p className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center gap-1.5">
-            <Users className="w-4 h-4 shrink-0" />
-            <span>നിങ്ങൾ ഈ സ്ഥാനത്തായിരുന്നെങ്കിൽ എന്ത് തിരഞ്ഞെടുക്കും? (ഗുണവും ദോഷവും അനുഭവിച്ചു കാണാം!)</span>
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {chapter.options.map((opt) => {
-              const selected = chosenOptionId === opt.id;
-              return (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-xs font-extrabold">
+                  📍 {chapter.settingLabel}
+                </span>
                 <button
-                  key={opt.id}
                   type="button"
-                  onClick={() => handleChooseOption(opt)}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all flex items-start gap-3 ${
-                    selected
-                      ? opt.isRecommended
-                        ? 'bg-emerald-700 text-white border-emerald-900 shadow-md'
-                        : opt.isPositiveStep
-                        ? 'bg-sky-700 text-white border-sky-900 shadow-md'
-                        : 'bg-amber-600 text-white border-amber-800 shadow-md'
-                      : 'bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-400 text-slate-900'
-                  }`}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    narrator.speak(chapter.speech, `${chapter.emoji} ${chapter.title}`);
+                  }}
+                  aria-label="കഥ കേൾക്കാം"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
                 >
-                  <span className="text-2xl sm:text-3xl shrink-0">{opt.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-extrabold leading-snug break-words">
-                      {opt.label}
-                    </p>
-                    <p
-                      className={`text-[11px] font-bold mt-1.5 ${
-                        selected ? 'text-amber-200' : 'text-emerald-700'
+                  <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                </button>
+              </div>
+
+              <h3 className="text-base sm:text-xl font-extrabold text-slate-950 leading-snug">
+                {chapter.emoji} {chapter.title}
+              </h3>
+
+              <p className="text-sm text-slate-800 leading-relaxed font-medium">
+                {chapter.story}
+              </p>
+
+              {chapter.practicalTips && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                  <p className="text-xs sm:text-sm font-extrabold text-emerald-950 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>പ്രായോഗിക മാർഗ്ഗനിർദ്ദേശങ്ങൾ:</span>
+                  </p>
+                  <ul className="space-y-1.5">
+                    {chapter.practicalTips.map((tip) => (
+                      <li
+                        key={tip}
+                        className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed"
+                      >
+                        {tip}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {chapter.hasMeetingDesk && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 space-y-3">
+                <p className="text-xs sm:text-sm font-extrabold text-amber-900 flex items-center gap-1.5">
+                  <ClipboardCheck className="w-4 h-4 shrink-0" />
+                  ഔദ്യോഗിക രേഖാ പരിശീലനം ({doneDeskItems.length}/{MEETING_DESK_ITEMS.length})
+                </p>
+
+                <div className="space-y-2">
+                  {MEETING_DESK_ITEMS.map((item) => {
+                    const done = doneDeskItems.includes(item.id);
+                    const isOpen = expandedDeskId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`rounded-2xl border-2 overflow-hidden transition-all ${
+                          isOpen
+                            ? 'bg-white border-emerald-500 shadow-sm'
+                            : done
+                            ? 'bg-emerald-50/90 border-emerald-300'
+                            : 'bg-white border-slate-200'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleDeskTap(item)}
+                          className="w-full p-3 text-left flex items-start justify-between gap-2.5"
+                        >
+                          <div className="flex items-start gap-2 min-w-0 flex-1">
+                            <span className="text-xl shrink-0">{item.emoji}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs sm:text-sm font-extrabold text-slate-950 leading-snug break-words">
+                                {item.label}
+                              </p>
+                              <p className="text-xs font-semibold text-slate-600 mt-0.5 leading-snug break-words">
+                                {item.summary}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                            {done && <CheckCircle2 className="w-4 h-4 text-emerald-700" />}
+                            {isOpen ? (
+                              <ChevronUp className="w-4 h-4 text-slate-700" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-slate-700" />
+                            )}
+                          </div>
+                        </button>
+
+                        {isOpen && (
+                          <div className="px-3.5 pb-3.5 pt-1 border-t border-emerald-100 bg-emerald-50/50 space-y-1.5">
+                            <p className="text-xs font-extrabold text-emerald-900">
+                              📌 {item.exampleTitle}
+                            </p>
+                            <div className="p-2.5 rounded-xl bg-white border border-emerald-200 space-y-1">
+                              {item.exampleLines.map((line) => (
+                                <p
+                                  key={line}
+                                  className="text-xs font-semibold text-slate-800 leading-relaxed break-words"
+                                >
+                                  {line}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {chapter.circularItems && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50 border-2 border-sky-300 space-y-2">
+                <p className="text-xs sm:text-sm font-extrabold text-sky-950 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-sky-700 shrink-0" />
+                  <span>📜 SKSSF സംസ്ഥാന കമ്മിറ്റി സർക്കുലർ:</span>
+                </p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {chapter.circularItems.map((line) => (
+                    <li
+                      key={line}
+                      className="p-2.5 rounded-xl bg-white border border-sky-200 text-xs font-bold text-slate-900 leading-snug"
+                    >
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Decision Cards */}
+            <div className="space-y-2.5">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center gap-1.5">
+                <Users className="w-4 h-4 shrink-0" />
+                <span>നിങ്ങൾ ഈ സ്ഥാനത്തായിരുന്നെങ്കിൽ എന്ത് തിരഞ്ഞെടുക്കും?</span>
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {chapter.options.map((opt) => {
+                  const selected = chosenOptionId === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => handleChooseOption(opt)}
+                      className={`p-3.5 rounded-2xl border-2 text-left transition-all flex items-start gap-2.5 ${
+                        selected
+                          ? opt.isRecommended
+                            ? 'bg-emerald-700 text-white border-emerald-900 shadow-md'
+                            : opt.isPositiveStep
+                            ? 'bg-sky-700 text-white border-sky-900 shadow-md'
+                            : 'bg-amber-600 text-white border-amber-800 shadow-md'
+                          : 'bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-400 text-slate-900'
                       }`}
                     >
-                      {selected ? '✓ നിങ്ങൾ തിരഞ്ഞെടുത്തു' : '👆 ഫലം കാണാൻ ഇവിടെ തൊടൂ →'}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* REAL-WORLD PROS & CONS OUTCOME PANEL */}
-        {chosenOption && (
-          <motion.div
-            key={chosenOption.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`p-4 sm:p-5 rounded-2xl border-2 space-y-3 ${
-              chosenOption.isRecommended
-                ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
-                : chosenOption.isPositiveStep
-                ? 'bg-sky-50 border-sky-400 text-sky-950'
-                : 'bg-amber-50 border-amber-400 text-amber-950'
-            }`}
-          >
-            <h4 className="text-base sm:text-lg font-extrabold leading-snug">
-              {chosenOption.isRecommended ? '🌟 ' : chosenOption.isPositiveStep ? '💡 ' : '⚠️ '}
-              {chosenOption.outcomeTitle}
-            </h4>
-            <p className="text-xs sm:text-sm font-semibold leading-relaxed">
-              {chosenOption.outcomeStory}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-              <div className="p-3 rounded-xl bg-white border border-emerald-200 text-xs font-bold text-emerald-900 leading-relaxed">
-                👍 {chosenOption.prosText}
-              </div>
-              <div className="p-3 rounded-xl bg-white border border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-                🧭 {chosenOption.consText}
+                      <span className="text-2xl shrink-0">{opt.emoji}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs sm:text-sm font-extrabold leading-snug break-words">
+                          {opt.label}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </motion.div>
-        )}
 
-        {/* Navigation Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-200">
-          <button
-            type="button"
-            disabled={chapterIdx === 0}
-            onClick={() => {
-              sound.playClick();
-              setChapterIdx((i) => Math.max(0, i - 1));
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-extrabold hover:bg-slate-50 disabled:opacity-40"
-          >
-            <ChevronLeft className="w-4 h-4" /> മുമ്പത്തെ അദ്ധ്യായം
-          </button>
+            {chosenOption && (
+              <motion.div
+                key={chosenOption.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-3.5 rounded-2xl border-2 space-y-2.5 ${
+                  chosenOption.isRecommended
+                    ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
+                    : chosenOption.isPositiveStep
+                    ? 'bg-sky-50 border-sky-400 text-sky-950'
+                    : 'bg-amber-50 border-amber-400 text-amber-950'
+                }`}
+              >
+                <h4 className="text-sm sm:text-base font-extrabold leading-snug">
+                  {chosenOption.isRecommended ? '🌟 ' : chosenOption.isPositiveStep ? '💡 ' : '⚠️ '}
+                  {chosenOption.outcomeTitle}
+                </h4>
+                <p className="text-xs sm:text-sm font-semibold leading-relaxed">
+                  {chosenOption.outcomeStory}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="p-2.5 rounded-xl bg-white border border-emerald-200 text-xs font-bold text-emerald-900 leading-relaxed">
+                    👍 {chosenOption.prosText}
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-white border border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
+                    🧭 {chosenOption.consText}
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
-          {chapterIdx < POV_CHAPTERS.length - 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                sound.playPop();
-                setChapterIdx((i) => Math.min(POV_CHAPTERS.length - 1, i + 1));
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm"
-            >
-              <span>അടുത്ത അദ്ധ്യായം ({chapterIdx + 2}/{POV_CHAPTERS.length})</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              {onOpenBadgeStudio && (
+            {isLastPov && onOpenBadgeStudio && (
+              <div className="pt-2 border-t border-slate-200 flex justify-end">
                 <button
                   type="button"
                   onClick={() => {
                     sound.playSuccess();
                     onOpenBadgeStudio('master_guide');
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shadow-sm"
                 >
                   <Award className="w-4 h-4" /> 📷 ഫോട്ടോ ബാഡ്ജ് ഷെയർ
                 </button>
-              )}
-              {onCompletePovStage && (
-                <button
-                  type="button"
-                  disabled={!canProceedToLevel1}
-                  onClick={() => {
-                    sound.playHoist();
-                    onCompletePovStage();
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold shadow-sm transition-all ${
-                    canProceedToLevel1
-                      ? 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                      : 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  <span>ഘട്ടം 1 · യൂണിറ്റ് തലത്തിലേക്ക് പോകാം</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </motion.div>
         </div>
-      </motion.div>
-        </div>
-      </GameFullscreenShell>
+      </CollapsibleLessonDrawer>
 
-      {/* DEDICATED INTERACTIVE WIN/LOSE ARCADE GAME FOR POV STAGE */}
-      <OptionalLessonMiniGame
-        lessonKey="pov_journey"
-        onAwardXp={onAwardXp}
-        isCompleted={povMiniDone || povAlreadyCompleted}
-        onComplete={() => setPovMiniDone(true)}
+      {/* 4. NAVIGATION BELOW EVERYTHING */}
+      <LessonStepperNav
+        stepLabel={`POV യാത്ര · ${chapterIdx + 1}/${POV_CHAPTERS.length}`}
+        currentStep={chapterIdx}
+        totalSteps={POV_CHAPTERS.length}
+        prevLabel={chapterIdx > 0 ? POV_LESSON_META[chapterIdx - 1].shortLabel : undefined}
+        onPrev={chapterIdx > 0 ? () => handleSelectPovIdx(chapterIdx - 1) : undefined}
+        nextLabel={nextPovLabel}
+        nextIsWorldAdvance={isLastPov}
+        nextDisabled={!canAdvance}
+        onNext={handleAdvancePov}
       />
 
-      {/* LEARNING CHECK QUIZ (UNLOCKS LEVEL 1 & NEXT GAMES!) */}
-      {onQuizAnswered && (
-        <LessonCheckQuiz
-          lessonId="pov_journey"
-          title="POV പ്രായോഗിക യാത്ര — ഈ പാഠത്തിൽ നിന്ന് നമ്മൾ എന്ത് പഠിച്ചു?"
-          savedAnswer={quizAnswers.pov_journey}
-          onAnswered={(lid, idx, ok) => {
-            onQuizAnswered(lid, idx, ok);
-          }}
-        />
-      )}
-
-      {/* Clear Progress Reminder */}
-      {!canProceedToLevel1 && (
-        <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-xs sm:text-sm font-bold text-amber-950 leading-relaxed space-y-2">
-          <p>
-            🔒 അടുത്ത ഘട്ടവും പുതിയ ഗെയിമുകളും (ഘട്ടം 1 · യൂണിറ്റ് തലം) തുറക്കാൻ മുകളിലുള്ള ചെറിയ ചോദ്യത്തിന് ഉത്തരം നൽകൂ! (POV ഗെയിം താല്പര്യമുള്ളവർക്ക് കളിക്കാം അല്ലെങ്കിൽ സ്കിപ്പ് ചെയ്യാം.)
-          </p>
-        </div>
-      )}
-
-      {/* Master Completion Banner */}
-      {canProceedToLevel1 && (
-        <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border-2 border-amber-300 shadow-lg flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" /> 🧭 എന്റെ SKSSF യാത്ര പൂർത്തിയാക്കി! (+40 XP)
-            </p>
-            <h3 className="text-lg sm:text-xl font-extrabold mt-0.5 leading-snug">
-              🏆 മദ്രസ മുതൽ മേഖലാ കമ്മിറ്റി വരെയുള്ള പ്രായോഗിക യാത്ര വിജയം!
-            </h3>
-            <p className="text-xs sm:text-sm text-emerald-100 mt-0.5 leading-relaxed">
-              ഇനി ഔദ്യോഗിക ഫോട്ടോ ബാഡ്ജ് (QR കോഡ് സഹിതം) ഷെയർ ചെയ്യുകയോ ഘട്ടം 1 (യൂണിറ്റ് തലം) ഗെയിമുകൾ തുടങ്ങുകയോ ചെയ്യാം!
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {onOpenBadgeStudio && (
-              <button
-                type="button"
-                onClick={() => onOpenBadgeStudio('flag_keeper')}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm"
-              >
-                <Award className="w-4 h-4" />
-                <span>📷 ഫോട്ടോ ബാഡ്ജ് ഷെയർ</span>
-              </button>
-            )}
-            {onCompletePovStage && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playHoist();
-                  onCompletePovStage();
-                }}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 text-xs sm:text-sm font-extrabold shadow-sm"
-              >
-                <span>🎮 അടുത്ത ഘട്ടവും ഗെയിമും കളിക്കാം: ഘട്ടം 1 · യൂണിറ്റ് തലം</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      <LessonProgressTrack
+        stageTitle="🧭 എന്റെ SKSSF യാത്ര · 8 പ്രായോഗിക പാഠങ്ങൾ"
+        stageSubtitle="ഓരോ പാഠത്തിലും പ്രത്യേക SKSSF ഗെയിമും ക്വിസും പൂർത്തിയാക്കൂ"
+        items={POV_LESSON_META.map((m) => ({
+          id: m.chapterId,
+          lessonId: m.lessonId,
+          emoji: m.emoji,
+          label: m.shortLabel,
+        }))}
+        activeId={chapter.id}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => {
+          const nextIdx = POV_LESSON_META.findIndex((m) => m.chapterId === id);
+          if (nextIdx >= 0) handleSelectPovIdx(nextIdx);
+        }}
+      />
     </section>
   );
 };

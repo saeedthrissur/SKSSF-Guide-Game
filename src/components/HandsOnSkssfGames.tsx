@@ -1,9 +1,10 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Camera, CheckCircle2, Crop, PanelRightClose, PanelRightOpen, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowRight, Camera, CheckCircle2, Crop, Info, PanelRightClose, PanelRightOpen, RotateCcw, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { useGameFullscreen } from './GameFullscreenShell';
+import { scrollToActiveQuiz } from './LessonCheckQuiz';
 
 export interface HandsOnGameProps {
   xpKey: string;
@@ -18,58 +19,102 @@ const WinOverlay: React.FC<{
   headline: string;
   note: string;
   onReplay: () => void;
-}> = ({ headline, note, onReplay }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.92 }}
-    animate={{ opacity: 1, scale: 1 }}
-    className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border-2 border-amber-300 shadow-md flex flex-wrap items-center justify-between gap-2.5"
-  >
-    <div className="space-y-0.5 min-w-0 flex-1">
-      <p className="text-xs sm:text-sm font-extrabold text-amber-300 flex items-center gap-1.5">
-        <Sparkles className="w-4 h-4 shrink-0" />
-        <span>{headline}</span>
-      </p>
-      <p className="text-[11px] sm:text-xs text-emerald-100 font-semibold leading-snug break-words">
-        {note}
-      </p>
-    </div>
-    <button
-      type="button"
-      onClick={onReplay}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shrink-0"
+}> = ({ headline, note, onReplay }) => {
+  const [showInfo, setShowInfo] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-2.5 rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border-2 border-amber-300 shadow-md space-y-2"
     >
-      <RotateCcw className="w-3.5 h-3.5" /> വീണ്ടും കളിക്കാം
-    </button>
-  </motion.div>
-);
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setShowInfo((v) => !v);
+          }}
+          className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-amber-300"
+        >
+          <Sparkles className="w-4 h-4 shrink-0" />
+          <span>🎉 +30 XP</span>
+          <Info className="w-3.5 h-3.5 text-emerald-200" />
+        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onReplay}
+            aria-label="വീണ്ടും കളിക്കാം"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white font-extrabold shrink-0"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              scrollToActiveQuiz();
+            }}
+            className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shrink-0 shadow-xs"
+          >
+            <span>അടുത്തത് · ക്വിസ്</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+      {showInfo && (
+        <div className="text-[11px] text-emerald-100 font-semibold leading-snug border-t border-white/15 pt-1.5">
+          <p className="font-extrabold text-amber-200">{headline}</p>
+          <p>{note}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 const FailOverlay: React.FC<{
   headline: string;
   note: string;
   onRetry: () => void;
-}> = ({ headline, note, onRetry }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.94 }}
-    animate={{ opacity: 1, scale: 1 }}
-    className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-900 via-red-900 to-rose-950 text-white border-2 border-rose-300 shadow-md flex flex-wrap items-center justify-between gap-2.5"
-  >
-    <div className="space-y-0.5 min-w-0 flex-1">
-      <p className="text-xs sm:text-sm font-extrabold text-amber-300">
-        ❌ {headline}
-      </p>
-      <p className="text-[11px] sm:text-xs text-rose-100 font-semibold leading-snug break-words">
-        {note}
-      </p>
-    </div>
-    <button
-      type="button"
-      onClick={onRetry}
-      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shrink-0 shadow"
+}> = ({ headline, note, onRetry }) => {
+  const [showInfo, setShowInfo] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-2.5 rounded-2xl bg-gradient-to-r from-rose-900 via-red-900 to-rose-950 text-white border-2 border-rose-300 shadow-md space-y-2"
     >
-      <RotateCcw className="w-3.5 h-3.5" /> വീണ്ടും ശ്രമിക്കാം
-    </button>
-  </motion.div>
-);
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setShowInfo((v) => !v);
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-extrabold text-amber-300"
+        >
+          <span>❌</span>
+          <Info className="w-4 h-4 text-rose-200" />
+        </button>
+        <button
+          type="button"
+          onClick={onRetry}
+          aria-label="വീണ്ടും ശ്രമിക്കാം"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold shrink-0 shadow"
+        >
+          <RotateCcw className="w-4 h-4" /> 🔄
+        </button>
+      </div>
+      {showInfo && (
+        <div className="text-[11px] text-rose-100 font-semibold leading-snug border-t border-white/15 pt-1.5">
+          <p className="font-extrabold text-amber-200">{headline}</p>
+          <p>{note}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+};
 
 const GameShellHeader: React.FC<{
   badge: string;
@@ -77,31 +122,44 @@ const GameShellHeader: React.FC<{
   subtitle: string;
   done: boolean;
   progressText: string;
-}> = ({ badge, title, subtitle, done, progressText }) => (
-  <div className="flex flex-wrap items-center justify-between gap-2">
-    <div className="min-w-0 flex-1">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-950 text-[11px] font-extrabold">
-          {badge}
+}> = ({ badge, title, subtitle, done, progressText }) => {
+  const [showInfo, setShowInfo] = useState(false);
+  const iconOnly = badge.trim().split(/\s+/)[0] || '🎮';
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setShowInfo((v) => !v);
+            }}
+            aria-label={title}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-950 text-sm font-extrabold"
+          >
+            <span>{iconOnly}</span>
+            <Info className="w-3.5 h-3.5 text-emerald-700" />
+          </button>
+          {done && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-200 text-amber-950 text-xs font-extrabold">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-100 text-emerald-900 tabular-nums shrink-0">
+          {progressText}
         </span>
-        {done && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-200 text-amber-950 text-[11px] font-extrabold">
-            <CheckCircle2 className="w-3 h-3" /> ജയിച്ചു!
-          </span>
-        )}
       </div>
-      <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-1 leading-snug break-words">
-        {title}
-      </h4>
-      <p className="text-xs text-slate-600 font-medium leading-snug break-words mt-0.5">
-        {subtitle}
-      </p>
+      {showInfo && (
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 space-y-0.5">
+          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">{title}</h4>
+          <p className="text-[11px] text-slate-600 font-medium leading-snug">{subtitle}</p>
+        </div>
+      )}
     </div>
-    <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-100 text-emerald-900 tabular-nums shrink-0">
-      {progressText}
-    </span>
-  </div>
-);
+  );
+};
 
 /* ============================================================================
  * 1. POSTER & FESTON (തോരണം) WALL / MADRASA STICKING GAME (Drag & Drop + Tap!)
@@ -304,14 +362,11 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
                   )}
                 </motion.div>
               ) : (
-                <div className="py-1">
-                  <span className="text-lg block leading-none">{item.emoji}</span>
-                  <span className="text-[10px] sm:text-xs font-extrabold text-slate-800 leading-tight block mt-0.5">
-                    {item.slotLabel}
-                  </span>
+                <div className="py-1 flex items-center justify-center gap-1">
+                  <span className="text-2xl leading-none">{item.emoji}</span>
                   {isTarget && (
                     <motion.span
-                      animate={{ y: [0, -5, 0] }}
+                      animate={{ y: [0, -4, 0] }}
                       transition={{ duration: 0.75, repeat: Infinity }}
                       className="inline-block text-lg"
                     >
@@ -325,57 +380,60 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
         })}
       </div>
 
-      <p className="text-xs font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-        🖌️ {hint}
-      </p>
-
       {failed ? (
         <FailOverlay
           headline="ചുമർ അലങ്കാരം പരാജയപ്പെട്ടു!"
-          note="തെറ്റായ സ്ഥലത്ത് 3 തവണ ഒട്ടിച്ചതിനാൽ മാർക്ക് നഷ്ടപ്പെട്ടു. കൃത്യമായ സ്ഥലത്ത് ഒട്ടിക്കാൻ വീണ്ടും ശ്രമിക്കാം!"
+          note="തെറ്റായ സ്ഥലത്ത് 3 തവണ ഒട്ടിച്ചതിനാൽ മാർക്ക് നഷ്ടപ്പെട്ടു."
           onRetry={reset}
         />
       ) : !won ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {POSTER_ITEMS.map((item) => {
-            const done = placed.includes(item.id);
-            const active = selectedId === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={(e) => {
-                  sound.unlockAudio();
-                  setDraggingId(item.id);
-                  setSelectedId(item.id);
-                  e.dataTransfer.setData('text/plain', item.id);
-                }}
-                onClick={() => {
-                  sound.playClick();
-                  if (active) {
-                    snap(item.id, item.id);
-                  } else {
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-4 gap-2">
+            {POSTER_ITEMS.map((item) => {
+              const done = placed.includes(item.id);
+              const active = selectedId === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={done}
+                  draggable={!done}
+                  onDragStart={(e) => {
+                    sound.unlockAudio();
+                    setDraggingId(item.id);
                     setSelectedId(item.id);
-                  }
-                }}
-                className={`p-2.5 rounded-xl border-2 text-left transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-65'
-                    : active
-                    ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm scale-[1.02]'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xl">{item.emoji}</span>
-                  {done ? <CheckCircle2 className="w-4 h-4 text-emerald-700" /> : active && <span>👆</span>}
-                </div>
-                <p className="text-xs font-extrabold mt-1 leading-snug">{item.label}</p>
-              </button>
-            );
-          })}
+                    e.dataTransfer.setData('text/plain', item.id);
+                  }}
+                  onClick={() => {
+                    sound.playClick();
+                    if (active) {
+                      snap(item.id, item.id);
+                    } else {
+                      setSelectedId(item.id);
+                    }
+                  }}
+                  aria-label={item.label}
+                  title={item.label}
+                  className={`p-2.5 rounded-xl border-2 flex items-center justify-center gap-1 transition-all ${
+                    done
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-65'
+                      : active
+                      ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm scale-[1.03]'
+                      : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
+                  }`}
+                >
+                  <span className="text-2xl">{item.emoji}</span>
+                  {done && <CheckCircle2 className="w-4 h-4 text-emerald-700" />}
+                </button>
+              );
+            })}
+          </div>
+          {selectedId && (
+            <p className="text-[11px] font-bold text-emerald-900 text-center">
+              {POSTER_ITEMS.find((p) => p.id === selectedId)?.emoji}{' '}
+              {POSTER_ITEMS.find((p) => p.id === selectedId)?.label}
+            </p>
+          )}
         </div>
       ) : (
         <WinOverlay
@@ -447,9 +505,9 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
       ctx.fill();
     }
     ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 20px sans-serif';
+    ctx.font = 'bold 34px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🧽 വിരൽ കൊണ്ട് ഉരച്ച് ബോർഡിലെ പൊടി തുടയ്ക്കൂ!', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('🧽 ✨', canvas.width / 2, canvas.height / 2 + 10);
   };
 
   useEffect(() => {
@@ -515,11 +573,11 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
   return (
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
       <GameShellHeader
-        badge="🧽 സ്ക്രാച്ച് & ക്ലീൻ ഗെയിം"
+        badge="🧽"
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`വൃത്തി: ${cleanPct}% · ⏱️ ${timeLeft}s`}
+        progressText={`🧽 ${cleanPct}% · ⏱️ ${timeLeft}s`}
       />
 
       <div className="relative rounded-2xl border-4 border-amber-700 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 overflow-hidden min-h-[215px] sm:min-h-[235px] select-none touch-none shadow-inner">
@@ -614,9 +672,10 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
                 onComplete?.();
               }
             }}
-            className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-extrabold"
+            aria-label="തുടയ്ക്കൂ"
+            className="px-4 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-lg font-extrabold"
           >
-            🧽 ഡസ്റ്റർ കൊണ്ട് തുടയ്ക്കൂ
+            🧽
           </button>
         )}
       </div>
@@ -641,13 +700,12 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
 };
 
 /* ============================================================================
- * 3. SAMASTHA (1926) & SKSSF HERITAGE ARCH & EMBLEM COLORING STUDIO
- *    Realistic, creative sculpted SVG signboard with 6 distinct architectural
- *    and official organization emblem parts + 5 authentic paint pots!
+ * 3. WELCOME ARCH (സ്വാഗത കമാനം) PAINTING STUDIO
+ *    Pure festive welcome arch painting game — NO inaccurate flag text or EST dates!
  * ========================================================================== */
-type EmblemPartId = 'arch' | 'pillars' | 'canton' | 'dome' | 'green_strip' | 'ribbon';
+type ArchPartId = 'arch' | 'pillars' | 'crown' | 'banner' | 'flowers' | 'ribbon';
 
-interface EmblemPaintColor {
+interface ArchPaintColor {
   id: string;
   label: string;
   fill: string;
@@ -655,26 +713,26 @@ interface EmblemPaintColor {
   swatchBg: string;
 }
 
-const PAINT_COLORS: EmblemPaintColor[] = [
-  { id: 'sky', label: 'ആകാശനീല (SKSSF)', fill: '#0284C7', stroke: '#075985', swatchBg: '#E0F2FE' },
-  { id: 'maroon', label: 'സമസ്ത മെറൂൺ', fill: '#8C1D40', stroke: '#5C1028', swatchBg: '#FCE7F3' },
+const PAINT_COLORS: ArchPaintColor[] = [
+  { id: 'sky', label: 'ആകാശനീല', fill: '#0284C7', stroke: '#075985', swatchBg: '#E0F2FE' },
+  { id: 'maroon', label: 'കടും മെറൂൺ', fill: '#8C1D40', stroke: '#5C1028', swatchBg: '#FCE7F3' },
   { id: 'emerald', label: 'ഇസ്‌ലാമിക് പച്ച', fill: '#059669', stroke: '#065F46', swatchBg: '#D1FAE5' },
   { id: 'gold', label: 'സ്വർണ്ണ മഞ്ഞ', fill: '#D97706', stroke: '#92400E', swatchBg: '#FEF3C7' },
-  { id: 'pearl', label: 'തൂവെള്ള (പൈതൃക പ്രതലം)', fill: '#F8FAFC', stroke: '#94A3B8', swatchBg: '#F1F5F9' },
+  { id: 'pearl', label: 'തൂവെള്ള', fill: '#F8FAFC', stroke: '#94A3B8', swatchBg: '#F1F5F9' },
 ];
 
-const EMBLEM_PARTS: {
-  id: EmblemPartId;
+const ARCH_PARTS: {
+  id: ArchPartId;
   shortLabel: string;
   guideHint: string;
-  officialFill: string;
+  presetFill: string;
 }[] = [
-  { id: 'arch', shortLabel: '1926 കമാനം', guideHint: 'സമസ്ത മെറൂൺ / പച്ച', officialFill: '#8C1D40' },
-  { id: 'pillars', shortLabel: 'രണ്ട് തൂണുകൾ', guideHint: 'സ്വർണ്ണ മഞ്ഞ / തൂവെള്ള', officialFill: '#D97706' },
-  { id: 'canton', shortLabel: 'പതാക & ചന്ദ്രക്കല', guideHint: 'ആകാശനീല / മെറൂൺ', officialFill: '#0284C7' },
-  { id: 'dome', shortLabel: 'മസ്ജിദ് & മിനാരം', guideHint: 'തൂവെള്ള / സ്വർണ്ണ മഞ്ഞ', officialFill: '#F8FAFC' },
-  { id: 'green_strip', shortLabel: 'പച്ച വരമ്പ് & SKSSF', guideHint: 'ഇസ്‌ലാമിക് പച്ച', officialFill: '#059669' },
-  { id: 'ribbon', shortLabel: 'മുദ്രാവാക്യ റിബ്ബൺ', guideHint: 'സ്വർണ്ണ മഞ്ഞ / നീല', officialFill: '#D97706' },
+  { id: 'arch', shortLabel: 'പ്രധാന കമാനം', guideHint: 'കമാനത്തിന്റെ വലിയ വളവ്', presetFill: '#059669' },
+  { id: 'pillars', shortLabel: 'രണ്ട് തൂണുകൾ', guideHint: 'ഇടതും വലതും തൂണുകൾ', presetFill: '#D97706' },
+  { id: 'crown', shortLabel: 'മുകളിലെ താഴികക്കുടം', guideHint: 'കമാനത്തിന്റെ മുകൾ അലങ്കാരം', presetFill: '#8C1D40' },
+  { id: 'banner', shortLabel: 'സ്വാഗത ബോർഡ്', guideHint: 'എല്ലാവർക്കും സ്വാഗതം ഫലകം', presetFill: '#F8FAFC' },
+  { id: 'flowers', shortLabel: 'തോരണവും അലങ്കാരവും', guideHint: 'വർണ്ണ തോരണങ്ങൾ', presetFill: '#0284C7' },
+  { id: 'ribbon', shortLabel: 'മുദ്രാവാക്യ റിബ്ബൺ', guideHint: 'വിജ്ഞാനം · വിനയം · സേവനം', presetFill: '#D97706' },
 ];
 
 export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
@@ -687,150 +745,112 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
 }) => {
   const isFullscreen = useGameFullscreen();
   const rawUid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const archCrescentMaskId = `arch-crescent-${rawUid}`;
+  const archSkyId = `arch-sky-${rawUid}`;
 
-  const [selectedColor, setSelectedColor] = useState<EmblemPaintColor>(PAINT_COLORS[0]);
+  const [selectedColor, setSelectedColor] = useState<ArchPaintColor>(PAINT_COLORS[2]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [paintedParts, setPaintedParts] = useState<Partial<Record<EmblemPartId, string>>>(
+  const [paintedParts, setPaintedParts] = useState<Partial<Record<ArchPartId, string>>>(
     isCompleted
       ? {
-          arch: '#8C1D40',
+          arch: '#059669',
           pillars: '#D97706',
-          canton: '#0284C7',
-          dome: '#F8FAFC',
-          green_strip: '#059669',
+          crown: '#8C1D40',
+          banner: '#F8FAFC',
+          flowers: '#0284C7',
           ribbon: '#D97706',
         }
       : {}
   );
-  const [lastPaintedLabel, setLastPaintedLabel] = useState<string>(
-    'വലതുവശത്തെ സൈഡ് ബാറിൽ നിന്ന് നിറവും ഭാഗവും തിരഞ്ഞെടുത്ത് കമാനത്തിൽ നിറം നൽകൂ!'
-  );
   const [splashKey, setSplashKey] = useState(0);
   const [won, setWon] = useState(isCompleted);
-  const [failedMsg, setFailedMsg] = useState<string | null>(null);
 
   const paintedCount = Object.keys(paintedParts).length;
 
-  const evaluateCompletion = (next: Partial<Record<EmblemPartId, string>>) => {
-    if (Object.keys(next).length < EMBLEM_PARTS.length) return;
-    // Authentic flag accuracy check: Canton must be Sky Blue (SKSSF) or Maroon (Samastha), Green Strip must be Green!
-    const validCanton = next.canton === '#0284C7' || next.canton === '#8C1D40';
-    const validGreen = next.green_strip === '#059669';
-    if (!validCanton || !validGreen) {
-      sound.playError();
-      setWon(false);
-      setFailedMsg(
-        !validCanton && !validGreen
-          ? 'പതാകയുടെ ചന്ദ്രക്കല ഭാഗത്ത് ആകാശനീല/മെറൂണും താഴെ SKSSF വരമ്പിൽ ഇസ്‌ലാമിക് പച്ചയും നൽകണം!'
-          : !validCanton
-          ? 'പതാകയുടെ ചന്ദ്രക്കല ഭാഗത്ത് ഔദ്യോഗിക നിറം (ആകാശനീല അല്ലെങ്കിൽ സമസ്ത മെറൂൺ) നൽകണം!'
-          : 'താഴെയുള്ള SKSSF വരമ്പിൽ ഔദ്യോഗിക ഇസ്‌ലാമിക് പച്ച നിറം നൽകണം!'
-      );
-      return;
-    }
-    setFailedMsg(null);
+  const completeArch = () => {
     if (!won) {
       setWon(true);
       sound.playHoist();
       onAwardXp(30, `hands_${xpKey}`);
       onComplete?.();
-      narrator.speak(
-        'വിസ്മയം! സമസ്തയുടെയും എസ് കെ എസ് എസ് എഫിന്റെയും പൈതൃക കമാനവും ഔദ്യോഗിക പതാകയും അതിമനോഹരമായി നിറം നൽകി പൂർത്തിയാക്കി!',
-        title
-      );
+      narrator.speak('അതിമനോഹരം! സമ്മേളന സ്വാഗത കമാനം ഭംഗിയായി പെയിന്റ് ചെയ്ത് ഒരുക്കി!', title);
+      window.setTimeout(() => scrollToActiveQuiz(), 900);
     }
   };
 
-  const paintRegion = (partId: EmblemPartId) => {
+  const paintRegion = (partId: ArchPartId) => {
     sound.unlockAudio();
-    const meta = EMBLEM_PARTS.find((p) => p.id === partId);
     sound.playPop();
     setSplashKey((k) => k + 1);
-    const next: Partial<Record<EmblemPartId, string>> = {
+    const next: Partial<Record<ArchPartId, string>> = {
       ...paintedParts,
       [partId]: selectedColor.fill,
     };
     setPaintedParts(next);
-    setFailedMsg(null);
-    if (meta) {
-      setLastPaintedLabel(`🖌️ “${meta.shortLabel}” — ${selectedColor.label} നിറം നൽകി!`);
+    if (Object.keys(next).length >= ARCH_PARTS.length) {
+      completeArch();
     }
-    evaluateCompletion(next);
   };
 
-  const applyOfficialPalette = () => {
+  const applyPresetPalette = () => {
     sound.unlockAudio();
-    sound.playHoist();
-    const official: Partial<Record<EmblemPartId, string>> = {};
-    EMBLEM_PARTS.forEach((p) => {
-      official[p.id] = p.officialFill;
+    const preset: Partial<Record<ArchPartId, string>> = {};
+    ARCH_PARTS.forEach((p) => {
+      preset[p.id] = p.presetFill;
     });
-    setPaintedParts(official);
-    setFailedMsg(null);
-    setLastPaintedLabel('✨ സമസ്ത (1926) & SKSSF ഔദ്യോഗിക നിറങ്ങൾ മുഴുവൻ ബോർഡിലും തിളങ്ങി!');
-    if (!won) {
-      setWon(true);
-      onAwardXp(30, `hands_${xpKey}`);
-      onComplete?.();
-    }
+    setPaintedParts(preset);
+    completeArch();
   };
 
   const reset = () => {
     sound.playClick();
     setPaintedParts({});
     setWon(false);
-    setFailedMsg(null);
-    setLastPaintedLabel('വീണ്ടും ഔദ്യോഗിക നിറങ്ങൾ നൽകി പൈതൃക കമാനവും പതാകയും ഒരുക്കാം!');
   };
 
-  const getFill = (id: EmblemPartId, fallback: string) => paintedParts[id] ?? fallback;
+  const getFill = (id: ArchPartId, fallback: string) => paintedParts[id] ?? fallback;
 
   return (
     <div className={`bg-white rounded-2xl border-2 border-emerald-200 shadow-sm ${isFullscreen ? 'p-2.5 sm:p-3 space-y-2' : 'p-3.5 sm:p-4 space-y-3'}`}>
       {!isFullscreen && (
         <GameShellHeader
-          badge="🎨 സമസ്ത & SKSSF ലോഗോ കളറിംഗ് സ്റ്റുഡിയോ"
+          badge="🎨"
           title={title}
           subtitle={subtitle}
           done={won}
-          progressText={`${paintedCount}/6 ഭാഗങ്ങൾ`}
+          progressText={`${paintedCount}/6`}
         />
       )}
 
-      {/* Compact Live Status Strip + Fullscreen Sidebar Toggle */}
-      <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] sm:text-xs font-extrabold text-emerald-950 flex flex-wrap items-center justify-between gap-2">
-        <span className="leading-snug break-words flex-1 min-w-[140px]">{lastPaintedLabel}</span>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white border border-emerald-300 text-[11px]">
-            <span className="w-3 h-3 rounded-full border border-slate-400" style={{ backgroundColor: selectedColor.fill }} />
-            <span>{selectedColor.label}</span>
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setSidebarOpen((v) => !v);
-            }}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-800 text-white text-[11px] font-extrabold"
-          >
-            {sidebarOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
-            <span>{sidebarOpen ? 'സൈഡ് ബാർ മറയ്ക്കാം' : '🎨 നിറങ്ങളും ഭാഗങ്ങളും'}</span>
-          </button>
-        </div>
+      {/* Compact Color Bar */}
+      <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white border border-emerald-300 text-xs">
+          <span className="w-3.5 h-3.5 rounded-full border border-slate-400" style={{ backgroundColor: selectedColor.fill }} />
+          <span>{selectedColor.label}</span>
+        </span>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setSidebarOpen((v) => !v);
+          }}
+          aria-label="നിറങ്ങൾ"
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-800 text-white text-xs font-extrabold"
+        >
+          {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+          <span>🎨</span>
+        </button>
       </div>
 
-      {/* UNIFIED SIDE-BY-SIDE STUDIO: Arch Canvas + Tightly Coupled Paint & Part Descriptions Sidebar! */}
+      {/* UNIFIED SIDE-BY-SIDE STUDIO: Pure Welcome Arch Canvas + Color & Part Sidebar */}
       <div
         className={`grid gap-2.5 items-stretch ${
           sidebarOpen
             ? isFullscreen
-              ? 'grid-cols-1 sm:grid-cols-[1fr_265px]'
-              : 'grid-cols-1 lg:grid-cols-[1fr_275px]'
+              ? 'grid-cols-1 sm:grid-cols-[1fr_255px]'
+              : 'grid-cols-1 lg:grid-cols-[1fr_265px]'
             : 'grid-cols-1'
         }`}
       >
-        {/* LEFT: Sculpted Samastha (1926) & Official SKSSF Emblem Arch Canvas */}
         <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-sky-100 via-amber-50/70 to-emerald-50 p-2 sm:p-3 shadow-inner flex flex-col justify-center overflow-hidden">
           <svg
             viewBox="0 0 640 370"
@@ -838,41 +858,41 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
               isFullscreen ? 'max-h-[68dvh]' : 'max-h-[370px]'
             }`}
             role="img"
-            aria-label="സമസ്ത 1926 & SKSSF പൈതൃക കമാനവും ഔദ്യോഗിക ലോഗോയും കളറിംഗ് ബോർഡ്"
+            aria-label="സ്വാഗത കമാനം പെയിന്റ് ചെയ്യാനുള്ള ബോർഡ്"
           >
             <defs>
-              <linearGradient id="studioSky" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={archSkyId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#0F172A" />
                 <stop offset="55%" stopColor="#064E3B" />
                 <stop offset="100%" stopColor="#022C22" />
               </linearGradient>
-              {/* Exact Official Flag Crescent Mask: Thick Belly Right, Opening Upper-Left Toward Hoist */}
-              <mask id={archCrescentMaskId} maskUnits="userSpaceOnUse" x="-30" y="-30" width="60" height="60">
-                <rect x="-36" y="-36" width="72" height="72" fill="black" />
-                <circle cx="0" cy="0" r="22" fill="white" />
-                <circle cx="-7.5" cy="-6.5" r="18.2" fill="black" />
-              </mask>
-              <filter id="softGlow">
-                <feGaussianBlur stdDeviation="2.5" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
             </defs>
 
-            {/* Warm Heritage Backdrop */}
-            <rect x="8" y="8" width="624" height="354" rx="22" fill="url(#studioSky)" stroke="#F59E0B" strokeWidth="3" />
-            <circle cx="56" cy="48" r="2.5" fill="#FDE047" opacity="0.8" />
-            <circle cx="585" cy="44" r="3" fill="#FDE047" opacity="0.85" />
-            <circle cx="102" cy="74" r="1.8" fill="#BAE6FD" opacity="0.7" />
-            <circle cx="536" cy="72" r="2" fill="#BAE6FD" opacity="0.7" />
-            <rect x="28" y="316" width="584" height="30" rx="8" fill="#1E293B" stroke="#FBBF24" strokeWidth="1.5" />
+            {/* Evening Festival Backdrop */}
+            <rect x="8" y="8" width="624" height="354" rx="22" fill={`url(#${archSkyId})`} stroke="#F59E0B" strokeWidth="3" />
+            <circle cx="58" cy="48" r="2.5" fill="#FDE047" opacity="0.85" />
+            <circle cx="582" cy="44" r="3" fill="#FDE047" opacity="0.85" />
+            <circle cx="110" cy="72" r="2" fill="#BAE6FD" opacity="0.7" />
+            <circle cx="530" cy="70" r="2" fill="#BAE6FD" opacity="0.7" />
+            {/* Ground stage floor */}
+            <rect x="28" y="318" width="584" height="28" rx="8" fill="#1E293B" stroke="#FBBF24" strokeWidth="1.5" />
 
-            {/* PART 1: OUTER 1926 HERITAGE ARCH */}
+            {/* PART 3: TOP CROWN / DOME FINIAL */}
+            <g onClick={() => paintRegion('crown')} className="cursor-pointer transition-opacity hover:opacity-95">
+              <path
+                d="M270 64 Q320 12 370 64 Z"
+                fill={getFill('crown', '#CBD5E1')}
+                stroke={paintedParts.crown ? '#FDE047' : '#64748B'}
+                strokeWidth="2.5"
+                strokeDasharray={paintedParts.crown ? undefined : '5 4'}
+              />
+              <circle cx="320" cy="24" r="6" fill="#FDE047" />
+            </g>
+
+            {/* PART 1: OUTER WELCOME ARCH */}
             <g onClick={() => paintRegion('arch')} className="cursor-pointer transition-opacity hover:opacity-95">
               <path
-                d="M92 316 L92 146 Q92 42 320 28 Q548 42 548 146 L548 316 L496 316 L496 154 Q496 86 320 76 Q144 86 144 154 L144 316 Z"
+                d="M92 318 L92 150 Q92 56 320 46 Q548 56 548 150 L548 318 L494 318 L494 158 Q494 94 320 86 Q146 94 146 158 L146 318 Z"
                 fill={getFill('arch', '#CBD5E1')}
                 stroke={paintedParts.arch ? '#FDE047' : '#64748B'}
                 strokeWidth={paintedParts.arch ? '3' : '2.5'}
@@ -880,13 +900,13 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
               />
               <text
                 x="320"
-                y="58"
+                y="74"
                 textAnchor="middle"
                 fill={paintedParts.arch === '#F8FAFC' ? '#0F172A' : '#FEF08A'}
-                fontSize="14"
+                fontSize="15"
                 fontWeight="800"
               >
-                സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ · 1926
+                ✨ സ്വാഗത കമാനം ✨
               </text>
             </g>
 
@@ -894,9 +914,9 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
             <g onClick={() => paintRegion('pillars')} className="cursor-pointer transition-opacity hover:opacity-95">
               <rect
                 x="104"
-                y="156"
+                y="160"
                 width="34"
-                height="160"
+                height="158"
                 rx="6"
                 fill={getFill('pillars', '#E2E8F0')}
                 stroke={paintedParts.pillars ? '#FEF08A' : '#64748B'}
@@ -905,113 +925,72 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
               />
               <rect
                 x="502"
-                y="156"
+                y="160"
                 width="34"
-                height="160"
+                height="158"
                 rx="6"
                 fill={getFill('pillars', '#E2E8F0')}
                 stroke={paintedParts.pillars ? '#FEF08A' : '#64748B'}
                 strokeWidth="2.5"
                 strokeDasharray={paintedParts.pillars ? undefined : '5 4'}
               />
-              <rect x="98" y="148" width="46" height="12" rx="4" fill={getFill('pillars', '#CBD5E1')} stroke="#92400E" strokeWidth="1.5" />
-              <rect x="496" y="148" width="46" height="12" rx="4" fill={getFill('pillars', '#CBD5E1')} stroke="#92400E" strokeWidth="1.5" />
+              <rect x="98" y="152" width="46" height="12" rx="4" fill={getFill('pillars', '#CBD5E1')} stroke="#92400E" strokeWidth="1.5" />
+              <rect x="496" y="152" width="46" height="12" rx="4" fill={getFill('pillars', '#CBD5E1')} stroke="#92400E" strokeWidth="1.5" />
             </g>
 
-            {/* CENTRAL EMBLEM FRAME (EXACT OFFICIAL SKSSF / SAMASTHA FLAG LAYOUT) */}
-            <rect x="166" y="96" width="308" height="184" rx="14" fill="#FFFFFF" stroke="#FBBF24" strokeWidth="3" />
-
-            {/* PART 3: TOP-LEFT FLAG CANTON + EXACT OFFICIAL CRESCENT & STAR (Opening Upper-Left!) */}
-            <g onClick={() => paintRegion('canton')} className="cursor-pointer transition-opacity hover:opacity-95">
+            {/* PART 5: FESTIVE GARLAND / THORANAM */}
+            <g onClick={() => paintRegion('flowers')} className="cursor-pointer transition-opacity hover:opacity-95">
               <path
-                d="M168 110 Q168 98 180 98 L286 98 L286 224 L168 224 Z"
-                fill={getFill('canton', '#CBD5E1')}
-                stroke={paintedParts.canton ? '#FFFFFF' : '#64748B'}
+                d="M150 132 Q235 170 320 132 Q405 170 490 132 L490 156 Q405 192 320 156 Q235 192 150 156 Z"
+                fill={getFill('flowers', '#CBD5E1')}
+                stroke={paintedParts.flowers ? '#FEF08A' : '#64748B'}
                 strokeWidth="2"
-                strokeDasharray={paintedParts.canton ? undefined : '5 4'}
+                strokeDasharray={paintedParts.flowers ? undefined : '5 4'}
               />
-              {/* Official Crescent (Belly Bottom-Right, Opening Upper-Left) + 5-Pointed Star Nestled Inside */}
-              <g transform="translate(232, 164)">
-                <circle
-                  cx="0"
-                  cy="0"
-                  r="22"
-                  fill={paintedParts.canton === '#F8FAFC' ? '#0284C7' : '#FFFFFF'}
-                  mask={`url(#${archCrescentMaskId})`}
-                  filter={won ? 'url(#softGlow)' : undefined}
-                />
-                <polygon
-                  points="-9,-16 -6.8,-10.2 -0.5,-10 -5.4,-6.3 -3.6,-0.2 -9,-3.8 -14.4,-0.2 -12.6,-6.3 -17.5,-10 -11.2,-10.2"
-                  fill={paintedParts.canton === '#F8FAFC' ? '#D97706' : '#FFFFFF'}
-                />
-              </g>
+              {[180, 225, 275, 365, 415, 460].map((cx) => (
+                <circle key={cx} cx={cx} cy="156" r="5" fill="#FDE047" />
+              ))}
             </g>
 
-            {/* PART 4: TOP-RIGHT WHITE FIELD + OFFICIAL LEFT MINARET & RIBBED ONION MOSQUE DOME */}
-            <g onClick={() => paintRegion('dome')} className="cursor-pointer transition-opacity hover:opacity-95">
-              <path
-                d="M286 98 L460 98 Q472 98 472 110 L472 224 L286 224 Z"
-                fill={getFill('dome', '#E2E8F0')}
-                stroke={paintedParts.dome ? '#CBD5E1' : '#64748B'}
-                strokeWidth="2"
-                strokeDasharray={paintedParts.dome ? undefined : '5 4'}
-              />
-              {/* Exact Official Single Left Tall Minaret & Ribbed Onion Dome */}
-              <g
-                transform="translate(324, 114)"
-                fill="none"
-                stroke={paintedParts.dome === '#059669' || paintedParts.dome === '#8C1D40' ? '#FEF08A' : '#0F172A'}
-                strokeWidth="2.1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="6" y="18" width="10" height="76" fill="#FFFFFF" />
-                <line x1="6" y1="34" x2="16" y2="34" />
-                <line x1="6" y1="52" x2="16" y2="52" />
-                <line x1="6" y1="70" x2="16" y2="70" />
-                <path d="M 5,18 C 5,10 17,10 17,18 Z" fill="#0F172A" />
-                <line x1="11" y1="4" x2="11" y2="11" />
-                {/* Ribbed Onion Dome */}
-                <path d="M 22,80 C 24,44 56,34 62,20 C 68,34 100,44 102,80 Z" fill="#FFFFFF" />
-                <path d="M 62,20 L 62,80" />
-                <path d="M 62,20 C 51,42 49,58 49,80" />
-                <path d="M 62,20 C 73,42 75,58 75,80" />
-                <path d="M 34,50 Q 62,56 90,50" />
-                <path d="M 26,65 Q 62,71 98,65" />
-                {/* Spire Crescent */}
-                <line x1="62" y1="9" x2="62" y2="20" />
-                <path d="M 59,6 A 5,5 0 1,0 65,6 A 3.8,3.8 0 1,1 59,6 Z" fill="#0F172A" />
-                {/* Base */}
-                <path d="M 18,80 L 106,80 L 110,94 L 14,94 Z" fill="#FFFFFF" />
-              </g>
-            </g>
-
-            {/* PART 5: LOWER GREEN BAND & SKSSF 1989 BADGE */}
-            <g onClick={() => paintRegion('green_strip')} className="cursor-pointer transition-opacity hover:opacity-95">
-              <path
-                d="M168 224 L472 224 L472 266 Q472 278 460 278 L180 278 Q168 278 168 266 Z"
-                fill={getFill('green_strip', '#CBD5E1')}
-                stroke={paintedParts.green_strip ? '#A7F3D0' : '#64748B'}
-                strokeWidth="2"
-                strokeDasharray={paintedParts.green_strip ? undefined : '5 4'}
+            {/* PART 4: CENTRAL WELCOME BANNER BOARD */}
+            <g onClick={() => paintRegion('banner')} className="cursor-pointer transition-opacity hover:opacity-95">
+              <rect
+                x="182"
+                y="186"
+                width="276"
+                height="90"
+                rx="14"
+                fill={getFill('banner', '#E2E8F0')}
+                stroke={paintedParts.banner ? '#FBBF24' : '#64748B'}
+                strokeWidth="3"
+                strokeDasharray={paintedParts.banner ? undefined : '6 4'}
               />
               <text
                 x="320"
-                y="257"
+                y="224"
                 textAnchor="middle"
-                fill={paintedParts.green_strip === '#F8FAFC' ? '#065F46' : '#FFFFFF'}
-                fontSize="19"
+                fill={paintedParts.banner === '#F8FAFC' || !paintedParts.banner ? '#064E3B' : '#FFFFFF'}
+                fontSize="20"
                 fontWeight="900"
-                letterSpacing="1.8"
               >
-                SKSSF · EST. 1989
+                സമ്മേളന നഗരിയിലേക്ക്
+              </text>
+              <text
+                x="320"
+                y="255"
+                textAnchor="middle"
+                fill={paintedParts.banner === '#F8FAFC' || !paintedParts.banner ? '#0284C7' : '#FEF08A'}
+                fontSize="17"
+                fontWeight="800"
+              >
+                സ്നേഹപൂർവ്വം സ്വാഗതം!
               </text>
             </g>
 
             {/* PART 6: MOTTO RIBBON */}
             <g onClick={() => paintRegion('ribbon')} className="cursor-pointer transition-opacity hover:opacity-95">
               <path
-                d="M126 292 L514 292 L500 314 L514 336 L126 336 L140 314 Z"
+                d="M130 294 L510 294 L496 316 L510 338 L130 338 L144 316 Z"
                 fill={getFill('ribbon', '#E2E8F0')}
                 stroke={paintedParts.ribbon ? '#FEF08A' : '#64748B'}
                 strokeWidth="2.5"
@@ -1019,7 +998,7 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
               />
               <text
                 x="320"
-                y="320"
+                y="322"
                 textAnchor="middle"
                 fill={paintedParts.ribbon === '#F8FAFC' || !paintedParts.ribbon ? '#0F172A' : '#FFFFFF'}
                 fontSize="15"
@@ -1031,25 +1010,24 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
 
             {splashKey > 0 && (
               <g key={splashKey}>
-                <circle cx="320" cy="184" r="6" fill="#FDE047" opacity="0.7" />
+                <circle cx="320" cy="210" r="6" fill="#FDE047" opacity="0.7" />
               </g>
             )}
           </svg>
         </div>
 
-        {/* RIGHT SIDEBAR: Paint Pots + Part Descriptions Right Next to Each Other! */}
+        {/* RIGHT SIDEBAR */}
         {sidebarOpen && (
           <aside className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-2.5 flex flex-col gap-2.5 overflow-y-auto max-h-[68dvh]">
-            {/* 1. Paint Colors right at top of sidebar */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-1">
-                <p className="text-[11px] font-extrabold text-slate-900">🎨 1. നിറം തിരഞ്ഞെടുക്കൂ:</p>
+                <p className="text-[11px] font-extrabold text-slate-900">🎨 1. നിറം:</p>
                 <button
                   type="button"
-                  onClick={applyOfficialPalette}
+                  onClick={applyPresetPalette}
                   className="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-extrabold whitespace-nowrap"
                 >
-                  ✨ ഔദ്യോഗിക നിറം
+                  ✨ ഓട്ടോ നിറം
                 </button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-1">
@@ -1083,13 +1061,12 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
 
             <div className="border-t border-slate-200" />
 
-            {/* 2. Part Descriptions & Direct Tap-to-Paint RIGHT BELOW Colors in same sidebar */}
             <div className="space-y-1.5">
               <p className="text-[11px] font-extrabold text-slate-900">
-                🖌️ 2. കമാനത്തിന്റെ ഭാഗങ്ങൾ ({paintedCount}/6):
+                🖌️ 2. കമാന ഭാഗങ്ങൾ ({paintedCount}/6):
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-1.5">
-                {EMBLEM_PARTS.map((part) => {
+                {ARCH_PARTS.map((part) => {
                   const fill = paintedParts[part.id];
                   return (
                     <button
@@ -1124,18 +1101,10 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
         )}
       </div>
 
-      {failedMsg && (
-        <FailOverlay
-          headline="ഔദ്യോഗിക പതാകാ നിറങ്ങൾ ശരിയായില്ല!"
-          note={failedMsg}
-          onRetry={reset}
-        />
-      )}
-
       {won && (
         <WinOverlay
-          headline="🎨 സമസ്ത (1926) & SKSSF പൈതൃക ലോഗോയും കമാനവും തിളങ്ങി! (+30 XP)"
-          note="വിജ്ഞാനം · വിനയം · സേവനം — ഔദ്യോഗിക നിറങ്ങളോടെ പൈതൃക ബോർഡ് മനോഹരമായി!"
+          headline="🎨 സ്വാഗത കമാനം ഭംഗിയായി പെയിന്റ് ചെയ്തു! (+30 XP)"
+          note="സമ്മേളന നഗരിയിലേക്ക് ഏവരെയും വരവേൽക്കുന്ന വർണ്ണാഭമായ സ്വാഗത കമാനം തയ്യാറായി!"
           onReplay={reset}
         />
       )}
@@ -1213,20 +1182,19 @@ export const MasjidCleanSweepGame: React.FC<HandsOnGameProps> = ({
   return (
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
       <GameShellHeader
-        badge="🧹 വിഖായ വൃത്തിയാക്കൽ ഗെയിം"
+        badge="🧹"
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`വൃത്തിയാക്കിയത്: ${cleaned.length}/${COURTYARD_LITTER.length} · ⏱️ ${timeLeft}s`}
+        progressText={`🧹 ${cleaned.length}/${COURTYARD_LITTER.length} · ⏱️ ${timeLeft}s`}
       />
 
       <div className="relative rounded-2xl border-2 border-emerald-300 bg-gradient-to-b from-sky-100 via-emerald-50 to-amber-50 min-h-[245px] overflow-hidden p-3 select-none">
-        {/* Sunlit Mosque Header Silhouette */}
-        <div className="text-center text-xs sm:text-sm font-extrabold text-emerald-950 pb-2">
-          🕌 പള്ളി &amp; ഇസ്‌ലാമിക് സെന്റർ മുറ്റം — 18 സെക്കൻഡിനുള്ളിൽ മാലിന്യങ്ങൾ പച്ച ഡസ്റ്റ്ബിന്നിലേക്ക് മാറ്റൂ!
+        <div className="text-center text-lg font-extrabold text-emerald-950 pb-1">
+          🕌
         </div>
 
-        {/* Scattered Draggable / Tappable Trash Items */}
+        {/* Scattered Draggable / Tappable Trash Icon Buttons */}
         {COURTYARD_LITTER.map((item) => {
           const isGone = cleaned.includes(item.id);
           if (isGone) return null;
@@ -1243,11 +1211,12 @@ export const MasjidCleanSweepGame: React.FC<HandsOnGameProps> = ({
                 e.dataTransfer.setData('text/plain', item.id);
               }}
               onClick={() => sweepItem(item.id)}
+              aria-label={item.label}
+              title={item.label}
               style={{ left: item.left, top: item.top }}
-              className="absolute -translate-x-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-xl bg-white/95 border-2 border-amber-400 shadow-md hover:scale-110 active:scale-95 transition-transform flex items-center gap-1 cursor-grab animate-float-bob disabled:opacity-50"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-2xl bg-white/95 border-2 border-amber-400 shadow-md hover:scale-110 active:scale-95 transition-transform flex items-center justify-center cursor-grab animate-float-bob disabled:opacity-50"
             >
-              <span className="text-xl">{item.emoji}</span>
-              <span className="text-[10px] sm:text-xs font-extrabold text-slate-800">{item.label}</span>
+              <span className="text-2xl">{item.emoji}</span>
             </button>
           );
         })}
@@ -1260,13 +1229,10 @@ export const MasjidCleanSweepGame: React.FC<HandsOnGameProps> = ({
             const id = e.dataTransfer.getData('text/plain') || draggingId;
             if (id) sweepItem(id);
           }}
-          className="absolute bottom-3 right-3 px-4 py-2.5 rounded-2xl bg-emerald-700 text-white border-2 border-amber-300 shadow-lg flex items-center gap-2"
+          className="absolute bottom-3 right-3 px-3.5 py-2 rounded-2xl bg-emerald-700 text-white border-2 border-amber-300 shadow-lg flex items-center gap-1.5"
         >
           <span className="text-2xl">🗑️</span>
-          <div className="text-left">
-            <p className="text-xs font-extrabold">വിഖായ ഗ്രീൻ ബിൻ</p>
-            <p className="text-[10px] text-emerald-100">ഇവിടെ വലിച്ചിടൂ ({cleaned.length}/5)</p>
-          </div>
+          <span className="text-xs font-extrabold tabular-nums">{cleaned.length}/5</span>
         </div>
 
         {won && (
@@ -1411,10 +1377,10 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
         >
           {placed.includes('banner') ? (
             <p className="text-xs sm:text-sm font-extrabold text-amber-200">
-              🚩 SKSSF കൗൺസിൽ &amp; സമ്മേളന വേദി · വിജ്ഞാനം · വിനയം · സേവനം 🚩
+              🚩 SKSSF 🚩
             </p>
           ) : (
-            <p className="text-xs font-bold text-amber-100">🏳️ ഇവിടെ സ്റ്റേജ് ബാനർ വലിച്ചിടൂ / തൊടൂ</p>
+            <p className="text-2xl">🏳️</p>
           )}
         </div>
 
@@ -1436,12 +1402,11 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
             }`}
           >
             {placed.includes('chairs') ? (
-              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="space-y-1">
+              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
                 <p className="text-2xl tracking-widest">🪑 🪑 🪑 🪑 🪑</p>
-                <p className="text-[11px] font-bold text-amber-200">അതിഥി കസേരകൾ വരിയായി അടുക്കി!</p>
               </motion.div>
             ) : (
-              <p className="text-xs font-bold text-amber-100">🪑 ഇവിടെ കസേരകൾ അടുക്കി വെക്കൂ</p>
+              <p className="text-2xl">🪑</p>
             )}
           </div>
 
@@ -1463,10 +1428,9 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
             {placed.includes('mic') ? (
               <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
                 <p className="text-2xl">🎙️🔊</p>
-                <p className="text-[11px] font-bold text-emerald-200">മൈക്ക് ചെക്ക് OK!</p>
               </motion.div>
             ) : (
-              <p className="text-xs font-bold text-amber-100">🎙️ പോഡിയം മൈക്ക് ഇവിടെ</p>
+              <p className="text-2xl">🎙️</p>
             )}
           </div>
         </div>
@@ -1490,51 +1454,60 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
           {placed.includes('flowers') ? (
             <p className="text-base tracking-widest">🪴 🌸 🪴 🌼 🪴 🌺 🪴</p>
           ) : (
-            <p className="text-xs font-bold text-amber-100">🪴 മുന്നിൽ പൂച്ചട്ടികൾ വെക്കൂ</p>
+            <p className="text-2xl">🪴</p>
           )}
         </div>
       </div>
 
       {failed ? (
         <FailOverlay
-          headline="3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചു — വേദി ഒരുക്കൽ തോറ്റു!"
-          note="ഓരോ സാധനവും തിരഞ്ഞെടുത്ത് കൃത്യമായ സ്ഥാനത്ത് വലിച്ചിടുകയോ തൊടുകയോ ചെയ്യൂ!"
+          headline="വേദി ഒരുക്കൽ തോറ്റു!"
+          note="ഓരോ സാധനവും കൃത്യമായ സ്ഥാനത്ത് വലിച്ചിടുകയോ തൊടുകയോ ചെയ്യൂ!"
           onRetry={reset}
         />
       ) : !won ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {STAGE_PARTS.map((p) => {
-            const done = placed.includes(p.id);
-            const active = selected === p.id;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={(e) => {
-                  sound.unlockAudio();
-                  setDragging(p.id);
-                  setSelected(p.id);
-                  e.dataTransfer.setData('text/plain', p.id);
-                }}
-                onClick={() => {
-                  sound.playClick();
-                  setSelected(p.id);
-                }}
-                className={`p-2.5 rounded-xl border-2 text-left transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-65'
-                    : active
-                    ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
-                }`}
-              >
-                <span className="text-xl">{p.emoji}</span>
-                <p className="text-xs font-extrabold mt-1">{p.label}</p>
-              </button>
-            );
-          })}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-4 gap-2">
+            {STAGE_PARTS.map((p) => {
+              const done = placed.includes(p.id);
+              const active = selected === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  disabled={done}
+                  draggable={!done}
+                  onDragStart={(e) => {
+                    sound.unlockAudio();
+                    setDragging(p.id);
+                    setSelected(p.id);
+                    e.dataTransfer.setData('text/plain', p.id);
+                  }}
+                  onClick={() => {
+                    sound.playClick();
+                    setSelected(p.id);
+                  }}
+                  aria-label={p.label}
+                  title={p.label}
+                  className={`p-2.5 rounded-xl border-2 flex items-center justify-center transition-all ${
+                    done
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-65'
+                      : active
+                      ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
+                  }`}
+                >
+                  <span className="text-2xl">{done ? '✅' : p.emoji}</span>
+                </button>
+              );
+            })}
+          </div>
+          {selected && (
+            <p className="text-[11px] font-bold text-emerald-900 text-center">
+              {STAGE_PARTS.find((p) => p.id === selected)?.emoji}{' '}
+              {STAGE_PARTS.find((p) => p.id === selected)?.label}
+            </p>
+          )}
         </div>
       ) : (
         <WinOverlay
@@ -1638,9 +1611,9 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
         </motion.p>
       )}
 
-      <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 via-white to-amber-50 p-4 space-y-3 select-none">
-        <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950 border-b border-emerald-200 pb-2">
-          <span>🏠 SKSSF യൂണിറ്റ് കാര്യാലയം (Unit Office Room)</span>
+      <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-b from-emerald-50 via-white to-amber-50 p-3.5 space-y-2.5 select-none">
+        <div className="flex items-center justify-between text-sm font-extrabold text-emerald-950 border-b border-emerald-200 pb-2">
+          <span>🏠 SKSSF</span>
           <button
             type="button"
             onDragOver={(e) => e.preventDefault()}
@@ -1649,7 +1622,7 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
               placeItem(e.dataTransfer.getData('text/plain') || dragging || selected || '', 'clock');
             }}
             onClick={() => placeItem(selected || '', 'clock')}
-            className={`px-2.5 py-1 rounded-lg border-2 text-xs font-extrabold ${
+            className={`px-3 py-1 rounded-lg border-2 text-base font-extrabold ${
               placed.includes('clock')
                 ? 'bg-amber-100 border-amber-400 text-amber-950'
                 : selected === 'clock'
@@ -1657,11 +1630,11 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
                 : 'border-dashed border-slate-300 bg-white'
             }`}
           >
-            {placed.includes('clock') ? '🕰️ 10:00 AM കൃത്യനിഷ്ഠ' : '🕰️ ക്ലോക്ക് ഇവിടെ'}
+            {placed.includes('clock') ? '🕰️ ✅' : '🕰️'}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {['flag_stand', 'notice', 'books'].map((slotId) => {
             const meta = ROOM_ITEMS.find((r) => r.id === slotId)!;
             const done = placed.includes(slotId);
@@ -1675,7 +1648,7 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
                   placeItem(e.dataTransfer.getData('text/plain') || dragging || selected || '', slotId);
                 }}
                 onClick={() => placeItem(selected || '', slotId)}
-                className={`p-3.5 rounded-xl border-2 text-center cursor-pointer transition-all min-h-[92px] flex flex-col items-center justify-center ${
+                className={`p-3 rounded-xl border-2 text-center cursor-pointer transition-all min-h-[74px] flex flex-col items-center justify-center ${
                   done
                     ? 'bg-emerald-700 text-white border-emerald-900 shadow-md'
                     : active
@@ -1684,9 +1657,7 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
                 }`}
               >
                 <span className="text-2xl">{meta.emoji}</span>
-                <p className="text-xs font-extrabold mt-1">
-                  {done ? meta.label : meta.spot}
-                </p>
+                {done && <span className="text-xs mt-0.5">✅</span>}
               </div>
             );
           })}
@@ -1700,7 +1671,7 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
             placeItem(e.dataTransfer.getData('text/plain') || dragging || selected || '', 'desk');
           }}
           onClick={() => placeItem(selected || '', 'desk')}
-          className={`p-3.5 rounded-xl border-2 text-center cursor-pointer transition-all ${
+          className={`p-3 rounded-xl border-2 text-center cursor-pointer transition-all ${
             placed.includes('desk')
               ? 'bg-amber-800 text-amber-100 border-amber-950 shadow-md'
               : selected === 'desk'
@@ -1708,56 +1679,59 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
               : 'border-dashed border-emerald-400/70 bg-white'
           }`}
         >
-          {placed.includes('desk') ? (
-            <p className="text-xs sm:text-sm font-extrabold">
-              🪑💻 പ്രസിഡന്റ് · സെക്രട്ടറി · ട്രഷറർ മേശ &amp; മിനിറ്റ്സ് ബുക്ക് തയ്യാർ!
-            </p>
-          ) : (
-            <p className="text-xs font-extrabold text-slate-700">🪑 നടുവിൽ ഓഫീസ് മേശ &amp; കസേര വെക്കൂ</p>
-          )}
+          <span className="text-2xl">{placed.includes('desk') ? '🪑💻 ✅' : '🪑'}</span>
         </div>
       </div>
 
       {failed ? (
         <FailOverlay
-          headline="3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചു — ഓഫീസ് ഒരുക്കൽ തോറ്റു!"
-          note="ഓരോ സാധനവും തിരഞ്ഞെടുത്ത് കൃത്യമായ ഓഫീസ് ഇടത്ത് വെക്കൂ — വീണ്ടും ശ്രമിക്കാം!"
+          headline="ഓഫീസ് ഒരുക്കൽ തോറ്റു!"
+          note="ഓരോ സാധനവും കൃത്യമായ ഇടത്ത് വെക്കൂ!"
           onRetry={reset}
         />
       ) : !won ? (
-        <div className="flex flex-wrap gap-2">
-          {ROOM_ITEMS.map((r) => {
-            const done = placed.includes(r.id);
-            const active = selected === r.id;
-            return (
-              <button
-                key={r.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={(e) => {
-                  sound.unlockAudio();
-                  setDragging(r.id);
-                  setSelected(r.id);
-                  e.dataTransfer.setData('text/plain', r.id);
-                }}
-                onClick={() => {
-                  sound.playClick();
-                  setSelected(r.id);
-                }}
-                className={`px-3 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-60'
-                    : active
-                    ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
-                }`}
-              >
-                <span>{r.emoji}</span>
-                <span>{r.label}</span>
-              </button>
-            );
-          })}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
+            {ROOM_ITEMS.map((r) => {
+              const done = placed.includes(r.id);
+              const active = selected === r.id;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  disabled={done}
+                  draggable={!done}
+                  onDragStart={(e) => {
+                    sound.unlockAudio();
+                    setDragging(r.id);
+                    setSelected(r.id);
+                    e.dataTransfer.setData('text/plain', r.id);
+                  }}
+                  onClick={() => {
+                    sound.playClick();
+                    setSelected(r.id);
+                  }}
+                  aria-label={r.label}
+                  title={r.label}
+                  className={`py-2 rounded-xl border-2 text-2xl flex items-center justify-center transition-all ${
+                    done
+                      ? 'bg-emerald-50 border-emerald-300 opacity-55'
+                      : active
+                      ? 'bg-amber-400 border-amber-600 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 hover:border-emerald-400'
+                  }`}
+                >
+                  {done ? '✅' : r.emoji}
+                </button>
+              );
+            })}
+          </div>
+          {selected && (
+            <p className="text-[11px] font-bold text-emerald-900 text-center">
+              {ROOM_ITEMS.find((r) => r.id === selected)?.emoji}{' '}
+              {ROOM_ITEMS.find((r) => r.id === selected)?.label}
+            </p>
+          )}
         </div>
       ) : (
         <WinOverlay
@@ -1851,17 +1825,16 @@ export const FoodPackDeliverGame: React.FC<HandsOnGameProps> = ({
   return (
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
       <GameShellHeader
-        badge="🍱 സഹചാരി ഭക്ഷണ പാക്കിംഗ് & വിതരണം"
+        badge="🍱"
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`വിതരണം: ${deliveredKits}/3 · ⏱️ ${timeLeft}s`}
+        progressText={`🍱 ${deliveredKits}/3 · ⏱️ ${timeLeft}s`}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 via-white to-emerald-50 p-4 select-none">
+      <div className="grid grid-cols-3 gap-2.5 items-center rounded-2xl border-2 border-amber-200 bg-gradient-to-r from-amber-50 via-white to-emerald-50 p-3 select-none">
         {/* Left: Food Tray */}
-        <div className="md:col-span-4 space-y-2">
-          <p className="text-[11px] font-extrabold text-amber-900">1. 24 സെക്കൻഡിനുള്ളിൽ 3 കിറ്റ് പാക്ക് ചെയ്യൂ:</p>
+        <div className="space-y-2">
           {MEAL_ITEMS.map((item) => {
             const inside = packedInBox.includes(item.id);
             return (
@@ -1877,14 +1850,15 @@ export const FoodPackDeliverGame: React.FC<HandsOnGameProps> = ({
                   e.dataTransfer.setData('text/plain', item.id);
                 }}
                 onClick={() => addFoodToBox(item.id)}
-                className={`w-full p-2.5 rounded-xl border-2 text-left flex items-center gap-2 text-xs font-extrabold transition-all ${
+                aria-label={item.label}
+                title={item.label}
+                className={`w-full py-2.5 rounded-xl border-2 flex items-center justify-center text-2xl transition-all ${
                   inside
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-55'
-                    : 'bg-white border-amber-300 hover:border-emerald-500 text-slate-900 cursor-grab disabled:opacity-45'
+                    ? 'bg-emerald-50 border-emerald-300 opacity-50'
+                    : 'bg-white border-amber-300 hover:border-emerald-500 cursor-grab disabled:opacity-45'
                 }`}
               >
-                <span className="text-xl">{item.emoji}</span>
-                <span>{item.label}</span>
+                {inside ? '✅' : item.emoji}
               </button>
             );
           })}
@@ -1898,17 +1872,17 @@ export const FoodPackDeliverGame: React.FC<HandsOnGameProps> = ({
             const id = e.dataTransfer.getData('text/plain') || draggingId;
             if (id) addFoodToBox(id);
           }}
-          className={`md:col-span-4 rounded-2xl border-2 border-dashed p-4 text-center space-y-2 transition-all ${
+          className={`rounded-2xl border-2 border-dashed p-3 text-center space-y-2 transition-all ${
             boxReady
               ? 'border-emerald-600 bg-emerald-100 ring-4 ring-emerald-200'
               : 'border-amber-400 bg-white'
           }`}
         >
           <p className="text-3xl">{boxReady ? '🎁' : '📦'}</p>
-          <p className="text-xs font-extrabold text-slate-900">
-            സഹചാരി ഭക്ഷണ ബോക്സ് ({packedInBox.length}/3)
+          <p className="text-xs font-extrabold text-slate-900 tabular-nums">
+            {packedInBox.length}/3
           </p>
-          <div className="flex justify-center gap-1.5 text-xl min-h-[28px]">
+          <div className="flex justify-center gap-1 text-lg min-h-[24px]">
             {packedInBox.map((id) => (
               <span key={id}>{MEAL_ITEMS.find((m) => m.id === id)?.emoji}</span>
             ))}
@@ -1916,35 +1890,35 @@ export const FoodPackDeliverGame: React.FC<HandsOnGameProps> = ({
           {boxReady && !won && !failed && (
             <motion.button
               type="button"
-              animate={{ scale: [1, 1.05, 1] }}
+              animate={{ scale: [1, 1.06, 1] }}
               transition={{ duration: 0.9, repeat: Infinity }}
               onClick={deliverBox}
-              className="w-full py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow"
+              aria-label="വിതരണം ചെയ്യൂ"
+              className="w-full py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-lg font-extrabold shadow"
             >
-              🚐 ആശുപത്രിയിലേക്ക് വിതരണം ചെയ്യൂ →
+              🚐 ➡️
             </motion.button>
           )}
         </div>
 
         {/* Right: Delivery Van & Recipients */}
-        <div className="md:col-span-4 rounded-2xl bg-emerald-900 text-white p-4 text-center space-y-2">
+        <div className="rounded-2xl bg-emerald-900 text-white p-3 text-center space-y-2">
           <motion.div
-            animate={{ x: [0, 6, 0] }}
+            animate={{ x: [0, 5, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-4xl"
+            className="text-3xl"
           >
             🚐🏥
           </motion.div>
-          <p className="text-xs font-extrabold text-amber-300">സഹചാരി വിതരണ വാഹനം</p>
-          <div className="flex justify-center gap-1.5 text-xl">
+          <div className="flex justify-center gap-1 text-lg">
             {[0, 1, 2].map((i) => (
               <span key={i} className={i < deliveredKits ? 'opacity-100' : 'opacity-30'}>
                 🍱
               </span>
             ))}
           </div>
-          <p className="text-[11px] text-emerald-100 font-semibold">
-            {deliveredKits}/3 കുടുംബങ്ങൾക്ക് എത്തിച്ചു!
+          <p className="text-xs text-amber-300 font-extrabold tabular-nums">
+            {deliveredKits}/3
           </p>
         </div>
       </div>
@@ -2131,56 +2105,62 @@ export const PhotoCropEditGame: React.FC<HandsOnGameProps> = ({
       ) : (
         <>
           {step === 'shoot' && (
-            <div className="space-y-2.5">
-              <label className="block text-xs font-extrabold text-slate-700">
-                🎯 ക്യാമറ നടുവിലെ പച്ച ഫ്രെയിമിലേക്ക് നീക്കി ഷട്ടർ അമർത്തൂ (ബാക്കി ഫിലിം: {shotsLeft}/3):
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-base">↔️</span>
                 <input
                   type="range"
                   min={10}
                   max={90}
                   value={aimX}
                   onChange={(e) => setAimX(Number(e.target.value))}
-                  className="w-full mt-1 accent-emerald-700 cursor-pointer"
+                  aria-label="ഫ്രെയിം"
+                  className="w-full accent-emerald-700 cursor-pointer"
                 />
-              </label>
+                <span className="text-xs font-extrabold tabular-nums">🎞️{shotsLeft}</span>
+              </div>
               <button
                 type="button"
                 onClick={takeShot}
-                className={`w-full py-2.5 rounded-xl text-white text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-2 shadow transition-colors ${
+                aria-label="ഫോട്ടോ എടുക്കൂ"
+                className={`w-full py-2.5 rounded-xl text-white text-xl font-extrabold inline-flex items-center justify-center gap-2 shadow transition-colors ${
                   inFocusZone ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-slate-700 hover:bg-slate-800'
                 }`}
               >
-                <Camera className="w-4 h-4" /> 📸 ഫോട്ടോ എടുക്കൂ!
+                <Camera className="w-5 h-5" /> 📸
               </button>
             </div>
           )}
 
           {step === 'crop' && (
-            <div className="space-y-2.5">
-              <label className="block text-xs font-extrabold text-slate-700">
-                ✂️ ഫോട്ടോ കൃത്യമായി ക്രോപ്പ് / സൂം ചെയ്യൂ ({cropZoom}%):
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🔍</span>
                 <input
                   type="range"
                   min={100}
                   max={135}
                   value={cropZoom}
                   onChange={(e) => setCropZoom(Number(e.target.value))}
-                  className="w-full mt-1 accent-amber-500 cursor-pointer"
+                  aria-label="സൂം"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
-              </label>
+                <span className="text-xs font-extrabold tabular-nums">{cropZoom}%</span>
+              </div>
               <button
                 type="button"
                 onClick={confirmCrop}
-                className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-2 shadow"
+                aria-label="ക്രോപ്പ് ഉറപ്പാക്കൂ"
+                className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xl font-extrabold inline-flex items-center justify-center gap-2 shadow"
               >
-                <Crop className="w-4 h-4" /> ✂️ ക്രോപ്പ് ഉറപ്പാക്കൂ → എഡിറ്റ് ചെയ്യാം
+                <Crop className="w-5 h-5" /> ✂️ ➡️
               </button>
             </div>
           )}
 
           {step === 'edit' && (
-            <div className="space-y-2.5">
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 {PHOTO_FILTERS.map((f) => (
                   <button
                     key={f.id}
@@ -2189,22 +2169,25 @@ export const PhotoCropEditGame: React.FC<HandsOnGameProps> = ({
                       sound.playClick();
                       setFilter(f);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border-2 ${
+                    aria-label={f.label}
+                    title={f.label}
+                    className={`py-2 rounded-xl text-xl font-extrabold border-2 ${
                       filter.id === f.id
                         ? 'bg-emerald-700 text-white border-emerald-900'
                         : 'bg-slate-50 text-slate-800 border-slate-200'
                     }`}
                   >
-                    {f.label}
+                    {f.label.split(' ')[0]}
                   </button>
                 ))}
               </div>
               <button
                 type="button"
                 onClick={publishPhoto}
-                className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow"
+                aria-label="സേവ് ചെയ്യൂ"
+                className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xl font-extrabold shadow"
               >
-                ✨ എഡിറ്റ് പൂർത്തിയാക്കി മീഡിയയിൽ സേവ് ചെയ്യൂ!
+                ✨ ✅
               </button>
             </div>
           )}
@@ -2298,8 +2281,8 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
         progressText={`❤️ ${lives}/3 · ${doneIds.length + (scratched ? 1 : 0)}/4`}
       />
 
-      {/* Gift Table */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3.5 select-none">
+      {/* Gift Table (Icon-First Slots) */}
+      <div className="grid grid-cols-3 gap-2 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 select-none">
         {GIFT_TASKS.map((t) => {
           const isDone = doneIds.includes(t.id);
           const isTarget = selected === t.id || dragging === t.id;
@@ -2312,7 +2295,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
                 snapTask(e.dataTransfer.getData('text/plain') || dragging || selected || t.id, t.id);
               }}
               onClick={() => snapTask(selected || t.id, t.id)}
-              className={`p-3.5 rounded-xl border-2 text-center cursor-pointer transition-all space-y-1.5 ${
+              className={`p-3 rounded-xl border-2 text-center cursor-pointer transition-all space-y-1 ${
                 isDone
                   ? 'bg-emerald-700 text-white border-emerald-900 shadow-md'
                   : isTarget
@@ -2327,55 +2310,63 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
               >
                 {t.target.split(' ')[0]} {isDone ? '✨' : ''}
               </motion.p>
-              <p className="text-xs font-extrabold">{t.target}</p>
-              <p className={`text-[11px] font-bold ${isDone ? 'text-amber-200' : 'text-slate-600'}`}>
-                {isDone ? '✅ ഭംഗിയായി ഒരുങ്ങി!' : `${t.emoji} ഇവിടെ വലിച്ചിടൂ / തൊടൂ`}
+              <p className="text-lg">
+                {isDone ? '✅' : t.emoji}
               </p>
             </div>
           );
         })}
       </div>
 
-      {/* Draggable Stickers & Ribbons Tray */}
+      {/* Draggable Stickers & Ribbons Icon Tray */}
       {doneIds.length < 3 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {GIFT_TASKS.map((t) => {
-            const done = doneIds.includes(t.id);
-            const active = selected === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={(e) => {
-                  sound.unlockAudio();
-                  setDragging(t.id);
-                  setSelected(t.id);
-                  e.dataTransfer.setData('text/plain', t.id);
-                }}
-                onClick={() => {
-                  sound.playClick();
-                  if (active) snapTask(t.id, t.id);
-                  else setSelected(t.id);
-                }}
-                className={`p-2.5 rounded-xl border-2 text-left flex items-center gap-2 text-xs font-extrabold transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-700 opacity-60'
-                    : active
-                    ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-sm'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400'
-                }`}
-              >
-                <span className="text-xl">{t.emoji}</span>
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-3 gap-2">
+            {GIFT_TASKS.map((t) => {
+              const done = doneIds.includes(t.id);
+              const active = selected === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  disabled={done}
+                  draggable={!done}
+                  onDragStart={(e) => {
+                    sound.unlockAudio();
+                    setDragging(t.id);
+                    setSelected(t.id);
+                    e.dataTransfer.setData('text/plain', t.id);
+                  }}
+                  onClick={() => {
+                    sound.playClick();
+                    if (active) snapTask(t.id, t.id);
+                    else setSelected(t.id);
+                  }}
+                  aria-label={t.label}
+                  title={t.label}
+                  className={`py-2.5 rounded-xl border-2 flex items-center justify-center text-2xl transition-all ${
+                    done
+                      ? 'bg-emerald-50 border-emerald-300 opacity-55'
+                      : active
+                      ? 'bg-amber-400 border-amber-600 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 hover:border-emerald-400'
+                  }`}
+                >
+                  {done ? '✅' : t.emoji}
+                </button>
+              );
+            })}
+          </div>
+          {selected && (
+            <p className="text-[11px] font-bold text-emerald-900 text-center">
+              {GIFT_TASKS.find((g) => g.id === selected)?.emoji}{' '}
+              {GIFT_TASKS.find((g) => g.id === selected)?.label}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Bonus Scratch & Win Star Foil Card once gifts are packed! */}
+      {/* Bonus Scratch & Win Star Foil Card */}
       {doneIds.length === 3 && !scratched && (
         <button
           type="button"
@@ -2383,13 +2374,11 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
             if (e.buttons > 0) rubScratchCard();
           }}
           onClick={rubScratchCard}
+          aria-label="സ്ക്രാച്ച് ചെയ്യൂ"
           className="w-full p-4 rounded-2xl border-2 border-amber-500 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-slate-950 text-center space-y-1 shadow-md cursor-pointer"
         >
-          <p className="text-sm sm:text-base font-extrabold">
-            ✨ സ്വർണ്ണ സ്ക്രാച്ച് &amp; വിൻ കാർഡ്! ({scratchProgress}%)
-          </p>
-          <p className="text-xs font-bold">
-            👆 ഇവിടെ ഉരച്ചോ 3 തവണ തൊട്ടോ കുട്ടികളുടെ സർപ്രൈസ് സമ്മാനം തുറക്കൂ!
+          <p className="text-2xl font-extrabold">
+            ✨ 👆 {scratchProgress}%
           </p>
         </button>
       )}

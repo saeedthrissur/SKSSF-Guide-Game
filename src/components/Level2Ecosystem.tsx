@@ -6,7 +6,6 @@ import {
   ChevronUp,
   Flame,
   Info,
-  Trophy,
   Volume2,
   X,
   Zap,
@@ -25,16 +24,14 @@ import {
   OfficialSkssfFlagImg,
 } from './SvgArtwork';
 import {
-  DriftingCloudsAndSun,
+  CollapsibleLessonDrawer,
   EasterEggItem,
   EasterEggSpot,
-  FlutteringFlagPole,
   GlitterBurstOverlay,
   LessonProgressTrack,
   LessonStepperNav,
-  SwayingGardenPlants,
 } from './GameEffects';
-import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameFullscreenShell } from './GameFullscreenShell';
 import { MadrasaBoardActivity } from './InteractiveMiniGames';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
@@ -67,6 +64,7 @@ interface Level2EcosystemProps {
   collectedEggs?: string[];
   onClaimEasterEgg?: (egg: EasterEggItem) => void;
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
+  devUnlocked?: boolean;
 }
 
 type FlagId = 'skju' | 'skimvb' | 'skssf' | 'sksbv';
@@ -552,6 +550,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
   collectedEggs = [],
   onClaimEasterEgg,
   onOpenBadgeStudio,
+  devUnlocked = false,
 }) => {
   const [activeTab, setActiveTab] = useState<L2GameTab>(initialTab);
   const [glitterKey, setGlitterKey] = useState(0);
@@ -688,6 +687,9 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
         triggerGlitter(`✨ ${first.pairId.toUpperCase()} ജോഡി ചേർന്നു!`);
         narrator.speak(card.speech, `${first.pairId.toUpperCase()} · ${card.speech}`);
         setTimeout(() => setFlippedUids([]), 400);
+        if (nextMatched.length >= 4) {
+          window.setTimeout(() => scrollToActiveQuiz(), 950);
+        }
       } else {
         sound.playError();
         const nextM = memoryMistakes + 1;
@@ -726,8 +728,12 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
       setCombo(nextCombo);
       sound.playSuccess(nextCombo);
       if (!solvedCases.includes(activeCase.id)) {
-        setSolvedCases((prev) => [...prev, activeCase.id]);
+        const nextSolved = [...solvedCases, activeCase.id];
+        setSolvedCases(nextSolved);
         onAwardXp(30 + nextCombo * 5, `l2_dispatch_${activeCase.id}`);
+        if (nextSolved.length >= HELPDESK_CASES.length) {
+          window.setTimeout(() => scrollToActiveQuiz(), 950);
+        }
       }
       setDispatchToast({
         ok: true,
@@ -764,26 +770,32 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
   const isSceneDone = (lessonId: string) =>
     completedSceneGames.includes(lessonId) || completedLessonIds.includes(lessonId);
 
-  const isTabActivityReady = (tab: L2GameTab): boolean => {
-    switch (tab) {
-      case 'memory':
-        return matchedPairs.length >= 4 || completedLessonIds.includes('l2_memory');
-      case 'madrasa_board':
-        return isSceneDone('l2_madrasa_board');
-      case 'tiers':
-        return isSceneDone('l2_tiers');
-      case 'election_roles':
-        return isSceneDone('l2_election_roles');
-      case 'centres':
-        return isSceneDone('l2_centres');
-      case 'dispatch':
-        return solvedCases.length >= 3 || completedLessonIds.includes('l2_dispatch');
-      case 'dawa_age':
-        return isSceneDone('l2_dawa_age');
-      case 'dawa_lanterns':
-        return isSceneDone('l2_dawa_lanterns');
-      case 'vault':
-        return isSceneDone('l2_vault');
+  const l2Tabs: { id: L2GameTab; label: string }[] = [
+    { id: 'memory', label: '1. പതാക മെമ്മറി' },
+    { id: 'madrasa_board', label: '2. മദ്രസാ ബോർഡ് അലങ്കാരം' },
+    { id: 'tiers', label: '3. 5 ഘടക ഘടന' },
+    { id: 'election_roles', label: '4. കമ്മിറ്റി സ്ഥാനങ്ങൾ' },
+    { id: 'centres', label: '5. 8 ഇസ്‌ലാമിക് സെന്ററുകൾ' },
+    { id: 'dispatch', label: '6. 17 വിങ്ങുകൾ & സേവന ദൗത്യം' },
+    { id: 'dawa_age', label: '7. പ്രായപരിധിയും സംഘടനയും' },
+    { id: 'dawa_lanterns', label: '8. 5 ദഅ്‌വത്ത് വിളക്കുകൾ' },
+    { id: 'vault', label: '9. പത്രങ്ങളും സ്ഥാപനങ്ങളും' },
+  ];
+  const activeTabIdx = l2Tabs.findIndex((t) => t.id === activeTab);
+  const isLastL2Tab = activeTabIdx === l2Tabs.length - 1;
+  const currentTabDone =
+    devUnlocked ||
+    isCompleted ||
+    completedLessonIds.includes(`l2_${activeTab}`) ||
+    Boolean(quizAnswers[`l2_${activeTab}`]);
+
+  const handleAdvanceL2Tab = () => {
+    onMarkLessonCompleted?.(`l2_${activeTab}`);
+    if (!isLastL2Tab) {
+      setActiveTab(l2Tabs[activeTabIdx + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleFinishLevel2();
     }
   };
 
@@ -791,58 +803,33 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
     const quizDone = Boolean(quizAnswers[`l2_${tab}`]) || completedLessonIds.includes(`l2_${tab}`);
     if (quizDone) {
       return tab === 'vault'
-        ? 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയായി — ഇനി ഘട്ടം 3 (ജില്ലാ തലം) ഗെയിമുകൾ കളിക്കാം!'
-        : 'ഈ പാഠം പൂർത്തിയായി — ഇനി അടുത്ത പാഠവും പുതിയ ഗെയിമും കളിക്കാം!';
+        ? 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയായി — ഇനി ഘട്ടം 3 (ജില്ലാ തലം) കടക്കാം!'
+        : 'ഈ പാഠം പൂർത്തിയായി — ഇനി അടുത്ത പാഠത്തിലേക്ക് കടക്കാം!';
     }
-    return 'ഈ പാഠം മനസ്സിലാക്കി താഴെയുള്ള ചോദ്യത്തിന് മറുപടി നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം കളിക്കൽ നിർബന്ധമില്ല, സ്കിപ്പ് ചെയ്യാം)';
+    return 'മുകളിലെ ക്വിസിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠം തുറക്കും!';
   };
 
   return (
     <section className="space-y-4">
-      <LessonProgressTrack
-        stageTitle="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
-        stageSubtitle="ഘടക ഘടന, തിരഞ്ഞെടുപ്പ് സ്ഥാനങ്ങൾ, 17 സബ് വിങ്ങുകൾ, ദഅ്‌വത്ത് & സ്ഥാപനങ്ങൾ"
-        items={[
-          { id: 'memory', lessonId: 'l2_memory', emoji: '🃏', label: `പതാക മെമ്മറി (${matchedPairs.length}/4)` },
-          { id: 'madrasa_board', lessonId: 'l2_madrasa_board', emoji: '🏫', label: 'മദ്രസാ ബോർഡ് അലങ്കാരം' },
-          { id: 'tiers', lessonId: 'l2_tiers', emoji: '🏛️', label: `5 ഘടക ഘടന (${exploredTiers.length}/5)` },
-          { id: 'election_roles', lessonId: 'l2_election_roles', emoji: '🗳️', label: 'കമ്മിറ്റി സ്ഥാനങ്ങൾ' },
-          { id: 'centres', lessonId: 'l2_centres', emoji: '🕌', label: '8 ഇസ്‌ലാമിക് സെന്ററുകൾ' },
-          { id: 'dispatch', lessonId: 'l2_dispatch', emoji: '🚑', label: `17 വിങ്ങുകൾ (${solvedCases.length}/${HELPDESK_CASES.length})` },
-          { id: 'dawa_age', lessonId: 'l2_dawa_age', emoji: '🎯', label: 'പ്രായപരിധിയും സംഘടനയും' },
-          { id: 'dawa_lanterns', lessonId: 'l2_dawa_lanterns', emoji: '🏮', label: `ദഅ്‌വത്ത് (${litDawaMissions.length}/5)` },
-          { id: 'vault', lessonId: 'l2_vault', emoji: '📰', label: 'പത്രങ്ങളും സ്ഥാപനങ്ങളും' },
-        ]}
-        activeId={activeTab}
-        completedLessonIds={completedLessonIds}
-        onSelectCompleted={(id) => setActiveTab(id as L2GameTab)}
-      />
-
-      {/* Compact Visual Header Strip */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4">
-        <img
-          src="./src/assets/images/world_festival_city_1794946532078.jpg"
-          alt="SKSSF ക്ലസ്റ്റർ & മേഖലാ തലം"
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
-          referrerPolicy="no-referrer"
+      {/* 1. GAME FIRST FOR ALL LESSON TABS */}
+      {(activeTab === 'tiers' ||
+        activeTab === 'election_roles' ||
+        activeTab === 'centres' ||
+        activeTab === 'dawa_age' ||
+        activeTab === 'dawa_lanterns' ||
+        activeTab === 'vault') && (
+        <OptionalLessonMiniGame
+          key={`l2_${activeTab}`}
+          lessonKey={`l2_${activeTab}` as MiniGameLessonKey}
+          onAwardXp={onAwardXp}
+          isCompleted={isSceneDone(`l2_${activeTab}`)}
+          onComplete={() => {
+            const lid = `l2_${activeTab}`;
+            setCompletedSceneGames((prev) => (prev.includes(lid) ? prev : [...prev, lid]));
+            if (quizAnswers[lid]) onMarkLessonCompleted?.(lid);
+          }}
         />
-        <DriftingCloudsAndSun className="opacity-55" />
-        <SwayingGardenPlants className="opacity-40" />
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-xs font-bold text-amber-300">
-              🏛️ ഘട്ടം 2 · ക്ലസ്റ്റർ &amp; മേഖലാ തലം · സംഘടനാ ഘടനയും സേവന വിഭാഗങ്ങളും
-            </p>
-            <h2 className="text-base sm:text-xl font-extrabold text-white">
-              ഘടക പ്രവർത്തനവും 17 കർമ്മ വിങ്ങുകളും
-            </h2>
-          </div>
-          <div className="hidden md:block">
-            <FlutteringFlagPole variant="skssf" />
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* GAME 2A: GOLDEN TILE MEMORY PAIR BOARD (Visually Distinct from Level 1 Flip Cards) */}
       {activeTab === 'memory' && (
@@ -852,23 +839,23 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
         >
           <div className="relative bg-amber-50/50 rounded-2xl border-2 border-amber-200 p-4 sm:p-5 space-y-4 overflow-hidden">
             <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-            <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-amber-200 rounded-xl px-4 py-2.5">
-              <span className="text-xs sm:text-sm font-bold text-amber-950">
-                {memoryToast || '🃏 രണ്ട് സ്വർണ്ണ ടൈലുകൾ തുറന്ന് പതാകയും അതിന്റെ പേരും ജോഡി ചേർക്കൂ!'}
+            <div className="flex items-center justify-between gap-2 bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs font-extrabold tabular-nums">
+              <span className="text-amber-950">
+                🃏 {matchedPairs.length}/4
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900 tabular-nums">
-                ബാക്കി അവസരങ്ങൾ: {Math.max(0, 6 - memoryMistakes)}/6
+              {memoryToast && (
+                <span className="text-[11px] font-bold text-emerald-900 break-words">
+                  {memoryToast}
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900">
+                ❤️ {Math.max(0, 6 - memoryMistakes)}/6
               </span>
             </div>
 
             {memoryFailed && (
-              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-extrabold text-rose-900">💥 മെമ്മറി ചലഞ്ച് പരാജയപ്പെട്ടു!</p>
-                  <p className="text-xs font-semibold text-rose-800">
-                    6 തെറ്റുകൾ സംഭവിച്ചു. ഓർമ്മശക്തി കൂട്ടി വീണ്ടും ജോഡി ചേർക്കാൻ ശ്രമിക്കാം!
-                  </p>
-                </div>
+              <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
+                <span className="text-sm font-extrabold text-rose-900">💔 0/6</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -878,9 +865,10 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                     setMatchedPairs([]);
                     setMemoryToast(null);
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+                  aria-label="വീണ്ടും ശ്രമിക്കാം"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700"
                 >
-                  🔄 വീണ്ടും ശ്രമിക്കാം
+                  🔄
                 </button>
               </div>
             )}
@@ -895,7 +883,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                     key={card.uid}
                     type="button"
                     onClick={() => handleFlipMemory(card)}
-                    className={`h-36 sm:h-40 rounded-2xl border-2 p-3 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+                    className={`h-32 sm:h-36 rounded-2xl border-2 p-3 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
                       isMatched
                         ? 'bg-emerald-50 border-emerald-500 shadow-xs'
                         : isOpen
@@ -908,9 +896,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                         <span className="text-2xl font-extrabold text-amber-100 tabular-nums">
                           #{tileIdx + 1}
                         </span>
-                        <span className="text-xs font-extrabold mt-1 text-amber-50">
-                          ടൈൽ തുറക്കൂ ✨
-                        </span>
+                        <span className="text-lg mt-1">✨</span>
                       </>
                     ) : card.kind === 'image' ? (
                       renderRealAsset(card.pairId, 'w-20 h-20')
@@ -923,6 +909,20 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                 );
               })}
             </div>
+            {matchedPairs.length === 4 && (
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    scrollToActiveQuiz();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-extrabold shadow-sm"
+                >
+                  അടുത്തത് · ക്വിസ് ➡️
+                </button>
+              </div>
+            )}
           </div>
         </GameFullscreenShell>
       )}
@@ -939,301 +939,9 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                 prev.includes('l2_madrasa_board') ? prev : [...prev, 'l2_madrasa_board']
               );
               if (quizAnswers.l2_madrasa_board) onMarkLessonCompleted?.('l2_madrasa_board');
+              window.setTimeout(() => scrollToActiveQuiz(), 850);
             }}
           />
-        </div>
-      )}
-
-      {/* GAME 2B: 5-TIER COMMITTEE STRUCTURE — EXPAND-IN-PLACE ACCORDION */}
-      {activeTab === 'tiers' && (
-        <div className="relative space-y-4">
-          <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
-            <div>
-              <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                🏛️ 5 ഘടകങ്ങളുടെ കൃത്യമായ ഭാരവാഹി ഘടന ({exploredTiers.length}/5 പരിശോധിച്ചു)
-              </h4>
-              <p className="text-xs text-slate-600 mt-0.5">
-                ഓരോ ഘടകത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ അംഗസംഖ്യയും ഭാരവാഹി തസ്തികകളും തുറന്നുവരും:
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {COMMITTEE_TIER_SPECS.map((t, idx) => {
-                const isOpen = idx === selectedTierIdx;
-                const seen = exploredTiers.includes(t.id);
-                return (
-                  <div
-                    key={t.id}
-                    className={`rounded-2xl border-2 overflow-hidden transition-colors ${
-                      isOpen
-                        ? 'border-emerald-600 bg-emerald-50/60'
-                        : seen
-                        ? 'border-emerald-200 bg-emerald-50/20'
-                        : 'border-slate-200 bg-slate-50'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleInspectTier(idx)}
-                      className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-xl shrink-0">{t.emoji}</span>
-                        <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                            <span>{t.tier}</span>
-                            {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                          </p>
-                          <p className="text-[11px] font-semibold text-emerald-800">
-                            ആകെ {t.totalMembers} അംഗങ്ങൾ · കൗൺസിൽ: {t.councilRatio}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 shrink-0">
-                        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </span>
-                    </button>
-
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.22 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="p-4 border-t border-emerald-200 bg-white space-y-3">
-                            <div className="flex flex-wrap items-start justify-between gap-2">
-                              <p className="text-xs sm:text-sm text-slate-700 font-semibold leading-relaxed">
-                                {t.scopeRule}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => narrator.speak(t.speech, t.tier)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold shrink-0"
-                              >
-                                <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {t.positions.map((pos) => (
-                                <div
-                                  key={pos.role}
-                                  className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
-                                    pos.count === 'NIL'
-                                      ? 'bg-slate-100 border-slate-200 text-slate-500'
-                                      : 'bg-emerald-50/40 border-emerald-200 text-slate-900'
-                                  }`}
-                                >
-                                  <span className="text-xs font-bold">{pos.role}</span>
-                                  <span
-                                    className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-md ${
-                                      pos.count === 'NIL'
-                                        ? 'bg-slate-200 text-slate-600'
-                                        : 'bg-emerald-700 text-white'
-                                    }`}
-                                  >
-                                    {pos.count}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 font-semibold leading-relaxed">
-                              💡 {t.workingCommitteeNote}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* GAME 2C: OFFICIAL ELECTION & COMMITTEE FORMATION ROLES — EXPAND-IN-PLACE ACCORDION */}
-      {activeTab === 'election_roles' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
-          <div>
-            <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-              🗳️ കമ്മിറ്റി രൂപീകരണ സ്ഥാനങ്ങളും ചട്ടങ്ങളും ({exploredRoles.length}/{ELECTION_OFFICIAL_ROLES.length} പരിശോധിച്ചു)
-            </h4>
-            <p className="text-xs text-slate-600 mt-0.5">
-              ഓരോ സ്ഥാനത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ വിശദാംശങ്ങളും ചട്ടങ്ങളും തുറന്നുവരും:
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            {ELECTION_OFFICIAL_ROLES.map((r, i) => {
-              const isOpen = i === roleIdx;
-              const seen = exploredRoles.includes(i);
-              return (
-                <div
-                  key={r.id}
-                  className={`rounded-2xl border-2 overflow-hidden transition-colors ${
-                    isOpen
-                      ? 'border-emerald-600 bg-emerald-50/60'
-                      : seen
-                      ? 'border-emerald-200 bg-emerald-50/20'
-                      : 'border-slate-200 bg-slate-50'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setRoleIdx(i);
-                      setExploredRoles((prev) => (prev.includes(i) ? prev : [...prev, i]));
-                      onAwardXp(5, `l2_${r.id}`);
-                      narrator.speak(r.speech, r.title);
-                    }}
-                    className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-lg shrink-0">{r.emoji}</span>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                          <span>{r.title}</span>
-                          {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                        </p>
-                        <p className="text-[11px] font-bold text-emerald-700">{r.badge}</p>
-                      </div>
-                    </div>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-emerald-800 shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
-                    )}
-                  </button>
-
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-4 border-t border-emerald-200 bg-white space-y-3">
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed flex-1">
-                              {r.summary}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => narrator.speak(r.speech, r.title)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-950 text-xs font-bold shrink-0"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-                            </button>
-                          </div>
-                          <ul className="space-y-1.5 pt-2 border-t border-slate-100">
-                            {r.rules.map((rule) => (
-                              <li
-                                key={rule}
-                                className="text-xs font-semibold text-emerald-950 flex items-start gap-2"
-                              >
-                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                <span>{rule}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* GAME 2D: 8 ISLAMIC CENTRES & HOSTELS — EXPAND-IN-PLACE ACCORDION */}
-      {activeTab === 'centres' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
-          <div>
-            <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-              🕌 SKSSF 8 ഇസ്‌ലാമിക് സെന്ററുകളും ഹോസ്റ്റലുകളും ({exploredCentres.length}/{ISLAMIC_CENTRES_LIST.length} പരിശോധിച്ചു)
-            </h4>
-            <p className="text-xs text-slate-600 mt-0.5">
-              ഓരോ നഗരത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ സെന്ററിന്റെ വിവരങ്ങൾ തുറന്നുവരും:
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            {ISLAMIC_CENTRES_LIST.map((c, i) => {
-              const isOpen = i === centreIdx;
-              const seen = exploredCentres.includes(i);
-              return (
-                <div
-                  key={c.id}
-                  className={`rounded-2xl border-2 overflow-hidden transition-colors ${
-                    isOpen
-                      ? 'border-amber-500 bg-amber-50/70'
-                      : seen
-                      ? 'border-emerald-200 bg-emerald-50/20'
-                      : 'border-slate-200 bg-slate-50'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setCentreIdx(i);
-                      setExploredCentres((prev) => (prev.includes(i) ? prev : [...prev, i]));
-                      onAwardXp(5, `l2_centre_${c.id}`);
-                      narrator.speak(c.speech, c.city);
-                    }}
-                    className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                        <span>📍 {i + 1}. {c.city}</span>
-                        {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                      </p>
-                      <p className="text-[11px] font-bold text-amber-900">{c.subtitle}</p>
-                    </div>
-                    {isOpen ? (
-                      <ChevronUp className="w-4 h-4 text-amber-900 shrink-0" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
-                    )}
-                  </button>
-
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-4 border-t border-amber-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                            {c.items}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => narrator.speak(c.speech, c.city)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -1345,7 +1053,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                   }`}
                 >
                   <span>{dispatchToast.text}</span>
-                  {dispatchToast.ok && caseIdx < HELPDESK_CASES.length - 1 && (
+                  {dispatchToast.ok && caseIdx < HELPDESK_CASES.length - 1 ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -1362,13 +1070,23 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                     >
                       അടുത്ത ദൗത്യം →
                     </button>
-                  )}
+                  ) : dispatchToast.ok && solvedCases.length >= 3 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        scrollToActiveQuiz();
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold whitespace-nowrap shrink-0"
+                    >
+                      അടുത്തത് · ക്വിസ് ➡️
+                    </button>
+                  ) : null}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
-          {/* Category Filter Strip for all 17 Official Sub-Wings */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl border border-slate-200 p-2.5">
             <div className="flex flex-wrap gap-1.5">
               {WING_CATEGORY_TABS.map((cat) => (
@@ -1444,8 +1162,342 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
         </GameFullscreenShell>
       )}
 
-      {/* GAME 2E: PUBLICATIONS & INSTITUTIONS — EXPAND-IN-PLACE ACCORDION */}
+      {/* 2. QUIZ (OPEN BY DEFAULT RIGHT BELOW THE GAME!) */}
+      <LessonCheckQuiz
+        lessonId={`l2_${activeTab}`}
+        savedAnswer={quizAnswers[`l2_${activeTab}`]}
+        onAnswered={(lid, idx, ok) => {
+          onQuizAnswered(lid, idx, ok);
+          onMarkLessonCompleted?.(`l2_${activeTab}`);
+        }}
+        onNextLesson={handleAdvanceL2Tab}
+        nextLessonLabel={!isLastL2Tab ? 'അടുത്ത പാഠം ➡️' : 'ഘട്ടം 3 · ജില്ലാ തലം ➡️'}
+      />
+
+      {/* 3. COLLAPSIBLE LESSON DRAWERS STRICTLY BELOW QUIZ */}
+      {activeTab === 'tiers' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-tiers"
+          emoji="🏛️"
+          title="5 ഘടക ഘടന · പാഠം"
+          badgeText={`${exploredTiers.length}/5`}
+        >
+        <div className="relative space-y-4">
+          <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
+            <div>
+              <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+                🏛️ 5 ഘടകങ്ങളുടെ കൃത്യമായ ഭാരവാഹി ഘടന ({exploredTiers.length}/5 പരിശോധിച്ചു)
+              </h4>
+              <p className="text-xs text-slate-600 mt-0.5">
+                ഓരോ ഘടകത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ അംഗസംഖ്യയും ഭാരവാഹി തസ്തികകളും തുറന്നുവരും:
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              {COMMITTEE_TIER_SPECS.map((t, idx) => {
+                const isOpen = idx === selectedTierIdx;
+                const seen = exploredTiers.includes(t.id);
+                return (
+                  <div
+                    key={t.id}
+                    className={`rounded-2xl border-2 overflow-hidden transition-colors ${
+                      isOpen
+                        ? 'border-emerald-600 bg-emerald-50/60'
+                        : seen
+                        ? 'border-emerald-200 bg-emerald-50/20'
+                        : 'border-slate-200 bg-slate-50'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleInspectTier(idx)}
+                      className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-xl shrink-0">{t.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                            <span>{t.tier}</span>
+                            {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </p>
+                          <p className="text-[11px] font-semibold text-emerald-800">
+                            ആകെ {t.totalMembers} അംഗങ്ങൾ · കൗൺസിൽ: {t.councilRatio}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 shrink-0">
+                        {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </span>
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="p-4 border-t border-emerald-200 bg-white space-y-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <p className="text-xs sm:text-sm text-slate-700 font-semibold leading-relaxed">
+                                {t.scopeRule}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => narrator.speak(t.speech, t.tier)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-bold shrink-0"
+                              >
+                                <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {t.positions.map((pos) => (
+                                <div
+                                  key={pos.role}
+                                  className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                                    pos.count === 'NIL'
+                                      ? 'bg-slate-100 border-slate-200 text-slate-500'
+                                      : 'bg-emerald-50/40 border-emerald-200 text-slate-900'
+                                  }`}
+                                >
+                                  <span className="text-xs font-bold">{pos.role}</span>
+                                  <span
+                                    className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-md ${
+                                      pos.count === 'NIL'
+                                        ? 'bg-slate-200 text-slate-600'
+                                        : 'bg-emerald-700 text-white'
+                                    }`}
+                                  >
+                                    {pos.count}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 font-semibold leading-relaxed">
+                              💡 {t.workingCommitteeNote}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {/* 2. COLLAPSIBLE LESSON: ELECTION ROLES */}
+      {activeTab === 'election_roles' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-election"
+          emoji="🗳️"
+          title="കമ്മിറ്റി സ്ഥാനങ്ങൾ · പാഠം"
+          badgeText={`${exploredRoles.length}/${ELECTION_OFFICIAL_ROLES.length}`}
+        >
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
+          <div>
+            <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+              🗳️ കമ്മിറ്റി രൂപീകരണ സ്ഥാനങ്ങളും ചട്ടങ്ങളും ({exploredRoles.length}/{ELECTION_OFFICIAL_ROLES.length} പരിശോധിച്ചു)
+            </h4>
+            <p className="text-xs text-slate-600 mt-0.5">
+              ഓരോ സ്ഥാനത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ വിശദാംശങ്ങളും ചട്ടങ്ങളും തുറന്നുവരും:
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {ELECTION_OFFICIAL_ROLES.map((r, i) => {
+              const isOpen = i === roleIdx;
+              const seen = exploredRoles.includes(i);
+              return (
+                <div
+                  key={r.id}
+                  className={`rounded-2xl border-2 overflow-hidden transition-colors ${
+                    isOpen
+                      ? 'border-emerald-600 bg-emerald-50/60'
+                      : seen
+                      ? 'border-emerald-200 bg-emerald-50/20'
+                      : 'border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setRoleIdx(i);
+                      setExploredRoles((prev) => (prev.includes(i) ? prev : [...prev, i]));
+                      onAwardXp(5, `l2_${r.id}`);
+                      narrator.speak(r.speech, r.title);
+                    }}
+                    className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-lg shrink-0">{r.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                          <span>{r.title}</span>
+                          {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                        </p>
+                        <p className="text-[11px] font-bold text-emerald-700">{r.badge}</p>
+                      </div>
+                    </div>
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-emerald-800 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                    )}
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-4 border-t border-emerald-200 bg-white space-y-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed flex-1">
+                              {r.summary}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => narrator.speak(r.speech, r.title)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-950 text-xs font-bold shrink-0"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                            </button>
+                          </div>
+                          <ul className="space-y-1.5 pt-2 border-t border-slate-100">
+                            {r.rules.map((rule) => (
+                              <li
+                                key={rule}
+                                className="text-xs font-semibold text-emerald-950 flex items-start gap-2"
+                              >
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                                <span>{rule}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {/* 2. COLLAPSIBLE LESSON: 8 ISLAMIC CENTRES */}
+      {activeTab === 'centres' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-centres"
+          emoji="🕌"
+          title="8 ഇസ്‌ലാമിക് സെന്ററുകൾ · പാഠം"
+          badgeText={`${exploredCentres.length}/${ISLAMIC_CENTRES_LIST.length}`}
+        >
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
+          <div>
+            <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
+              🕌 SKSSF 8 ഇസ്‌ലാമിക് സെന്ററുകളും ഹോസ്റ്റലുകളും ({exploredCentres.length}/{ISLAMIC_CENTRES_LIST.length} പരിശോധിച്ചു)
+            </h4>
+            <p className="text-xs text-slate-600 mt-0.5">
+              ഓരോ നഗരത്തിലും തൊട്ടാൽ അവിടെത്തന്നെ സെന്ററിന്റെ വിവരങ്ങൾ തുറന്നുവരും:
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {ISLAMIC_CENTRES_LIST.map((c, i) => {
+              const isOpen = i === centreIdx;
+              const seen = exploredCentres.includes(i);
+              return (
+                <div
+                  key={c.id}
+                  className={`rounded-2xl border-2 overflow-hidden transition-colors ${
+                    isOpen
+                      ? 'border-amber-500 bg-amber-50/70'
+                      : seen
+                      ? 'border-emerald-200 bg-emerald-50/20'
+                      : 'border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setCentreIdx(i);
+                      setExploredCentres((prev) => (prev.includes(i) ? prev : [...prev, i]));
+                      onAwardXp(5, `l2_centre_${c.id}`);
+                      narrator.speak(c.speech, c.city);
+                    }}
+                    className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                        <span>📍 {i + 1}. {c.city}</span>
+                        {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                      </p>
+                      <p className="text-[11px] font-bold text-amber-900">{c.subtitle}</p>
+                    </div>
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-amber-900 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                    )}
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-4 border-t border-amber-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                            {c.items}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => narrator.speak(c.speech, c.city)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {/* 3. COLLAPSIBLE LESSON: PUBLICATIONS & INSTITUTIONS */}
+
+      {/* 2. COLLAPSIBLE LESSON: PUBLICATIONS & INSTITUTIONS */}
       {activeTab === 'vault' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-vault"
+          emoji="📰"
+          title="പത്രങ്ങളും സ്ഥാപനങ്ങളും · പാഠം"
+          badgeText={`${exploredVaults.length}/${OFFICIAL_LOGOS_VAULT.length}`}
+        >
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -1550,10 +1602,16 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             })}
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* GAME 2F: AGE DIAL DAWA GUIDE — EXPAND-IN-PLACE ACCORDION */}
+      {/* 2. COLLAPSIBLE LESSON: AGE DIAL DAWA GUIDE */}
       {activeTab === 'dawa_age' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-dawa-age"
+          emoji="🎯"
+          title="പ്രായപരിധിയും സംഘടനയും · പാഠം"
+        >
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3.5">
           <div>
             <p className="text-xs font-extrabold text-emerald-700">
@@ -1645,10 +1703,17 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             📌 പ്രധാന വിവരം: <strong>SKSSF-ൽ 40 വയസ്സ് വരെ പ്രായപരിധിയുണ്ട്</strong> — 40 വയസ്സ് വരെയും SKSSF-ൽ തന്നെ പ്രവർത്തിക്കാം. കൂടാതെ <strong>SKSSF-ൽ പ്രവർത്തിക്കുന്നവർക്കും SYS-ൽ പ്രവർത്തിക്കാം.</strong>
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* GAME 2G: 5 TOWN DAWA MISSION LANTERNS */}
+      {/* 2. COLLAPSIBLE LESSON: 5 TOWN DAWA MISSION LANTERNS */}
       {activeTab === 'dawa_lanterns' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-dawa-lanterns"
+          emoji="🏮"
+          title="5 ദഅ്‌വത്ത് വിളക്കുകൾ · പാഠം"
+          badgeText={`${litDawaMissions.length}/5`}
+        >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 bg-emerald-950 text-white shadow-md">
@@ -1720,76 +1785,42 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             })}
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
-      {(activeTab === 'tiers' ||
-        activeTab === 'election_roles' ||
-        activeTab === 'centres' ||
-        activeTab === 'dawa_age' ||
-        activeTab === 'dawa_lanterns' ||
-        activeTab === 'vault') && (
-        <OptionalLessonMiniGame
-          key={`l2_${activeTab}`}
-          lessonKey={`l2_${activeTab}` as MiniGameLessonKey}
-          onAwardXp={onAwardXp}
-          isCompleted={isSceneDone(`l2_${activeTab}`)}
-          onComplete={() => {
-            const lid = `l2_${activeTab}`;
-            setCompletedSceneGames((prev) => (prev.includes(lid) ? prev : [...prev, lid]));
-            if (quizAnswers[lid]) onMarkLessonCompleted?.(lid);
-          }}
-        />
-      )}
-
-      <LessonCheckQuiz
-        lessonId={`l2_${activeTab}`}
-        savedAnswer={quizAnswers[`l2_${activeTab}`]}
-        onAnswered={(lid, idx, ok) => {
-          onQuizAnswered(lid, idx, ok);
-          onMarkLessonCompleted?.(`l2_${activeTab}`);
-        }}
+      {/* 4. NAVIGATION & PROGRESS TRACK STRICTLY BELOW LESSON */}
+      <LessonStepperNav
+        stepLabel={`ക്ലസ്റ്റർ & മേഖലാ തലം · പാഠം ${activeTabIdx + 1} / ${l2Tabs.length}: ${l2Tabs[activeTabIdx]?.label || ''}`}
+        currentStep={activeTabIdx}
+        totalSteps={l2Tabs.length}
+        statusHint={getTabRequirementHint(activeTab)}
+        prevLabel={activeTabIdx > 0 ? l2Tabs[activeTabIdx - 1].label : undefined}
+        onPrev={activeTabIdx > 0 ? () => setActiveTab(l2Tabs[activeTabIdx - 1].id) : undefined}
+        nextLabel={!isLastL2Tab ? l2Tabs[activeTabIdx + 1].label : 'ഘട്ടം 3 · ജില്ലാ തലം'}
+        nextIsWorldAdvance={isLastL2Tab}
+        nextDisabled={!currentTabDone}
+        onNext={handleAdvanceL2Tab}
       />
 
-      {(() => {
-        const tabs: { id: L2GameTab; label: string }[] = [
-          { id: 'memory', label: '1. പതാക മെമ്മറി' },
-          { id: 'madrasa_board', label: '2. മദ്രസാ ബോർഡ് അലങ്കാരം' },
-          { id: 'tiers', label: '3. 5 ഘടക ഘടന' },
-          { id: 'election_roles', label: '4. കമ്മിറ്റി സ്ഥാനങ്ങൾ' },
-          { id: 'centres', label: '5. 8 ഇസ്‌ലാമിക് സെന്ററുകൾ' },
-          { id: 'dispatch', label: '6. 17 വിങ്ങുകൾ & സേവന ദൗത്യം' },
-          { id: 'dawa_age', label: '7. പ്രായപരിധിയും സംഘടനയും' },
-          { id: 'dawa_lanterns', label: '8. 5 ദഅ്‌വത്ത് വിളക്കുകൾ' },
-          { id: 'vault', label: '9. പത്രങ്ങളും സ്ഥാപനങ്ങളും' },
-        ];
-        const idx = tabs.findIndex((t) => t.id === activeTab);
-        const isLast = idx === tabs.length - 1;
-        const currentTabDone =
-          isCompleted ||
-          completedLessonIds.includes(`l2_${activeTab}`) ||
-          Boolean(quizAnswers[`l2_${activeTab}`]);
-        return (
-          <LessonStepperNav
-            stepLabel={`ക്ലസ്റ്റർ & മേഖലാ തലം · പാഠം ${idx + 1} / ${tabs.length}: ${tabs[idx]?.label || ''}`}
-            currentStep={idx}
-            totalSteps={tabs.length}
-            statusHint={getTabRequirementHint(activeTab)}
-            prevLabel={idx > 0 ? tabs[idx - 1].label : undefined}
-            onPrev={idx > 0 ? () => setActiveTab(tabs[idx - 1].id) : undefined}
-            nextLabel={!isLast ? tabs[idx + 1].label : 'ഘട്ടം 3 · ജില്ലാ തലം'}
-            nextIsWorldAdvance={isLast}
-            nextDisabled={!currentTabDone}
-            onNext={() => {
-              onMarkLessonCompleted?.(`l2_${activeTab}`);
-              if (!isLast) {
-                setActiveTab(tabs[idx + 1].id);
-              } else {
-                handleFinishLevel2();
-              }
-            }}
-          />
-        );
-      })()}
+      <LessonProgressTrack
+        stageTitle="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
+        stageSubtitle="ഘടക ഘടന, തിരഞ്ഞെടുപ്പ് സ്ഥാനങ്ങൾ, 17 സബ് വിങ്ങുകൾ, ദഅ്‌വത്ത് & സ്ഥാപനങ്ങൾ"
+        items={[
+          { id: 'memory', lessonId: 'l2_memory', emoji: '🃏', label: `പതാക മെമ്മറി (${matchedPairs.length}/4)` },
+          { id: 'madrasa_board', lessonId: 'l2_madrasa_board', emoji: '🏫', label: 'മദ്രസാ ബോർഡ് അലങ്കാരം' },
+          { id: 'tiers', lessonId: 'l2_tiers', emoji: '🏛️', label: `5 ഘടക ഘടന (${exploredTiers.length}/5)` },
+          { id: 'election_roles', lessonId: 'l2_election_roles', emoji: '🗳️', label: 'കമ്മിറ്റി സ്ഥാനങ്ങൾ' },
+          { id: 'centres', lessonId: 'l2_centres', emoji: '🕌', label: '8 ഇസ്‌ലാമിക് സെന്ററുകൾ' },
+          { id: 'dispatch', lessonId: 'l2_dispatch', emoji: '🚑', label: `17 വിങ്ങുകൾ (${solvedCases.length}/${HELPDESK_CASES.length})` },
+          { id: 'dawa_age', lessonId: 'l2_dawa_age', emoji: '🎯', label: 'പ്രായപരിധിയും സംഘടനയും' },
+          { id: 'dawa_lanterns', lessonId: 'l2_dawa_lanterns', emoji: '🏮', label: `ദഅ്‌വത്ത് (${litDawaMissions.length}/5)` },
+          { id: 'vault', lessonId: 'l2_vault', emoji: '📰', label: 'പത്രങ്ങളും സ്ഥാപനങ്ങളും' },
+        ]}
+        activeId={activeTab}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => setActiveTab(id as L2GameTab)}
+      />
 
       {/* Sub-Wing Full Mission & Committee Strength Modal */}
       {wingPopup && (

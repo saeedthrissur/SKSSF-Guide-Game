@@ -18,6 +18,7 @@ import {
 import { CertificateGenerator } from './CertificateGenerator';
 import {
   AnimatedGiraffeMascot,
+  CollapsibleLessonDrawer,
   DriftingCloudsAndSun,
   EasterEggItem,
   EasterEggSpot,
@@ -28,7 +29,7 @@ import {
   LessonStepperNav,
   SwayingGardenPlants,
 } from './GameEffects';
-import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameFullscreenShell } from './GameFullscreenShell';
 import { ViqayaRescueVehicleActivity } from './InteractiveMiniGames';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
@@ -64,6 +65,7 @@ interface Level4StrategyProps {
   quizAnswers: QuizAnswerMap;
   onQuizAnswered: (lessonId: string, selectedIdx: number, isCorrect: boolean) => void;
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
+  devUnlocked?: boolean;
 }
 
 const EVENT_GEAR: {
@@ -179,6 +181,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   quizAnswers,
   onQuizAnswered,
   onOpenBadgeStudio,
+  devUnlocked = false,
 }) => {
   const [activeTab, setActiveTab] = useState<L4Tab>(initialTab || 'climb');
   const [selectedTierId, setSelectedTierId] = useState(HIERARCHY_NODES[0].id);
@@ -345,8 +348,12 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     if (gear.isGood) {
       sound.playDrop();
       if (!packedGear.includes(gear.id)) {
-        setPackedGear((prev) => [...prev, gear.id]);
+        const nextPacked = [...packedGear, gear.id];
+        setPackedGear(nextPacked);
         onAwardXp(20, `l4_gear_${gear.id}`);
+        if (nextPacked.length >= 4) {
+          window.setTimeout(() => scrollToActiveQuiz(), 950);
+        }
       }
       setGearMsg({ ok: true, text: `${gear.emoji} ബാഗിൽ വെച്ചു! ${gear.reason}` });
       triggerGlitter(`${gear.emoji} ബാഗിൽ വെച്ചു! +20 XP`);
@@ -378,6 +385,37 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     setActiveTab('certificate');
   };
 
+  const l4Tabs: { id: L4Tab; label: string }[] = [
+    { id: 'climb', label: '1. ആഗോള ഘടന' },
+    { id: 'viqaya_van', label: '2. വിഖായ വാഹനം' },
+    { id: 'compass', label: '3. സംഘാടന സൂത്രങ്ങൾ' },
+    { id: 'bag', label: '4. സമ്മേളന ബാഗ്' },
+    { id: 'crisis', label: '5. പ്രതിസന്ധി പരിഹാരം' },
+    { id: 'cyber_shield', label: '6. സൈബർ ഷീൽഡ്' },
+    { id: 'certificate', label: '7. സാക്ഷ്യപത്രം' },
+  ];
+  const activeL4Idx = l4Tabs.findIndex((t) => t.id === activeTab);
+  const nextL4Tab = activeL4Idx < l4Tabs.length - 1 ? l4Tabs[activeL4Idx + 1] : undefined;
+  const currentL4LessonId = `l4_${activeTab}`;
+  const l4StepUnlocked =
+    activeTab === 'certificate'
+      ? true
+      : devUnlocked ||
+        isCompleted ||
+        completedLessonIds.includes(currentL4LessonId) ||
+        Boolean(quizAnswers[currentL4LessonId]);
+
+  const handleAdvanceL4Tab = () => {
+    if (!nextL4Tab) return;
+    onMarkLessonCompleted?.(currentL4LessonId);
+    if (nextL4Tab.id === 'certificate' && !isCompleted) {
+      handleUnlockCertificate();
+    } else {
+      setActiveTab(nextL4Tab.id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const trackItems: { id: L4Tab; lessonId: string; label: string; emoji: string }[] = [
     { id: 'climb', lessonId: 'l4_climb', label: 'ആഗോള ഘടന', emoji: '🗼' },
     { id: 'viqaya_van', lessonId: 'l4_viqaya_van', label: 'വിഖായ വാഹനം', emoji: '🚑' },
@@ -394,56 +432,200 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
 
   return (
     <section className="space-y-4">
-      {/* Tower Sky Header with Always-On Scenic Animations */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4 sm:p-5">
-        <img
-          src="./src/assets/images/world_tower_sky_1794946534081.jpg"
-          alt="ജിറാഫും ഏണിയും സ്വർണ്ണ ഗോപുരവും"
-          className="absolute inset-0 w-full h-full object-cover opacity-35"
-          referrerPolicy="no-referrer"
+      {/* 1. GAME FIRST FOR LESSON TABS */}
+      {(activeTab === 'climb' ||
+        activeTab === 'compass' ||
+        activeTab === 'crisis' ||
+        activeTab === 'cyber_shield') && (
+        <OptionalLessonMiniGame
+          key={`l4_${activeTab}`}
+          lessonKey={`l4_${activeTab}` as MiniGameLessonKey}
+          onAwardXp={onAwardXp}
+          isCompleted={
+            isCompleted ||
+            completedLessonIds.includes(`l4_${activeTab}`) ||
+            completedSceneGames.includes(`l4_${activeTab}`)
+          }
+          onComplete={() =>
+            setCompletedSceneGames((prev) =>
+              prev.includes(`l4_${activeTab}`) ? prev : [...prev, `l4_${activeTab}`]
+            )
+          }
         />
-        <DriftingCloudsAndSun className="opacity-35" />
-        <SwayingGardenPlants side="right" className="opacity-70" />
+      )}
 
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-xs font-bold text-amber-300">
-              🦒 ഘട്ടം 4 · സ്റ്റേറ്റ് &amp; ഗ്ലോബൽ തലം · ശാഖ മുതൽ SIC വരെ · സൈബർ ഷീൽഡ് · സാക്ഷ്യപത്രം
-            </p>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white">
-              ആഗോള ഗോപുരാരോഹണവും വിജയ സാക്ഷ്യപത്രവും
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs font-bold text-emerald-100 tabular-nums">
-              ഭൂപടം: {exploredTiers.length}/7 · ബാഗ്: {packedGear.length}/4 · സാഹസികത:{' '}
-              {solvedCrisis.length}/3 · ഷീൽഡ്: {solvedSocial.length}/3
+      {/* GAME 4A-2: DEDICATED VIQAYA RESCUE VEHICLE MISSION */}
+      {activeTab === 'viqaya_van' && (
+        <div className="space-y-4">
+          <ViqayaRescueVehicleActivity
+            onAwardXp={onAwardXp}
+            onUnlockBadge={onUnlockBadge}
+            onOpenBadgeStudio={onOpenBadgeStudio}
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_viqaya_van') ? prev : [...prev, 'l4_viqaya_van']
+              );
+              window.setTimeout(() => scrollToActiveQuiz(), 850);
+            }}
+          />
+        </div>
+      )}
+
+      {/* GAME 4B-2: EVENT BACKPACK PACKING */}
+      {activeTab === 'bag' && (
+        <GameFullscreenShell
+          title="🎒 സമ്മേളന ബാഗ് പാക്ക് ഗെയിം"
+          subtitle="ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ ബാഗിലേക്ക് വലിച്ചിടൂ"
+        >
+        <div className="relative space-y-4">
+          <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Backpack className="w-5 h-5 text-emerald-700" />
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                  🎒 സമ്മേളന ബാഗ് പാക്ക് ചെയ്യൂ! (ശരിയായ 4 സാമഗ്രികൾ ബാഗിലേക്ക് ഇടൂ)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
+                  {'❤️'.repeat(Math.max(0, 2 - bagMistakes))}
+                  {'💔'.repeat(Math.min(2, bagMistakes))}
+                </span>
+                <span className="text-xs font-bold text-emerald-800 tabular-nums">
+                  {packedGear.length}/4
+                </span>
+              </div>
             </div>
-            <FlutteringFlagPole variant="skssf" className="hidden sm:flex scale-90 origin-bottom" />
+
+            {bagFailed && (
+              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold text-rose-900">💥 സമ്മേളന ബാഗ് പാക്ക് പരാജയപ്പെട്ടു!</p>
+                  <p className="text-xs font-semibold text-rose-800">
+                    2 തെറ്റായ കാര്യങ്ങൾ ബാഗിലിട്ടു. ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ മാത്രം തിരഞ്ഞെടുത്ത് വീണ്ടും ശ്രമിക്കാം!
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setBagMistakes(0);
+                    setPackedGear([]);
+                    setGearMsg(null);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+                >
+                  🔄 വീണ്ടും ശ്രമിക്കാം
+                </button>
+              </div>
+            )}
+
+            <AnimatePresence mode="wait">
+              {gearMsg && (
+                <motion.div
+                  key={gearMsg.text}
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className={`p-3 rounded-xl border text-xs sm:text-sm font-bold flex flex-wrap items-center justify-between gap-2 ${
+                    gearMsg.ok
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                      : 'bg-amber-50 border-amber-300 text-amber-950'
+                  }`}
+                >
+                  <span>{gearMsg.text}</span>
+                  {packedGear.length >= 4 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        scrollToActiveQuiz();
+                      }}
+                      className="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold shrink-0"
+                    >
+                      അടുത്തത് · ക്വിസ് ➡️
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+              <div className="md:col-span-7 flex flex-wrap gap-2">
+                {EVENT_GEAR.map((g) => {
+                  const packed = packedGear.includes(g.id);
+                  return (
+                    <button
+                      key={g.id}
+                      type="button"
+                      draggable={!packed}
+                      disabled={packed}
+                      onDragStart={() => {
+                        sound.playClick();
+                        setDraggedGearId(g.id);
+                      }}
+                      onClick={() => handlePackGear(g.id)}
+                      className={`px-3.5 py-2.5 rounded-xl border border-b-2 text-xs font-bold transition-all ${
+                        packed
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-50'
+                          : 'bg-slate-50 border-slate-300 text-slate-900 hover:border-emerald-600 cursor-grab card-3d-tilt'
+                      }`}
+                    >
+                      {g.emoji} {g.label} {packed ? '✓' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handlePackGear(draggedGearId)}
+                onClick={() => draggedGearId && handlePackGear(draggedGearId)}
+                className="md:col-span-5 p-5 rounded-2xl border-2 border-dashed border-emerald-500 bg-emerald-50/75 text-center card-3d-tilt"
+              >
+                <Backpack className="w-9 h-9 text-emerald-700 mx-auto mb-1 animate-float-bob" />
+                <p className="text-sm font-extrabold text-emerald-950">
+                  🎒 ഇവന്റ് ബാഗ് ({packedGear.length}/4)
+                </p>
+                <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
+                  എന്ത്–എന്തിന്–എപ്പോൾ–എവിടെ–ആര് · NOC · കരുതൽ തുക
+                </p>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+        </GameFullscreenShell>
+      )}
 
-      <LessonProgressTrack
-        stageTitle="ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം"
-        stageSubtitle="ഓരോ പാഠവും താഴെയുള്ള ചോദ്യവും പൂർത്തിയാക്കി അവസാനം നിങ്ങളുടെ സാക്ഷ്യപത്രം സ്വന്തമാക്കാം"
-        items={trackItems}
-        activeId={activeTab}
-        completedLessonIds={trackCompletedIds}
-        onSelectCompleted={(id) => {
-          if (id === 'certificate' && !isCompleted) {
-            handleUnlockCertificate();
-          } else {
-            setActiveTab(id as L4Tab);
+      {/* 2. QUIZ (OPEN BY DEFAULT RIGHT BELOW THE GAME!) */}
+      {activeTab !== 'certificate' && (
+        <LessonCheckQuiz
+          lessonId={`l4_${activeTab}`}
+          savedAnswer={quizAnswers[`l4_${activeTab}`]}
+          onAnswered={(lessonId, selectedIdx, isCorrect) => {
+            onQuizAnswered(lessonId, selectedIdx, isCorrect);
+            onMarkLessonCompleted?.(lessonId);
+          }}
+          onNextLesson={nextL4Tab ? handleAdvanceL4Tab : undefined}
+          nextLessonLabel={
+            nextL4Tab?.id === 'certificate' ? 'സാക്ഷ്യപത്രം നേടാം 🏆' : 'അടുത്ത പാഠം ➡️'
           }
-        }}
-      />
+        />
+      )}
 
-      {/* GAME 4A: 2D ANIMATED SPIRAL TOWER CLIMB */}
+      {/* 3. COLLAPSIBLE LESSON: SPIRAL TOWER CLIMB */}
       {activeTab === 'climb' && (
+        <CollapsibleLessonDrawer
+          key="l4-drawer-climb"
+          emoji="🗼"
+          title="ആഗോള ഘടന · 7 പടികൾ · പാഠം"
+          badgeText={`${exploredTiers.length}/7`}
+        >
         <GameFullscreenShell
           title="🗼 ആഗോള ഘടനാ ഗോപുരം"
-          subtitle="യൂണിറ്റ് മുതൽ ഗ്ലോബൽ / SIC വരെയുള്ള 7 പടികൾ ചവിട്ടിക്കയറൂ"
+          subtitle="യൂണിറ്റ് മുതൽ ഗ്ലോബൽ / SIC വരെ"
         >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
           <div className="relative lg:col-span-7 rounded-2xl border-2 border-emerald-300 overflow-hidden bg-gradient-to-br from-emerald-950 via-teal-950 to-sky-950 p-4 sm:p-5">
@@ -630,26 +812,20 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           </motion.div>
         </div>
         </GameFullscreenShell>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* GAME 4A-2: DEDICATED VIQAYA RESCUE VEHICLE MISSION */}
-      {activeTab === 'viqaya_van' && (
-        <div className="space-y-4">
-          <ViqayaRescueVehicleActivity
-            onAwardXp={onAwardXp}
-            onUnlockBadge={onUnlockBadge}
-            onOpenBadgeStudio={onOpenBadgeStudio}
-            onComplete={() =>
-              setCompletedSceneGames((prev) =>
-                prev.includes('l4_viqaya_van') ? prev : [...prev, 'l4_viqaya_van']
-              )
-            }
-          />
-        </div>
-      )}
-
-      {/* GAME 4B-1: LEADERSHIP COMPASS SPOTLIGHT (INLINE STEPPER — ZERO TOP-BOTTOM DISCONNECT) */}
+      {/* 3. COLLAPSIBLE LESSON: LEADERSHIP COMPASS */}
       {activeTab === 'compass' && (
+        <CollapsibleLessonDrawer
+          key="l4-drawer-compass"
+          emoji="🧭"
+          title="സംഘാടന സൂത്രങ്ങൾ · പാഠം"
+          badgeText={`${exploredCompassIds.length}/${STRATEGY_FLASH_CARDS.length}`}
+          onSpeak={() =>
+            narrator.speak(activeCompass.speech, `${activeCompass.emoji} ${activeCompass.title}`)
+          }
+        >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
 
@@ -722,129 +898,22 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             </AnimatePresence>
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* GAME 4B-2: EVENT BACKPACK PACKING (STRICT SINGLE-FOCUS) */}
-      {activeTab === 'bag' && (
-        <GameFullscreenShell
-          title="🎒 സമ്മേളന ബാഗ് പാക്ക് ഗെയിം"
-          subtitle="ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ ബാഗിലേക്ക് വലിച്ചിടൂ"
-        >
-        <div className="relative space-y-4">
-          <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Backpack className="w-5 h-5 text-emerald-700" />
-                <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
-                  🎒 സമ്മേളന ബാഗ് പാക്ക് ചെയ്യൂ! (ശരിയായ 4 സാമഗ്രികൾ ബാഗിലേക്ക് ഇടൂ)
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                  {'❤️'.repeat(Math.max(0, 2 - bagMistakes))}
-                  {'💔'.repeat(Math.min(2, bagMistakes))}
-                </span>
-                <span className="text-xs font-bold text-emerald-800 tabular-nums">
-                  {packedGear.length}/4
-                </span>
-              </div>
-            </div>
+      {/* 3. COLLAPSIBLE LESSON: CRISIS SIMULATOR */}
 
-            {bagFailed && (
-              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-extrabold text-rose-900">💥 സമ്മേളന ബാഗ് പാക്ക് പരാജയപ്പെട്ടു!</p>
-                  <p className="text-xs font-semibold text-rose-800">
-                    2 തെറ്റായ കാര്യങ്ങൾ ബാഗിലിട്ടു. ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ മാത്രം തിരഞ്ഞെടുത്ത് വീണ്ടും ശ്രമിക്കാം!
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setBagMistakes(0);
-                    setPackedGear([]);
-                    setGearMsg(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
-                >
-                  🔄 വീണ്ടും ശ്രമിക്കാം
-                </button>
-              </div>
-            )}
-
-            <AnimatePresence mode="wait">
-              {gearMsg && (
-                <motion.div
-                  key={gearMsg.text}
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className={`p-3 rounded-xl border text-xs sm:text-sm font-bold ${
-                    gearMsg.ok
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                      : 'bg-amber-50 border-amber-300 text-amber-950'
-                  }`}
-                >
-                  {gearMsg.text}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-              <div className="md:col-span-7 flex flex-wrap gap-2">
-                {EVENT_GEAR.map((g) => {
-                  const packed = packedGear.includes(g.id);
-                  return (
-                    <button
-                      key={g.id}
-                      type="button"
-                      draggable={!packed}
-                      disabled={packed}
-                      onDragStart={() => {
-                        sound.playClick();
-                        setDraggedGearId(g.id);
-                      }}
-                      onClick={() => handlePackGear(g.id)}
-                      className={`px-3.5 py-2.5 rounded-xl border border-b-2 text-xs font-bold transition-all ${
-                        packed
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-50'
-                          : 'bg-slate-50 border-slate-300 text-slate-900 hover:border-emerald-600 cursor-grab card-3d-tilt'
-                      }`}
-                    >
-                      {g.emoji} {g.label} {packed ? '✓' : ''}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handlePackGear(draggedGearId)}
-                onClick={() => draggedGearId && handlePackGear(draggedGearId)}
-                className="md:col-span-5 p-5 rounded-2xl border-2 border-dashed border-emerald-500 bg-emerald-50/75 text-center card-3d-tilt"
-              >
-                <Backpack className="w-9 h-9 text-emerald-700 mx-auto mb-1 animate-float-bob" />
-                <p className="text-sm font-extrabold text-emerald-950">
-                  🎒 ഇവന്റ് ബാഗ് ({packedGear.length}/4)
-                </p>
-                <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
-                  എന്ത്–എന്തിന്–എപ്പോൾ–എവിടെ–ആര് · NOC · കരുതൽ തുക
-                </p>
-              </button>
-            </div>
-          </div>
-        </div>
-        </GameFullscreenShell>
-      )}
-
-      {/* GAME 4B-3: SINGLE-CARD ADVENTURE CRISIS STEPPER (STRICT SINGLE-FOCUS) */}
+      {/* 2. COLLAPSIBLE LESSON: CRISIS SIMULATOR */}
       {activeTab === 'crisis' && (
+        <CollapsibleLessonDrawer
+          key="l4-drawer-crisis"
+          emoji="🎭"
+          title="പ്രതിസന്ധി പരിഹാരം · പാഠം"
+          badgeText={`${solvedCrisis.length}/3`}
+        >
         <GameFullscreenShell
-          title="🎭 പ്രതിസന്ധി പരിഹാര വെല്ലുവിളി"
-          subtitle="ഓരോ സാഹസിക സാഹചര്യത്തിലും ശരിയായ തീരുമാനം തിരഞ്ഞെടുക്കൂ"
+          title="🎭 പ്രതിസന്ധി പരിഹാരം"
+          subtitle="ശരിയായ തീരുമാനം തിരഞ്ഞെടുക്കൂ"
         >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
@@ -965,13 +1034,20 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           </div>
         </div>
         </GameFullscreenShell>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* GAME 4C: SINGLE-PHONE CYBER SHIELD FEED SIMULATOR */}
+      {/* 2. COLLAPSIBLE LESSON: CYBER SHIELD */}
       {activeTab === 'cyber_shield' && (
+        <CollapsibleLessonDrawer
+          key="l4-drawer-cyber"
+          emoji="📱"
+          title="സൈബർ ഷീൽഡ് · പാഠം"
+          badgeText={`${solvedSocial.length}/${SOCIAL_ETHICS_CASES.length}`}
+        >
         <GameFullscreenShell
-          title="📱 സൈബർ ഷീൽഡ് സിമുലേറ്റർ"
-          subtitle="ഓൺലൈൻ സാഹചര്യങ്ങളിൽ വിവേകപൂർണ്ണമായ തീരുമാനം തിരഞ്ഞെടുക്കൂ"
+          title="📱 സൈബർ ഷീൽഡ്"
+          subtitle="തർക്കുൽ മാലായഅ്നി"
         >
         <div className="relative bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 space-y-5 overflow-hidden">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
@@ -1171,6 +1247,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           })()}
         </div>
         </GameFullscreenShell>
+        </CollapsibleLessonDrawer>
       )}
 
       {/* TAB 6: CERTIFICATE STUDIO + UNSEEN-ONLY RE-SURFACING */}
@@ -1214,99 +1291,47 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
         </div>
       )}
 
-      {(activeTab === 'climb' ||
-        activeTab === 'compass' ||
-        activeTab === 'crisis' ||
-        activeTab === 'cyber_shield') && (
-        <OptionalLessonMiniGame
-          key={`l4_${activeTab}`}
-          lessonKey={`l4_${activeTab}` as MiniGameLessonKey}
-          onAwardXp={onAwardXp}
-          isCompleted={
-            isCompleted ||
-            completedLessonIds.includes(`l4_${activeTab}`) ||
-            completedSceneGames.includes(`l4_${activeTab}`)
+      {/* 4. NAVIGATION & PROGRESS TRACK STRICTLY BELOW LESSON */}
+      <LessonStepperNav
+        stepLabel={`ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം · പാഠം ${activeL4Idx + 1} / ${l4Tabs.length}: ${l4Tabs[activeL4Idx]?.label || ''}`}
+        statusHint={
+          activeTab !== 'certificate' && !l4StepUnlocked
+            ? nextL4Tab?.id === 'certificate'
+              ? 'മുകളിലെ ക്വിസിന് ഉത്തരം നൽകിയാൽ സാക്ഷ്യപത്രം തുറക്കും!'
+              : 'മുകളിലെ ക്വിസിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠം തുറക്കും!'
+            : undefined
+        }
+        currentStep={activeL4Idx}
+        totalSteps={l4Tabs.length}
+        prevLabel={activeL4Idx > 0 ? l4Tabs[activeL4Idx - 1].label : undefined}
+        onPrev={activeL4Idx > 0 ? () => setActiveTab(l4Tabs[activeL4Idx - 1].id) : undefined}
+        nextLabel={
+          nextL4Tab
+            ? nextL4Tab.id === 'certificate'
+              ? 'സാക്ഷ്യപത്രം നേടാം 🏆'
+              : nextL4Tab.label
+            : undefined
+        }
+        nextIsWorldAdvance={nextL4Tab?.id === 'certificate'}
+        nextDisabled={!l4StepUnlocked}
+        onNext={nextL4Tab ? handleAdvanceL4Tab : undefined}
+      />
+
+      <LessonProgressTrack
+        stageTitle="ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം"
+        stageSubtitle="ആഗോള ഘടന, വിഖായ, സൈബർ ഷീൽഡ് & സാക്ഷ്യപത്രം"
+        items={trackItems}
+        activeId={activeTab}
+        completedLessonIds={trackCompletedIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => {
+          if (id === 'certificate' && !isCompleted && !devUnlocked) {
+            handleUnlockCertificate();
+          } else {
+            setActiveTab(id as L4Tab);
           }
-          onComplete={() =>
-            setCompletedSceneGames((prev) =>
-              prev.includes(`l4_${activeTab}`) ? prev : [...prev, `l4_${activeTab}`]
-            )
-          }
-        />
-      )}
-
-      {activeTab !== 'certificate' && (
-        <LessonCheckQuiz
-          lessonId={`l4_${activeTab}`}
-          savedAnswer={quizAnswers[`l4_${activeTab}`]}
-          onAnswered={(lessonId, selectedIdx, isCorrect) => {
-            onQuizAnswered(lessonId, selectedIdx, isCorrect);
-            onMarkLessonCompleted?.(lessonId);
-          }}
-        />
-      )}
-
-      {/* Prominent Sequential Lesson Stepper (Single Bottom Navigation Bar) */}
-      {(() => {
-        const tabs: {
-          id: L4Tab;
-          label: string;
-        }[] = [
-          { id: 'climb', label: '1. ആഗോള ഘടന' },
-          { id: 'viqaya_van', label: '2. വിഖായ വാഹനം' },
-          { id: 'compass', label: '3. സംഘാടന സൂത്രങ്ങൾ' },
-          { id: 'bag', label: '4. സമ്മേളന ബാഗ്' },
-          { id: 'crisis', label: '5. പ്രതിസന്ധി പരിഹാരം' },
-          { id: 'cyber_shield', label: '6. സൈബർ ഷീൽഡ്' },
-          { id: 'certificate', label: '7. സാക്ഷ്യപത്രം' },
-        ];
-        const idx = tabs.findIndex((t) => t.id === activeTab);
-        const nextTab = idx < tabs.length - 1 ? tabs[idx + 1] : undefined;
-        const currentLessonId = `l4_${activeTab}`;
-        const alreadyDone = isCompleted || completedLessonIds.includes(currentLessonId);
-        const quizDone = Boolean(quizAnswers[currentLessonId]);
-
-        const stepUnlocked =
-          activeTab === 'certificate' ? true : alreadyDone || quizDone;
-        const statusHint =
-          activeTab !== 'certificate' && !stepUnlocked
-            ? nextTab?.id === 'certificate'
-              ? 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ സാക്ഷ്യപത്രം തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-              : 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-            : undefined;
-
-        return (
-          <LessonStepperNav
-            stepLabel={`ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം · പാഠം ${idx + 1} / ${tabs.length}: ${tabs[idx]?.label || ''}`}
-            statusHint={statusHint}
-            currentStep={idx}
-            totalSteps={tabs.length}
-            prevLabel={idx > 0 ? tabs[idx - 1].label : undefined}
-            onPrev={idx > 0 ? () => setActiveTab(tabs[idx - 1].id) : undefined}
-            nextLabel={
-              nextTab
-                ? nextTab.id === 'certificate'
-                  ? 'സാക്ഷ്യപത്രം നേടാം 🏆'
-                  : nextTab.label
-                : undefined
-            }
-            nextIsWorldAdvance={nextTab?.id === 'certificate'}
-            nextDisabled={!stepUnlocked}
-            onNext={
-              nextTab
-                ? () => {
-                    onMarkLessonCompleted?.(currentLessonId);
-                    if (nextTab.id === 'certificate' && !isCompleted) {
-                      handleUnlockCertificate();
-                    } else {
-                      setActiveTab(nextTab.id);
-                    }
-                  }
-                : undefined
-            }
-          />
-        );
-      })()}
+        }}
+      />
     </section>
   );
 };

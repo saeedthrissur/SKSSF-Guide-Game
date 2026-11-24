@@ -1,9 +1,10 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle2, Gamepad2, RotateCcw, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Gamepad2, Info, RotateCcw, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
+import { scrollToActiveQuiz } from './LessonCheckQuiz';
 
 import {
   FoodPackDeliverGame,
@@ -16,6 +17,15 @@ import {
   TrophyGiftPackGame,
   UnitRoomDecorGame,
 } from './HandsOnSkssfGames';
+import {
+  IslamicLibraryShelfGame,
+  MajlisAgendaNoticeGame,
+  ProgramBudgetCheeraniGame,
+  ProgramReviewReportGame,
+  StadiumCleanupViqayaGame,
+  StageBuildSequenceGame,
+  WallWritingPaintGame,
+} from './SkssfPracticalGames';
 
 export type MiniGameLessonKey =
   | 'p0_creator'
@@ -27,6 +37,13 @@ export type MiniGameLessonKey =
   | 'sb_ch2'
   | 'sb_ch3'
   | 'storyboard'
+  | 'pov_1'
+  | 'pov_2'
+  | 'pov_3'
+  | 'pov_4'
+  | 'pov_6'
+  | 'pov_7'
+  | 'pov_8'
   | 'pov_journey'
   | 'l1_cosmic'
   | 'l1_roots'
@@ -731,39 +748,58 @@ const InStageFailOverlay: React.FC<{
   reason: string;
   scoreText?: string;
   onRetry: () => void;
-}> = ({ title = 'ഈ ശ്രമം പരാജയപ്പെട്ടു!', reason, scoreText, onRetry }) => (
-  <div className="absolute inset-0 z-40 bg-slate-950/88 backdrop-blur-xs flex items-center justify-center p-4">
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="max-w-md w-full rounded-2xl border-2 border-rose-400 bg-slate-900/95 text-white p-5 text-center shadow-2xl space-y-3"
-    >
-      <div className="text-4xl">⚠️</div>
-      <h4 className="text-base sm:text-lg font-extrabold text-amber-300 leading-snug">{title}</h4>
-      <p className="text-xs sm:text-sm font-bold text-slate-100 leading-relaxed">{reason}</p>
-      {scoreText && (
-        <p className="text-xs font-extrabold text-rose-200 bg-rose-950/70 border border-rose-500/40 rounded-lg px-3 py-1.5 inline-block tabular-nums">
-          {scoreText}
-        </p>
-      )}
-      <div className="pt-1">
-        <motion.button
-          type="button"
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.94 }}
-          onClick={() => {
-            sound.playClick();
-            onRetry();
-          }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-xs sm:text-sm font-extrabold shadow-lg"
-        >
-          <RotateCcw className="w-4 h-4" />
-          <span>🔄 വീണ്ടും ശ്രമിക്കാം</span>
-        </motion.button>
-      </div>
-    </motion.div>
-  </div>
-);
+}> = ({ title = '⚠️', reason, scoreText, onRetry }) => {
+  const [showInfo, setShowInfo] = useState(false);
+  return (
+    <div className="absolute inset-0 z-40 bg-slate-950/88 backdrop-blur-xs flex items-center justify-center p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="max-w-xs w-full rounded-2xl border-2 border-rose-400 bg-slate-900/95 text-white p-4 text-center shadow-2xl space-y-3"
+      >
+        <div className="text-4xl">⚠️</div>
+        {scoreText && (
+          <p className="text-xs font-extrabold text-rose-200 bg-rose-950/70 border border-rose-500/40 rounded-lg px-3 py-1 inline-block tabular-nums">
+            {scoreText}
+          </p>
+        )}
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setShowInfo((v) => !v);
+            }}
+            aria-label="വിവരം"
+            className="w-11 h-11 rounded-xl bg-white/15 hover:bg-white/25 text-amber-300 flex items-center justify-center"
+          >
+            <Info className="w-5 h-5" />
+          </button>
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => {
+              sound.playClick();
+              onRetry();
+            }}
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow-lg"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span>🔄</span>
+          </motion.button>
+        </div>
+        {showInfo && (
+          <div className="rounded-xl bg-slate-800/90 border border-slate-700 p-2.5 text-left space-y-1">
+            <p className="text-xs font-extrabold text-amber-300 leading-snug">{title}</p>
+            <p className="text-[11px] font-bold text-slate-200 leading-relaxed">{reason}</p>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
 
 /* ============================================================================
  * ICON-FIRST ARCADE GAME PEDALS (NO BORING TEXT LABELS — INSTANTLY RECOGNIZABLE!)
@@ -1015,31 +1051,36 @@ const TreeRainGardenGame: React.FC<{
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
   const isFullscreen = useGameFullscreen();
-  const [jugX, setJugX] = useState(95);
+  const [jugX, setJugX] = useState(110);
   const [grown, setGrown] = useState<number[]>([]);
   const [pouring, setPouring] = useState<'idle' | 'hit' | 'waste'>('idle');
-  const [pourX, setPourX] = useState(95);
+  const [pourX, setPourX] = useState(110);
   const [waterLeft, setWaterLeft] = useState(5);
   const [wastedCount, setWastedCount] = useState(0);
   const [failedReason, setFailedReason] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [tappedPotIdx, setTappedPotIdx] = useState<number | null>(null);
   const [msg, setMsg] = useState(
     'ജഗ്ഗ് കൃത്യമായി വാടിയ ചെടിക്ക് മുകളിൽ എത്തുമ്പോൾ താഴെയുള്ള 💧 ചിഹ്നം അമർത്തൂ! തറയിൽ വെള്ളം പാഴാക്കിയാൽ കളി ഔട്ട് ആകും!'
   );
 
   const dirRef = useRef(1);
+  const jugXRef = useRef(110);
   const spotXs = [130, 300, 470];
   const allGrown = grown.length === config.spots.length;
   const failed = Boolean(failedReason);
 
   const resetLocal = () => {
-    setJugX(95);
+    jugXRef.current = 110;
     dirRef.current = 1;
+    setJugX(110);
     setGrown([]);
     setPouring('idle');
-    setPourX(95);
+    setPourX(76);
     setWaterLeft(5);
     setWastedCount(0);
     setFailedReason(null);
+    setTappedPotIdx(null);
     setMsg(
       'ജഗ്ഗ് കൃത്യമായി വാടിയ ചെടിക്ക് മുകളിൽ എത്തുമ്പോൾ താഴെയുള്ള 💧 ചിഹ്നം അമർത്തൂ! തറയിൽ വെള്ളം പാഴാക്കിയാൽ കളി ഔട്ട് ആകും!'
     );
@@ -1049,41 +1090,50 @@ const TreeRainGardenGame: React.FC<{
     resetLocal();
   }, [resetSignal]);
 
-  // Smooth continuous gliding of the Watering Jug across the garden
+  // Silky-smooth 60fps requestAnimationFrame glide (zero stutter!)
   useEffect(() => {
     if (allGrown || failed || pouring !== 'idle') return;
-    const id = window.setInterval(() => {
-      setJugX((prev) => {
-        const next = prev + dirRef.current * 5.6;
-        if (next >= 530) {
-          dirRef.current = -1;
-          return 530;
-        }
-        if (next <= 70) {
-          dirRef.current = 1;
-          return 70;
-        }
-        return next;
-      });
-    }, 32);
-    return () => window.clearInterval(id);
+    let rafId = 0;
+    let lastTs = performance.now();
+    const speedPxPerSec = 175;
+
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, Math.max(0.001, (now - lastTs) / 1000));
+      lastTs = now;
+      let next = jugXRef.current + dirRef.current * speedPxPerSec * dt;
+      if (next >= 530) {
+        next = 530;
+        dirRef.current = -1;
+      } else if (next <= 95) {
+        next = 95;
+        dirRef.current = 1;
+      }
+      jugXRef.current = next;
+      setJugX(next);
+      rafId = window.requestAnimationFrame(tick);
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
   }, [allGrown, failed, pouring]);
 
-  // Spout tip sits ~26px to the left of jug body center
-  const spoutX = jugX - 24;
-  const hoveredSpotIdx = spotXs.findIndex((sx) => Math.abs(spoutX - sx) <= 44);
+  // Spout rose tip sits cleanly at -34px from jug center
+  const spoutX = jugX - 34;
+  const hoveredSpotIdx = spotXs.findIndex((sx) => Math.abs(spoutX - sx) <= 46);
   const overDrySpot = hoveredSpotIdx >= 0 && !grown.includes(hoveredSpotIdx);
 
   const handlePourWater = () => {
     sound.unlockAudio();
     if (pouring !== 'idle' || failed || allGrown || waterLeft <= 0) return;
 
-    const currentSpout = spoutX;
+    const currentSpout = jugXRef.current - 34;
     setPourX(currentSpout);
     const nextWater = waterLeft - 1;
     setWaterLeft(nextWater);
 
-    const targetIdx = spotXs.findIndex((sx) => Math.abs(currentSpout - sx) <= 44);
+    const targetIdx = spotXs.findIndex((sx) => Math.abs(currentSpout - sx) <= 46);
     const isHitDry = targetIdx >= 0 && !grown.includes(targetIdx);
 
     if (isHitDry) {
@@ -1103,9 +1153,8 @@ const TreeRainGardenGame: React.FC<{
           sound.playError();
           setFailedReason('ജഗ്ഗിലെ വെള്ളം തികയാതെ പോയി! ബാക്കിയുള്ള ചെടികൾ നനയ്ക്കാൻ കഴിഞ്ഞില്ല.');
         }
-      }, 520);
+      }, 560);
     } else {
-      // Wasted water on empty courtyard bricks or already watered plant!
       setPouring('waste');
       sound.playError();
       const nextWasted = wastedCount + 1;
@@ -1117,7 +1166,7 @@ const TreeRainGardenGame: React.FC<{
         const remainingNeeded = config.spots.length - grown.length;
         if (nextWasted >= 2) {
           setFailedReason(
-            'വെള്ളം വെറുതെ പാഴാക്കി! 2 തവണ ചെടിക്ക് പുറത്ത് / അധികമായി വെള്ളം ഒഴിച്ചതിനാൽ കളി ഔട്ട് ആയി. ഒരു തുള്ളി പോലും പാഴാക്കാതെ വീണ്ടും ശ്രമിക്കൂ!'
+            'വെള്ളം വെറുതെ പാഴാക്കി! 2 തവണ ചെടിക്ക് പുറത്ത് / അധികമായി വെള്ളം ഒഴിച്ചതിനാൽ കളി ഔട്ട് ആയി.'
           );
         } else if (nextWater < remainingNeeded) {
           setFailedReason(
@@ -1126,33 +1175,35 @@ const TreeRainGardenGame: React.FC<{
         } else {
           setMsg(
             hitAlreadyWatered
-              ? '⚠️ അയ്യോ! നനച്ച ചെടിയിൽ തന്നെ വീണ്ടും ഒഴിച്ച് വെള്ളം പാഴാക്കി! ഇനി ഒരിക്കൽ കൂടി പാഴാക്കിയാൽ കളി ഔട്ട് ആകും!'
-              : '⚠️ അയ്യോ! ചെടിയില്ലാത്ത തറയിൽ വെള്ളം വെറുതെ പാഴായി! ഇനി ഒരിക്കൽ കൂടി പാഴാക്കിയാൽ കളി ഔട്ട് ആകും!'
+              ? '⚠️ നനച്ച ചെടിയിൽ തന്നെ വീണ്ടും ഒഴിച്ചു!'
+              : '⚠️ ചെടിയില്ലാത്ത തറയിൽ വെള്ളം പാഴായി!'
           );
         }
-      }, 540);
+      }, 560);
     }
   };
 
+  const waterRatio = Math.max(0, Math.min(1, waterLeft / 5));
+
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-sky-100 shadow-inner select-none">
-        {/* Top HUD inside Stage */}
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+        {/* Icon-Only Top HUD */}
+        <div className="absolute top-2 left-2.5 right-2.5 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5">
             <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-sky-200 text-xs font-extrabold tabular-nums">
-              🫖 വെള്ളം: {waterLeft}/5
+              🫖 {waterLeft}/5
             </span>
             <span
               className={`px-2.5 py-1 rounded-xl text-xs font-extrabold tabular-nums ${
                 wastedCount > 0 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-950/75 text-emerald-200'
               }`}
             >
-              💦 പാഴാക്കിയത്: {wastedCount}/2
+              💦 {wastedCount}/2
             </span>
           </div>
           <span className="px-2.5 py-1 rounded-xl bg-emerald-950/85 text-amber-300 text-xs font-extrabold tabular-nums">
-            🌺 നനച്ചത്: {grown.length}/{config.spots.length}
+            🌺 {grown.length}/{config.spots.length}
           </span>
         </div>
 
@@ -1173,33 +1224,49 @@ const TreeRainGardenGame: React.FC<{
               <stop offset="55%" stopColor="#0284C7" />
               <stop offset="100%" stopColor="#0369A1" />
             </linearGradient>
+            <linearGradient id="jugSpoutGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#0369A1" />
+              <stop offset="100%" stopColor="#0EA5E9" />
+            </linearGradient>
           </defs>
 
           <rect width="600" height="265" fill="url(#madrasaGardenSky)" />
 
-          {/* Warm Sun */}
-          <motion.g
-            animate={{ rotate: [0, 360] }}
-            transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-            style={{ originX: '542px', originY: '46px' }}
-          >
-            <circle cx="542" cy="46" r="20" fill="#FACC15" />
-            <circle cx="542" cy="46" r="28" fill="#FDE047" opacity="0.32" />
-          </motion.g>
+          {/* Warm Sun (Outer translate + inner rotate so it spins cleanly in place!) */}
+          <g transform="translate(542, 46)">
+            <motion.g
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+              style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+            >
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+                <line
+                  key={deg}
+                  x1="0"
+                  y1="-26"
+                  x2="0"
+                  y2="-32"
+                  stroke="#FACC15"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  transform={`rotate(${deg})`}
+                />
+              ))}
+            </motion.g>
+            <circle cx="0" cy="0" r="24" fill="#FDE047" opacity="0.32" />
+            <circle cx="0" cy="0" r="18" fill="#FACC15" />
+          </g>
 
-          {/* Charming Masjid Dome + Madrasa Building in Background */}
+          {/* Masjid Dome + Madrasa Silhouette in Background */}
           <g opacity="0.92">
-            {/* Mosque Central Dome & Minarets */}
             <rect x="205" y="122" width="190" height="72" rx="4" fill="#FEFCE8" stroke="#065F46" strokeWidth="2" />
             <path d="M252 122 Q300 72 348 122 Z" fill="#059669" stroke="#064E3B" strokeWidth="2" />
             <line x1="300" y1="74" x2="300" y2="62" stroke="#F59E0B" strokeWidth="2.5" />
             <circle cx="300" cy="60" r="3" fill="#F59E0B" />
-            {/* Left & Right Minarets */}
             <rect x="190" y="92" width="16" height="102" fill="#ECFDF5" stroke="#065F46" strokeWidth="1.8" />
             <path d="M188 92 Q198 76 208 92 Z" fill="#047857" />
             <rect x="394" y="92" width="16" height="102" fill="#ECFDF5" stroke="#065F46" strokeWidth="1.8" />
             <path d="M392 92 Q402 76 412 92 Z" fill="#047857" />
-            {/* Madrasa Arched Windows */}
             {[232, 278, 324, 362].map((ax) => (
               <path
                 key={ax}
@@ -1208,202 +1275,259 @@ const TreeRainGardenGame: React.FC<{
                 opacity="0.75"
               />
             ))}
-            {/* Signboard */}
-            <rect x="242" y="126" width="116" height="15" rx="4" fill="#065F46" />
-            <text x="300" y="137" textAnchor="middle" fill="#FDE047" fontSize="8.2" fontWeight="900">
-              🕌 പള്ളി &amp; മദ്‌റസ
-            </text>
           </g>
 
-          {/* Courtyard Lawn & Brick Border Path (Empty brick ground between pots = DON'T WASTE WATER HERE!) */}
+          {/* Courtyard Lawn & Brick Path */}
           <rect x="0" y="190" width="600" height="75" fill="#22C55E" />
-          <rect x="0" y="216" width="600" height="49" fill="#B45309" opacity="0.22" />
-          <rect x="0" y="220" width="600" height="45" fill="#78350F" opacity="0.88" />
-          {/* Courtyard tiles lines */}
+          <rect x="0" y="218" width="600" height="47" fill="#78350F" opacity="0.88" />
           {[60, 185, 240, 360, 415, 540].map((tx) => (
-            <line key={tx} x1={tx} y1="220" x2={tx - 10} y2="265" stroke="#92400E" strokeWidth="1.5" opacity="0.55" />
+            <line key={tx} x1={tx} y1="218" x2={tx - 10} y2="265" stroke="#92400E" strokeWidth="1.5" opacity="0.55" />
           ))}
 
-          {/* Target Aim Drop Guide Beam under Jug Spout */}
-          {!allGrown && !failed && (
+          {/* Target Aim Drop Guide Beam under Spout Tip */}
+          {!allGrown && !failed && pouring === 'idle' && (
             <line
               x1={spoutX}
               y1="82"
               x2={spoutX}
-              y2="215"
-              stroke={overDrySpot ? '#22C55E' : '#F43F5E'}
+              y2="204"
+              stroke={overDrySpot ? '#16A34A' : '#F43F5E'}
               strokeWidth={overDrySpot ? '3' : '2'}
               strokeDasharray="6 6"
-              opacity={overDrySpot ? 0.9 : 0.45}
+              opacity={overDrySpot ? 0.92 : 0.4}
             />
           )}
 
-          {/* ANIMATED GLIDING WATERING JUG (🫖) */}
-          <motion.g
-            transform={`translate(${jugX}, 48)`}
-            animate={
-              pouring === 'waste'
-                ? { rotate: [-14, 14, -10, 10, 0] }
-                : pouring === 'hit'
-                ? { rotate: -30 }
-                : { rotate: overDrySpot ? -8 : 0 }
-            }
-            transition={{ duration: 0.25 }}
-            style={{ transformOrigin: '0px 18px' }}
-          >
-            {/* Spout pointing left-down */}
-            <path
-              d="M-12 18 L-34 28 L-31 35 L-8 27 Z"
-              fill="#0284C7"
-              stroke="#0C4A6E"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-            {/* Rose nozzle */}
-            <ellipse cx="-33" cy="32" rx="4.5" ry="6.5" fill="#FACC15" stroke="#92400E" strokeWidth="1.5" transform="rotate(-24 -33 32)" />
-            {/* Jug Handle */}
-            <path d="M18 8 C34 8 34 32 16 32" fill="none" stroke="#0369A1" strokeWidth="5" strokeLinecap="round" />
-            {/* Jug Body */}
-            <path
-              d="M-14 6 L16 6 L20 34 Q20 40 12 40 L-10 40 Q-18 40 -18 34 Z"
-              fill="url(#jugBodyGrad)"
-              stroke="#0C4A6E"
-              strokeWidth="2.2"
-            />
-            {/* Water level shine inside jug */}
-            <rect x="-11" y="14" width="24" height="5" rx="2.5" fill="#BAE6FD" opacity="0.65" />
-            <text x="1" y="31" textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="900">
-              💧{waterLeft}
-            </text>
-          </motion.g>
+          {/* ANIMATED GLIDING WATERING JUG — OUTER <g> HANDLES X POSITION, INNER <motion.g> HANDLES TILT ONLY! */}
+          <g transform={`translate(${jugX}, 44)`}>
+            <motion.g
+              animate={
+                pouring === 'waste'
+                  ? { rotate: [-18, 12, -14, 10, 0] }
+                  : pouring === 'hit'
+                  ? { rotate: -26 }
+                  : { rotate: overDrySpot ? -8 : 0 }
+              }
+              transition={{ duration: pouring === 'waste' ? 0.45 : 0.2 }}
+              style={{ transformOrigin: '0px 22px' }}
+            >
+              {/* Soft Shadow under jug */}
+              <ellipse cx="0" cy="46" rx="18" ry="3.5" fill="#0F172A" opacity="0.14" />
+              {/* Top & Rear Ergonomic Loop Handle */}
+              <path
+                d="M-6 8 C-4 -6 22 -6 24 12 C26 24 24 34 15 34"
+                fill="none"
+                stroke="#0369A1"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Spout Neck pointing cleanly left-down */}
+              <path
+                d="M-14 22 L-33 30 L-30 37 L-11 32 Z"
+                fill="url(#jugSpoutGrad)"
+                stroke="#0C4A6E"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* Brass Rose Sprinkler Head */}
+              <ellipse
+                cx="-34"
+                cy="34"
+                rx="4.8"
+                ry="7"
+                fill="#FACC15"
+                stroke="#92400E"
+                strokeWidth="1.6"
+                transform="rotate(-24 -34 34)"
+              />
+              {/* Sculpted Jug Body */}
+              <path
+                d="M-15 8 L15 8 L19 36 Q19 42 11 42 L-11 42 Q-19 42 -19 36 Z"
+                fill="url(#jugBodyGrad)"
+                stroke="#0C4A6E"
+                strokeWidth="2.2"
+              />
+              {/* Top Rim Lip */}
+              <ellipse cx="0" cy="8" rx="15" ry="3.2" fill="#7DD3FC" stroke="#0C4A6E" strokeWidth="1.6" />
+              {/* Live Water Level Gauge Inside Jug */}
+              <rect x="-11" y="16" width="22" height="20" rx="4" fill="#0C4A6E" opacity="0.45" />
+              <rect
+                x="-10"
+                y={17 + (1 - waterRatio) * 18}
+                width="20"
+                height={waterRatio * 18}
+                rx="3"
+                fill="#7DD3FC"
+              />
+              <text x="0" y="31" textAnchor="middle" fill="#FFFFFF" fontSize="9.5" fontWeight="900">
+                💧{waterLeft}
+              </text>
+            </motion.g>
+          </g>
 
-          {/* ANIMATED WATER STREAM & SPLASH WHEN POURING */}
+          {/* REALISTIC CASCADING WATER DROPLETS & RIPPLE SPLASH WHEN POURING */}
           {pouring !== 'idle' && (
             <g>
-              {[-6, 0, 6].map((dx, i) => (
-                <motion.line
+              {[-7, -2, 3, 8].map((dx, i) => (
+                <motion.circle
                   key={dx}
-                  x1={pourX + dx * 0.4}
-                  y1="78"
-                  x2={pourX + dx}
-                  y2="212"
-                  stroke={pouring === 'waste' ? '#FB7185' : '#38BDF8'}
-                  strokeWidth="3.5"
-                  strokeDasharray="10 8"
-                  initial={{ opacity: 0.2, y: -10 }}
-                  animate={{ opacity: [0.5, 1, 0.2], y: [0, 24] }}
-                  transition={{ duration: 0.35, repeat: Infinity, delay: i * 0.06 }}
+                  cx={pourX + dx * 0.5}
+                  cy={84}
+                  r={i % 2 === 0 ? 3.8 : 3}
+                  fill={pouring === 'waste' ? '#FB7185' : '#38BDF8'}
+                  stroke={pouring === 'waste' ? '#E11D48' : '#0284C7'}
+                  strokeWidth="1"
+                  initial={{ cy: 84, opacity: 0.95 }}
+                  animate={{ cy: [84, 204], opacity: [1, 0.9, 0.15] }}
+                  transition={{ duration: 0.42, repeat: Infinity, delay: i * 0.08, ease: 'easeIn' }}
                 />
               ))}
-              {pouring === 'waste' && (
-                <motion.g
-                  initial={{ scale: 0.4, opacity: 1 }}
-                  animate={{ scale: 1.4, opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                  transform={`translate(${pourX}, 220)`}
-                >
-                  <ellipse cx="0" cy="0" rx="26" ry="8" fill="#F43F5E" opacity="0.65" />
-                  <text x="0" y="-12" textAnchor="middle" fill="#BE123C" fontSize="13" fontWeight="900">
-                    💦 പാഴായി!
+              {/* Splash Ripple Ring at Ground / Pot Top (Outer translate, inner scale!) */}
+              <g transform={`translate(${pourX}, 205)`}>
+                <motion.ellipse
+                  cx="0"
+                  cy="0"
+                  rx="24"
+                  ry="7"
+                  fill="none"
+                  stroke={pouring === 'waste' ? '#F43F5E' : '#38BDF8'}
+                  strokeWidth="3"
+                  initial={{ scale: 0.35, opacity: 1 }}
+                  animate={{ scale: [0.35, 1.35], opacity: [1, 0] }}
+                  transition={{ duration: 0.48, repeat: Infinity }}
+                  style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                />
+                {pouring === 'waste' && (
+                  <text x="0" y="-12" textAnchor="middle" fill="#BE123C" fontSize="16" fontWeight="900">
+                    ❌💦
                   </text>
-                </motion.g>
-              )}
+                )}
+              </g>
             </g>
           )}
 
-          {/* 3 POTTED GARDEN PLANTS WITH CLEAR SPACING BETWEEN THEM */}
+          {/* 3 POTTED GARDEN PLANTS (Outer translate + Inner motion so zero transform bugs!) */}
           {config.spots.map((spot, idx) => {
             const x = spotXs[idx];
             const isGrown = grown.includes(idx);
             const isAimed = hoveredSpotIdx === idx && !isGrown;
             return (
-              <g key={spot.id}>
-                {/* Glowing Green Aim Ring when jug spout is aligned over thirsty plant! */}
+              <g
+                key={spot.id}
+                transform={`translate(${x}, 200)`}
+                className="cursor-pointer"
+                onClick={() => {
+                  sound.playClick();
+                  setTappedPotIdx((cur) => (cur === idx ? null : idx));
+                }}
+              >
+                {/* Glowing Green Aim Halo when spout is over thirsty plant */}
                 {isAimed && (
                   <motion.ellipse
-                    cx={x}
-                    cy={220}
-                    rx={44}
-                    ry={13}
+                    cx="0"
+                    cy="20"
+                    rx="44"
+                    ry="13"
                     fill="#4ADE80"
-                    opacity="0.45"
-                    animate={{ scale: [1, 1.08, 1] }}
+                    opacity="0.48"
+                    animate={{ scale: [1, 1.09, 1] }}
                     transition={{ duration: 0.45, repeat: Infinity }}
+                    style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   />
                 )}
 
                 {/* Terracotta Flower Pot */}
                 <path
-                  d={`M${x - 24} 204 L${x + 24} 204 L${x + 18} 226 L${x - 18} 226 Z`}
+                  d="M-24 4 L24 4 L18 26 L-18 26 Z"
                   fill={isGrown ? '#D97706' : isAimed ? '#F59E0B' : '#B45309'}
                   stroke={isAimed ? '#FEF08A' : '#78350F'}
                   strokeWidth={isAimed ? '3' : '2'}
                 />
-                <rect x={x - 27} y={199} width="54" height="7" rx="3" fill="#EA580C" stroke="#78350F" strokeWidth="1.5" />
+                <rect x="-27" y="-1" width="54" height="7" rx="3" fill="#EA580C" stroke="#78350F" strokeWidth="1.5" />
 
                 {!isGrown ? (
-                  /* Thirsty drooping sapling waiting for water */
                   <motion.g
-                    animate={{ rotate: [-3, 3, -3] }}
+                    animate={{ rotate: [-4, 4, -4] }}
                     transition={{ duration: 1.8, repeat: Infinity }}
-                    style={{ transformOrigin: `${x}px 199px` }}
+                    style={{ transformOrigin: '0px 0px' }}
                   >
-                    <path d={`M${x} 199 Q${x - 4} 182 ${x - 12} 186`} stroke="#65A30D" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-                    <path d={`M${x} 199 Q${x + 6} 180 ${x + 14} 187`} stroke="#84CC16" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-                    <text x={x} y="172" textAnchor="middle" fontSize="14">
+                    <path d="M0 0 Q-4 -18 -12 -14" stroke="#65A30D" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                    <path d="M0 0 Q6 -20 14 -13" stroke="#84CC16" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+                    <text x="0" y="-26" textAnchor="middle" fontSize="15">
                       {isAimed ? '🎯' : '🥀'}
                     </text>
                   </motion.g>
                 ) : (
-                  /* Lush Bloomed Plant / Tree with Animated Sway & Sparkle! */
                   <motion.g
-                    initial={{ scaleY: 0.25, opacity: 0.4 }}
+                    initial={{ scaleY: 0.2, opacity: 0.3 }}
                     animate={{ scaleY: 1, opacity: 1 }}
                     transition={{ type: 'spring', stiffness: 170, damping: 12 }}
-                    style={{ originX: `${x}px`, originY: '200px' }}
+                    style={{ transformOrigin: '0px 0px' }}
                   >
-                    <rect x={x - 7} y={142} width="14" height="58" rx="4" fill="#78350F" />
-                    <circle cx={x} cy={126} r="32" fill="#15803D" />
-                    <circle cx={x - 22} cy={140} r="22" fill="#16A34A" />
-                    <circle cx={x + 22} cy={140} r="22" fill="#22C55E" />
-                    <circle cx={x} cy={114} r="20" fill="#4ADE80" opacity="0.65" />
-                    <motion.text
-                      x={x}
-                      y={134}
-                      textAnchor="middle"
-                      fontSize="24"
-                      animate={{ y: [134, 129, 134] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
+                    <rect x="-7" y="-58" width="14" height="58" rx="4" fill="#78350F" />
+                    <circle cx="0" cy="-74" r="32" fill="#15803D" />
+                    <circle cx="-22" cy="-60" r="22" fill="#16A34A" />
+                    <circle cx="22" cy="-60" r="22" fill="#22C55E" />
+                    <circle cx="0" cy="-86" r="20" fill="#4ADE80" opacity="0.65" />
+                    <text x="0" y="-66" textAnchor="middle" fontSize="24">
                       {spot.bloomEmoji}
-                    </motion.text>
+                    </text>
                   </motion.g>
                 )}
 
-                <rect x={x - 58} y={232} width="116" height="22" rx="6" fill={isGrown ? '#065F46' : '#1E293B'} />
-                <text x={x} y={246} textAnchor="middle" fill="#FFFFFF" fontSize="9.2" fontWeight="800">
-                  {isGrown ? '✅ ' : ''}
-                  {spot.label}
+                {/* Compact Icon Chip under Pot (Tap pot to reveal its name!) */}
+                <rect
+                  x="-22"
+                  y="32"
+                  width="44"
+                  height="22"
+                  rx="8"
+                  fill={isGrown ? '#065F46' : tappedPotIdx === idx ? '#F59E0B' : '#1E293B'}
+                />
+                <text x="0" y="47" textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="800">
+                  {isGrown ? '✅' : spot.bloomEmoji}
                 </text>
               </g>
             );
           })}
         </svg>
 
-        {/* IN-SCREEN ICONIC POUR CONTROL BAR */}
-        <div className="bg-slate-950/92 backdrop-blur-xs border-t-2 border-emerald-500/40 px-3 py-2.5 flex items-center justify-between gap-3">
-          <p className="text-[11px] sm:text-xs font-bold text-emerald-100 leading-snug flex-1">
-            {msg}
-          </p>
+        {/* Tap-to-Reveal Label Strip (Only shown when user taps a pot or ℹ️!) */}
+        {(showInfo || tappedPotIdx !== null) && (
+          <div className="bg-slate-900/95 border-t border-emerald-500/30 px-3 py-1.5 text-[11px] font-bold text-emerald-100 text-center">
+            {tappedPotIdx !== null
+              ? `${config.spots[tappedPotIdx].bloomEmoji} ${config.spots[tappedPotIdx].label}`
+              : msg}
+          </div>
+        )}
 
-          {/* Iconic Animated Pour Button (No boring prose!) */}
+        {/* ICON-ONLY BOTTOM POUR CONTROL BAR */}
+        <div className="bg-slate-950/92 backdrop-blur-xs border-t-2 border-emerald-500/40 px-3 py-2 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setTappedPotIdx(null);
+              setShowInfo((v) => !v);
+            }}
+            aria-label="സഹായം"
+            className={`w-11 h-11 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${
+              showInfo
+                ? 'bg-amber-400 text-slate-950 border-amber-300'
+                : 'bg-white/10 hover:bg-white/20 text-amber-300 border-white/20'
+            }`}
+          >
+            <Info className="w-5 h-5" />
+          </button>
+
           <motion.button
             type="button"
             disabled={pouring !== 'idle' || allGrown || failed}
             whileTap={{ scale: 0.9, y: 3 }}
             onClick={handlePourWater}
             aria-label="വെള്ളം ഒഴിക്കൂ"
-            className={`h-14 px-5 sm:px-6 rounded-2xl border-2 border-b-4 flex items-center justify-center gap-2 shrink-0 transition-all shadow-lg ${
+            className={`h-14 flex-1 max-w-[200px] rounded-2xl border-2 border-b-4 flex items-center justify-center gap-2 transition-all shadow-lg ${
               allGrown
                 ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-900 opacity-85'
                 : overDrySpot
@@ -1414,13 +1538,15 @@ const TreeRainGardenGame: React.FC<{
             <span className="text-2xl">{allGrown ? '✅' : '🫖'}</span>
             <span className="text-2xl">{allGrown ? '🌺' : '💧'}</span>
           </motion.button>
+
+          <div className="w-11 shrink-0" />
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="💦 വെള്ളം പാഴാക്കി — കളി ഔട്ട്!"
-            reason={failedReason || 'വെള്ളം വെറുതെ പാഴാക്കിയതിനാൽ പരാജയപ്പെട്ടു! കൃത്യമായി ചെടിക്ക് മുകളിൽ മാത്രം ഒഴിച്ച് വീണ്ടും ശ്രമിക്കൂ.'}
-            scoreText={`നനച്ച ചെടികൾ: ${grown.length}/${config.spots.length} · പാഴാക്കിയത്: ${wastedCount}/2`}
+            reason={failedReason || 'വെള്ളം വെറുതെ പാഴാക്കിയതിനാൽ പരാജയപ്പെട്ടു!'}
+            scoreText={`🌺 ${grown.length}/${config.spots.length} · 💦 ${wastedCount}/2`}
             onRetry={resetLocal}
           />
         )}
@@ -1948,32 +2074,32 @@ const RoadVehicleDriveGame: React.FC<{
           isFullscreen ? 'min-h-[78dvh]' : 'min-h-[345px] sm:min-h-[395px]'
         }`}
       >
-        {/* TOP HUD INSIDE GAME SCREEN */}
-        <div className="relative z-20 px-3 pt-2.5 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-[11px] sm:text-xs font-extrabold backdrop-blur-xs tabular-nums">
-              {config.weather === 'evening' ? '💡 കത്തിച്ചത്' : '✅ പൂർത്തിയാക്കിയത്'}: {servedStops.length}/{config.stops.length}
+        {/* TOP HUD INSIDE GAME SCREEN (ICON-FIRST) */}
+        <div className="relative z-20 px-3 pt-2.5 flex items-center justify-between gap-2 pointer-events-none">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold backdrop-blur-xs tabular-nums">
+              {config.weather === 'evening' ? '💡' : '✅'} {servedStops.length}/{config.stops.length}
             </span>
-            <span className="px-2.5 py-1 rounded-xl bg-emerald-950/85 text-emerald-200 text-[11px] sm:text-xs font-extrabold tabular-nums">
-              ⭐ മാർക്ക്: {score}
+            <span className="px-2.5 py-1 rounded-xl bg-emerald-950/85 text-emerald-200 text-xs font-extrabold tabular-nums">
+              ⭐ {score}
             </span>
             {missedStops.length > 0 && (
-              <span className="px-2.5 py-1 rounded-xl bg-rose-900/90 text-rose-100 text-[11px] sm:text-xs font-extrabold tabular-nums">
-                ❌ വിട്ടുപോയത്: {missedStops.length}
+              <span className="px-2.5 py-1 rounded-xl bg-rose-900/90 text-rose-100 text-xs font-extrabold tabular-nums">
+                ❌ {missedStops.length}
               </span>
             )}
           </div>
 
-          <span className="px-2.5 py-1 rounded-xl bg-white/95 text-emerald-950 text-[11px] sm:text-xs font-extrabold shadow-xs">
+          <span className="px-2.5 py-1 rounded-xl bg-white/95 text-emerald-950 text-xs font-extrabold shadow-xs">
             {won
-              ? '🎉 ദൗത്യം വിജയം!'
+              ? '🎉'
               : canServeNow
-              ? '✨ ഇപ്പോൾ സേവനം ചെയ്യൂ!'
+              ? '✨👇'
               : inStopZone && driving && !isCurrentServed
-              ? '🛑 ഇപ്പോൾ ബ്രേക്ക് അമർത്തൂ!'
+              ? '🛑'
               : driving
-              ? '🚗 വണ്ടി ഓടുന്നു...'
-              : '🅿️ വണ്ടി നിർത്തിയിരിക്കുന്നു'}
+              ? '🚗'
+              : '🅿️'}
           </span>
         </div>
 
@@ -2094,9 +2220,8 @@ const RoadVehicleDriveGame: React.FC<{
                 />
               )}
 
-              {/* Alert Badge Above Stop */}
               <div
-                className={`mb-1 px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-extrabold whitespace-nowrap shadow-md ${
+                className={`mb-1 px-2 py-0.5 rounded-lg text-xs font-extrabold whitespace-nowrap shadow-md ${
                   isCurrentServed
                     ? 'bg-emerald-600 text-white'
                     : isCurrentMissed
@@ -2107,13 +2232,13 @@ const RoadVehicleDriveGame: React.FC<{
                 }`}
               >
                 {isCurrentServed
-                  ? '✅ പൂർത്തിയായി!'
+                  ? '✅'
                   : isCurrentMissed
-                  ? '❌ വിട്ടുപോയി!'
+                  ? '❌'
                   : inStopZone
                   ? driving
-                    ? '🛑 ഇപ്പോൾ ബ്രേക്ക്!'
-                    : '👇 താഴെ അമർത്തൂ!'
+                    ? '🛑'
+                    : '👇'
                   : `${activeStop.emoji} #${currentIdx + 1}`}
               </div>
 
@@ -2179,17 +2304,15 @@ const RoadVehicleDriveGame: React.FC<{
           </motion.div>
         </div>
 
-        {/* IN-SCREEN DRIVING COCKPIT CONTROLS (ICON-FIRST ARCADE PEDALS — ZERO CLUNKY TEXT!) */}
-        <div className="relative z-30 bg-slate-950/92 backdrop-blur-xs border-t-2 border-emerald-500/40 px-3 sm:px-4 py-2.5 space-y-1.5">
+        {/* IN-SCREEN DRIVING COCKPIT CONTROLS (ICON-ONLY PEDALS) */}
+        <div className="relative z-30 bg-slate-950/92 backdrop-blur-xs border-t-2 border-emerald-500/40 px-3 sm:px-4 py-2">
           <div className="grid grid-cols-3 gap-2.5 items-center max-w-lg mx-auto">
-            {/* LEFT: SCULPTED RED BRAKE PEDAL ICON */}
             <GameBrakePedal
               disabled={!driving || routeEnded}
               highlight={driving && inStopZone && !isCurrentServed}
               onClick={handleBrake}
             />
 
-            {/* CENTER: PULSING GRAPHIC ACTION ICON (LIGHT LAMP / MOSQUE / MEDICINE / HOME) */}
             <motion.button
               type="button"
               disabled={!canServeNow}
@@ -2197,7 +2320,7 @@ const RoadVehicleDriveGame: React.FC<{
               onClick={handleServe}
               aria-label={currentActionText}
               title={currentActionText}
-              className={`h-14 sm:h-16 px-2 rounded-2xl border-2 border-b-4 transition-all flex flex-col items-center justify-center leading-none ${
+              className={`h-14 sm:h-16 px-2 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-center leading-none ${
                 canServeNow
                   ? 'bg-gradient-to-b from-amber-300 to-amber-500 hover:from-amber-200 hover:to-amber-400 text-slate-950 border-white border-b-amber-700 ring-4 ring-amber-200/80 shadow-[0_0_24px_rgba(250,204,21,0.85)]'
                   : 'bg-slate-800/90 text-slate-500 border-slate-700 border-b-slate-950 cursor-not-allowed opacity-55'
@@ -2210,14 +2333,8 @@ const RoadVehicleDriveGame: React.FC<{
               >
                 {activeStop?.emoji ?? (config.weather === 'evening' ? '💡' : '✨')}
               </motion.span>
-              {canServeNow && (
-                <span className="text-[9px] sm:text-[10px] font-black text-slate-950 mt-0.5 leading-none">
-                  {currentActionText.replace(/^[^\u0D00-\u0D7F]+/, '').trim() || 'തൊടൂ!'}
-                </span>
-              )}
             </motion.button>
 
-            {/* RIGHT: SCULPTED EMERALD GAS / FORWARD PEDAL ICON */}
             <GameGasPedal
               disabled={driving || routeEnded}
               running={driving}
@@ -2225,33 +2342,36 @@ const RoadVehicleDriveGame: React.FC<{
               onClick={handleAccelerate}
             />
           </div>
-
-          <p className="text-[11px] sm:text-xs font-bold text-emerald-100 text-center leading-snug">
-            {msg}
-          </p>
         </div>
 
         {/* FAILURE OVERLAY INSIDE STAGE WHEN ANY STOP WAS MISSED */}
         {failed && (
           <InStageFailOverlay
             title="⚠️ ചില സ്റ്റോപ്പുകൾ നിർത്താതെ കടന്നുപോയി!"
-            reason={`ആകെ ${config.stops.length} സ്റ്റോപ്പുകളിൽ ${missedStops.length} എണ്ണം വിട്ടുപോയി! ഓരോ സ്റ്റോപ്പും വണ്ടിയുടെ അടുത്തെത്തുമ്പോൾ ചുവന്ന ബ്രേക്ക് പെഡൽ അമർത്തി സേവനം പൂർത്തിയാക്കൂ.`}
-            scoreText={`ലഭിച്ച മാർക്ക്: ${score} · പൂർത്തിയാക്കിയത്: ${servedStops.length}/${config.stops.length}`}
+            reason={`ആകെ ${config.stops.length} സ്റ്റോപ്പുകളിൽ ${missedStops.length} എണ്ണം വിട്ടുപോയി!`}
+            scoreText={`⭐ ${score} · ✅ ${servedStops.length}/${config.stops.length}`}
             onRetry={resetGame}
           />
         )}
       </div>
 
-      {/* Compact Route Checklist Below Stage (Hidden in Fullscreen for 100% Canvas Immersion) */}
+      {/* Icon-Only Stop Indicators Below Stage (Tap any icon to see its label!) */}
       {!isFullscreen && (
         <div className="flex flex-wrap items-center gap-1.5">
           {config.stops.map((s, i) => {
             const done = servedStops.includes(i);
             const missed = missedStops.includes(i);
             return (
-              <span
+              <button
                 key={s.id}
-                className={`text-xs font-extrabold px-2.5 py-1 rounded-lg border ${
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  setMsg(`${s.emoji} ${s.label}`);
+                }}
+                aria-label={s.label}
+                title={s.label}
+                className={`text-sm font-extrabold px-2.5 py-1 rounded-lg border ${
                   done
                     ? 'bg-emerald-100 text-emerald-950 border-emerald-400'
                     : missed
@@ -2261,10 +2381,13 @@ const RoadVehicleDriveGame: React.FC<{
                     : 'bg-slate-100 text-slate-600 border-slate-200'
                 }`}
               >
-                {done ? '✅' : missed ? '❌' : s.emoji} {s.label}
-              </span>
+                {done ? '✅' : missed ? '❌' : s.emoji}
+              </button>
             );
           })}
+          <span className="text-[11px] font-bold text-slate-600 ml-1">
+            {msg && msg.length < 40 ? msg : ''}
+          </span>
         </div>
       )}
     </div>
@@ -2409,10 +2532,10 @@ const TrainStationVoyageGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-200 select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🚂 കോച്ചുകൾ: {attachedList.length}/{config.stations.length} · ⭐ {score}
+            🚂 {attachedList.length}/{config.stations.length} · ⭐ {score}
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-white/95 text-emerald-950 text-xs font-extrabold">
-            {canAttach ? '🔔 കോച്ച് ഘടിപ്പിക്കൂ!' : inZone && driving && !isAttached ? '🛑 ഇപ്പോൾ ബ്രേക്ക്!' : driving ? '🚂 ഓടുന്നു...' : '🅿️ നിർത്തി'}
+            {canAttach ? '🔔' : inZone && driving && !isAttached ? '🛑' : driving ? '🚂' : '🅿️'}
           </span>
         </div>
 
@@ -2529,8 +2652,8 @@ const TrainStationVoyageGame: React.FC<{
           </g>
         </svg>
 
-        {/* IN-SCREEN TRAIN COCKPIT CONTROLS (ICON-FIRST ARCADE PEDALS!) */}
-        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2.5 space-y-1.5">
+        {/* IN-SCREEN TRAIN COCKPIT CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2">
           <div className="grid grid-cols-3 gap-2.5 items-center max-w-lg mx-auto">
             <GameBrakePedal
               disabled={!driving || routeEnded}
@@ -2547,7 +2670,8 @@ const TrainStationVoyageGame: React.FC<{
               whileTap={canAttach ? { scale: 0.9, y: 3 } : {}}
               onClick={handleAttach}
               aria-label="കോച്ച് ഘടിപ്പിക്കൂ"
-              className={`h-14 sm:h-16 px-2 rounded-2xl border-2 border-b-4 transition-all flex flex-col items-center justify-center ${
+              title={msg}
+              className={`h-14 sm:h-16 px-2 rounded-2xl border-2 border-b-4 transition-all flex items-center justify-center ${
                 canAttach
                   ? 'bg-gradient-to-b from-amber-300 to-amber-500 text-slate-950 border-white border-b-amber-700 ring-4 ring-amber-200 shadow-lg'
                   : 'bg-slate-800/90 text-slate-500 border-slate-700 border-b-slate-950 cursor-not-allowed opacity-55'
@@ -2573,14 +2697,13 @@ const TrainStationVoyageGame: React.FC<{
               }}
             />
           </div>
-          <p className="text-[11px] sm:text-xs font-bold text-emerald-100 text-center leading-snug">{msg}</p>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="🚂 ചില ചരിത്ര സ്റ്റേഷനുകൾ വിട്ടുപോയി!"
-            reason="എല്ലാ ചരിത്ര സ്റ്റേഷനുകളിലും കൃത്യമായി ബ്രേക്ക് അമർത്തി കോച്ചുകൾ ഘടിപ്പിക്കണം! വീണ്ടും ശ്രമിക്കാം."
-            scoreText={`ഘടിപ്പിച്ച കോച്ചുകൾ: ${attachedList.length}/${config.stations.length} · മാർക്ക്: ${score}`}
+            reason="എല്ലാ സ്റ്റേഷനുകളിലും കൃത്യമായി ബ്രേക്ക് അമർത്തി കോച്ചുകൾ ഘടിപ്പിക്കണം!"
+            scoreText={`🚂 ${attachedList.length}/${config.stations.length} · ⭐ ${score}`}
             onRetry={resetLocal}
           />
         )}
@@ -2667,7 +2790,7 @@ const CraneBuilderGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-100 select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🏗️ നിലകൾ: {placedCount}/{config.blocks.length}
+            🏗️ {placedCount}/{config.blocks.length}
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-white text-xs font-extrabold">
             {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '🖤')).join('')}
@@ -2775,30 +2898,31 @@ const CraneBuilderGame: React.FC<{
           )}
         </svg>
 
-        {/* IN-SCREEN CRANE CONTROLS */}
-        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold text-emerald-100 flex-1 min-w-[160px] leading-snug">{msg}</span>
+        {/* IN-SCREEN CRANE CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2 flex items-center justify-center gap-3">
           <button
             type="button"
             disabled={allDone || failed}
             onClick={handleDrop}
-            className={`px-5 py-2.5 rounded-xl border-b-4 text-xs sm:text-sm font-extrabold transition-all shrink-0 ${
+            aria-label="താഴെ ഇറക്കൂ"
+            title={msg}
+            className={`h-13 px-10 rounded-2xl border-2 border-b-4 text-2xl font-extrabold transition-all ${
               allDone
-                ? 'bg-emerald-600 text-white border-emerald-800 opacity-80'
+                ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-800 opacity-80'
                 : isAligned
-                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-800 ring-4 ring-emerald-200 shadow-md'
-                : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-600 shadow-md'
+                ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-white border-b-emerald-800 ring-4 ring-emerald-200 shadow-md'
+                : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200 border-b-amber-600 shadow-md'
             }`}
           >
-            {allDone ? '✅ നിർമ്മാണം പൂർത്തിയായി!' : '⬇️ ഇവിടെ ഇറക്കൂ!'}
+            {allDone ? '✅' : '⬇️'}
           </button>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="🏗️ ക്രെയിൻ ബാലൻസ് തെറ്റി!"
-            reason="3 തവണ പച്ച അടയാളത്തിന് പുറത്ത് ബ്ലോക്ക് ഇറക്കിയതിനാൽ നിർമ്മാണം തകർന്നു. ക്രെയിൻ നടുവിൽ എത്തുമ്പോൾ കൃത്യമായി അമർത്തൂ!"
-            scoreText={`സ്ഥാപിച്ച നിലകൾ: ${placedCount}/${config.blocks.length}`}
+            reason="പച്ച അടയാളത്തിൽ എത്തുമ്പോൾ കൃത്യമായി അമർത്തൂ!"
+            scoreText={`🏗️ ${placedCount}/${config.blocks.length}`}
             onRetry={resetLocal}
           />
         )}
@@ -2876,7 +3000,7 @@ const FlagRopeHoistGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-100 select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🚩 ഉയരം: {pct}%
+            🚩 {pct}%
           </span>
           <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold tabular-nums ${timeLeft <= 6 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-950/80 text-white'}`}>
             ⏱️ {timeLeft}s
@@ -2954,28 +3078,29 @@ const FlagRopeHoistGame: React.FC<{
             ))}
         </svg>
 
-        {/* IN-SCREEN ROPE PULL CONTROLS */}
-        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold text-emerald-100 flex-1 min-w-[160px] leading-snug">{msg}</span>
+        {/* IN-SCREEN ROPE PULL CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2 flex items-center justify-center">
           <button
             type="button"
             disabled={pct >= 100 || failed}
             onClick={handlePull}
-            className={`px-6 py-2.5 rounded-xl border-b-4 text-xs sm:text-sm font-extrabold transition-all shrink-0 ${
+            aria-label="കയർ വലിക്കൂ"
+            title={msg}
+            className={`h-13 px-10 rounded-2xl border-2 border-b-4 text-2xl font-extrabold transition-all ${
               pct >= 100
-                ? 'bg-emerald-600 text-white border-emerald-800 opacity-85'
-                : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-600 shadow-md active:translate-y-0.5'
+                ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-800 opacity-85'
+                : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200 border-b-amber-600 shadow-md active:translate-y-0.5'
             }`}
           >
-            {pct >= 100 ? '🎉 പതാക ഉയരത്തിൽ പാറുന്നു!' : '🪢 കയർ വലിക്കൂ!'}
+            {pct >= 100 ? '🎉🚩' : '🪢⬆️'}
           </button>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="⏱️ സമയം കഴിഞ്ഞു!"
-            reason="18 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്താൻ കഴിഞ്ഞില്ല! തുടർച്ചയായി “🪢 കയർ വലിക്കൂ!” അമർത്തി വീണ്ടും ശ്രമിക്കാം."
-            scoreText={`എത്തിയ ഉയരം: ${pct}%`}
+            reason="18 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്തണം!"
+            scoreText={`🚩 ${pct}%`}
             onRetry={resetLocal}
           />
         )}
@@ -3113,11 +3238,11 @@ const ShipHarborSailGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-sky-300 shadow-inner bg-sky-700 select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            ⛵ ദീപസ്തംഭങ്ങൾ: {visited.length}/{config.islands.length} · ⭐ {score}
+            ⛵ {visited.length}/{config.islands.length} · ⭐ {score}
           </span>
           {missed.length > 0 && (
             <span className="px-2.5 py-1 rounded-xl bg-rose-900/90 text-rose-100 text-xs font-extrabold tabular-nums">
-              ❌ വിട്ടുപോയത്: {missed.length}
+              ❌ {missed.length}
             </span>
           )}
         </div>
@@ -3197,8 +3322,8 @@ const ShipHarborSailGame: React.FC<{
           </motion.g>
         </svg>
 
-        {/* IN-SCREEN SHIP STEERING CONTROLS (GRAPHIC HELM ARROWS + FORWARD THROTTLE ICON!) */}
-        <div className="bg-slate-950/92 border-t border-sky-400/40 px-3 py-2.5 space-y-1.5">
+        {/* IN-SCREEN SHIP STEERING CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-950/92 border-t border-sky-400/40 px-3 py-2">
           <div className="grid grid-cols-3 gap-2.5 items-center max-w-lg mx-auto">
             <motion.button
               type="button"
@@ -3209,6 +3334,7 @@ const ShipHarborSailGame: React.FC<{
                 setLane((l) => Math.max(0, l - 1) as 0 | 1 | 2);
               }}
               aria-label="മുകളിലേക്ക് തിരിക്കുക"
+              title={msg}
               className="h-14 sm:h-16 rounded-2xl bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white border-2 border-sky-300 border-b-4 border-b-sky-900 flex items-center justify-center text-2xl font-black shadow-lg"
             >
               ▲
@@ -3239,14 +3365,13 @@ const ShipHarborSailGame: React.FC<{
               }}
             />
           </div>
-          <p className="text-[11px] sm:text-xs font-bold text-sky-100 text-center leading-snug">{msg}</p>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="🌊 ചില ദീപസ്തംഭങ്ങൾ നഷ്ടപ്പെട്ടു!"
-            reason="കപ്പൽ ശരിയായ പാതയിലേക്ക് തിരിക്കാത്തതിനാൽ ദീപസ്തംഭം വിട്ടുപോയി! ⬆️ / ⬇️ ബട്ടണുകൾ ഉപയോഗിച്ച് വീണ്ടും ശ്രമിക്കൂ."
-            scoreText={`എത്തിയ ദീപസ്തംഭങ്ങൾ: ${visited.length}/${config.islands.length} · മാർക്ക്: ${score}`}
+            reason="കപ്പൽ ശരിയായ പാതയിലേക്ക് തിരിക്കൂ!"
+            scoreText={`⛵ ${visited.length}/${config.islands.length} · ⭐ ${score}`}
             onRetry={resetLocal}
           />
         )}
@@ -3334,7 +3459,7 @@ const BalloonClimbGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-300 shadow-inner bg-indigo-950 select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🎈 ഉയരം: {step}/{config.gates.length}
+            🎈 {step}/{config.gates.length}
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-white text-xs font-extrabold">
             {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '🖤')).join('')}
@@ -3402,30 +3527,31 @@ const BalloonClimbGame: React.FC<{
           </motion.g>
         </svg>
 
-        {/* IN-SCREEN BALLOON CONTROLS */}
-        <div className="bg-slate-950/92 border-t border-indigo-400/40 px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-xs font-bold text-indigo-100 flex-1 min-w-[160px] leading-snug">{msg}</span>
+        {/* IN-SCREEN BALLOON CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-950/92 border-t border-indigo-400/40 px-3 py-2 flex items-center justify-center">
           <button
             type="button"
             disabled={allDone || failed}
             onClick={handlePumpFlame}
-            className={`px-6 py-2.5 rounded-xl border-b-4 text-xs sm:text-sm font-extrabold transition-all shrink-0 ${
+            aria-label="ജ്വാല ഉയർത്തൂ"
+            title={msg}
+            className={`h-13 px-10 rounded-2xl border-2 border-b-4 text-2xl font-extrabold transition-all ${
               allDone
-                ? 'bg-emerald-600 text-white border-emerald-800 opacity-85'
+                ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-800 opacity-85'
                 : stormDanger
-                ? 'bg-rose-700 text-white border-rose-950'
-                : 'bg-orange-500 hover:bg-orange-400 text-white border-orange-800 shadow-md active:translate-y-0.5'
+                ? 'bg-rose-700 text-white border-rose-400 border-b-rose-950'
+                : 'bg-orange-500 hover:bg-orange-400 text-white border-amber-200 border-b-orange-800 shadow-md active:translate-y-0.5'
             }`}
           >
-            {allDone ? '🌟 കൊടുമുടിയിൽ!' : stormDanger ? '⛈️ കാത്തുനിൽക്കൂ!' : '🔥 ജ്വാല ഉയർത്തൂ!'}
+            {allDone ? '🌟' : stormDanger ? '⛈️' : '🔥⬆️'}
           </button>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="⛈️ ഇടിമേഘത്തിൽ ബലൂൺ കുടുങ്ങി!"
-            reason="ഇടിമേഘം ബലൂണിന് മുകളിലുള്ളപ്പോൾ ജ്വാല അമർത്തിയതിനാൽ 3 അവസരവും നഷ്ടമായി. മേഘം മാറുമ്പോൾ കൃത്യമായി ഉയർത്തൂ!"
-            scoreText={`എത്തിയ പടവുകൾ: ${step}/${config.gates.length}`}
+            reason="ഇടിമേഘം മാറുമ്പോൾ കൃത്യമായി 🔥 അമർത്തൂ!"
+            scoreText={`🎈 ${step}/${config.gates.length}`}
             onRetry={resetLocal}
           />
         )}
@@ -3523,7 +3649,7 @@ const CyberShieldArcadeGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-sky-400 bg-slate-950 shadow-inner select-none">
         <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
           <span className="px-2.5 py-1 rounded-xl bg-slate-900/90 text-sky-300 text-xs font-extrabold tabular-nums">
-            📩 സന്ദേശങ്ങൾ: {cleared}/{config.waves.length}
+            📩 {cleared}/{config.waves.length}
           </span>
           <span className="px-2.5 py-1 rounded-xl bg-slate-900/90 text-white text-xs font-extrabold">
             {Array.from({ length: 3 }).map((_, i) => (i < hp ? '🛡️' : '💔')).join('')}
@@ -3591,40 +3717,44 @@ const CyberShieldArcadeGame: React.FC<{
           )}
         </svg>
 
-        {/* IN-SCREEN MESSAGE & SHIELD ACTION BUTTONS */}
-        <div className="bg-slate-900/95 border-t border-sky-500/40 px-3 py-2.5 space-y-2">
+        {/* IN-SCREEN MESSAGE & ICONIC SHIELD ACTION BUTTONS */}
+        <div className="bg-slate-900/95 border-t border-sky-500/40 px-3 py-2 space-y-2">
           {!allDone && activeWave && (
-            <div className="px-3 py-1.5 rounded-xl bg-slate-950 text-amber-200 border border-sky-400/40 text-xs sm:text-sm font-extrabold text-center">
-              📩 ({cleared + 1}/{config.waves.length}): {activeWave.emoji} {activeWave.text}
+            <div className="px-3 py-1.5 rounded-xl bg-slate-950 text-amber-200 border border-sky-400/40 text-xs font-extrabold text-center">
+              {activeWave.emoji} {activeWave.text}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
             <button
               type="button"
               disabled={allDone || failed}
               onClick={() => handleAction('block')}
-              className="py-2.5 px-3 rounded-xl border-b-4 bg-rose-700 hover:bg-rose-600 disabled:opacity-50 text-white border-rose-950 text-xs sm:text-sm font-extrabold shadow-md"
+              aria-label="വ്യാജം — തടുക്കൂ"
+              title={msg}
+              className="h-12 rounded-xl border-b-4 bg-rose-700 hover:bg-rose-600 disabled:opacity-50 text-white border-rose-950 text-xl font-extrabold shadow-md flex items-center justify-center gap-1.5"
             >
-              🛡️ വ്യാജം — തടുക്കൂ!
+              <span>🛡️</span>
+              <span>❌</span>
             </button>
             <button
               type="button"
               disabled={allDone || failed}
               onClick={() => handleAction('allow')}
-              className="py-2.5 px-3 rounded-xl border-b-4 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white border-emerald-950 text-xs sm:text-sm font-extrabold shadow-md"
+              aria-label="സത്യം — കടത്തിവിടൂ"
+              className="h-12 rounded-xl border-b-4 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white border-emerald-950 text-xl font-extrabold shadow-md flex items-center justify-center gap-1.5"
             >
-              ✅ സത്യം — കടത്തിവിടൂ!
+              <span>✅</span>
+              <span>➡️</span>
             </button>
           </div>
-          <p className="text-[11px] sm:text-xs font-bold text-sky-100 text-center leading-snug">{msg}</p>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="💥 സൈബർ കവചം തകർന്നു!"
-            reason="വ്യാജവാർത്തകൾ ടവറിലേക്ക് കടത്തിവിട്ടതിനാൽ നാടിന്റെ സൈബർ കവചം തകർന്നു! സത്യവും വ്യാജവും കൃത്യമായി തിരിച്ചറിഞ്ഞ് വീണ്ടും ശ്രമിക്കാം."
-            scoreText={`പൂർത്തിയാക്കിയ സന്ദേശങ്ങൾ: ${cleared}/${config.waves.length}`}
+            reason="വ്യാജം 🛡️, സത്യം ✅ — കൃത്യമായി വേർതിരിച്ച് വീണ്ടും ശ്രമിക്കാം!"
+            scoreText={`📩 ${cleared}/${config.waves.length}`}
             onRetry={resetLocal}
           />
         )}
@@ -3653,9 +3783,11 @@ const SceneGameRunner: React.FC<{
 }> = ({ lessonKey, config, onAwardXp, onComplete, externalCompleted }) => {
   const [completed, setCompleted] = useState(externalCompleted);
   const [resetSignal, setResetSignal] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
     setCompleted(externalCompleted);
+    setShowInfo(false);
   }, [externalCompleted, lessonKey]);
 
   const handleWin = () => {
@@ -3665,6 +3797,7 @@ const SceneGameRunner: React.FC<{
       onAwardXp(25, `scene_game_${lessonKey}`);
       onComplete?.();
       narrator.speak(config.doneMessage, config.title);
+      window.setTimeout(() => scrollToActiveQuiz(), 850);
     }
   };
 
@@ -3686,45 +3819,60 @@ const SceneGameRunner: React.FC<{
             : 'border-amber-400 bg-gradient-to-br from-amber-50/95 via-white to-sky-50/70'
         }`}
       >
-        {/* Friendly Optional Game Header */}
-        <div className="px-4 py-3 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-start gap-2.5 min-w-0 flex-1">
-            <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-              <Gamepad2 className="w-5 h-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-extrabold">
-                <span className="text-amber-300">
-                  🎮 രസകരമായ ആനിമേറ്റഡ് ഗെയിം · കളിച്ചു ബോണസ് XP നേടാം (സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)
-                </span>
-                {completed && (
-                  <span className="inline-flex items-center gap-1 text-emerald-300">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> ഗെയിം വിജയിച്ചു!
-                  </span>
-                )}
-              </div>
-              <h4 className="text-sm sm:text-base font-extrabold text-white leading-snug mt-0.5 break-words">
-                {config.title}
-              </h4>
-            </div>
+        {/* Minimal Icon-Only Game Strip (Tap ℹ️ or 🎮 for text) */}
+        <div className="px-3 py-1.5 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setShowInfo((v) => !v);
+              }}
+              aria-label="വിവരം"
+              className="w-7 h-7 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs"
+            >
+              <Gamepad2 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setShowInfo((v) => !v);
+              }}
+              aria-label="സഹായം"
+              className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                showInfo ? 'bg-white text-emerald-950' : 'bg-white/15 hover:bg-white/25 text-amber-200'
+              }`}
+            >
+              <Info className="w-4 h-4" />
+            </button>
+            {completed && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600/80 text-white text-xs font-extrabold">
+                <CheckCircle2 className="w-3.5 h-3.5" /> +25
+              </span>
+            )}
           </div>
 
           {completed && (
             <button
               type="button"
               onClick={handleReplay}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold shrink-0"
+              aria-label="വീണ്ടും കളിക്കാം"
+              className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center shrink-0"
             >
-              <RotateCcw className="w-3.5 h-3.5" /> വീണ്ടും കളിക്കാം
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        <div className="p-4 space-y-3 text-slate-900">
-          <p className="text-xs sm:text-sm font-bold text-slate-700 leading-relaxed">
-            {config.subtitle}
-          </p>
+        {showInfo && (
+          <div className="px-3.5 py-2 bg-emerald-950/95 text-emerald-100 border-b border-emerald-800 space-y-0.5">
+            <p className="text-xs font-extrabold text-amber-300 leading-snug">{config.title}</p>
+            <p className="text-[11px] font-semibold leading-snug">{config.subtitle}</p>
+          </div>
+        )}
 
+        <div className="p-2.5 sm:p-3 space-y-2.5 text-slate-900">
           {config.engine === 'tree_rain_garden' && (
             <TreeRainGardenGame config={config} onWin={handleWin} resetSignal={resetSignal} />
           )}
@@ -3751,14 +3899,24 @@ const SceneGameRunner: React.FC<{
           )}
 
           {completed && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 text-white text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow-sm"
-            >
-              <Sparkles className="w-5 h-5 text-amber-300 shrink-0" />
-              <span className="leading-snug break-words">{config.doneMessage}</span>
-            </motion.div>
+            <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border border-amber-300 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+              <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-amber-300">
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>🎉 +25 XP</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  scrollToActiveQuiz();
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
+              >
+                <span>അടുത്തത് · ക്വിസ്</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -3772,15 +3930,108 @@ export const OptionalLessonMiniGame: React.FC<OptionalLessonMiniGameProps> = ({
   onComplete,
   isCompleted: externalCompleted = false,
 }) => {
-  // Route dedicated tactile Drag-and-Drop / Scratch-Clean / Samastha Emblem Coloring / Stage / Room / Food / Photo-Crop / Trophy games
+  // 7 Authentic Kerala SKSSF Practical Games (POV Lessons)
+  if (lessonKey === 'pov_1') {
+    const title = '📚 ഇസ്‌ലാമിക ലൈബ്രറി അദബ് — പുസ്തകങ്ങൾ ക്രമത്തിൽ അടുക്കാം!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <IslamicLibraryShelfGame
+          xpKey="pov_1_library"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_2') {
+    const title = '📜 മജ്‌ലിസുന്നൂർ അജണ്ടയും നോട്ടീസും തയ്യാറാക്കാം!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <MajlisAgendaNoticeGame
+          xpKey="pov_2_majlis_notice"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_3') {
+    const title = '🖌️ സമ്മേളന ചുമരിലെഴുത്ത് (Wall Writing)!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <WallWritingPaintGame
+          xpKey="pov_3_wall_writing"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_4') {
+    const title = '🏗️ സമ്മേളന സ്റ്റേജ് നിർമ്മാണം (7 ഘട്ടങ്ങൾ)!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <StageBuildSequenceGame
+          xpKey="pov_4_stage_build"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_6') {
+    const title = '💰 വരവ്–ചെലവ്–നീക്കിയിരിപ്പും ചീരണി വിതരണവും!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <ProgramBudgetCheeraniGame
+          xpKey="pov_6_budget_cheerani"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_7') {
+    const title = '🏟️ പരിപാടിക്ക് ശേഷം സ്റ്റേഡിയം ശുചീകരണം (വിഖായ)!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <StadiumCleanupViqayaGame
+          xpKey="pov_7_stadium_cleanup"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+  if (lessonKey === 'pov_8') {
+    const title = '📋 പരിപാടി അവലോകന റിപ്പോർട്ട് തയ്യാറാക്കാം!';
+    return (
+      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+        <ProgramReviewReportGame
+          xpKey="pov_8_review_report"
+          onAwardXp={onAwardXp}
+          onComplete={onComplete}
+          isCompleted={externalCompleted}
+        />
+      </GameFullscreenShell>
+    );
+  }
+
+  // Route dedicated tactile Drag-and-Drop / Scratch-Clean / Welcome Arch Painting / Stage / Room / Food / Photo-Crop / Trophy games
   if (lessonKey === 'p1') {
-    const title = '🎨 സമസ്ത (1926) & SKSSF പൈതൃക കമാനവും ഔദ്യോഗിക ലോഗോയും പെയിന്റ് ചെയ്യാം!';
+    const title = '🎨 സമ്മേളന സ്വാഗത കമാനം പെയിന്റ് ചെയ്യാം!';
     return (
       <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
         <PaintRollerGame
           xpKey="p1_paint"
           title={title}
-          subtitle="സമസ്തയുടെയും SKSSF-ന്റെയും ഔദ്യോഗിക നിറങ്ങൾ തിരഞ്ഞെടുത്ത് 1926 പൈതൃക കമാനത്തിലും ലോഗോയിലും ക്രിയേറ്റീവായി നിറം നൽകൂ!"
+          subtitle="ഇഷ്ടമുള്ള നിറങ്ങൾ തിരഞ്ഞെടുത്ത് സമ്മേളന നഗരിയിലേക്കുള്ള സ്വാഗത കമാനത്തിന്റെ 6 ഭാഗങ്ങളും മനോഹരമായി പെയിന്റ് ചെയ്യൂ!"
           onAwardXp={onAwardXp}
           onComplete={onComplete}
           isCompleted={externalCompleted}

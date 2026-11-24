@@ -155,22 +155,19 @@ const RealisticChestUnlockGame: React.FC<{
 
   return (
     <div className="p-4 sm:p-5 bg-gradient-to-b from-[#1f130a] via-[#2d1b0e] to-[#120a05] text-white space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/35 border border-amber-400/35 rounded-xl px-3.5 py-2">
-        <span className="text-xs font-extrabold text-amber-200">
-          ⏳ 24 സെക്കൻഡിനുള്ളിൽ പെട്ടി തുറന്ന് 3 രേഖകളും വായിക്കൂ!
+      <div className="flex items-center justify-between gap-2 bg-black/35 border border-amber-400/35 rounded-xl px-3 py-1.5">
+        <span className="text-xs font-extrabold text-amber-200 tabular-nums">
+          🗝️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
         </span>
         <span className={`text-xs font-extrabold tabular-nums px-2.5 py-0.5 rounded-lg ${timeLeft <= 6 ? 'bg-rose-600 text-white' : 'bg-amber-400/20 text-amber-200'}`}>
           ⏱️ {timeLeft}s
         </span>
       </div>
       {failed && !allCollected && (
-        <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-200">⏰ സമയം കഴിഞ്ഞു! ചരിത്ര പെട്ടി പൂട്ടിപ്പോയി!</p>
-            <p className="text-xs font-semibold text-rose-100">വേഗത്തിൽ താക്കോൽ തിരിച്ച് 3 രേഖകളും പരിശോധിക്കാൻ വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
-          <button type="button" onClick={resetEra1} className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700">
-            🔄 വീണ്ടും ശ്രമിക്കാം
+        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-200">⏰ 🔒</span>
+          <button type="button" onClick={resetEra1} aria-label="വീണ്ടും ശ്രമിക്കാം" className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700">
+            🔄
           </button>
         </div>
       )}
@@ -326,28 +323,25 @@ const RealisticChestUnlockGame: React.FC<{
 
           {/* Mechanical Key Slide/Turn Control when Locked */}
           {!chestOpen ? (
-            <div className="w-full max-w-md mt-2 p-3.5 rounded-2xl bg-black/45 border border-amber-400/40 space-y-2.5">
-              <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-amber-200">
-                <span>🗝️ പിച്ചള താക്കോൽ വലതുവശത്തേക്ക് നീക്കി പൂട്ട് തിരിക്കൂ!</span>
-                <span className="tabular-nums text-amber-400">{keyProgress}%</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={keyProgress}
-                onChange={(e) => handleSliderChange(Number(e.target.value))}
-                aria-label="പൂട്ട് തുറക്കാൻ താക്കോൽ നീക്കുക"
-                className="w-full accent-amber-400 h-3 cursor-pointer"
-              />
-              <div className="flex justify-between items-center text-[11px] text-amber-100/80">
-                <span>← താക്കോൽ തിരിക്കുക</span>
+            <div className="w-full max-w-md mt-2 p-3 rounded-2xl bg-black/45 border border-amber-400/40 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🗝️</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={keyProgress}
+                  onChange={(e) => handleSliderChange(Number(e.target.value))}
+                  aria-label="പൂട്ട് തുറക്കുക"
+                  className="w-full accent-amber-400 h-3 cursor-pointer"
+                />
                 <button
                   type="button"
                   onClick={triggerChestUnlock}
-                  className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold transition-colors"
+                  aria-label="തുറക്കാം"
+                  className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold transition-colors shrink-0"
                 >
-                  🗝️ പൂട്ട് തുറക്കാം
+                  🔓
                 </button>
               </div>
             </div>
@@ -355,42 +349,32 @@ const RealisticChestUnlockGame: React.FC<{
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full mt-3 space-y-2.5"
+              className="w-full mt-3"
             >
-              <p className="text-center text-xs sm:text-sm font-extrabold text-amber-300">
-                🔓 പെട്ടി തുറന്നു! ഉള്ളിലെ 3 ചരിത്ര രേഖകൾ ഓരോന്നായി പുറത്തെടുത്ത് വായിക്കൂ:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-3 gap-2">
                 {artifacts.map((art, idx) => {
                   const found = collectedIds.includes(art.id);
                   return (
                     <motion.button
                       key={art.id}
                       type="button"
-                      initial={{ opacity: 0, y: 18 }}
+                      initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
+                      transition={{ delay: idx * 0.08 }}
                       onClick={() => {
                         setActiveArt(art);
                         onCollect(art);
                       }}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      aria-label={art.label}
+                      title={art.label}
+                      className={`p-3 rounded-xl border-2 flex items-center justify-center gap-1.5 transition-all ${
                         found
                           ? 'bg-emerald-900/75 border-emerald-400 text-white'
                           : 'bg-amber-100 border-amber-500 text-slate-950 hover:bg-amber-200 shadow-md'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-lg">{art.emoji}</span>
-                        <span
-                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
-                            found ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500 text-slate-950'
-                          }`}
-                        >
-                          {found ? 'വായിച്ചു ✓' : 'തുറക്കൂ 📜'}
-                        </span>
-                      </div>
-                      <p className="text-xs font-extrabold mt-1.5 leading-snug">{art.label}</p>
+                      <span className="text-2xl">{art.emoji}</span>
+                      <span className="text-sm font-extrabold">{found ? '✅' : '📜'}</span>
                     </motion.button>
                   );
                 })}
@@ -453,26 +437,18 @@ const HeritageStampPressGame: React.FC<{
 
   return (
     <div className="p-4 sm:p-5 bg-gradient-to-b from-[#4c1024] via-[#6e1532] to-slate-950 text-white space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/30 border border-amber-400/30 rounded-xl px-4 py-2.5">
-        <p className="text-xs sm:text-sm font-extrabold text-amber-200">
-          🔖 18 സെക്കൻഡിനുള്ളിൽ 3 ചരിത്ര രേഖകളിലും 1926 സമസ്ത സീൽ പതിക്കൂ!
-        </p>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-amber-400/20 text-amber-200'}`}>
-            ⏱️ {timeLeft}s
-          </span>
-          <span className="text-xs font-extrabold text-amber-300 tabular-nums">
-            മുദ്ര പതിച്ചത്: {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
-          </span>
-        </div>
+      <div className="flex items-center justify-between gap-2 bg-black/30 border border-amber-400/30 rounded-xl px-3.5 py-2">
+        <span className="text-xs font-extrabold text-amber-300 tabular-nums">
+          🔖 {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
+        </span>
+        <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-amber-400/20 text-amber-200'}`}>
+          ⏱️ {timeLeft}s
+        </span>
       </div>
 
       {failed && !allStamped && (
-        <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-200">⏰ സമയം കഴിഞ്ഞു! രേഖകൾ സീൽ ചെയ്യാൻ വൈകി!</p>
-            <p className="text-xs font-semibold text-rose-100">18 സെക്കൻഡിനുള്ളിൽ 3 രേഖകളിലും സീൽ പതിക്കാൻ വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
+        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-200">⏰ 🔖</span>
           <button
             type="button"
             onClick={() => {
@@ -481,48 +457,45 @@ const HeritageStampPressGame: React.FC<{
               setFailed(false);
               setStarted(false);
             }}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
           >
-            🔄 വീണ്ടും ശ്രമിക്കാം
+            🔄
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2.5">
         {artifacts.map((art) => {
           const stamped = collectedIds.includes(art.id);
           const isPressing = stampingId === art.id;
           return (
             <div
               key={art.id}
-              className="relative rounded-2xl border-2 border-amber-300/60 bg-[#FFFDF5] text-slate-900 p-4 shadow-lg flex flex-col justify-between min-h-[175px]"
+              className="relative rounded-2xl border-2 border-amber-300/60 bg-[#FFFDF5] text-slate-900 p-3 shadow-lg flex flex-col justify-between min-h-[135px]"
             >
-              {/* Paper header lines */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
-                  <span className="text-[10px] font-extrabold text-red-900">ഔദ്യോഗിക ചരിത്ര രേഖ</span>
-                  <span className="text-base">{art.emoji}</span>
-                </div>
-                <h4 className="text-sm font-extrabold text-slate-900 leading-snug">{art.label}</h4>
-                <div className="space-y-1 pt-1">
+              <div className="space-y-1.5 text-center">
+                <span className="text-3xl block">{art.emoji}</span>
+                <div className="space-y-1">
                   <div className="h-1.5 rounded bg-slate-200 w-full" />
-                  <div className="h-1.5 rounded bg-slate-200 w-4/5" />
+                  <div className="h-1.5 rounded bg-slate-200 w-3/4 mx-auto" />
                 </div>
               </div>
 
-              {/* Wax Seal Stamp Area */}
-              <div className="pt-3 flex items-center justify-between gap-2">
+              <div className="pt-2">
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.88 }}
                   onClick={() => handleStamp(art)}
-                  className={`w-full py-2 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 border-b-4 transition-all ${
+                  aria-label={art.label}
+                  title={art.label}
+                  className={`w-full py-2 rounded-xl font-extrabold text-lg flex items-center justify-center border-b-4 transition-all ${
                     stamped
                       ? 'bg-emerald-700 text-white border-emerald-950'
                       : 'bg-[#8C1D40] hover:bg-[#a3234b] text-amber-100 border-[#4d0d22]'
                   }`}
                 >
-                  {isPressing ? '💥 സീൽ പതിയുന്നു...' : stamped ? '✅ സീൽ പതിച്ചു · വായിക്കൂ' : '🔖 1926 സീൽ പതിക്കൂ'}
+                  {isPressing ? '💥' : stamped ? '✅' : '🔖'}
                 </motion.button>
               </div>
 
@@ -629,24 +602,19 @@ const MadrasaLanternSweepGame: React.FC<{
 
   return (
     <div className="p-3 sm:p-5 bg-black text-white space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-500/15 border border-amber-400/35 rounded-xl px-3.5 py-2">
-        <p className="text-xs sm:text-sm font-extrabold text-amber-200">
-          🏮 കറുത്ത ഇരുട്ടിൽ വിളക്ക് നീക്കി മറഞ്ഞിരിക്കുന്ന 3 ബോർഡുകൾ കണ്ടെത്തി തെളിയിക്കൂ!
-        </p>
-        <div className="flex items-center gap-2 shrink-0">
-          <span
-            className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg tabular-nums ${
-              oilLeft <= 10 && !allLit
-                ? 'bg-rose-600 text-white animate-pulse'
-                : 'bg-slate-900 text-amber-300 border border-amber-500/40'
-            }`}
-          >
-            🪔 എണ്ണ: {allLit ? 'സുരക്ഷിതം ✓' : `${oilLeft}s`}
-          </span>
-          <span className="text-xs font-extrabold text-amber-300 tabular-nums">
-            കണ്ടെത്തിയത്: {litCount}/{artifacts.length}
-          </span>
-        </div>
+      <div className="flex items-center justify-between gap-2 bg-amber-500/15 border border-amber-400/35 rounded-xl px-3.5 py-2">
+        <span className="text-xs font-extrabold text-amber-300 tabular-nums">
+          🏮 {litCount}/{artifacts.length}
+        </span>
+        <span
+          className={`text-xs font-extrabold px-2.5 py-0.5 rounded-lg tabular-nums ${
+            oilLeft <= 10 && !allLit
+              ? 'bg-rose-600 text-white animate-pulse'
+              : 'bg-slate-900 text-amber-300 border border-amber-500/40'
+          }`}
+        >
+          🪔 {allLit ? '✅' : `${oilLeft}s`}
+        </span>
       </div>
 
       {/* Pitch-Black Stage: Completely dark except directly under Lantern beam and permanently lit discovered boards! */}
@@ -726,23 +694,17 @@ const MadrasaLanternSweepGame: React.FC<{
                 onCollect(art);
               }}
               style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-2 rounded-2xl border-2 text-left max-w-[155px] sm:max-w-[205px] transition-all duration-200 ${
+              aria-label={art.label}
+              title={art.label}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 px-3.5 py-2.5 rounded-2xl border-2 text-center transition-all duration-200 ${
                 lit
                   ? 'opacity-100 bg-amber-300 text-slate-950 border-yellow-100 shadow-[0_0_30px_rgba(251,191,36,0.95)] cursor-pointer'
                   : near
-                  ? 'opacity-100 bg-amber-400 text-slate-950 border-yellow-100 scale-105 shadow-[0_0_26px_rgba(251,191,36,0.85)] cursor-pointer'
+                  ? 'opacity-100 bg-amber-400 text-slate-950 border-yellow-100 scale-110 shadow-[0_0_26px_rgba(251,191,36,0.85)] cursor-pointer'
                   : 'opacity-0 pointer-events-none bg-black border-transparent'
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{lit ? '🌟' : art.emoji}</span>
-                <span className="text-[11px] sm:text-xs font-extrabold leading-tight">
-                  {art.label}
-                </span>
-              </div>
-              <p className="text-[10px] font-bold mt-1">
-                {lit ? '✨ തിളങ്ങി നിൽക്കുന്നു ✓' : '👆 ഇവിടെ തൊട്ട് തെളിയിക്കൂ!'}
-              </p>
+              <span className="text-2xl">{lit ? '🌟✅' : `${art.emoji} 👆`}</span>
             </motion.button>
           );
         })}
@@ -796,20 +758,17 @@ const MadrasaLanternSweepGame: React.FC<{
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute inset-0 z-40 bg-black/90 flex flex-col items-center justify-center p-5 text-center space-y-3 cursor-auto"
           >
-            <span className="text-4xl">🪔</span>
-            <p className="text-base sm:text-lg font-extrabold text-rose-300">
-              വിളക്കിലെ എണ്ണ തീർന്നു! ({litCount}/{artifacts.length} മാത്രം കണ്ടെത്തി)
-            </p>
-            <p className="text-xs text-slate-300 max-w-sm">
-              ഇരുട്ടിലൂടെ വേഗത്തിൽ വിളക്ക് നീക്കി 3 ബോർഡുകളും തെളിയിക്കൂ!
+            <span className="text-4xl">🪔 ❌</span>
+            <p className="text-sm font-extrabold text-rose-300 tabular-nums">
+              {litCount}/{artifacts.length}
             </p>
             <button
               type="button"
               onClick={handleRetry}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-lg"
+              aria-label="വീണ്ടും ശ്രമിക്കാം"
+              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold shadow-lg"
             >
-              <RotateCcw className="w-4 h-4" />
-              <span>🔄 വീണ്ടും ശ്രമിക്കാം</span>
+              <RotateCcw className="w-4 h-4" /> 🔄
             </button>
           </div>
         )}
@@ -873,20 +832,17 @@ const VintageLandlineBroadcastGame: React.FC<{
 
   return (
     <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-900 via-cyan-950 to-emerald-950 text-white space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/35 border border-cyan-400/35 rounded-xl px-3.5 py-2">
-        <span className="text-xs font-extrabold text-cyan-200">
-          ☎️ 20 സെക്കൻഡിനുള്ളിൽ 3 ക്യാമ്പ് നമ്പറുകളും ഡയൽ ചെയ്ത് സന്ദേശം കേൾക്കൂ!
+      <div className="flex items-center justify-between gap-2 bg-black/35 border border-cyan-400/35 rounded-xl px-3.5 py-2">
+        <span className="text-xs font-extrabold text-cyan-200 tabular-nums">
+          ☎️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
         </span>
         <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-cyan-400/20 text-cyan-200'}`}>
           ⏱️ {timeLeft}s
         </span>
       </div>
       {failed && !allHeard && (
-        <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-200">📵 ലൈൻ കട്ടായി! സമയം കഴിഞ്ഞു!</p>
-            <p className="text-xs font-semibold text-rose-100">20 സെക്കൻഡിനുള്ളിൽ 3 നമ്പറുകളും വേഗം ഡയൽ ചെയ്യാൻ വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
+        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-200">📵 ⏰</span>
           <button
             type="button"
             onClick={() => {
@@ -895,18 +851,15 @@ const VintageLandlineBroadcastGame: React.FC<{
               setFailed(false);
               setStarted(false);
             }}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
           >
-            🔄 വീണ്ടും ശ്രമിക്കാം
+            🔄
           </button>
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-        {/* Retro Landline Rotary Dial & Live Broadcast VU Meter */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
         <div className="md:col-span-5 rounded-2xl bg-slate-950/80 border-2 border-cyan-500/40 p-4 flex flex-col items-center space-y-3">
-          <p className="text-xs font-extrabold text-cyan-300">
-            ☎️ 1989–1995 ക്യാമ്പ് ലാൻഡ്‌ഫോൺ &amp; ടാഗോർ ഹാൾ മൈക്ക്
-          </p>
           <motion.div
             animate={{ rotate: dialAngle }}
             transition={{ type: 'spring', stiffness: 130, damping: 14 }}
@@ -931,7 +884,6 @@ const VintageLandlineBroadcastGame: React.FC<{
             </span>
           </motion.div>
 
-          {/* Animated Audio Broadcast Bars */}
           <div className="flex items-end justify-center gap-1.5 h-8 w-full px-4">
             {[0.4, 0.9, 0.65, 1, 0.75, 0.5, 0.85, 0.6].map((h, idx) => (
               <motion.span
@@ -952,11 +904,7 @@ const VintageLandlineBroadcastGame: React.FC<{
           </div>
         </div>
 
-        {/* 3 Broadcast Buttons to Dial */}
-        <div className="md:col-span-7 space-y-2.5">
-          <p className="text-xs font-bold text-emerald-200">
-            ഓരോ നമ്പറിലും ഡയൽ ചെയ്ത് ക്യാമ്പ് ഓർമ്മകളും 1995 ടാഗോർ ഹാൾ പ്രഖ്യാപനവും കേൾക്കൂ:
-          </p>
+        <div className="md:col-span-7 grid grid-cols-3 md:grid-cols-1 gap-2">
           {artifacts.map((art, idx) => {
             const heard = collectedIds.includes(art.id);
             const active = activeIdx === idx;
@@ -965,7 +913,9 @@ const VintageLandlineBroadcastGame: React.FC<{
                 key={art.id}
                 type="button"
                 onClick={() => handleDialStation(idx)}
-                className={`w-full p-3 rounded-xl border-2 text-left flex items-center justify-between gap-3 transition-all ${
+                aria-label={art.label}
+                title={art.label}
+                className={`w-full p-3 rounded-xl border-2 flex items-center justify-between gap-2 transition-all ${
                   active
                     ? 'bg-amber-400 text-slate-950 border-white shadow-md'
                     : heard
@@ -973,18 +923,12 @@ const VintageLandlineBroadcastGame: React.FC<{
                     : 'bg-white/10 hover:bg-white/15 text-white border-cyan-400/40'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span className="px-2 py-1 rounded-lg bg-slate-950/80 text-amber-300 font-mono text-xs font-extrabold">
-                    #{dialCodes[idx] || idx + 1}
-                  </span>
-                  <div>
-                    <p className="text-xs sm:text-sm font-extrabold">
-                      {art.emoji} {art.label}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-extrabold shrink-0">
-                  {heard ? 'കേട്ടു ✓' : 'ഡയൽ ചെയ്യൂ 📞'}
+                <span className="px-2 py-0.5 rounded-lg bg-slate-950/80 text-amber-300 font-mono text-xs font-extrabold">
+                  #{dialCodes[idx] || idx + 1}
+                </span>
+                <span className="text-2xl">{art.emoji}</span>
+                <span className="text-lg shrink-0">
+                  {heard ? '✅' : '📞'}
                 </span>
               </button>
             );
@@ -1054,26 +998,18 @@ const GlobalFlightBeaconGame: React.FC<{
 
   return (
     <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-950 via-indigo-950 to-emerald-950 text-white space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white/10 border border-sky-400/35 rounded-xl px-4 py-2.5">
-        <p className="text-xs sm:text-sm font-extrabold text-sky-200">
-          ✈️ 20 സെക്കൻഡിനുള്ളിൽ കേരളത്തിൽ നിന്ന് മക്കയിലേക്കും ലോകമെങ്ങും വിമാനം പറത്തി 3 സ്റ്റേഷനുകൾ സന്ദർശിക്കൂ!
-        </p>
-        <div className="flex items-center gap-2">
-          <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-sky-400/20 text-sky-200'}`}>
-            ⏱️ {timeLeft}s
-          </span>
-          <span className="text-xs font-extrabold text-amber-300 tabular-nums">
-            സന്ദർശിച്ചത്: {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
-          </span>
-        </div>
+      <div className="flex items-center justify-between gap-2 bg-white/10 border border-sky-400/35 rounded-xl px-3.5 py-2">
+        <span className="text-xs font-extrabold text-amber-300 tabular-nums">
+          ✈️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
+        </span>
+        <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-sky-400/20 text-sky-200'}`}>
+          ⏱️ {timeLeft}s
+        </span>
       </div>
 
       {failed && !allVisited && (
-        <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-200">⛽ ഇന്ധനം തീർന്നു! വിമാന യാത്ര പൂർത്തിയായില്ല!</p>
-            <p className="text-xs font-semibold text-rose-100">20 സെക്കൻഡിനുള്ളിൽ 3 ഗ്ലോബൽ സ്റ്റേഷനുകളിലും പറന്നെത്താൻ വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
+        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-200">⛽ ⏰</span>
           <button
             type="button"
             onClick={() => {
@@ -1082,9 +1018,10 @@ const GlobalFlightBeaconGame: React.FC<{
               setFailed(false);
               setStarted(false);
             }}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
           >
-            🔄 വീണ്ടും ശ്രമിക്കാം
+            🔄
           </button>
         </div>
       )}
@@ -1092,11 +1029,9 @@ const GlobalFlightBeaconGame: React.FC<{
       {/* Global Radar & Animated Flight Path */}
       <div className="relative h-60 sm:h-64 rounded-2xl border-2 border-sky-400/40 bg-slate-950/90 overflow-hidden">
         <svg viewBox="0 0 600 240" className="absolute inset-0 w-full h-full" aria-hidden="true">
-          {/* Radar Latitude/Longitude Grid */}
           <ellipse cx="300" cy="120" rx="250" ry="95" fill="none" stroke="#38BDF8" strokeWidth="1" opacity="0.22" />
           <ellipse cx="300" cy="120" rx="140" ry="95" fill="none" stroke="#34D399" strokeWidth="1" opacity="0.22" />
           <line x1="30" y1="120" x2="570" y2="120" stroke="#38BDF8" strokeWidth="1" strokeDasharray="4 4" opacity="0.25" />
-          {/* Curved Flight Route */}
           <path
             d="M 108 158 Q 200 60 300 86 Q 410 45 492 130"
             fill="none"
@@ -1106,7 +1041,6 @@ const GlobalFlightBeaconGame: React.FC<{
           />
         </svg>
 
-        {/* Flying Animated Plane */}
         <motion.div
           animate={{ left: `${currentPos.x}%`, top: `${currentPos.y}%` }}
           transition={{ type: 'spring', stiffness: 90, damping: 16 }}
@@ -1115,7 +1049,6 @@ const GlobalFlightBeaconGame: React.FC<{
           ✈️
         </motion.div>
 
-        {/* 3 Global Radar Beacons */}
         {artifacts.map((art, idx) => {
           const st = stops[idx] || stops[0];
           const visited = collectedIds.includes(art.id);
@@ -1124,22 +1057,17 @@ const GlobalFlightBeaconGame: React.FC<{
               key={art.id}
               type="button"
               onClick={() => flyToStop(idx)}
+              aria-label={art.label}
+              title={art.label}
               style={{ left: `${st.x}%`, top: `${st.y}%` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 px-2.5 py-2 rounded-xl border-2 text-left max-w-[140px] sm:max-w-[185px] transition-all ${
+              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-2 rounded-2xl border-2 flex items-center gap-1.5 transition-all ${
                 visited
                   ? 'bg-emerald-600 text-white border-emerald-200 shadow-lg'
                   : 'bg-sky-900/95 hover:bg-sky-800 text-white border-amber-400 shadow-md'
               }`}
             >
-              <div className="flex items-center gap-1">
-                <span>{visited ? <CheckCircle2 className="w-3.5 h-3.5 text-amber-300" /> : art.emoji}</span>
-                <span className="text-[10px] sm:text-xs font-extrabold leading-tight">
-                  {art.label}
-                </span>
-              </div>
-              <p className="text-[9px] text-amber-200 font-bold mt-0.5">
-                {visited ? 'എത്തിച്ചേർന്നു ✓' : 'ഇങ്ങോട്ട് പറക്കൂ ✈️'}
-              </p>
+              <span className="text-2xl">{art.emoji}</span>
+              {visited ? <CheckCircle2 className="w-4 h-4 text-amber-300" /> : <span className="text-sm">✈️</span>}
             </button>
           );
         })}

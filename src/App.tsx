@@ -19,6 +19,7 @@ import {
   VisualStoryboardArena,
 } from './components/StoryIntroAndBoard';
 import { SkssfPovJourneyGame } from './components/SkssfPovJourneyGame';
+import { AllLessonsMapPage } from './components/AllLessonsMapPage';
 import { ShareableBadgeStudio } from './components/ShareableBadgeStudio';
 import {
   AudioLoadingFloatBadge,
@@ -165,15 +166,24 @@ export default function App() {
     )
   );
 
+  const [devUnlocked, setDevUnlocked] = useState<boolean>(false);
+  const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
+
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() =>
     savedInit?.completedLessonIds?.length ? savedInit.completedLessonIds : loadCompletedLessonIds()
   );
   const [activeLessonId, setActiveLessonId] = useState<string>(
     () => savedInit?.activeLessonId ?? 'prologue_curiosity'
   );
-  const [prologueInitialMode, setPrologueInitialMode] = useState<
-    'curiosity' | 'story' | undefined
-  >(() => getInitialTabForLesson<'curiosity' | 'story'>(savedInit?.activeLessonId, 'prologue'));
+  const [prologueInitialLessonId, setPrologueInitialLessonId] = useState<string | undefined>(() =>
+    savedInit?.stage === 'prologue' ? savedInit?.activeLessonId : undefined
+  );
+  const [storyboardInitialTab, setStoryboardInitialTab] = useState<string | undefined>(() =>
+    getInitialTabForLesson<string>(savedInit?.activeLessonId, 'storyboard')
+  );
+  const [povInitialTab, setPovInitialTab] = useState<string | undefined>(() =>
+    getInitialTabForLesson<string>(savedInit?.activeLessonId, 'pov')
+  );
   const [l1InitialTab, setL1InitialTab] = useState<L1Tab | undefined>(() =>
     getInitialTabForLesson<L1Tab>(savedInit?.activeLessonId, 'world', 1)
   );
@@ -249,6 +259,7 @@ export default function App() {
   }, [quizAnswers]);
 
   const storyboardUnlocked =
+    devUnlocked ||
     stage === 'storyboard' ||
     stage === 'pov' ||
     stage === 'world' ||
@@ -258,6 +269,7 @@ export default function App() {
     unlockedLevels.length > 1;
 
   const povUnlocked =
+    devUnlocked ||
     stage === 'pov' ||
     stage === 'world' ||
     completedLessonIds.includes('storyboard') ||
@@ -266,6 +278,7 @@ export default function App() {
     unlockedLevels.length > 1;
 
   const world1Unlocked =
+    devUnlocked ||
     stage === 'world' ||
     completedLessonIds.includes('pov_journey') ||
     completedLevels.length > 0 ||
@@ -277,11 +290,13 @@ export default function App() {
     sound.unlockAudio();
     sound.playClick();
     if (target.stage === 'prologue') {
-      setPrologueInitialMode(target.tab === 'story' ? 'story' : 'curiosity');
+      setPrologueInitialLessonId(target.id);
       setStage('prologue');
     } else if (target.stage === 'storyboard') {
+      setStoryboardInitialTab(target.tab);
       setStage('storyboard');
     } else if (target.stage === 'pov') {
+      setPovInitialTab(target.tab ?? target.id);
       setStage('pov');
     } else if (target.stage === 'world' && target.level) {
       const lvl = target.level;
@@ -294,6 +309,7 @@ export default function App() {
       setCurrentLevel(lvl);
     }
     setActiveLessonId(target.id);
+    setLessonsMapOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -381,10 +397,11 @@ export default function App() {
   };
 
   const handleSwitchLevel = (lvlId: LevelNumber) => {
-    if (lvlId === 1 && !world1Unlocked) return;
-    if (lvlId > 1 && !unlockedLevels.includes(lvlId)) return;
+    if (!devUnlocked && lvlId === 1 && !world1Unlocked) return;
+    if (!devUnlocked && lvlId > 1 && !unlockedLevels.includes(lvlId)) return;
     sound.unlockAudio();
     sound.playClick();
+    setLessonsMapOpen(false);
     setStage('world');
     setCurrentLevel(lvlId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -426,11 +443,14 @@ export default function App() {
     setActiveFlightEvent(null);
     setGameOverOpen(false);
     setActiveLessonId('prologue_curiosity');
-    setPrologueInitialMode('curiosity');
+    setPrologueInitialLessonId('prologue_curiosity');
+    setStoryboardInitialTab(undefined);
+    setPovInitialTab(undefined);
     setL1InitialTab(undefined);
     setL2InitialTab(undefined);
     setL3InitialTab(undefined);
     setL4InitialTab(undefined);
+    setLessonsMapOpen(false);
     setShowResumeToast(false);
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -454,11 +474,14 @@ export default function App() {
     setActiveFlightEvent(null);
     setGameOverOpen(false);
     setActiveLessonId('prologue_curiosity');
-    setPrologueInitialMode('curiosity');
+    setPrologueInitialLessonId('prologue_curiosity');
+    setStoryboardInitialTab(undefined);
+    setPovInitialTab(undefined);
     setL1InitialTab(undefined);
     setL2InitialTab(undefined);
     setL3InitialTab(undefined);
     setL4InitialTab(undefined);
+    setLessonsMapOpen(false);
     setShowResumeToast(false);
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -485,11 +508,14 @@ export default function App() {
     setActiveFlightEvent(null);
     setGameOverOpen(false);
     setActiveLessonId('prologue_curiosity');
-    setPrologueInitialMode('curiosity');
+    setPrologueInitialLessonId('prologue_curiosity');
+    setStoryboardInitialTab(undefined);
+    setPovInitialTab(undefined);
     setL1InitialTab(undefined);
     setL2InitialTab(undefined);
     setL3InitialTab(undefined);
     setL4InitialTab(undefined);
+    setLessonsMapOpen(false);
     setShowResumeToast(false);
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -551,230 +577,110 @@ export default function App() {
     setAmbiencePlaying(playing);
   };
 
+  const [touchedNavLabel, setTouchedNavLabel] = useState<string | null>(null);
+
   return (
     <GameLivesProvider lives={lives} maxLives={3} lastBreakEvent={heartBreakEvent}>
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Clean Non-Overlapping Sticky Header */}
+      {/* Slim Sticky Top Bar — Single Settings Icon Only + Icon-First Status */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 space-y-1.5 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between gap-x-3 gap-y-2">
-          {/* Row 1 on mobile (left + primary right controls on desktop) */}
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playClick();
-                setStage('prologue');
-              }}
-              className="text-left shrink-0"
-            >
-              <h1 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-tight whitespace-nowrap">
-                ✨ SKSSF ഗൈഡ് ഗെയിം
-              </h1>
-            </button>
-
-            {/* Mobile-only right utility cluster (Settings + Mute) so title never overlaps hearts */}
-            <div className="flex sm:hidden items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setSettingsOpen(true);
-                }}
-                aria-label="ശബ്ദ സെറ്റിംഗ്സ് തുറക്കുക"
-                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-[11px] font-extrabold"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>സെറ്റിംഗ്സ്</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleSound}
-                aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700"
-              >
-                {muted ? (
-                  <VolumeX className="w-4 h-4 text-slate-500" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-emerald-700" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <nav
-            aria-label="സംഘടനാ ഘട്ടങ്ങൾ"
-            className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-lg"
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setLessonsMapOpen(false);
+              setStage('prologue');
+            }}
+            className="text-left shrink-0"
           >
+            <h1 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-tight whitespace-nowrap">
+              ✨ SKSSF
+            </h1>
+          </button>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
+            <HeaderHeartsBar />
+
             <button
               type="button"
               onClick={() => {
                 sound.unlockAudio();
                 sound.playClick();
-                setStage('prologue');
+                setScoreModalOpen(true);
               }}
-              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
-                stage === 'prologue'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'text-slate-700 hover:bg-white'
-              }`}
+              aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
+              title="സ്കോർ"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-950 text-[11px] sm:text-xs font-extrabold hover:bg-sky-100 tabular-nums whitespace-nowrap"
             >
-              <Compass className="w-3.5 h-3.5" />
-              <span>ആമുഖം</span>
+              <BarChart3 className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+              <span>{xp}</span>
             </button>
 
-            {storyboardUnlocked && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playPop();
+                setBadgeStudioPreset('starter_member');
+                setBadgeStudioOpen(true);
+              }}
+              aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ്"
+              title="ബാഡ്ജ്"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-xs"
+            >
+              <Award className="w-4 h-4 shrink-0" />
+            </button>
+
+            {/* Surprise Gift Badge: ONLY shown after the user discovers at least 1 gift! */}
+            {collectedEggs.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   sound.unlockAudio();
                   sound.playClick();
-                  setStage('storyboard');
+                  setCelebrationEgg(null);
+                  setGiftChestOpen(true);
                 }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
-                  stage === 'storyboard'
-                    ? 'bg-amber-400 text-slate-950 shadow-xs'
-                    : 'text-slate-700 hover:bg-white'
-                }`}
+                aria-label="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
+                title="സമ്മാനങ്ങൾ"
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap"
               >
-                {completedLessonIds.includes('storyboard') && stage !== 'storyboard' ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                ) : (
-                  <BookOpen className="w-3.5 h-3.5" />
-                )}
-                <span>സാഹചര്യങ്ങൾ</span>
+                <Gift className="w-3.5 h-3.5 text-amber-600" />
+                <span>{collectedEggs.length}</span>
               </button>
             )}
 
-            {povUnlocked && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setStage('pov');
-                }}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
-                  stage === 'pov'
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'text-emerald-900 bg-emerald-50 hover:bg-white'
-                }`}
-              >
-                {completedLessonIds.includes('pov_journey') && stage !== 'pov' ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                ) : null}
-                <span>🧭 POV യാത്ര</span>
-              </button>
-            )}
+            {/* SINGLE SETTINGS BUTTON AT THE TOP */}
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setSettingsOpen(true);
+              }}
+              aria-label="സെറ്റിംഗ്സ്"
+              title="സെറ്റിംഗ്സ്"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
 
-            {LEVEL_META.map((lvl) => {
-              const unlocked = lvl.id === 1 ? world1Unlocked : unlockedLevels.includes(lvl.id);
-              if (!unlocked) return null;
-              const completed = completedLevels.includes(lvl.id);
-              const active = stage === 'world' && currentLevel === lvl.id;
-              return (
-                <button
-                  key={lvl.id}
-                  type="button"
-                  onClick={() => handleSwitchLevel(lvl.id)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors whitespace-nowrap shrink-0 ${
-                    active
-                      ? 'bg-emerald-700 text-white shadow-xs'
-                      : 'text-slate-700 hover:bg-white'
-                  }`}
-                >
-                  {completed && !active && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                  )}
-                  <span>{lvl.short}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Compact Status & Action Strip (Clean Row 2 on Mobile, Right Cluster on Desktop — Zero Overlap!) */}
-          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-1.5 sm:gap-2">
-            <div className="flex items-center gap-1.5">
-              {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
-              <HeaderHeartsBar />
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setScoreModalOpen(true);
-                }}
-                aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-950 text-[11px] sm:text-xs font-extrabold hover:bg-sky-100 tabular-nums whitespace-nowrap"
-              >
-                <BarChart3 className="w-3.5 h-3.5 text-sky-700 shrink-0" />
-                <span>{xp} XP</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playPop();
-                  setBadgeStudioPreset('starter_member');
-                  setBadgeStudioOpen(true);
-                }}
-                aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ് & സോഷ്യൽ കാർഡ്"
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold hover:bg-amber-300 whitespace-nowrap shadow-xs"
-              >
-                <Award className="w-3.5 h-3.5 shrink-0" />
-                <span>ഫോട്ടോ ബാഡ്ജ്</span>
-              </button>
-
-              {/* Surprise Gift Badge: ONLY shown after the user discovers at least 1 gift! */}
-              {collectedEggs.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    setCelebrationEgg(null);
-                    setGiftChestOpen(true);
-                  }}
-                  aria-label="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap"
-                >
-                  <Gift className="w-3.5 h-3.5 text-amber-600" />
-                  <span>
-                    {collectedEggs.length}/{EASTER_EGG_ITEMS.length}
-                  </span>
-                </button>
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
+              title={muted ? 'ശബ്ദം ഓൺ' : 'മ്യൂട്ട്'}
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+            >
+              {muted ? (
+                <VolumeX className="w-4 h-4 text-slate-500" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-emerald-700" />
               )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setSettingsOpen(true);
-                }}
-                aria-label="ശബ്ദ സെറ്റിംഗ്സ് തുറക്കുക"
-                className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-xs font-extrabold hover:bg-emerald-100 whitespace-nowrap"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>സെറ്റിംഗ്സ്</span>
-              </button>
-              <button
-                type="button"
-                onClick={toggleSound}
-                aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
-                className="hidden sm:inline-flex p-2 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              >
-                {muted ? (
-                  <VolumeX className="w-4 h-4 text-slate-500" />
-                ) : (
-                  <Volume2 className="w-4 h-4 text-emerald-700" />
-                )}
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -782,99 +688,26 @@ export default function App() {
       {/* Non-blocking Floating Top-Right Audio Loader */}
       <AudioLoadingFloatBadge />
 
-      {/* Mobile / Tablet Switcher — Only Shows Previously Unlocked Stages (Zero Future Links on Page 1!) */}
-      {(storyboardUnlocked || povUnlocked || world1Unlocked) && (
-        <div className="lg:hidden bg-white border-b border-slate-200 px-3 py-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playClick();
-                setStage('prologue');
-              }}
-              className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
-                stage === 'prologue'
-                  ? 'bg-emerald-700 text-white'
-                  : 'bg-slate-100 text-slate-700'
-              }`}
-            >
-              🚐 തുടക്കം
-            </button>
-            {storyboardUnlocked && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setStage('storyboard');
-                }}
-                className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
-                  stage === 'storyboard'
-                    ? 'bg-amber-400 text-slate-950'
-                    : 'bg-amber-50 text-amber-900'
-                }`}
-              >
-                സാഹചര്യ ബോർഡ്
-              </button>
-            )}
-            {povUnlocked && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  setStage('pov');
-                }}
-                className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
-                  stage === 'pov'
-                    ? 'bg-emerald-700 text-white'
-                    : 'bg-emerald-50 text-emerald-900'
-                }`}
-              >
-                🧭 POV യാത്ര
-              </button>
-            )}
-            {LEVEL_META.map((lvl) => {
-              const unlocked = lvl.id === 1 ? world1Unlocked : unlockedLevels.includes(lvl.id);
-              if (!unlocked) return null;
-              const active = stage === 'world' && currentLevel === lvl.id;
-              return (
-                <button
-                  key={lvl.id}
-                  type="button"
-                  onClick={() => handleSwitchLevel(lvl.id)}
-                  className={`py-1.5 px-2.5 rounded-lg text-[11px] font-bold ${
-                    active ? 'bg-emerald-700 text-white' : 'bg-slate-100 text-slate-700'
-                  }`}
-                >
-                  ഘട്ടം {lvl.id}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Main Game Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      {/* Main Game Workspace — GAME STARTS IMMEDIATELY AT TOP! */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5">
         {showResumeToast && (
-          <div className="mb-3 rounded-xl border border-emerald-300 bg-emerald-50 px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-emerald-950">
-            <span>
-              💾 നിങ്ങളുടെ മുൻ പുരോഗതി പുനഃസ്ഥാപിച്ചു (ശ്രമം #{runNumber} · {xp} XP · പാഠങ്ങൾ{' '}
-              {completedLessonIds.length}/{ALL_LESSONS.length})
+          <div className="mb-2.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
+            <span className="tabular-nums">
+              💾 #{runNumber} · {xp} XP · {completedLessonIds.length}/{ALL_LESSONS.length}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => setScoreModalOpen(true)}
-                className="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 font-extrabold"
+                aria-label="സ്കോർ കാണാം"
+                className="px-2 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 font-extrabold"
               >
-                📊 സ്കോർ കാണാം
+                📊
               </button>
               <button
                 type="button"
                 onClick={() => setShowResumeToast(false)}
+                aria-label="അടയ്ക്കുക"
                 className="px-2 py-1 rounded-lg text-emerald-700 hover:bg-emerald-100 font-extrabold"
               >
                 ✕
@@ -883,178 +716,339 @@ export default function App() {
           </div>
         )}
 
-        <StoryNarrationStrip
-          ambiencePlaying={ambiencePlaying}
-          ambienceLabel={sound.getSceneLabel()}
-          onToggleAmbience={toggleAmbience}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-
-        <UnseenLessonBanner
-          unseenLessons={skippedUnseenBefore}
-          onJumpToLesson={handleJumpToLesson}
-        />
-
-        {stage === 'prologue' && (
-          <StoryPrologueTheater
-            key={`prologue_${attemptKey}`}
-            xp={xp}
-            badgesCount={badges.length}
-            onStartAdventure={handleStartAdventure}
-            onOpenStoryboard={handleOpenStoryboard}
-            onOpenBadgeStudio={(presetId) => {
-              setBadgeStudioPreset(presetId);
-              setBadgeStudioOpen(true);
-            }}
-            onAwardXp={handleAwardXp}
-            awardedActions={awardedActions}
-            collectedEggs={collectedEggs}
-            onClaimEasterEgg={handleClaimEasterEgg}
-            initialMode={prologueInitialMode}
-            onActiveLessonChange={setActiveLessonId}
-            onMarkLessonCompleted={handleMarkLessonCompleted}
+        {lessonsMapOpen ? (
+          <AllLessonsMapPage
+            activeLessonId={activeLessonId}
             completedLessonIds={completedLessonIds}
-            quizAnswers={quizAnswers}
-            onQuizAnswered={handleQuizAnswered}
+            devUnlocked={devUnlocked}
+            onSetDevUnlocked={setDevUnlocked}
+            onSelectLesson={handleJumpToLesson}
+            onClose={() => setLessonsMapOpen(false)}
           />
-        )}
-
-        {stage === 'pov' && (
-          <SkssfPovJourneyGame
-            key={`pov_${attemptKey}`}
-            onAwardXp={handleAwardXp}
-            awardedActions={awardedActions}
-            completedLessonIds={completedLessonIds}
-            onUnlockBadge={handleUnlockBadge}
-            onOpenBadgeStudio={(presetId) => {
-              setBadgeStudioPreset(presetId);
-              setBadgeStudioOpen(true);
-            }}
-            onActiveLessonChange={setActiveLessonId}
-            quizAnswers={quizAnswers}
-            onQuizAnswered={handleQuizAnswered}
-            onCompletePovStage={() => {
-              handleMarkLessonCompleted('pov_journey');
-              handleStartAdventure();
-            }}
-          />
-        )}
-
-        {stage === 'storyboard' && (
-          <VisualStoryboardArena
-            key={`storyboard_${attemptKey}`}
-            onAwardXp={handleAwardXp}
-            onUnlockBadge={handleUnlockBadge}
-            onGoToMission1={() => {
-              handleMarkLessonCompleted('storyboard');
-              setStage('pov');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            collectedEggs={collectedEggs}
-            onClaimEasterEgg={handleClaimEasterEgg}
-            onActiveLessonChange={setActiveLessonId}
-            onMarkLessonCompleted={handleMarkLessonCompleted}
-            completedLessonIds={completedLessonIds}
-            quizAnswers={quizAnswers}
-            onQuizAnswered={handleQuizAnswered}
-          />
-        )}
-
-        {stage === 'world' && (
+        ) : (
           <>
-            <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
-              <p className="font-semibold">{LEVEL_META[currentLevel - 1].full}</p>
-              {badges.length > 0 && (
-                <p className="font-bold text-emerald-800">
-                  ബാഡ്ജുകൾ: {badges.join(' · ')}
-                </p>
-              )}
-            </div>
+            <UnseenLessonBanner
+              unseenLessons={skippedUnseenBefore}
+              onJumpToLesson={handleJumpToLesson}
+            />
 
-            {currentLevel === 1 && (
-              <Level1Story
-                key={`l1_${attemptKey}`}
-                isCompleted={completedLevels.includes(1)}
-                onAwardXp={handleAwardXp}
-                onUnlockBadge={handleUnlockBadge}
-                onCompleteLevel={() => handleCompleteLevel(1)}
-                collectedEggs={collectedEggs}
-                onClaimEasterEgg={handleClaimEasterEgg}
-                initialTab={l1InitialTab}
-                onActiveLessonChange={setActiveLessonId}
-                onMarkLessonCompleted={handleMarkLessonCompleted}
-                completedLessonIds={completedLessonIds}
-                quizAnswers={quizAnswers}
-                onQuizAnswered={handleQuizAnswered}
-              />
-            )}
-
-            {currentLevel === 2 && (
-              <Level2Ecosystem
-                key={`l2_${attemptKey}`}
-                isCompleted={completedLevels.includes(2)}
-                onAwardXp={handleAwardXp}
-                onUnlockBadge={handleUnlockBadge}
-                onCompleteLevel={() => handleCompleteLevel(2)}
-                collectedEggs={collectedEggs}
-                onClaimEasterEgg={handleClaimEasterEgg}
-                initialTab={l2InitialTab}
-                onActiveLessonChange={setActiveLessonId}
-                onMarkLessonCompleted={handleMarkLessonCompleted}
-                completedLessonIds={completedLessonIds}
-                quizAnswers={quizAnswers}
-                onQuizAnswered={handleQuizAnswered}
-                onOpenBadgeStudio={(presetId) => {
-                  setBadgeStudioPreset(presetId);
-                  setBadgeStudioOpen(true);
-                }}
-              />
-            )}
-
-            {currentLevel === 3 && (
-              <Level3Organizer
-                key={`l3_${attemptKey}`}
-                isCompleted={completedLevels.includes(3)}
-                onAwardXp={handleAwardXp}
-                onUnlockBadge={handleUnlockBadge}
-                onCompleteLevel={() => handleCompleteLevel(3)}
-                collectedEggs={collectedEggs}
-                onClaimEasterEgg={handleClaimEasterEgg}
-                initialTab={l3InitialTab}
-                onActiveLessonChange={setActiveLessonId}
-                onMarkLessonCompleted={handleMarkLessonCompleted}
-                completedLessonIds={completedLessonIds}
-                quizAnswers={quizAnswers}
-                onQuizAnswered={handleQuizAnswered}
-              />
-            )}
-
-            {currentLevel === 4 && (
-              <Level4Strategy
-                key={`l4_${attemptKey}`}
+            {stage === 'prologue' && (
+              <StoryPrologueTheater
+                key={`prologue_${attemptKey}`}
                 xp={xp}
-                rank={currentRank}
-                badges={badges}
-                isCompleted={completedLevels.includes(4)}
+                badgesCount={badges.length}
+                onStartAdventure={handleStartAdventure}
+                onOpenStoryboard={handleOpenStoryboard}
+                onOpenBadgeStudio={(presetId) => {
+                  setBadgeStudioPreset(presetId);
+                  setBadgeStudioOpen(true);
+                }}
                 onAwardXp={handleAwardXp}
-                onUnlockBadge={handleUnlockBadge}
-                onCompleteLevel={() => handleCompleteLevel(4)}
+                awardedActions={awardedActions}
                 collectedEggs={collectedEggs}
                 onClaimEasterEgg={handleClaimEasterEgg}
-                initialTab={l4InitialTab}
-                unseenLessons={allUnseenLessons}
-                onJumpToLesson={handleJumpToLesson}
+                initialLessonId={prologueInitialLessonId}
+                devUnlocked={devUnlocked}
                 onActiveLessonChange={setActiveLessonId}
                 onMarkLessonCompleted={handleMarkLessonCompleted}
                 completedLessonIds={completedLessonIds}
                 quizAnswers={quizAnswers}
                 onQuizAnswered={handleQuizAnswered}
+              />
+            )}
+
+            {stage === 'pov' && (
+              <SkssfPovJourneyGame
+                key={`pov_${attemptKey}`}
+                initialTab={povInitialTab}
+                devUnlocked={devUnlocked}
+                onAwardXp={handleAwardXp}
+                awardedActions={awardedActions}
+                completedLessonIds={completedLessonIds}
+                onUnlockBadge={handleUnlockBadge}
                 onOpenBadgeStudio={(presetId) => {
                   setBadgeStudioPreset(presetId);
                   setBadgeStudioOpen(true);
                 }}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+                onCompletePovStage={() => {
+                  handleMarkLessonCompleted('pov_journey');
+                  handleStartAdventure();
+                }}
               />
             )}
+
+            {stage === 'storyboard' && (
+              <VisualStoryboardArena
+                key={`storyboard_${attemptKey}`}
+                initialTab={storyboardInitialTab}
+                devUnlocked={devUnlocked}
+                onAwardXp={handleAwardXp}
+                onUnlockBadge={handleUnlockBadge}
+                onGoToMission1={() => {
+                  handleMarkLessonCompleted('storyboard');
+                  setStage('pov');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                collectedEggs={collectedEggs}
+                onClaimEasterEgg={handleClaimEasterEgg}
+                onActiveLessonChange={setActiveLessonId}
+                onMarkLessonCompleted={handleMarkLessonCompleted}
+                completedLessonIds={completedLessonIds}
+                quizAnswers={quizAnswers}
+                onQuizAnswered={handleQuizAnswered}
+              />
+            )}
+
+            {stage === 'world' && (
+              <>
+                {currentLevel === 1 && (
+                  <Level1Story
+                    key={`l1_${attemptKey}`}
+                    isCompleted={completedLevels.includes(1)}
+                    onAwardXp={handleAwardXp}
+                    onUnlockBadge={handleUnlockBadge}
+                    onCompleteLevel={() => handleCompleteLevel(1)}
+                    collectedEggs={collectedEggs}
+                    onClaimEasterEgg={handleClaimEasterEgg}
+                    initialTab={l1InitialTab}
+                    devUnlocked={devUnlocked}
+                    onActiveLessonChange={setActiveLessonId}
+                    onMarkLessonCompleted={handleMarkLessonCompleted}
+                    completedLessonIds={completedLessonIds}
+                    quizAnswers={quizAnswers}
+                    onQuizAnswered={handleQuizAnswered}
+                  />
+                )}
+
+                {currentLevel === 2 && (
+                  <Level2Ecosystem
+                    key={`l2_${attemptKey}`}
+                    isCompleted={completedLevels.includes(2)}
+                    onAwardXp={handleAwardXp}
+                    onUnlockBadge={handleUnlockBadge}
+                    onCompleteLevel={() => handleCompleteLevel(2)}
+                    collectedEggs={collectedEggs}
+                    onClaimEasterEgg={handleClaimEasterEgg}
+                    initialTab={l2InitialTab}
+                    devUnlocked={devUnlocked}
+                    onActiveLessonChange={setActiveLessonId}
+                    onMarkLessonCompleted={handleMarkLessonCompleted}
+                    completedLessonIds={completedLessonIds}
+                    quizAnswers={quizAnswers}
+                    onQuizAnswered={handleQuizAnswered}
+                    onOpenBadgeStudio={(presetId) => {
+                      setBadgeStudioPreset(presetId);
+                      setBadgeStudioOpen(true);
+                    }}
+                  />
+                )}
+
+                {currentLevel === 3 && (
+                  <Level3Organizer
+                    key={`l3_${attemptKey}`}
+                    isCompleted={completedLevels.includes(3)}
+                    onAwardXp={handleAwardXp}
+                    onUnlockBadge={handleUnlockBadge}
+                    onCompleteLevel={() => handleCompleteLevel(3)}
+                    collectedEggs={collectedEggs}
+                    onClaimEasterEgg={handleClaimEasterEgg}
+                    initialTab={l3InitialTab}
+                    devUnlocked={devUnlocked}
+                    onActiveLessonChange={setActiveLessonId}
+                    onMarkLessonCompleted={handleMarkLessonCompleted}
+                    completedLessonIds={completedLessonIds}
+                    quizAnswers={quizAnswers}
+                    onQuizAnswered={handleQuizAnswered}
+                  />
+                )}
+
+                {currentLevel === 4 && (
+                  <Level4Strategy
+                    key={`l4_${attemptKey}`}
+                    xp={xp}
+                    rank={currentRank}
+                    badges={badges}
+                    isCompleted={completedLevels.includes(4)}
+                    onAwardXp={handleAwardXp}
+                    onUnlockBadge={handleUnlockBadge}
+                    onCompleteLevel={() => handleCompleteLevel(4)}
+                    collectedEggs={collectedEggs}
+                    onClaimEasterEgg={handleClaimEasterEgg}
+                    initialTab={l4InitialTab}
+                    devUnlocked={devUnlocked}
+                    unseenLessons={allUnseenLessons}
+                    onJumpToLesson={handleJumpToLesson}
+                    onActiveLessonChange={setActiveLessonId}
+                    onMarkLessonCompleted={handleMarkLessonCompleted}
+                    completedLessonIds={completedLessonIds}
+                    quizAnswers={quizAnswers}
+                    onQuizAnswered={handleQuizAnswered}
+                    onOpenBadgeStudio={(presetId) => {
+                      setBadgeStudioPreset(presetId);
+                      setBadgeStudioOpen(true);
+                    }}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Narration Bar (Default Collapsed, No Duplicate Settings!) — Below Game */}
+            <StoryNarrationStrip
+              ambiencePlaying={ambiencePlaying}
+              ambienceLabel={sound.getSceneLabel()}
+              onToggleAmbience={toggleAmbience}
+            />
+
+            {/* NAVIGATION MAP & ALL-LESSONS OVERVIEW TRIGGER STRICTLY BELOW THE GAME & LESSON */}
+            <nav
+              aria-label="സംഘടനാ ഘട്ടങ്ങൾ"
+              className="mt-3 rounded-2xl border border-slate-200 bg-white p-2.5 shadow-2xs space-y-2"
+            >
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    setLessonsMapOpen(true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  aria-label="എല്ലാ പാഠങ്ങളുടെയും പട്ടിക കാണാം"
+                  className="inline-flex items-center gap-1.5 px-3.5 h-10 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-amber-300 text-xs sm:text-sm font-extrabold shadow-xs transition-all tabular-nums"
+                >
+                  <span>🗺️</span>
+                  <span>
+                    പാഠങ്ങൾ ({completedLessonIds.filter((id) => ALL_LESSONS.some((l) => l.id === id)).length}/{ALL_LESSONS.length})
+                  </span>
+                </button>
+
+                {(storyboardUnlocked || povUnlocked || world1Unlocked) && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="ആമുഖം"
+                      title="ആമുഖം"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        setTouchedNavLabel('🚐 ആമുഖം');
+                        setStage('prologue');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all ${
+                        stage === 'prologue'
+                          ? 'bg-emerald-700 text-white shadow-sm scale-105'
+                          : 'bg-slate-100 text-slate-700 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <Compass className="w-5 h-5" />
+                    </button>
+
+                    {storyboardUnlocked && (
+                      <button
+                        type="button"
+                        aria-label="സാഹചര്യങ്ങൾ"
+                        title="സാഹചര്യങ്ങൾ"
+                        onClick={() => {
+                          sound.unlockAudio();
+                          sound.playClick();
+                          setTouchedNavLabel('📖 സാഹചര്യ ബോർഡ്');
+                          setStage('storyboard');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all relative ${
+                          stage === 'storyboard'
+                            ? 'bg-amber-400 text-slate-950 shadow-sm scale-105'
+                            : 'bg-slate-100 text-slate-700 hover:bg-amber-50'
+                        }`}
+                      >
+                        <BookOpen className="w-5 h-5" />
+                        {completedLessonIds.includes('storyboard') && stage !== 'storyboard' && (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 absolute -top-1 -right-1 bg-white rounded-full" />
+                        )}
+                      </button>
+                    )}
+
+                    {povUnlocked && (
+                      <button
+                        type="button"
+                        aria-label="POV യാത്ര"
+                        title="POV യാത്ര"
+                        onClick={() => {
+                          sound.unlockAudio();
+                          sound.playClick();
+                          setTouchedNavLabel('🧭 POV യാത്ര');
+                          setStage('pov');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all relative ${
+                          stage === 'pov'
+                            ? 'bg-emerald-700 text-white shadow-sm scale-105'
+                            : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
+                        }`}
+                      >
+                        <span>🧭</span>
+                        {completedLessonIds.includes('pov_journey') && stage !== 'pov' && (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 absolute -top-1 -right-1 bg-white rounded-full" />
+                        )}
+                      </button>
+                    )}
+
+                    {LEVEL_META.map((lvl) => {
+                      const unlocked =
+                        devUnlocked || (lvl.id === 1 ? world1Unlocked : unlockedLevels.includes(lvl.id));
+                      if (!unlocked) return null;
+                      const completed = completedLevels.includes(lvl.id);
+                      const active = stage === 'world' && currentLevel === lvl.id;
+                      const lvlEmoji = lvl.id === 1 ? '⛵' : lvl.id === 2 ? '🏛️' : lvl.id === 3 ? '🎈' : '🦒';
+                      return (
+                        <button
+                          key={lvl.id}
+                          type="button"
+                          aria-label={lvl.full}
+                          title={lvl.short}
+                          onClick={() => {
+                            setTouchedNavLabel(lvl.short);
+                            handleSwitchLevel(lvl.id);
+                          }}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-all relative ${
+                            active
+                              ? 'bg-emerald-700 text-white shadow-sm scale-105'
+                              : 'bg-slate-100 text-slate-700 hover:bg-emerald-50'
+                          }`}
+                        >
+                          <span>{lvlEmoji}</span>
+                          <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-slate-900 text-amber-300 text-[9px] font-extrabold flex items-center justify-center">
+                            {lvl.id}
+                          </span>
+                          {completed && !active && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 absolute -top-1 -right-1 bg-white rounded-full" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+
+              {touchedNavLabel && (
+                <div className="flex items-center justify-between gap-2 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950">
+                  <span>{touchedNavLabel}</span>
+                  <button
+                    type="button"
+                    onClick={() => setTouchedNavLabel(null)}
+                    className="text-emerald-700 px-1"
+                    aria-label="അടയ്ക്കുക"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </nav>
           </>
         )}
       </main>

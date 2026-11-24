@@ -8,6 +8,8 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Copy,
   Gift,
   Info,
@@ -987,14 +989,110 @@ export const AudioLoadingFloatBadge: React.FC = () => {
   );
 };
 
+/* Reusable Default-Collapsed Lesson Drawer (Icon-first; expands full lesson title & content ONLY when tapped!) */
+export const CollapsibleLessonDrawer: React.FC<{
+  title?: string;
+  emoji?: string;
+  badgeText?: string;
+  defaultOpen?: boolean;
+  onSpeak?: () => void;
+  children: React.ReactNode;
+}> = ({
+  title = 'പാഠം വായിക്കാം',
+  emoji = '📖',
+  badgeText,
+  defaultOpen = false,
+  onSpeak,
+  children,
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div
+      data-lesson-drawer="true"
+      className="rounded-2xl border-2 border-emerald-200 bg-white shadow-xs overflow-hidden scroll-mt-20"
+    >
+      <div className="px-3.5 py-2 flex items-center justify-between gap-2 bg-emerald-50/70">
+        <button
+          type="button"
+          onClick={() => {
+            sound.unlockAudio();
+            sound.playClick();
+            setOpen((v) => !v);
+          }}
+          aria-expanded={open}
+          aria-label={title}
+          className="flex items-center gap-2 min-w-0 flex-1 text-left"
+        >
+          <span className="text-lg shrink-0" aria-hidden="true">
+            {emoji}
+          </span>
+          <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words">
+            {open ? title : 'പാഠം തുറക്കാം'}
+          </span>
+          {badgeText && (
+            <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 tabular-nums">
+              {badgeText}
+            </span>
+          )}
+        </button>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onSpeak && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                onSpeak();
+              }}
+              aria-label="പാഠം കേൾക്കാം"
+              title="പാഠം കേൾക്കാം"
+              className="w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-2xs transition-transform active:scale-95"
+            >
+              <Volume2 className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setOpen((v) => !v);
+            }}
+            aria-expanded={open}
+            aria-label={open ? 'പാഠം ചുരുക്കാം' : 'പാഠം തുറക്കാം'}
+            className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center"
+          >
+            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-emerald-100"
+          >
+            <div className="p-3.5 sm:p-5 space-y-4">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export const StoryNarrationStrip: React.FC<{
   ambiencePlaying: boolean;
   ambienceLabel: string;
   onToggleAmbience: () => void;
   onOpenSettings?: () => void;
-}> = ({ onOpenSettings }) => {
+}> = () => {
   const [state, setState] = useState<NarratorState>(narrator.getState());
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
 
   useEffect(() => {
     const unsubNav = narrator.subscribe(setState);
@@ -1005,7 +1103,7 @@ export const StoryNarrationStrip: React.FC<{
 
   if (minimized) {
     return (
-      <div className="mb-3 flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-950 text-white shadow-xs">
+      <div className="mt-3 flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-950 text-white shadow-2xs">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -1017,18 +1115,16 @@ export const StoryNarrationStrip: React.FC<{
                 narrator.replayLast();
               }
             }}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1 shrink-0 text-[11px] font-extrabold ${
+            aria-label={state.speaking ? 'നിർത്താം' : 'കേൾക്കാം'}
+            className={`px-2.5 py-1 rounded-lg flex items-center gap-1 shrink-0 text-xs font-extrabold ${
               state.speaking
                 ? 'bg-amber-400 text-slate-950'
                 : 'bg-emerald-700 text-white hover:bg-emerald-600'
             }`}
           >
             {state.enabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span>{state.speaking ? 'നിർത്താം' : 'കേൾക്കാം'}</span>
+            <span>{state.speaking ? '⏹️' : '🎙️'}</span>
           </button>
-          <span className="text-[11px] font-bold text-amber-200">
-            🔊 ശബ്ദ സഹായി
-          </span>
         </div>
         <button
           type="button"
@@ -1036,16 +1132,17 @@ export const StoryNarrationStrip: React.FC<{
             sound.playClick();
             setMinimized(false);
           }}
-          className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] font-extrabold whitespace-nowrap shrink-0"
+          aria-label="ശബ്ദ വാചകം തുറക്കാം"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white"
         >
-          + തുറക്കാം
+          <ChevronDown className="w-3.5 h-3.5" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mb-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white shadow-xs overflow-hidden">
+    <div className="mt-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white shadow-xs overflow-hidden">
       <div className="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <button
@@ -1058,62 +1155,32 @@ export const StoryNarrationStrip: React.FC<{
                 narrator.replayLast();
               }
             }}
-            className={`px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 text-xs font-extrabold transition-transform active:scale-95 ${
+            aria-label={state.speaking ? 'നിർത്താം' : 'കേൾക്കാം'}
+            className={`p-2 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95 ${
               state.speaking || state.awaitingUnlock
                 ? 'bg-amber-400 text-slate-950 shadow-xs'
                 : 'bg-emerald-700 text-white hover:bg-emerald-600'
             }`}
-            title="വായിച്ചു കേൾക്കാൻ ഇവിടെ തൊടൂ"
           >
-            {state.enabled ? (
-              <Volume2 className="w-4 h-4" />
-            ) : (
-              <VolumeX className="w-4 h-4" />
-            )}
-            <span className="whitespace-nowrap">
-              {state.speaking ? 'നിർത്താം' : '🔊 കേൾക്കാം'}
-            </span>
+            {state.enabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold text-amber-300 leading-snug break-words">
-              🔊 ശബ്ദ സഹായി
-              {state.speaking ? ' · ഇപ്പോൾ വായിക്കുന്നു...' : ''}
-            </p>
-            <p className="text-xs sm:text-sm font-semibold text-emerald-50 leading-snug break-words mt-0.5">
-              {state.currentText}
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm font-semibold text-emerald-50 leading-snug break-words min-w-0 flex-1">
+            {state.currentText}
+          </p>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {onOpenSettings && (
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playClick();
-                onOpenSettings();
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold bg-white/15 hover:bg-white/25 text-white whitespace-nowrap"
-              title="ഖുർആൻ, ബാങ്ക് വിളി & വോളിയം സെറ്റിംഗ്സ്"
-            >
-              <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">ശബ്ദ സെറ്റിംഗ്സ്</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setMinimized(true);
-            }}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold bg-white/15 hover:bg-white/25 text-amber-200 whitespace-nowrap"
-            title="ഈ ബോക്സ് ചുരുക്കി വെക്കാം"
-          >
-            <span>− ചുരുക്കാം</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setMinimized(true);
+          }}
+          aria-label="ചുരുക്കാം"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-amber-200 shrink-0"
+        >
+          <ChevronUp className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
@@ -1180,6 +1247,7 @@ export interface LessonProgressStepItem {
   emoji?: string;
 }
 
+/* Icon-Only Tap-to-Reveal Lesson Map (Placed BELOW Game!) */
 export const LessonProgressTrack: React.FC<{
   stageTitle: string;
   stageSubtitle?: string;
@@ -1187,15 +1255,17 @@ export const LessonProgressTrack: React.FC<{
   activeId: string;
   completedLessonIds: string[];
   onSelectCompleted: (id: string) => void;
+  devUnlocked?: boolean;
 }> = ({
   stageTitle,
-  stageSubtitle,
   items,
   activeId,
   completedLessonIds,
   onSelectCompleted,
+  devUnlocked = false,
 }) => {
-  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
+  const [touchedNotice, setTouchedNotice] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const activeIdx = Math.max(
     0,
     items.findIndex((item) => item.id === activeId)
@@ -1210,85 +1280,99 @@ export const LessonProgressTrack: React.FC<{
   );
 
   return (
-    <div className="mb-4 rounded-2xl border-2 border-emerald-200 bg-white px-4 py-3.5 shadow-xs space-y-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words">
-            {stageTitle}
-            {activeItem && (
-              <span className="text-emerald-700">
-                {' '}· {activeItem.emoji ? `${activeItem.emoji} ` : ''}{activeItem.label}
-              </span>
-            )}
-          </p>
-          {stageSubtitle && (
-            <p className="text-[11px] sm:text-xs text-slate-600 font-medium leading-snug break-words">
-              {stageSubtitle}
-            </p>
-          )}
+    <div className="mt-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 shadow-2xs space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setExpanded((v) => !v);
+            setTouchedNotice(activeItem ? `${activeItem.emoji || '📘'} ${activeItem.label}` : stageTitle);
+          }}
+          aria-expanded={expanded}
+          aria-label={stageTitle}
+          className="inline-flex items-center gap-1.5 text-left min-w-0"
+        >
+          <span className="text-base shrink-0">🗺️</span>
+          <span className="text-[11px] font-extrabold text-emerald-900 tabular-nums">
+            {activeIdx + 1}/{items.length}
+          </span>
+        </button>
+
+        {/* Icon-Only Quick Step Dots (Tap any icon to reveal its label & jump if unlocked!) */}
+        <div className="flex flex-wrap items-center gap-1">
+          {items.map((item, idx) => {
+            const isCurrent = item.id === activeId;
+            const isDone = completedLessonIds.includes(item.lessonId);
+            const isReachable = devUnlocked || isCurrent || isDone || idx < activeIdx;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={item.label}
+                title={item.label}
+                onClick={() => {
+                  sound.unlockAudio();
+                  if (isReachable) {
+                    sound.playClick();
+                    setTouchedNotice(`${item.emoji || '📘'} ${idx + 1}. ${item.label}`);
+                    onSelectCompleted(item.id);
+                  } else {
+                    sound.playError();
+                    setTouchedNotice(`🔒 ${item.label}`);
+                  }
+                }}
+                className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center border transition-all ${
+                  isCurrent
+                    ? 'bg-emerald-700 text-white border-emerald-900 shadow-2xs scale-105'
+                    : isDone
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                    : isReachable
+                    ? 'bg-white text-slate-800 border-slate-300'
+                    : 'bg-slate-100 text-slate-400 border-slate-200'
+                }`}
+              >
+                {isDone ? '✅' : isCurrent ? item.emoji || '▶️' : isReachable ? item.emoji || '📘' : '🔒'}
+              </button>
+            );
+          })}
         </div>
-        <span className="text-[11px] font-extrabold text-emerald-900 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg tabular-nums shrink-0">
-          പാഠം {activeIdx + 1} / {items.length}
-        </span>
+
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setExpanded((v) => !v);
+          }}
+          aria-expanded={expanded}
+          aria-label="മാപ്പ് തുറക്കാം"
+          className="w-7 h-7 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 flex items-center justify-center shrink-0"
+        >
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+      <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
         <div
           style={{ width: `${Math.min(100, pct)}%` }}
           className="h-full bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-400 transition-all duration-300"
         />
       </div>
 
-      {/* Visible Lesson & Locked Games Roadmap */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-        {items.map((item, idx) => {
-          const isCurrent = item.id === activeId;
-          const isDone = completedLessonIds.includes(item.lessonId);
-          const isReachable = isCurrent || isDone || idx < activeIdx;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                if (isReachable) {
-                  sound.playClick();
-                  setLockedNotice(null);
-                  onSelectCompleted(item.id);
-                } else {
-                  sound.playError();
-                  setLockedNotice(
-                    `🔒 “${item.label}” എന്ന പാഠവും അതിലെ പുതിയ ഗെയിമും ലോക്കിലാണ് — ഇപ്പോഴത്തെ പാഠം മനസ്സിലാക്കി താഴെയുള്ള ചോദ്യത്തിന് മറുപടി നൽകിയാൽ അടുത്ത ഗെയിമും പാഠവും തുറക്കും!`
-                  );
-                }
-              }}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition-all ${
-                isCurrent
-                  ? 'bg-emerald-700 text-white border-emerald-900 shadow-xs'
-                  : isDone
-                  ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100'
-                  : isReachable
-                  ? 'bg-white text-slate-800 border-slate-300 hover:bg-slate-50'
-                  : 'bg-slate-100 text-slate-500 border-slate-200 hover:border-amber-400'
-              }`}
-            >
-              <span>{isDone ? '✅' : isCurrent ? '▶️' : isReachable ? item.emoji || '📘' : '🔒'}</span>
-              <span>
-                {idx + 1}. {item.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {lockedNotice && (
-        <div className="rounded-xl bg-amber-50 border border-amber-300 px-3 py-2 text-[11px] sm:text-xs font-bold text-amber-950 flex items-center justify-between gap-2">
-          <span>{lockedNotice}</span>
+      {/* Label shown ONLY when an icon is touched or expanded */}
+      {(touchedNotice || expanded) && (
+        <div className="rounded-xl bg-emerald-50/90 border border-emerald-200 px-3 py-1.5 text-[11px] font-extrabold text-emerald-950 flex items-center justify-between gap-2">
+          <span className="leading-snug break-words">
+            {touchedNotice || `${stageTitle} · ${activeItem?.label ?? ''}`}
+          </span>
           <button
             type="button"
-            onClick={() => setLockedNotice(null)}
-            className="text-amber-800 hover:text-amber-950 font-extrabold shrink-0 px-1.5"
+            onClick={() => {
+              setTouchedNotice(null);
+              setExpanded(false);
+            }}
+            aria-label="അടയ്ക്കുക"
+            className="text-emerald-800 font-extrabold px-1 shrink-0"
           >
             ✕
           </button>
@@ -1314,7 +1398,6 @@ export interface LessonStepperNavProps {
 }
 
 export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
-  stepLabel,
   currentStep,
   totalSteps,
   prevLabel,
@@ -1323,10 +1406,11 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
   onNext,
   nextDisabled = false,
   nextIsWorldAdvance = false,
-  statusHint,
   missingActionLabel,
   onMissingAction,
 }) => {
+  const [tipText, setTipText] = useState<string | null>(null);
+
   const scrollAndRun = (fn?: () => void) => {
     if (!fn) return;
     sound.unlockAudio();
@@ -1336,53 +1420,18 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
   };
 
   return (
-    <div className="mt-6 rounded-2xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-amber-50 p-4 shadow-md space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words">
-          {stepLabel}
-        </span>
-
-        {typeof currentStep === 'number' && typeof totalSteps === 'number' && totalSteps > 1 && (
-          <div className="flex items-center gap-1" aria-hidden="true">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-2 rounded-sm transition-all ${
-                  i === currentStep
-                    ? 'w-5 bg-emerald-700'
-                    : i < currentStep
-                    ? 'w-2.5 bg-amber-400'
-                    : 'w-2 bg-slate-300'
-                }`}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {statusHint && (
-        <p
-          className={`text-xs font-bold rounded-xl px-3.5 py-2 border leading-relaxed ${
-            nextDisabled
-              ? 'text-amber-950 bg-amber-50 border-amber-300'
-              : 'text-emerald-900 bg-emerald-50/90 border-emerald-200'
-          }`}
-        >
-          {nextDisabled ? '🔒 ' : '🎉 '}
-          {statusHint}
-        </p>
-      )}
-
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
+    <div className="mt-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2.5 shadow-xs space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
           {prevLabel && onPrev && (
             <button
               type="button"
               onClick={() => scrollAndRun(onPrev)}
-              className="group flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-extrabold hover:bg-slate-50 transition-colors"
+              title={prevLabel}
+              aria-label={prevLabel}
+              className="w-10 h-9 rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors"
             >
-              <ArrowLeft className="w-4 h-4 shrink-0 transition-transform group-hover:-translate-x-1" />
-              <span>മുൻ പാഠം: {prevLabel}</span>
+              <ArrowLeft className="w-4 h-4" />
             </button>
           )}
 
@@ -1392,34 +1441,36 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
               sound.playClick();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            title="മുകളിലേക്ക് പോകുക"
-            className="inline-flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl border-2 border-emerald-200 bg-emerald-50 text-emerald-900 text-xs font-extrabold hover:bg-emerald-100 transition-colors shrink-0"
+            title="മുകളിലേക്ക്"
+            aria-label="മുകളിലേക്ക്"
+            className="w-9 h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 flex items-center justify-center transition-colors shrink-0"
           >
             <ArrowUp className="w-4 h-4" />
-            <span className="hidden sm:inline">മുകളിലേക്ക്</span>
           </button>
+
+          {typeof currentStep === 'number' && typeof totalSteps === 'number' && totalSteps > 1 && (
+            <span className="text-[11px] font-extrabold text-slate-500 tabular-nums px-1">
+              {currentStep + 1}/{totalSteps}
+            </span>
+          )}
         </div>
 
-        {/* Always show Next navigation — inviting kids to play the next game & lesson once quiz is answered */}
         {nextLabel && onNext && !nextDisabled ? (
           <motion.button
-            initial={{ opacity: 0, scale: 0.94 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             type="button"
             onClick={() => scrollAndRun(onNext)}
-            className={`group inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-b-4 text-xs sm:text-sm font-extrabold shadow-md transition-all ${
+            title={nextLabel}
+            aria-label={`അടുത്തത്: ${nextLabel}`}
+            className={`inline-flex items-center justify-center gap-1 px-4 h-9 rounded-xl border-b-2 text-sm font-extrabold shadow-sm transition-all ${
               nextIsWorldAdvance
                 ? 'border-amber-600 bg-amber-400 hover:bg-amber-300 text-slate-950'
                 : 'border-emerald-950 bg-emerald-700 hover:bg-emerald-800 text-white'
             }`}
           >
-            <span>
-              {nextIsWorldAdvance
-                ? '🎮 അടുത്ത ഘട്ടവും ഗെയിമും കളിക്കാം: '
-                : '🎮 അടുത്ത ഗെയിമും പാഠവും കളിക്കാം: '}
-              {nextLabel}
-            </span>
-            <ArrowRight className="w-5 h-5 shrink-0 transition-transform group-hover:translate-x-1" />
+            <span>{nextIsWorldAdvance ? '🏆' : '▶'}</span>
+            <ArrowRight className="w-4 h-4 shrink-0" />
           </motion.button>
         ) : (
           nextLabel && (
@@ -1428,21 +1479,34 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
               onClick={() => {
                 sound.unlockAudio();
                 sound.playClick();
+                setTipText(`🔒 ${missingActionLabel || 'ക്വിസ് ഉത്തരം നൽകൂ'}`);
                 if (onMissingAction) {
                   onMissingAction();
-                } else {
-                  window.scrollTo({ top: Math.max(0, window.scrollY - 360), behavior: 'smooth' });
                 }
               }}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-amber-400 bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs sm:text-sm font-extrabold transition-colors text-center shadow-xs"
+              aria-label={missingActionLabel || 'ക്വിസ് ഉത്തരം നൽകൂ'}
+              title={missingActionLabel || 'ക്വിസ് ഉത്തരം നൽകൂ'}
+              className="inline-flex items-center justify-center gap-1 px-3 h-9 rounded-xl border border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-extrabold transition-colors"
             >
-              <span>
-                🔒 {missingActionLabel || 'അടുത്ത ഗെയിം തുറക്കാൻ ചോദ്യത്തിന് ഉത്തരം നൽകൂ'}
-              </span>
+              <span>🔒</span>
+              <span>❓</span>
             </button>
           )
         )}
       </div>
+
+      {tipText && (
+        <div className="rounded-xl bg-amber-50 border border-amber-300 px-3 py-1.5 text-[11px] font-bold text-amber-950 flex items-center justify-between gap-2">
+          <span>{tipText}</span>
+          <button
+            type="button"
+            onClick={() => setTipText(null)}
+            className="text-amber-800 font-extrabold px-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 };

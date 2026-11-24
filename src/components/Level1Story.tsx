@@ -23,6 +23,7 @@ import {
   OfficialSkssfFlagImg,
 } from './SvgArtwork';
 import {
+  CollapsibleLessonDrawer,
   EasterEggItem,
   EasterEggSpot,
   GlitterBurstOverlay,
@@ -31,17 +32,26 @@ import {
 } from './GameEffects';
 import { EraInteractiveStage } from './EraInteractiveActivities';
 import { GameFullscreenShell } from './GameFullscreenShell';
-import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 
-export type L1Tab = 'timeline' | 'flags' | 'cosmic' | 'roots';
+export type L1Tab =
+  | 'era_1'
+  | 'era_2'
+  | 'era_3'
+  | 'era_4'
+  | 'era_5'
+  | 'flags'
+  | 'cosmic'
+  | 'roots';
 
 interface Level1StoryProps {
   isCompleted: boolean;
-  initialTab?: L1Tab;
+  initialTab?: L1Tab | 'timeline';
+  devUnlocked?: boolean;
   onAwardXp: (amount: number, actionId: string) => void;
   onUnlockBadge: (badge: string) => void;
   onCompleteLevel: () => void;
@@ -448,9 +458,32 @@ const ERA_BOARDS: EraBoard[] = [
 
 type FlagSlot = 'canton' | 'mosque' | 'green';
 
+const L1_FLAT_ORDER: {
+  tab: L1Tab;
+  lessonId: string;
+  emoji: string;
+  label: string;
+  eraIdx?: number;
+}[] = [
+  { tab: 'era_1', lessonId: 'l1_era_1', emoji: '⛵', label: '1921–1924 ചരിത്രം', eraIdx: 0 },
+  { tab: 'era_2', lessonId: 'l1_era_2', emoji: '🕌', label: '1926 സമസ്ത പിറവി', eraIdx: 1 },
+  { tab: 'era_3', lessonId: 'l1_era_3', emoji: '🏫', label: '1951 & 1989 SKSSF', eraIdx: 2 },
+  { tab: 'era_4', lessonId: 'l1_era_4', emoji: '☎️', label: '1989–1995 ടാഗോർ ഹാൾ', eraIdx: 3 },
+  { tab: 'era_5', lessonId: 'l1_timeline', emoji: '🌍', label: '1993 SKSBV & ആഗോളം', eraIdx: 4 },
+  { tab: 'flags', lessonId: 'l1_flags', emoji: '🚩', label: 'പതാക നിർമ്മാണം' },
+  { tab: 'cosmic', lessonId: 'l1_cosmic', emoji: '🌱', label: 'വിശ്വാസ ശൃംഖല' },
+  { tab: 'roots', lessonId: 'l1_roots', emoji: '📚', label: 'സമസ്തയുടെ വേരുകൾ' },
+];
+
+function normalizeL1Tab(tab?: L1Tab | 'timeline'): L1Tab {
+  if (!tab || tab === 'timeline') return 'era_1';
+  return tab;
+}
+
 export const Level1Story: React.FC<Level1StoryProps> = ({
   isCompleted,
-  initialTab = 'timeline',
+  initialTab = 'era_1',
+  devUnlocked = false,
   onAwardXp,
   onUnlockBadge,
   onCompleteLevel,
@@ -462,14 +495,13 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
   collectedEggs = [],
   onClaimEasterEgg,
 }) => {
-  const [phase, setPhase] = useState<L1Tab>(initialTab);
+  const [phase, setPhase] = useState<L1Tab>(() => normalizeL1Tab(initialTab));
   const [activeFlagTab, setActiveFlagTab] = useState<'skju' | 'skssf'>('skju');
   const [flippedRoots, setFlippedRoots] = useState<string[]>([]);
   const [cosmicIdx, setCosmicIdx] = useState<number>(0);
   const [selectedOtherExampleIdx, setSelectedOtherExampleIdx] = useState<number>(0);
   const [visitedCosmicIds, setVisitedCosmicIds] = useState<string[]>(['c1']);
 
-  const [boardIdx, setBoardIdx] = useState(0);
   const [collectedArtifacts, setCollectedArtifacts] = useState<string[]>([]);
   const [glitterKey, setGlitterKey] = useState(0);
   const [glitterMsg, setGlitterMsg] = useState<string>('');
@@ -489,16 +521,17 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
   const [flagMistakes, setFlagMistakes] = useState<number>(0);
   const [completedSceneGames, setCompletedSceneGames] = useState<string[]>([]);
 
-  const board = ERA_BOARDS[boardIdx];
+  const phaseIndex = Math.max(0, L1_FLAT_ORDER.findIndex((x) => x.tab === phase));
+  const currentMeta = L1_FLAT_ORDER[phaseIndex] ?? L1_FLAT_ORDER[0];
+  const isEraPhase = typeof currentMeta.eraIdx === 'number';
+  const boardIdx = currentMeta.eraIdx ?? 0;
+  const board = ERA_BOARDS[boardIdx] ?? ERA_BOARDS[0];
+  const activeLessonId = currentMeta.lessonId;
+
   const skjuBuilt = skjuSlots.canton && skjuSlots.mosque && skjuSlots.green;
   const skssfBuilt = skssfSlots.canton && skssfSlots.mosque && skssfSlots.green;
   const flagFailed = flagMistakes >= 3 && !(skjuBuilt && skssfBuilt);
-  const totalArtifacts = ERA_BOARDS.reduce((sum, b) => sum + b.artifacts.length, 0);
-  const currentBoardHasCollection = board.artifacts.some((a) =>
-    collectedArtifacts.includes(a.id)
-  );
-  const timelineQuizDone = Boolean(quizAnswers.l1_timeline);
-  const flagsQuizDone = Boolean(quizAnswers.l1_flags);
+
   const cosmicQuizDone = Boolean(quizAnswers.l1_cosmic);
   const rootsQuizDone = Boolean(quizAnswers.l1_roots);
   const cosmicGameDone =
@@ -506,48 +539,23 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
   const rootsGameDone =
     completedLessonIds.includes('l1_roots') || completedSceneGames.includes('l1_roots');
 
-  const timelineSaved = isCompleted || completedLessonIds.includes('l1_timeline');
-  const flagsSaved = isCompleted || completedLessonIds.includes('l1_flags');
-  const cosmicSaved = isCompleted || completedLessonIds.includes('l1_cosmic');
-  const rootsSaved = isCompleted || completedLessonIds.includes('l1_roots');
-
-  const isLastEraBoard = boardIdx === ERA_BOARDS.length - 1;
-  const canAdvanceTimeline = timelineSaved ? true : isLastEraBoard ? timelineQuizDone : true;
-  const canAdvanceFlags = flagsSaved || flagsQuizDone;
-  const canAdvanceCosmic = cosmicSaved || cosmicQuizDone;
-  const canFinishRoots = rootsSaved || rootsQuizDone;
+  const currentQuizDone = Boolean(quizAnswers[activeLessonId]);
+  const currentLessonSaved = isCompleted || completedLessonIds.includes(activeLessonId);
+  const canAdvanceCurrent = devUnlocked || currentLessonSaved || currentQuizDone;
 
   useEffect(() => {
-    setPhase(initialTab);
+    setPhase(normalizeL1Tab(initialTab));
   }, [initialTab]);
 
   useEffect(() => {
-    onActiveLessonChange?.(`l1_${phase}`);
-  }, [phase, onActiveLessonChange]);
+    onActiveLessonChange?.(activeLessonId);
+  }, [activeLessonId, onActiveLessonChange]);
 
   useEffect(() => {
-    if (isLastEraBoard && timelineQuizDone && !completedLessonIds.includes('l1_timeline')) {
-      onMarkLessonCompleted?.('l1_timeline');
+    if (currentQuizDone && !completedLessonIds.includes(activeLessonId)) {
+      onMarkLessonCompleted?.(activeLessonId);
     }
-  }, [isLastEraBoard, timelineQuizDone, completedLessonIds, onMarkLessonCompleted]);
-
-  useEffect(() => {
-    if (flagsQuizDone && !completedLessonIds.includes('l1_flags')) {
-      onMarkLessonCompleted?.('l1_flags');
-    }
-  }, [flagsQuizDone, completedLessonIds, onMarkLessonCompleted]);
-
-  useEffect(() => {
-    if (cosmicQuizDone && !completedLessonIds.includes('l1_cosmic')) {
-      onMarkLessonCompleted?.('l1_cosmic');
-    }
-  }, [cosmicQuizDone, completedLessonIds, onMarkLessonCompleted]);
-
-  useEffect(() => {
-    if (rootsQuizDone && !completedLessonIds.includes('l1_roots')) {
-      onMarkLessonCompleted?.('l1_roots');
-    }
-  }, [rootsQuizDone, completedLessonIds, onMarkLessonCompleted]);
+  }, [activeLessonId, currentQuizDone, completedLessonIds, onMarkLessonCompleted]);
 
   useEffect(() => {
     if (phase === 'roots') {
@@ -568,7 +576,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
     } else {
       narrator.speak(`${board.title}. ${board.missionCue}`, `${board.emoji} ${board.title}`);
     }
-  }, [phase, boardIdx, board.title, board.missionCue, board.emoji]);
+  }, [phase, board.title, board.missionCue, board.emoji]);
 
   const triggerGlitter = (msg: string) => {
     setGlitterMsg(msg);
@@ -598,9 +606,14 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
       } else {
         sound.playWriting();
       }
-      setCollectedArtifacts((prev) => [...prev, art.id]);
+      const next = [...collectedArtifacts, art.id];
+      setCollectedArtifacts(next);
       onAwardXp(15, `l1_art_${art.id}`);
       triggerGlitter(`✨ ${art.label} (+15 XP)`);
+      const boardAllDone = board.artifacts.every((a) => next.includes(a.id));
+      if (boardAllDone) {
+        window.setTimeout(() => scrollToActiveQuiz(), 900);
+      }
     } else {
       sound.playClick();
     }
@@ -613,8 +626,6 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
     fromCanvasTap = false
   ) => {
     const current = variant === 'skju' ? skjuSlots : skssfSlots;
-    // Allow intuitive 1-tap directly on flag '+' zone even if no piece was pre-selected,
-    // OR smart snap when a piece IS selected and user taps anywhere on the flag canvas
     const effectiveSlot: FlagSlot | null =
       pieceSlot && !current[pieceSlot]
         ? fromCanvasTap && pieceSlot !== targetSlot
@@ -654,12 +665,13 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
           : 'മനോഹരം! ആകാശനീലയും വെള്ളയും പച്ചയും ചേർന്ന എസ് കെ എസ് എസ് എഫ് പതാക ഉയർന്നു!';
       triggerGlitter('🎉 ഔദ്യോഗിക പതാക ഉയർന്നു! +40 XP');
       narrator.speak(flagSpeech);
-      // Automatically switch to the second flag after a short pause if not built yet
       if (variant === 'skju' && !skssfBuilt) {
         window.setTimeout(() => {
           setActiveFlagTab('skssf');
           setSelectedPiece(null);
         }, 1200);
+      } else {
+        window.setTimeout(() => scrollToActiveQuiz(), 1000);
       }
     } else {
       sound.playDrop();
@@ -808,7 +820,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                       setSelectedPiece(p.slot);
                     }
                   }}
-                  className={`w-full px-3 py-2.5 rounded-xl border border-b-4 text-xs font-bold flex items-center justify-between transition-all ${
+                  className={`w-full px-3 py-2.5 rounded-xl border border-b-4 text-xs font-extrabold flex items-center justify-between transition-all ${
                     placed
                       ? 'opacity-40 bg-slate-100 text-slate-500 border-slate-200 cursor-default'
                       : isSelected
@@ -816,8 +828,12 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                       : `${p.colorClass} active:translate-y-0.5 cursor-grab card-3d-tilt`
                   }`}
                 >
-                  <span>{p.label}</span>
-                  <span>{placed ? 'ചേർത്തു ✓' : 'വലിച്ചിടുക / ടാപ്പ്'}</span>
+                  <span className="text-base leading-none">
+                    {p.slot === 'canton' ? '🌙' : p.slot === 'mosque' ? '🕌' : '🟩'}
+                  </span>
+                  <span className="text-xs font-extrabold">
+                    {isSelected ? p.label : placed ? '✓' : '👆'}
+                  </span>
                 </button>
               );
             })}
@@ -832,7 +848,8 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                     onDrop={() => handlePlaceFlagPiece(variant, target, selectedPiece)}
                     onClick={() => handlePlaceFlagPiece(variant, target, selectedPiece)}
                     disabled={slots[target]}
-                    className={`py-2 px-1.5 rounded-lg border-2 border-dashed text-[11px] font-bold ${
+                    aria-label={target}
+                    className={`py-2 px-1.5 rounded-lg border-2 border-dashed text-sm font-extrabold ${
                       slots[target]
                         ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                         : selectedPiece
@@ -840,22 +857,10 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                         : 'bg-slate-50 border-slate-300 text-slate-500'
                     }`}
                   >
-                    {target === 'canton'
-                      ? 'ഇടത് മുകൾ'
-                      : target === 'mosque'
-                      ? 'വലത് വെള്ള'
-                      : 'താഴെ പച്ച'}
+                    {slots[target] ? '✅' : target === 'canton' ? '↖️' : target === 'mosque' ? '⬜' : '⬇️'}
                   </button>
                 ))}
               </div>
-            )}
-
-            {!isBuilt && (
-              <p className="text-[11px] font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
-                {selectedPiece
-                  ? 'ഇനി വലതുവശത്തെ പതാകയിലെ + ഭാഗത്ത് തൊട്ടാൽ ഉടൻ ചേരും!'
-                  : 'ഇവിടെ ഒരു ഭാഗം തിരഞ്ഞെടുക്കുകയോ, പതാകയിലെ + ഭാഗത്ത് നേരിട്ട് തൊടുകയോ ചെയ്യാം.'}
-              </p>
             )}
 
             {flagAlert && (
@@ -912,86 +917,44 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
     );
   };
 
+  const handleAdvanceL1 = () => {
+    onMarkLessonCompleted?.(activeLessonId);
+    if (phaseIndex < L1_FLAT_ORDER.length - 1) {
+      setPhase(L1_FLAT_ORDER[phaseIndex + 1].tab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleFinishLevel1();
+    }
+  };
+
+  const nextL1Label =
+    phaseIndex < L1_FLAT_ORDER.length - 1
+      ? L1_FLAT_ORDER[phaseIndex + 1].label
+      : 'ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം';
+
+  const currentBoardFoundCount = board.artifacts.filter((a) =>
+    collectedArtifacts.includes(a.id)
+  ).length;
+
   return (
     <section className="space-y-4">
-      <LessonProgressTrack
-        stageTitle="ഘട്ടം 1 · യൂണിറ്റ് തലം — അടിസ്ഥാന അറിവുകൾ"
-        stageSubtitle="ഒരു യൂണിറ്റ് പ്രവർത്തകൻ അറിഞ്ഞിരിക്കേണ്ട ചരിത്രവും പതാകകളും വിശ്വാസ അടിത്തറയും"
-        items={[
-          { id: 'timeline', lessonId: 'l1_timeline', emoji: '⛵', label: `ചരിത്ര യാത്ര (${collectedArtifacts.length}/${totalArtifacts})` },
-          { id: 'flags', lessonId: 'l1_flags', emoji: '🚩', label: `പതാക നിർമ്മാണം (${[skjuBuilt, skssfBuilt].filter(Boolean).length}/2)` },
-          { id: 'cosmic', lessonId: 'l1_cosmic', emoji: '🌱', label: 'വിശ്വാസ ശൃംഖല' },
-          { id: 'roots', lessonId: 'l1_roots', emoji: '📚', label: `വേരുകൾ (${flippedRoots.length}/6)` },
-        ]}
-        activeId={phase}
-        completedLessonIds={completedLessonIds}
-        onSelectCompleted={(id) => setPhase(id as L1Tab)}
-      />
-
-      {/* PHASE 1: 5 DISTINCT REALISTIC INTERACTIVE ERA GAMES */}
-      {phase === 'timeline' && (
+      {/* FLAT ERA LESSONS (5 STANDALONE LESSONS: era_1 .. era_5) */}
+      {isEraPhase && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-extrabold text-emerald-900">
-              ⛵ കാലഘട്ടങ്ങൾ (ഭാഗം {boardIdx + 1}/{ERA_BOARDS.length})
-            </span>
-            <span className="text-xs font-bold text-slate-600 tabular-nums">
-              പഠിച്ച ചരിത്ര രേഖകൾ: {collectedArtifacts.length}/{totalArtifacts}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-            {ERA_BOARDS.map((b, idx) => {
-              const hasAny = b.artifacts.some((a) => collectedArtifacts.includes(a.id));
-              const prevDone =
-                idx === 0 ||
-                ERA_BOARDS[idx - 1].artifacts.some((a) => collectedArtifacts.includes(a.id));
-              const reachable = idx === boardIdx || hasAny || prevDone;
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  disabled={!reachable}
-                  onClick={() => {
-                    sound.playClick();
-                    setBoardIdx(idx);
-                    setSelectedPiece(null);
-                    setFlagAlert(null);
-                  }}
-                  className={`px-2 py-2 rounded-xl border-b-4 text-xs font-bold transition-all ${
-                    idx === boardIdx
-                      ? 'bg-emerald-700 text-white border-emerald-900'
-                      : hasAny
-                      ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
-                      : reachable
-                      ? 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                      : 'bg-slate-100 text-slate-400 border-slate-200 opacity-55 cursor-not-allowed'
-                  }`}
-                >
-                  {b.emoji} {b.year}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Dedicated Realistic Era Interactive Game Card (Each Era has its OWN distinct tactile mechanic!) */}
+          {/* 1. GAME FIRST */}
           <GameFullscreenShell
             title={`${board.emoji} ${board.title}`}
             subtitle={`${board.year} · ${board.missionCue}`}
           >
             <div className="relative rounded-2xl border-2 border-emerald-300 overflow-hidden shadow-md bg-slate-950">
               <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-              <div className="px-4 py-3 bg-slate-950 border-b border-white/15 flex flex-wrap items-center justify-between gap-2 text-white">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="px-3 py-2 bg-slate-950 border-b border-white/15 flex items-center justify-between gap-2 text-white">
+                <div className="flex items-center gap-2 text-xs font-extrabold tabular-nums">
                   <Compass className="w-4 h-4 text-amber-300 shrink-0" />
-                  <span className="text-xs sm:text-sm font-extrabold leading-snug break-words">
-                    {board.title}
-                  </span>
+                  <span>{board.emoji} {board.year}</span>
+                  <span className="text-amber-300">📜 {currentBoardFoundCount}/{board.artifacts.length}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] sm:text-xs font-extrabold">
-                    {board.missionCue}
-                  </span>
                   {onClaimEasterEgg && (
                     <EasterEggSpot
                       eggId="egg_captain_compass"
@@ -1013,92 +976,88 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             </div>
           </GameFullscreenShell>
 
-          {board.id === 3 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
-              <OfficialSkimvbLogoImg className="w-12 h-12 shrink-0" />
-              <p className="text-xs sm:text-sm text-slate-700">
-                <strong>🏫 SKIMVB (1951):</strong> നമ്മുടെ കുട്ടികൾക്ക് നല്ല മതപഠനം നൽകാൻ തുടങ്ങിയ ബോർഡ് — ഇന്ന് 11,000+ മദ്രസകളും ജാമിഅ നൂരിയ്യയും SNEC/CSWC/Albirr ഉം നയിക്കുന്നു!
-              </p>
-            </div>
-          )}
-
-          {board.showSksbvFlag && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row items-center gap-4">
-              <OfficialSksbvFlagImg className="w-32 h-32 shrink-0 flag-wave" />
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-sky-700">
-                  1993 ഡിസംബർ 26 · 10,637+ മദ്രസാ യൂണിറ്റുകൾ · 17 ജില്ലകൾ · ആഗോള യൂണിറ്റുകൾ
-                </p>
-                <h4 className="text-sm sm:text-base font-extrabold text-slate-900">
-                  🚩 SKSBV ഔദ്യോഗിക പതാകയും ആഗോള ശൃംഖലയും
-                </h4>
-                <p className="text-xs text-slate-700 leading-relaxed">
-                  മജ്‌ലിസുൽ മആരിഫ്, ജ്ഞാനതീരം, ബാല ഇന്ത്യ എന്നീ പരിപാടികളോടൊപ്പം വിദേശ രാജ്യങ്ങളിലും (SIC &amp; SPC) മക്ക-മദീന ഹജ്ജ് സേവനങ്ങളിലും (വിഖായ) സമസ്ത സജീവമാണ്.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {isLastEraBoard && (
-            <LessonCheckQuiz
-              lessonId="l1_timeline"
-              savedAnswer={quizAnswers.l1_timeline}
-              onAnswered={(lid, idx, ok) => {
-                onQuizAnswered(lid, idx, ok);
-                onMarkLessonCompleted?.('l1_timeline');
-              }}
-            />
-          )}
-
-          <LessonStepperNav
-            stepLabel={`യൂണിറ്റ് തലം · പാഠം 1 / 4 · കാലഘട്ടം ${boardIdx + 1}/${ERA_BOARDS.length} (${board.year})`}
-            currentStep={boardIdx}
-            totalSteps={ERA_BOARDS.length}
-            prevLabel={boardIdx > 0 ? ERA_BOARDS[boardIdx - 1].year : undefined}
-            onPrev={
-              boardIdx > 0
-                ? () => {
-                    setBoardIdx(boardIdx - 1);
-                  }
-                : undefined
-            }
-            statusHint={
-              canAdvanceTimeline
-                ? isLastEraBoard
-                  ? 'ചരിത്ര യാത്രയും ചോദ്യവും പൂർത്തിയായി — ഇനി 3D പതാക നിർമ്മാണ ശാല ഗെയിം കളിക്കാം!'
-                  : 'അടുത്ത കാലഘട്ടത്തിലേക്കും പുതിയ ഗെയിമിലേക്കും പോകാം!'
-                : 'താഴെയുള്ള വിലയിരുത്തൽ ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും!'
-            }
-            nextLabel={
-              !isLastEraBoard
-                ? `${ERA_BOARDS[boardIdx + 1].year} — ${ERA_BOARDS[boardIdx + 1].title}`
-                : '2. പതാക നിർമ്മാണ ശാല'
-            }
-            nextDisabled={!canAdvanceTimeline}
-            onNext={() => {
-              if (!isLastEraBoard) {
-                setBoardIdx(boardIdx + 1);
-              } else {
-                onMarkLessonCompleted?.('l1_timeline');
-                setPhase('flags');
-              }
+          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
+          <LessonCheckQuiz
+            key={`l1-quiz-${activeLessonId}`}
+            lessonId={activeLessonId}
+            title={`${board.year} · ക്വിസ്`}
+            savedAnswer={quizAnswers[activeLessonId]}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.(activeLessonId);
             }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
           />
+
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key={`l1-era-info-${board.id}`}
+            emoji={board.emoji}
+            title={`${board.year} · ${board.title}`}
+            badgeText={`${boardIdx + 1}/5`}
+            onSpeak={() => narrator.speak(`${board.title}. ${board.artifacts.map((a) => a.discovery).join(' ')}`, board.title)}
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-2.5">
+                {board.artifacts.map((art) => (
+                  <div
+                    key={art.id}
+                    className="bg-white rounded-xl border border-emerald-200 p-3.5 space-y-1"
+                  >
+                    <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
+                      {art.emoji} {art.label}
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                      {art.discovery}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {board.id === 3 && (
+                <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center gap-3">
+                  <OfficialSkimvbLogoImg className="w-12 h-12 shrink-0" />
+                  <p className="text-xs sm:text-sm text-slate-700">
+                    <strong>🏫 SKIMVB (1951):</strong> നമ്മുടെ കുട്ടികൾക്ക് നല്ല മതപഠനം നൽകാൻ തുടങ്ങിയ ബോർഡ് — ഇന്ന് 11,000+ മദ്രസകളും ജാമിഅ നൂരിയ്യയും SNEC/CSWC/Albirr ഉം നയിക്കുന്നു!
+                  </p>
+                </div>
+              )}
+
+              {board.showSksbvFlag && (
+                <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex flex-col sm:flex-row items-center gap-4">
+                  <OfficialSksbvFlagImg className="w-28 h-28 shrink-0 flag-wave" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-sky-700">
+                      1993 ഡിസംബർ 26 · 10,637+ മദ്രസാ യൂണിറ്റുകൾ · 17 ജില്ലകൾ
+                    </p>
+                    <h4 className="text-sm font-extrabold text-slate-900">
+                      🚩 SKSBV ഔദ്യോഗിക പതാകയും ആഗോള ശൃംഖലയും
+                    </h4>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      മജ്‌ലിസുൽ മആരിഫ്, ജ്ഞാനതീരം, ബാല ഇന്ത്യ എന്നീ പരിപാടികളോടൊപ്പം വിദേശ രാജ്യങ്ങളിലും (SIC &amp; SPC) മക്ക-മദീന ഹജ്ജ് സേവനങ്ങളിലും (വിഖായ) സമസ്ത സജീവമാണ്.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CollapsibleLessonDrawer>
         </div>
       )}
 
-      {/* PHASE 2: DEDICATED FLAG WORKSHOP (1 Flag Builder Visible at a Time) */}
+      {/* PHASE: FLAG WORKSHOP */}
       {phase === 'flags' && (
         <div className="space-y-4 relative">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
+          {/* 1. GAME FIRST */}
           <GameFullscreenShell
             title="🚩 3D പതാക നിർമ്മാണ ശാല"
             subtitle="സമസ്ത (SKJU) & SKSSF ഔദ്യോഗിക പതാകകൾ കൂട്ടിച്ചേർത്ത് ഉയർത്തൂ"
           >
             <div className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs sm:text-sm font-extrabold text-amber-950">
-                  🚩 രണ്ട് ഔദ്യോഗിക പതാകകളും ഓരോന്നായി നിർമ്മിച്ച് ഉയർത്തൂ ({[skjuBuilt, skssfBuilt].filter(Boolean).length}/2)
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-extrabold text-amber-950">
+                  🚩 {[skjuBuilt, skssfBuilt].filter(Boolean).length}/2
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -1140,229 +1099,49 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             </div>
           </GameFullscreenShell>
 
+          {/* 2. QUIZ OPEN BY DEFAULT */}
           <LessonCheckQuiz
             lessonId="l1_flags"
+            title="പതാക നിർമ്മാണം · ക്വിസ്"
             savedAnswer={quizAnswers.l1_flags}
             onAnswered={(lid, idx, ok) => {
               onQuizAnswered(lid, idx, ok);
               onMarkLessonCompleted?.('l1_flags');
             }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
           />
 
-          <LessonStepperNav
-            stepLabel="യൂണിറ്റ് തലം · പാഠം 2 / 4: പതാക നിർമ്മാണ ശാല"
-            currentStep={1}
-            totalSteps={4}
-            prevLabel="1. ചരിത്ര യാത്ര"
-            onPrev={() => setPhase('timeline')}
-            statusHint={
-              canAdvanceFlags
-                ? 'പാഠം പൂർത്തിയായി — ഇനി അടുത്ത പാഠവും അൽബിർ & SKSBV ട്രോഫി ഗെയിമും കളിക്കാം!'
-                : 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-            }
-            nextLabel="3. പ്രപഞ്ച സൃഷ്ടാവ് — വിശ്വാസ ശൃംഖല"
-            nextDisabled={!canAdvanceFlags}
-            onNext={() => {
-              onMarkLessonCompleted?.('l1_flags');
-              setPhase('cosmic');
-            }}
-          />
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key="l1-flags-lesson"
+            emoji="🚩"
+            title="സമസ്ത & SKSSF ഔദ്യോഗിക പതാകകൾ · പാഠം"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1.5">
+                <p className="text-xs font-extrabold text-[#8C1D40]">🌙 സമസ്ത (SKJU) പതാക</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  മുകളിൽ ഇടതുവശത്ത് മെറൂൺ നിറത്തിൽ ചന്ദ്രക്കലയും നക്ഷത്രവും, വലതുവശത്ത് വെള്ള പ്രതലത്തിൽ മസ്ജിദും മിനാരവും, താഴെ ഇസ്‌ലാമിക് പച്ച വരമ്പും.
+                </p>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-1.5">
+                <p className="text-xs font-extrabold text-sky-700">🚩 SKSSF പതാക</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  ആകാശനീല, തൂവെള്ള, പച്ച നിറങ്ങളോടെ വിജ്ഞാനം · വിനയം · സേവനം എന്ന ആദർശം വിളിച്ചോതുന്ന വിദ്യാർത്ഥി പ്രസ്ഥാനത്തിന്റെ ഔദ്യോഗിക പതാക.
+                </p>
+              </div>
+            </div>
+          </CollapsibleLessonDrawer>
         </div>
       )}
 
-      {/* PHASE 3: EXPAND-IN-PLACE COSMIC CREATOR SIGNS (Zero Tap-Top / Read-Below Disconnect!) */}
+      {/* PHASE: COSMIC */}
       {phase === 'cosmic' && (
         <div className="space-y-4 relative">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-          <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-extrabold text-emerald-700">
-                  🌱 പാഠം 3 / 4 · അല്ലാഹുവിനെ കണ്ടെത്താനുള്ള അനന്തമായ ദൃഷ്ടാന്തങ്ങൾ
-                </p>
-                <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                  ഉദാഹരണം 1: ചെടി മുതൽ ഏക സൃഷ്ടാവായ അല്ലാഹു വരെ
-                </h3>
-                <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                  ഓരോ പടിയിലും തൊട്ടാൽ അവിടെത്തന്നെ വിശദീകരണം തുറന്നുവരും!
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playQuran('ikhlas');
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300 whitespace-nowrap shrink-0"
-              >
-                <BookOpen className="w-3.5 h-3.5" /> ഖുറാൻ പാരായണം
-              </button>
-            </div>
 
-            <div className="space-y-2">
-              {COSMIC_CHAIN.map((item, idx) => {
-                const isOpen = cosmicIdx === idx;
-                const seen = visitedCosmicIds.includes(item.id);
-                return (
-                  <div
-                    key={item.id}
-                    className={`rounded-xl border-2 overflow-hidden transition-colors ${
-                      isOpen
-                        ? 'border-emerald-600 bg-emerald-50/70'
-                        : seen
-                        ? 'border-emerald-200 bg-emerald-50/30'
-                        : 'border-slate-200 bg-slate-50'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sound.playPop();
-                        setCosmicIdx(idx);
-                        setVisitedCosmicIds((prev) =>
-                          prev.includes(item.id) ? prev : [...prev, item.id]
-                        );
-                        onAwardXp(5, `l1_cosmic_${item.id}`);
-                        narrator.speak(`${item.step}: ${item.desc}`, item.step);
-                      }}
-                      className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
-                    >
-                      <span className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                        <span className="text-lg">{item.emoji}</span>
-                        <span>{item.step}</span>
-                        {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                      </span>
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 shrink-0">
-                        {isOpen ? (
-                          <>
-                            <span>തുറന്നു</span>
-                            <ChevronUp className="w-4 h-4" />
-                          </>
-                        ) : (
-                          <>
-                            <span>വായിക്കാം</span>
-                            <ChevronDown className="w-4 h-4" />
-                          </>
-                        )}
-                      </span>
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-4 pb-3.5 pt-2 border-t border-emerald-200/80 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
-                              {item.desc}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => narrator.speak(`${item.step}: ${item.desc}`, item.step)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* MORE EVERYDAY SIGNS OF ALLAH — Expand-in-Place Accordion */}
-          <div className="bg-gradient-to-br from-amber-50/70 via-white to-sky-50/70 rounded-2xl border-2 border-amber-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
-            <div>
-              <p className="text-xs font-extrabold text-amber-800">
-                ✨ ചെടിയും വിത്തും ഒരു ഉദാഹരണം മാത്രം!
-              </p>
-              <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
-                നമുക്ക് ചുറ്റുമുള്ള മറ്റു ദൃഷ്ടാന്തങ്ങൾ തൊട്ട് അവിടെത്തന്നെ വായിക്കൂ:
-              </h4>
-            </div>
-
-            <div className="space-y-2">
-              {OTHER_COSMIC_EXAMPLES.map((ex, idx) => {
-                const isOpen = selectedOtherExampleIdx === idx;
-                const seen = visitedCosmicIds.includes(ex.id);
-                return (
-                  <div
-                    key={ex.id}
-                    className={`rounded-xl border-2 overflow-hidden transition-colors ${
-                      isOpen
-                        ? 'border-amber-500 bg-amber-50/70'
-                        : seen
-                        ? 'border-amber-200 bg-white'
-                        : 'border-slate-200 bg-white'
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sound.playPop();
-                        setSelectedOtherExampleIdx(idx);
-                        setVisitedCosmicIds((prev) =>
-                          prev.includes(ex.id) ? prev : [...prev, ex.id]
-                        );
-                        onAwardXp(5, `l1_cosmic_${ex.id}`);
-                        narrator.speak(`${ex.title}. ${ex.desc}`, `${ex.emoji} ${ex.title}`);
-                      }}
-                      className="w-full px-4 py-3 flex items-center justify-between gap-2 text-left"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
-                          <span className="text-lg">{ex.emoji}</span>
-                          <span>{ex.title}</span>
-                          {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
-                        </p>
-                        <p className="text-[11px] font-semibold text-amber-800 mt-0.5">
-                          {ex.summary}
-                        </p>
-                      </div>
-                      {isOpen ? (
-                        <ChevronUp className="w-4 h-4 text-amber-800 shrink-0" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
-                      )}
-                    </button>
-                    <AnimatePresence initial={false}>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="px-4 pb-3.5 pt-2 border-t border-amber-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
-                              {ex.desc}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                narrator.speak(`${ex.title}. ${ex.desc}`, `${ex.emoji} ${ex.title}`)
-                              }
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
+          {/* 1. GAME FIRST */}
           <OptionalLessonMiniGame
             lessonKey="l1_cosmic"
             onAwardXp={onAwardXp}
@@ -1375,98 +1154,197 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             }}
           />
 
+          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
           <LessonCheckQuiz
             lessonId="l1_cosmic"
+            title="വിശ്വാസ ശൃംഖല · ക്വിസ്"
             savedAnswer={quizAnswers.l1_cosmic}
             onAnswered={(lid, idx, ok) => {
               onQuizAnswered(lid, idx, ok);
               onMarkLessonCompleted?.('l1_cosmic');
             }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
           />
 
-          <LessonStepperNav
-            stepLabel="യൂണിറ്റ് തലം · പാഠം 3 / 4: പ്രപഞ്ച സൃഷ്ടാവ് — വിശ്വാസ ദൃഷ്ടാന്തങ്ങൾ"
-            currentStep={2}
-            totalSteps={4}
-            prevLabel="2. പതാക നിർമ്മാണ ശാല"
-            onPrev={() => setPhase('flags')}
-            statusHint={
-              canAdvanceCosmic
-                ? 'പാഠം പൂർത്തിയായി — ഇനി സമസ്ത പൈതൃക പായ്ക്കപ്പൽ ഗെയിമും വേരുകൾ കാർഡുകളും തുറക്കാം!'
-                : 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചെറിയ ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും!'
-            }
-            nextLabel="4. സമസ്തയുടെ വേരുകൾ കാർഡുകൾ"
-            nextDisabled={!canAdvanceCosmic}
-            onNext={() => {
-              onMarkLessonCompleted?.('l1_cosmic');
-              setPhase('roots');
-            }}
-          />
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key="l1-cosmic-lesson"
+            emoji="🌱"
+            title="വിശ്വാസ ശൃംഖല · പാഠം"
+            badgeText={`${visitedCosmicIds.length}/${COSMIC_CHAIN.length + OTHER_COSMIC_EXAMPLES.length}`}
+            onSpeak={() => sound.playQuran('ikhlas')}
+          >
+            <div className="space-y-3">
+              <div className="bg-white rounded-xl border border-emerald-200 p-3.5 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    🌱 ചെടി മുതൽ ഏക സൃഷ്ടാവായ അല്ലാഹു വരെ
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playQuran('ikhlas');
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> ഖുറാൻ
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {COSMIC_CHAIN.map((item, idx) => {
+                    const isOpen = cosmicIdx === idx;
+                    const seen = visitedCosmicIds.includes(item.id);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`rounded-xl border-2 overflow-hidden transition-colors ${
+                          isOpen
+                            ? 'border-emerald-600 bg-emerald-50/70'
+                            : seen
+                            ? 'border-emerald-200 bg-emerald-50/30'
+                            : 'border-slate-200 bg-slate-50'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playPop();
+                            setCosmicIdx(idx);
+                            setVisitedCosmicIds((prev) =>
+                              prev.includes(item.id) ? prev : [...prev, item.id]
+                            );
+                            onAwardXp(5, `l1_cosmic_${item.id}`);
+                            narrator.speak(`${item.step}: ${item.desc}`, item.step);
+                          }}
+                          className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-left"
+                        >
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                            <span className="text-base">{item.emoji}</span>
+                            <span>{item.step}</span>
+                            {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </span>
+                          {isOpen ? (
+                            <ChevronUp className="w-4 h-4 text-emerald-800 shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-emerald-800 shrink-0" />
+                          )}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-3.5 pb-3 pt-2 border-t border-emerald-200/80 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
+                                  {item.desc}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() => narrator.speak(`${item.step}: ${item.desc}`, item.step)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-amber-50/50 rounded-xl border border-amber-200 p-3.5 space-y-2">
+                <h4 className="text-xs sm:text-sm font-extrabold text-amber-950">
+                  ✨ മറ്റു ദൃഷ്ടാന്തങ്ങൾ
+                </h4>
+                <div className="space-y-2">
+                  {OTHER_COSMIC_EXAMPLES.map((ex, idx) => {
+                    const isOpen = selectedOtherExampleIdx === idx;
+                    const seen = visitedCosmicIds.includes(ex.id);
+                    return (
+                      <div
+                        key={ex.id}
+                        className={`rounded-xl border-2 overflow-hidden transition-colors ${
+                          isOpen
+                            ? 'border-amber-500 bg-amber-50/70'
+                            : 'border-slate-200 bg-white'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sound.playPop();
+                            setSelectedOtherExampleIdx(idx);
+                            setVisitedCosmicIds((prev) =>
+                              prev.includes(ex.id) ? prev : [...prev, ex.id]
+                            );
+                            onAwardXp(5, `l1_cosmic_${ex.id}`);
+                            narrator.speak(`${ex.title}. ${ex.desc}`, `${ex.emoji} ${ex.title}`);
+                          }}
+                          className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2 text-left"
+                        >
+                          <span className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                            <span className="text-base">{ex.emoji}</span>
+                            <span>{ex.title}</span>
+                            {seen && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                          </span>
+                          {isOpen ? (
+                            <ChevronUp className="w-4 h-4 text-amber-800 shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                          )}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-3.5 pb-3 pt-2 border-t border-amber-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">
+                                  {ex.desc}
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    narrator.speak(`${ex.title}. ${ex.desc}`, `${ex.emoji} ${ex.title}`)
+                                  }
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-xs font-extrabold shrink-0 self-start sm:self-center"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </CollapsibleLessonDrawer>
         </div>
       )}
 
-      {/* PHASE 4: DEDICATED 3D FLIP-CARD HERITAGE ROOTS */}
+      {/* PHASE: ROOTS */}
       {phase === 'roots' && (
         <div className="space-y-4 relative">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-bold text-amber-950">
-            📚 ഈ {ROOT_FLIP_CARDS.length} 3D പൈതൃക കാർഡുകളിൽ ടാപ്പ് ചെയ്ത് മറിച്ചുനോക്കൂ — അവിടെത്തന്നെ കഥ വായിക്കാനും കേൾക്കാനും സാധിക്കും!
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ROOT_FLIP_CARDS.map((card) => {
-              const isFlipped = flippedRoots.includes(card.id);
-              return (
-                <div key={card.id} className="perspective-1000 h-64 sm:h-72">
-                  <button
-                    type="button"
-                    onClick={() => handleFlipRoot(card)}
-                    className={`relative w-full h-full text-left preserve-3d transition-transform duration-500 cursor-pointer ${
-                      isFlipped ? 'rotate-y-180' : ''
-                    }`}
-                  >
-                    <div className="absolute inset-0 backface-hidden rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/70 p-5 flex flex-col justify-between shadow-sm hover:shadow-md">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-red-900">
-                          {card.emoji} {card.frontTag}
-                        </span>
-                        <RotateCw className="w-4 h-4 text-emerald-700" />
-                      </div>
-                      <div className="text-center space-y-2">
-                        {card.arabic && (
-                          <p className="font-arabic text-xl font-bold text-emerald-900">
-                            {card.arabic}
-                          </p>
-                        )}
-                        <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                          {card.frontTitle}
-                        </h3>
-                      </div>
-                      <p className="text-xs text-center font-bold text-emerald-800">
-                        കഥ കേൾക്കാനും മറിക്കാനും ടാപ്പ് ചെയ്യൂ ✨ (+15 XP)
-                      </p>
-                    </div>
-
-                    <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl border-2 border-emerald-600 bg-emerald-950 text-white p-5 flex flex-col justify-between shadow-md">
-                      <div className="flex items-center justify-between text-emerald-300 text-xs font-bold">
-                        <span>
-                          {card.emoji} {card.frontTitle}
-                        </span>
-                        <span>തിരിക്കുക ↻</span>
-                      </div>
-                      <p className="text-xs sm:text-sm leading-relaxed text-emerald-50 overflow-y-auto">
-                        {card.backStory}
-                      </p>
-                      <p className="text-[11px] font-bold text-amber-300">
-                        വായിച്ചു ✓
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-
+          {/* 1. GAME FIRST */}
           <OptionalLessonMiniGame
             lessonKey="l1_roots"
             onAwardXp={onAwardXp}
@@ -1479,36 +1357,112 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             }}
           />
 
+          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
           <LessonCheckQuiz
             lessonId="l1_roots"
+            title="സമസ്തയുടെ വേരുകൾ · ക്വിസ്"
             savedAnswer={quizAnswers.l1_roots}
             onAnswered={(lid, idx, ok) => {
               onQuizAnswered(lid, idx, ok);
               onMarkLessonCompleted?.('l1_roots');
             }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
           />
 
-          <LessonStepperNav
-            stepLabel="യൂണിറ്റ് തലം · പാഠം 4 / 4: സമസ്തയുടെ വേരുകൾ കാർഡുകൾ"
-            currentStep={3}
-            totalSteps={4}
-            statusHint={
-              canFinishRoots || isCompleted
-                ? 'യൂണിറ്റ് തലം പൂർത്തിയായി — ഇനി ഘട്ടം 2 (ക്ലസ്റ്റർ & മേഖലാ തലം) ഗെയിമുകൾ കളിക്കാം!'
-                : 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചെറിയ ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത ഘട്ടവും പുതിയ ഗെയിമുകളും തുറക്കും!'
-            }
-            prevLabel="3. വിശ്വാസ ശൃംഖല"
-            onPrev={() => setPhase('cosmic')}
-            nextLabel="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
-            nextIsWorldAdvance={true}
-            nextDisabled={!canFinishRoots && !isCompleted}
-            onNext={() => {
-              onMarkLessonCompleted?.('l1_roots');
-              handleFinishLevel1();
-            }}
-          />
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key="l1-roots-lesson"
+            emoji="📚"
+            title="സമസ്തയുടെ വേരുകൾ · പാഠം"
+            badgeText={`${flippedRoots.length}/${ROOT_FLIP_CARDS.length}`}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {ROOT_FLIP_CARDS.map((card) => {
+                const isFlipped = flippedRoots.includes(card.id);
+                return (
+                  <div key={card.id} className="perspective-1000 h-60 sm:h-64">
+                    <button
+                      type="button"
+                      onClick={() => handleFlipRoot(card)}
+                      className={`relative w-full h-full text-left preserve-3d transition-transform duration-500 cursor-pointer ${
+                        isFlipped ? 'rotate-y-180' : ''
+                      }`}
+                    >
+                      <div className="absolute inset-0 backface-hidden rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-white via-emerald-50/50 to-amber-50/70 p-4 flex flex-col justify-between shadow-sm hover:shadow-md">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-extrabold text-red-900">
+                            {card.emoji} {card.frontTag}
+                          </span>
+                          <RotateCw className="w-4 h-4 text-emerald-700" />
+                        </div>
+                        <div className="text-center space-y-1.5">
+                          {card.arabic && (
+                            <p className="font-arabic text-xl font-bold text-emerald-900">
+                              {card.arabic}
+                            </p>
+                          )}
+                          <h3 className="text-base font-extrabold text-slate-900">
+                            {card.frontTitle}
+                          </h3>
+                        </div>
+                        <p className="text-xs text-center font-bold text-emerald-800">
+                          👆 ടാപ്പ് ചെയ്യൂ ✨
+                        </p>
+                      </div>
+
+                      <div className="absolute inset-0 backface-hidden rotate-y-180 rounded-2xl border-2 border-emerald-600 bg-emerald-950 text-white p-4 flex flex-col justify-between shadow-md">
+                        <div className="flex items-center justify-between text-emerald-300 text-xs font-bold">
+                          <span>
+                            {card.emoji} {card.frontTitle}
+                          </span>
+                          <span>↻</span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-emerald-50 overflow-y-auto">
+                          {card.backStory}
+                        </p>
+                        <p className="text-[11px] font-bold text-amber-300">✓</p>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleLessonDrawer>
         </div>
       )}
+
+      {/* 4. NAVIGATION BELOW EVERYTHING */}
+      <LessonStepperNav
+        stepLabel={`യൂണിറ്റ് തലം · ${phaseIndex + 1}/${L1_FLAT_ORDER.length}: ${currentMeta.label}`}
+        currentStep={phaseIndex}
+        totalSteps={L1_FLAT_ORDER.length}
+        prevLabel={phaseIndex > 0 ? L1_FLAT_ORDER[phaseIndex - 1].label : undefined}
+        onPrev={
+          phaseIndex > 0
+            ? () => setPhase(L1_FLAT_ORDER[phaseIndex - 1].tab)
+            : undefined
+        }
+        nextLabel={nextL1Label}
+        nextIsWorldAdvance={phaseIndex === L1_FLAT_ORDER.length - 1}
+        nextDisabled={!canAdvanceCurrent}
+        onNext={handleAdvanceL1}
+      />
+
+      <LessonProgressTrack
+        stageTitle="ഘട്ടം 1 · യൂണിറ്റ് തലം · 8 പാഠങ്ങൾ"
+        stageSubtitle="ചരിത്രവും പതാകകളും വിശ്വാസ അടിത്തറയും"
+        items={L1_FLAT_ORDER.map((x) => ({
+          id: x.tab,
+          lessonId: x.lessonId,
+          emoji: x.emoji,
+          label: x.label,
+        }))}
+        activeId={phase}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => setPhase(id as L1Tab)}
+      />
     </section>
   );
 };

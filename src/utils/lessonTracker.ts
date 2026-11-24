@@ -11,45 +11,201 @@ export interface LessonDescriptor {
 }
 
 export const ALL_LESSONS: LessonDescriptor[] = [
+  // ആമുഖ ഘട്ടം (6 സ്വതന്ത്ര പാഠങ്ങൾ)
   {
     id: 'prologue_curiosity',
     stage: 'prologue',
-    tab: 'curiosity',
-    emoji: '✨',
+    tab: 'prologue_curiosity',
+    emoji: '🚐',
     groupLabel: 'ആമുഖം',
-    title: 'നമ്മൾ ആരാണ്? (ദൗത്യ പരിചയം)',
+    title: 'പ്രചാരണ വാഹനവും നമ്മുടെ ദൗത്യവും',
+  },
+  {
+    id: 'prologue_ch1',
+    stage: 'prologue',
+    tab: 'prologue_ch1',
+    emoji: '🌌',
+    groupLabel: 'ആമുഖം',
+    title: 'പ്രപഞ്ചവും ഏക സൃഷ്ടാവും',
+  },
+  {
+    id: 'prologue_ch2',
+    stage: 'prologue',
+    tab: 'prologue_ch2',
+    emoji: '📖',
+    groupLabel: 'ആമുഖം',
+    title: 'ഖുർആനും തിരുനബി ﷺ മാതൃകയും',
+  },
+  {
+    id: 'prologue_ch3',
+    stage: 'prologue',
+    tab: 'prologue_ch3',
+    emoji: '🕌',
+    groupLabel: 'ആമുഖം',
+    title: '1926 സമസ്തയും സ്ഥാപക ലക്ഷ്യങ്ങളും',
+  },
+  {
+    id: 'prologue_ch4',
+    stage: 'prologue',
+    tab: 'prologue_ch4',
+    emoji: '🏫',
+    groupLabel: 'ആമുഖം',
+    title: '1951 വിദ്യാഭ്യാസ ബോർഡും 1989 SKSSF-ഉം',
   },
   {
     id: 'prologue_story',
     stage: 'prologue',
-    tab: 'story',
-    emoji: '📖',
+    tab: 'prologue_story',
+    emoji: '🏆',
     groupLabel: 'ആമുഖം',
-    title: 'പ്രപഞ്ചം · പ്രവാചക മാതൃക ﷺ · സമസ്തയുടെ കഥ',
+    title: 'SKSSF ഗൈഡ് ഗെയിം ദൗത്യം',
+  },
+
+  // സാഹചര്യ ബോർഡ് (4 സ്വതന്ത്ര പാഠങ്ങൾ)
+  {
+    id: 'storyboard_ch1',
+    stage: 'storyboard',
+    tab: 'sb0_roots',
+    emoji: '🕌',
+    groupLabel: 'സാഹചര്യങ്ങൾ',
+    title: 'വഖഫ് & പണ്ഡിത പാരമ്പര്യം',
+  },
+  {
+    id: 'storyboard_ch2',
+    stage: 'storyboard',
+    tab: 'sb1',
+    emoji: '🕊️',
+    groupLabel: 'സാഹചര്യങ്ങൾ',
+    title: '1995 ടാഗോർ ഹാൾ & TREND',
+  },
+  {
+    id: 'storyboard_ch3',
+    stage: 'storyboard',
+    tab: 'sb2',
+    emoji: '🌙',
+    groupLabel: 'സാഹചര്യങ്ങൾ',
+    title: 'ഇഖ്‌ലാസ് & സഹചാരി സേവനം',
   },
   {
     id: 'storyboard',
     stage: 'storyboard',
-    emoji: '🧭',
+    tab: 'sb3',
+    emoji: '📱',
     groupLabel: 'സാഹചര്യങ്ങൾ',
-    title: 'നന്മയുടെ തിരഞ്ഞെടുപ്പ് (സാഹചര്യ ബോർഡ്)',
+    title: 'സൈബർ മര്യാദ & സൈകോൺ',
+  },
+
+  // എന്റെ SKSSF യാത്ര — POV (8 സ്വതന്ത്ര പ്രായോഗിക പാഠങ്ങൾ)
+  {
+    id: 'pov_1',
+    stage: 'pov',
+    tab: 'pov_1_madrasa',
+    emoji: '📚',
+    groupLabel: 'POV യാത്ര',
+    title: 'മദ്രസയും ലൈബ്രറി അദബും (SKSBV)',
+  },
+  {
+    id: 'pov_2',
+    stage: 'pov',
+    tab: 'pov_2_spiritual',
+    emoji: '📜',
+    groupLabel: 'POV യാത്ര',
+    title: 'മജ്‌ലിസുന്നൂർ അജണ്ടയും നോട്ടീസും',
+  },
+  {
+    id: 'pov_3',
+    stage: 'pov',
+    tab: 'pov_3_programs',
+    emoji: '🖌️',
+    groupLabel: 'POV യാത്ര',
+    title: 'സമ്മേളന ചുമരിലെഴുത്തും പ്രചാരണവും',
+  },
+  {
+    id: 'pov_4',
+    stage: 'pov',
+    tab: 'pov_4_obstacles',
+    emoji: '🏗️',
+    groupLabel: 'POV യാത്ര',
+    title: 'പരിപാടി സ്റ്റേജ് നിർമ്മാണവും കൂട്ടായ്മയും',
+  },
+  {
+    id: 'pov_5',
+    stage: 'pov',
+    tab: 'pov_5_unit',
+    emoji: '🚩',
+    groupLabel: 'POV യാത്ര',
+    title: 'ഔദ്യോഗിക SKSSF യൂണിറ്റ് രൂപീകരണം',
+  },
+  {
+    id: 'pov_6',
+    stage: 'pov',
+    tab: 'pov_6_meeting',
+    emoji: '💰',
+    groupLabel: 'POV യാത്ര',
+    title: 'പരിപാടി വരവ്–ചെലവ്–നീക്കിയിരിപ്പും ചീരണിയും',
+  },
+  {
+    id: 'pov_7',
+    stage: 'pov',
+    tab: 'pov_7_cluster',
+    emoji: '🏟️',
+    groupLabel: 'POV യാത്ര',
+    title: 'സ്റ്റേഡിയം ശുചീകരണവും വിഖായ ഡിസ്പോസലും',
   },
   {
     id: 'pov_journey',
     stage: 'pov',
-    emoji: '🚩',
-    groupLabel: 'POV യാത്ര (നിർബന്ധം)',
-    title: 'എന്റെ SKSSF യാത്ര — മദ്രസ → സിയാറത്ത് → യൂണിറ്റ് → മീറ്റിംഗ് → മേഖല',
+    tab: 'pov_8_state_circular',
+    emoji: '📋',
+    groupLabel: 'POV യാത്ര',
+    title: 'പരിപാടി അവലോകന റിപ്പോർട്ടും സർക്കുലറും',
   },
-  // ഘട്ടം 1 · യൂണിറ്റ് തലം
+
+  // ഘട്ടം 1 · യൂണിറ്റ് തലം (8 സ്വതന്ത്ര പാഠങ്ങൾ — 5 ചരിത്ര കാലഘട്ടങ്ങൾ വേർതിരിച്ചു)
+  {
+    id: 'l1_era_1',
+    stage: 'world',
+    level: 1,
+    tab: 'era_1',
+    emoji: '🕌',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: '1926 · സമസ്തയുടെ പിറവി',
+  },
+  {
+    id: 'l1_era_2',
+    stage: 'world',
+    level: 1,
+    tab: 'era_2',
+    emoji: '📜',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: '1934 · ഔദ്യോഗിക രജിസ്ട്രേഷൻ',
+  },
+  {
+    id: 'l1_era_3',
+    stage: 'world',
+    level: 1,
+    tab: 'era_3',
+    emoji: '🏫',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: '1951 · സമസ്ത വിദ്യാഭ്യാസ ബോർഡ്',
+  },
+  {
+    id: 'l1_era_4',
+    stage: 'world',
+    level: 1,
+    tab: 'era_4',
+    emoji: '☎️',
+    groupLabel: 'യൂണിറ്റ് തലം',
+    title: '1989 · SKSSF പിറവിയും മുന്നേറ്റവും',
+  },
   {
     id: 'l1_timeline',
     stage: 'world',
     level: 1,
-    tab: 'timeline',
-    emoji: '⛵',
+    tab: 'era_5',
+    emoji: '✈️',
     groupLabel: 'യൂണിറ്റ് തലം',
-    title: 'സമസ്തയുടെ ചരിത്ര യാത്ര',
+    title: '1993 · SKSBV & ആഗോള ശൃംഖല',
   },
   {
     id: 'l1_flags',
@@ -78,6 +234,7 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     groupLabel: 'യൂണിറ്റ് തലം',
     title: 'സമസ്തയുടെ വേരുകൾ & ചരിത്ര കാർഡുകൾ',
   },
+
   // ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം
   {
     id: 'l2_memory',
@@ -160,6 +317,7 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     groupLabel: 'ക്ലസ്റ്റർ & മേഖല',
     title: 'പത്രങ്ങളും വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളും',
   },
+
   // ഘട്ടം 3 · ജില്ലാ തലം
   {
     id: 'l3_sky_catcher',
@@ -206,6 +364,7 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     groupLabel: 'ജില്ലാ തലം',
     title: 'മാധ്യമ & വാർത്താ പരിശീലനം',
   },
+
   // ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം
   {
     id: 'l4_climb',
@@ -286,11 +445,6 @@ export function saveCompletedLessonIds(ids: string[]): void {
   }
 }
 
-/**
- * Returns ONLY lessons that appear BEFORE `currentLessonId` in the curriculum
- * and have NOT yet been seen/completed by the user.
- * Completed lessons NEVER appear here.
- */
 export function getSkippedUnseenLessonsBefore(
   currentLessonId: string,
   completedIds: string[]
@@ -301,9 +455,6 @@ export function getSkippedUnseenLessonsBefore(
   return ALL_LESSONS.slice(0, idx).filter((l) => !completedSet.has(l.id));
 }
 
-/**
- * Returns ALL lessons across the entire game that have not yet been completed/seen.
- */
 export function getAllUnseenLessons(completedIds: string[]): LessonDescriptor[] {
   const completedSet = new Set(completedIds);
   return ALL_LESSONS.filter((l) => !completedSet.has(l.id));

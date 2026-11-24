@@ -15,17 +15,17 @@ import {
   UNIT_STEPS,
 } from '../data/level3Data';
 import {
+  CollapsibleLessonDrawer,
   DriftingCloudsAndSun,
   EasterEggItem,
   EasterEggSpot,
   FloatingSparkleField,
-  FlutteringFlagPole,
   GlitterBurstOverlay,
   LessonProgressTrack,
   LessonStepperNav,
   SwayingGardenPlants,
 } from './GameEffects';
-import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameFullscreenShell } from './GameFullscreenShell';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
@@ -47,6 +47,7 @@ interface Level3OrganizerProps {
   completedLessonIds?: string[];
   quizAnswers: QuizAnswerMap;
   onQuizAnswered: (lessonId: string, selectedIdx: number, isCorrect: boolean) => void;
+  devUnlocked?: boolean;
 }
 
 interface SkyBubble {
@@ -286,6 +287,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
   completedLessonIds = [],
   quizAnswers,
   onQuizAnswered,
+  devUnlocked = false,
 }) => {
   const [activeTab, setActiveTab] = useState<L3Tab>(initialTab || 'sky_catcher');
   const [glitterKey, setGlitterKey] = useState(0);
@@ -421,7 +423,8 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
       const nextCombo = sortCombo + 1;
       setSortCombo(nextCombo);
       sound.playSuccess(nextCombo);
-      setCaughtBubbles((prev) => [...prev, bubble.id]);
+      const nextCaught = [...caughtBubbles, bubble.id];
+      setCaughtBubbles(nextCaught);
       onAwardXp(20, `l3_val_${bubble.id}`);
       setSkyMsg({
         ok: true,
@@ -433,6 +436,9 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           : `⚡ കെണി പൊട്ടിച്ചു! +20 XP`
       );
       narrator.speak(bubble.speech, `${bubble.emoji} ${bubble.label}`);
+      if (nextCaught.length === SKY_BUBBLES.length) {
+        window.setTimeout(() => scrollToActiveQuiz(), 950);
+      }
     } else {
       setSortCombo(0);
       sound.playError();
@@ -472,8 +478,12 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
       sound.playSuccess();
       sound.playWriting();
       if (!placedTasks.includes(currentTask.id)) {
-        setPlacedTasks((prev) => [...prev, currentTask.id]);
+        const nextPlaced = [...placedTasks, currentTask.id];
+        setPlacedTasks(nextPlaced);
         onAwardXp(25, `l3_desk_${currentTask.id}`);
+        if (nextPlaced.length === DESK_TASKS.length) {
+          window.setTimeout(() => scrollToActiveQuiz(), 950);
+        }
       }
       setDeskMsg({ ok: true, text: '🎉 കൃത്യം! ശരിയായ ഭാരവാഹിയുടെ ഡെസ്കിൽ ഫയൽ എത്തി (+25 XP)!' });
       triggerGlitter('📂 ഫയൽ ഡെസ്കിൽ എത്തി! +25 XP');
@@ -516,6 +526,9 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
         setNewsMsg({ ok: true, text: '🎉 അടിപൊളി! പൂർണ്ണ ക്രമം കൃത്യമായി ചേർന്നു! (+40 XP)' });
         triggerGlitter('🚂 ട്രെയിൻ ക്രമം പൂർത്തിയായി! +40 XP');
         narrator.speak('വളരെ മനോഹരം! പൂർണ്ണ ക്രമം കൃത്യമായി ചേർന്നു!');
+        if (xpKey === 'l3_ai_snap') {
+          window.setTimeout(() => scrollToActiveQuiz(), 950);
+        }
       } else {
         setNewsMsg({
           ok: true,
@@ -551,6 +564,32 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
     onCompleteLevel();
   };
 
+  const l3Tabs: { id: L3Tab; label: string }[] = [
+    { id: 'sky_catcher', label: '1. സ്കൈ ക്യാച്ചർ ഗെയിം' },
+    { id: 'scrolls', label: '2. ജ്ഞാനച്ചുരുൾ (പ്രവാചക സ്നേഹം ﷺ)' },
+    { id: 'mind_chain', label: '3. മനസ്സിന്റെ 5 പടവുകൾ' },
+    { id: 'unit_desks', label: '4. ഓഫീസ് ഡെസ്ക്' },
+    { id: 'newsroom', label: '5. ന്യൂസ്‌റൂം & മിനിറ്റ്സ്' },
+  ];
+  const activeL3Idx = l3Tabs.findIndex((t) => t.id === activeTab);
+  const isLastL3Tab = activeL3Idx === l3Tabs.length - 1;
+  const currentL3LessonId = `l3_${activeTab}`;
+  const l3StepUnlocked =
+    devUnlocked ||
+    isCompleted ||
+    completedLessonIds.includes(currentL3LessonId) ||
+    Boolean(quizAnswers[currentL3LessonId]);
+
+  const handleAdvanceL3Tab = () => {
+    onMarkLessonCompleted?.(currentL3LessonId);
+    if (!isLastL3Tab) {
+      setActiveTab(l3Tabs[activeL3Idx + 1].id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleFinishLevel3();
+    }
+  };
+
   const trackItems: { id: L3Tab; lessonId: string; label: string; emoji: string }[] = [
     { id: 'sky_catcher', lessonId: 'l3_sky_catcher', label: 'സ്കൈ ക്യാച്ചർ', emoji: '🎈' },
     { id: 'scrolls', lessonId: 'l3_scrolls', label: 'ജ്ഞാനച്ചുരുൾ (പ്രവാചക സ്നേഹം ﷺ)', emoji: '📜' },
@@ -561,103 +600,90 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
 
   return (
     <section className="space-y-4">
-      {/* Garden Sanctuary Header with Swaying Plants & Flags */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-200 bg-emerald-950 text-white p-4 sm:p-5">
-        <img
-          src="./src/assets/images/world_heart_garden_1794946533326.jpg"
-          alt="ഹൃദയ തോട്ടവും കാര്യാലയവും"
-          className="absolute inset-0 w-full h-full object-cover opacity-35"
-          referrerPolicy="no-referrer"
+      {/* 1. GAME FIRST FOR LESSON TABS */}
+      {(activeTab === 'scrolls' || activeTab === 'mind_chain') && (
+        <OptionalLessonMiniGame
+          key={`l3_${activeTab}`}
+          lessonKey={`l3_${activeTab}` as MiniGameLessonKey}
+          onAwardXp={onAwardXp}
+          isCompleted={
+            isCompleted ||
+            completedLessonIds.includes(`l3_${activeTab}`) ||
+            completedSceneGames.includes(`l3_${activeTab}`)
+          }
+          onComplete={() =>
+            setCompletedSceneGames((prev) =>
+              prev.includes(`l3_${activeTab}`) ? prev : [...prev, `l3_${activeTab}`]
+            )
+          }
         />
-        <DriftingCloudsAndSun className="opacity-65" />
-        <SwayingGardenPlants className="opacity-50" />
-
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-xs font-bold text-amber-300">
-              💖 ഘട്ടം 3 · ജില്ലാ തലം · ആദർശ കവചം · ഓഫീസ് ഡെസ്ക് · വാർത്താ റിപ്പോർട്ടിംഗ്
-            </p>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white">
-              ഹൃദയ തോട്ടവും സംഘാടക കവചവും
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-xs font-bold text-emerald-100 tabular-nums">
-              ബബിളുകൾ: {caughtBubbles.length}/8 · ഡെസ്ക്: {placedTasks.length}/6 · ന്യൂസ്‌റൂം:{' '}
-              {[
-                erasedHypes.length === 3,
-                minutesPicked.length === MINUTES_ORDER_CORRECT.length,
-                aiPicked.length === AI_WORKFLOW_CORRECT.length,
-              ].filter(Boolean).length}
-              /3
-            </div>
-            <div className="hidden md:block">
-              <FlutteringFlagPole variant="skju" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <LessonProgressTrack
-        stageTitle="ഘട്ടം 3 · ജില്ലാ തലം"
-        stageSubtitle="ഓരോ പാഠത്തിലെയും പ്രവർത്തനവും താഴെയുള്ള ചോദ്യവും പൂർത്തിയാക്കുമ്പോൾ അടുത്ത പാഠം തുറക്കും"
-        items={trackItems}
-        activeId={activeTab}
-        completedLessonIds={completedLessonIds}
-        onSelectCompleted={(id) => setActiveTab(id as L3Tab)}
-      />
+      )}
 
       {/* GAME 3A: 2D ANIMATED FLOATING SKY BUBBLE CATCHER GAME */}
       {activeTab === 'sky_catcher' && (
+        <div className="space-y-4">
         <GameFullscreenShell
-          title="🎈 സ്കൈ ക്യാച്ചർ — നന്മ കവചം"
-          subtitle="ഹൃദയ കവച വടിയും ബ്ലാസ്റ്ററും ഉപയോഗിച്ച് ആകാശത്തെ ബബിളുകൾ പിടിക്കൂ"
+          title="🎈 സ്കൈ ക്യാച്ചർ"
+          subtitle="നന്മകൾ പിടിക്കൂ · കെണികൾ പൊട്ടിക്കൂ"
         >
         <div className="space-y-3">
-          <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 px-4 py-3 text-xs sm:text-sm font-extrabold text-amber-950 flex flex-wrap items-center justify-between gap-2">
-            <span>
-              ❤️ ഓർക്കൂ: നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും മുഹമ്മദ് നബി ﷺ പഠിപ്പിച്ച ഉത്തമ മാതൃകയും സത്യപാതയും പിന്തുടരലാണ് — തിന്മയുടെ കെണികളിൽ നിന്ന് അകന്നുനിൽക്കാം!
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                narrator.speak(
-                  'നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും നമ്മെ ഏറെ സ്നേഹിച്ച മുഹമ്മദ് നബി സ്വല്ലല്ലാഹു അലൈഹി വസല്ലം പഠിപ്പിച്ച ഉത്തമ മാതൃക പിന്തുടരലാണ്. തിന്മയുടെ കെണികളിൽ നിന്ന് അകന്നുനിന്ന് എപ്പോഴും സൽസ്വഭാവം കാത്തുസൂക്ഷിക്കാം.',
-                  '❤️ തിരുനബി ﷺ-യുടെ ഉത്തമ മാതൃക'
-                )
-              }
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-extrabold shrink-0"
-            >
-              <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs sm:text-sm font-extrabold text-slate-900">
-                ആദ്യം താഴെ നിന്ന് നിങ്ങളുടെ നന്മ കവചമോ ബ്ലാസ്റ്ററോ തിരഞ്ഞെടുത്ത്, ആകാശത്ത് പറക്കുന്ന ബബിളുകളിൽ ടാപ്പ് ചെയ്യൂ!
-              </p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setActiveTool('shield');
+                  }}
+                  title="❤️ ഹൃദയ കവച വടി (നല്ല ഗുണങ്ങൾ പിടിക്കൂ)"
+                  aria-label="ഹൃദയ കവച വടി"
+                  className={`px-3.5 py-2 rounded-xl border-2 border-b-4 text-base font-extrabold flex items-center gap-1.5 transition-all ${
+                    activeTool === 'shield'
+                      ? 'bg-emerald-600 text-white border-emerald-900 ring-2 ring-emerald-300'
+                      : 'bg-emerald-50 text-emerald-950 border-emerald-300'
+                  }`}
+                >
+                  <span>❤️</span>
+                  <span className="text-xs">🛡️</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setActiveTool('trap');
+                  }}
+                  title="⚡ ഷീൽഡ് ബ്ലാസ്റ്റർ (കെണികൾ പൊട്ടിക്കൂ)"
+                  aria-label="ഷീൽഡ് ബ്ലാസ്റ്റർ"
+                  className={`px-3.5 py-2 rounded-xl border-2 border-b-4 text-base font-extrabold flex items-center gap-1.5 transition-all ${
+                    activeTool === 'trap'
+                      ? 'bg-red-700 text-white border-red-950 ring-2 ring-red-300'
+                      : 'bg-red-50 text-red-950 border-red-300'
+                  }`}
+                >
+                  <span>⚡</span>
+                  <span className="text-xs">💥</span>
+                </button>
+              </div>
+              <div className="flex items-center gap-2 tabular-nums">
+                <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-900">
+                  🎈 {caughtBubbles.length}/{SKY_BUBBLES.length}
+                </span>
                 <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
                   {'❤️'.repeat(Math.max(0, 3 - skyMistakes))}
                   {'💔'.repeat(Math.min(3, skyMistakes))}
                 </span>
                 {sortCombo > 1 && (
-                  <span className="inline-flex items-center gap-1 text-xs font-extrabold text-red-700">
-                    <Flame className="w-4 h-4 text-orange-500" /> Combo x{sortCombo} 🔥
+                  <span className="inline-flex items-center gap-0.5 text-xs font-extrabold text-red-700">
+                    <Flame className="w-3.5 h-3.5 text-orange-500" /> x{sortCombo}
                   </span>
                 )}
               </div>
             </div>
 
             {skyFailed && (
-              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-extrabold text-rose-900">💥 സ്കൈ ക്യാച്ചർ പരാജയപ്പെട്ടു!</p>
-                  <p className="text-xs font-semibold text-rose-800">
-                    3 തവണ തെറ്റായ ആയുധം തിരഞ്ഞെടുത്തു. നന്മയും കെണിയും കൃത്യമായി വേർതിരിക്കാൻ വീണ്ടും ശ്രമിക്കാം!
-                  </p>
-                </div>
+              <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
+                <span className="text-sm font-extrabold text-rose-900">💔 0/3</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -667,44 +693,13 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
                     setCaughtBubbles([]);
                     setSkyMsg(null);
                   }}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
+                  aria-label="വീണ്ടും ശ്രമിക്കാം"
+                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700"
                 >
-                  🔄 വീണ്ടും ശ്രമിക്കാം
+                  🔄
                 </button>
               </div>
             )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClick();
-                  setActiveTool('shield');
-                }}
-                className={`p-3 rounded-xl border-2 border-b-4 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all ${
-                  activeTool === 'shield'
-                    ? 'bg-emerald-600 text-white border-emerald-900 ring-4 ring-emerald-200 scale-[1.01]'
-                    : 'bg-emerald-50 text-emerald-950 border-emerald-300'
-                }`}
-              >
-                <span>❤️ ഹൃദയ കവച വടി (നല്ല ഗുണങ്ങൾ പിടിക്കൂ)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClick();
-                  setActiveTool('trap');
-                }}
-                className={`p-3 rounded-xl border-2 border-b-4 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all ${
-                  activeTool === 'trap'
-                    ? 'bg-red-700 text-white border-red-950 ring-4 ring-red-200 scale-[1.01]'
-                    : 'bg-red-50 text-red-950 border-red-300'
-                }`}
-              >
-                <span>⚡ ഷീൽഡ് ബ്ലാസ്റ്റർ (കെണികൾ പൊട്ടിക്കൂ)</span>
-              </button>
-            </div>
 
             <AnimatePresence mode="wait">
               {skyMsg && (
@@ -773,23 +768,73 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
             })}
 
             {caughtBubbles.length === SKY_BUBBLES.length && (
-              <div className="absolute inset-0 z-30 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center text-white space-y-2">
+              <div className="absolute inset-0 z-30 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center text-white space-y-3">
                 <p className="text-3xl">🎉✨</p>
                 <h3 className="text-lg sm:text-xl font-extrabold">
                   അടിപൊളി! 8 ബബിളുകളും വിജയകരമായി പിടിച്ചു!
                 </h3>
-                <p className="text-xs sm:text-sm font-semibold text-amber-200">
-                  ഇനി താഴെയുള്ള ചെറിയ ചോദ്യത്തിന് ഉത്തരം നൽകി അടുത്ത പാഠത്തിലേക്ക് കടക്കാം.
-                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    scrollToActiveQuiz();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-extrabold shadow-lg"
+                >
+                  അടുത്തത് · ക്വിസ് ➡️
+                </button>
               </div>
             )}
           </div>
         </div>
         </GameFullscreenShell>
+        </div>
       )}
 
-      {/* TAB 2: ILLUMINATED WISDOM SCROLL READER (STRICT SINGLE-FOCUS) */}
+      {/* 2. QUIZ (OPEN BY DEFAULT RIGHT BELOW THE GAME!) */}
+      {activeTab !== 'unit_desks' && activeTab !== 'newsroom' && (
+        <LessonCheckQuiz
+          lessonId={`l3_${activeTab}`}
+          savedAnswer={quizAnswers[`l3_${activeTab}`]}
+          onAnswered={(lessonId, selectedIdx, isCorrect) => {
+            onQuizAnswered(lessonId, selectedIdx, isCorrect);
+            onMarkLessonCompleted?.(lessonId);
+          }}
+          onNextLesson={handleAdvanceL3Tab}
+          nextLessonLabel={!isLastL3Tab ? 'അടുത്ത പാഠം ➡️' : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം ➡️'}
+        />
+      )}
+
+      {/* 3. COLLAPSIBLE LESSON FOR SKY CATCHER */}
+      {activeTab === 'sky_catcher' && (
+        <CollapsibleLessonDrawer
+          key="l3-sky-note"
+          emoji="❤️"
+          title="തിരുനബി ﷺ-യുടെ മാതൃക · പാഠം"
+          onSpeak={() =>
+            narrator.speak(
+              'നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും നമ്മെ ഏറെ സ്നേഹിച്ച മുഹമ്മദ് നബി സ്വല്ലല്ലാഹു അലൈഹി വസല്ലം പഠിപ്പിച്ച ഉത്തമ മാതൃക പിന്തുടരലാണ്. തിന്മയുടെ കെണികളിൽ നിന്ന് അകന്നുനിന്ന് എപ്പോഴും സൽസ്വഭാവം കാത്തുസൂക്ഷിക്കാം.',
+              '❤️ തിരുനബി ﷺ-യുടെ ഉത്തമ മാതൃക'
+            )
+          }
+        >
+          <p className="text-xs sm:text-sm font-bold text-amber-950 leading-relaxed">
+            ❤️ നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും മുഹമ്മദ് നബി ﷺ പഠിപ്പിച്ച ഉത്തമ മാതൃകയും സത്യപാതയും പിന്തുടരലാണ് — തിന്മയുടെ കെണികളിൽ നിന്ന് അകന്നുനിൽക്കാം!
+          </p>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {/* 2. COLLAPSIBLE LESSON: WISDOM SCROLLS */}
       {activeTab === 'scrolls' && (
+        <CollapsibleLessonDrawer
+          key="l3-drawer-scrolls"
+          emoji="📜"
+          title="ജ്ഞാനച്ചുരുൾ · പാഠം"
+          badgeText={`${readScrollIds.length}/${LESSON_FLIP_CARDS.length}`}
+          onSpeak={() =>
+            narrator.speak(activeScroll.speech, `${activeScroll.emoji} ${activeScroll.title}`)
+          }
+        >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
 
@@ -881,10 +926,17 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
             </AnimatePresence>
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
-      {/* TAB 3: ASCENDING MIND-FLOW STAIRCASE (STRICT SINGLE-FOCUS) */}
+      {/* 2. COLLAPSIBLE LESSON: MIND CHAIN */}
       {activeTab === 'mind_chain' && (
+        <CollapsibleLessonDrawer
+          key="l3-drawer-mind"
+          emoji="🪜"
+          title="മനസ്സിന്റെ 5 പടവുകൾ · പാഠം"
+          badgeText={`${activeChainIdx + 1}/${MIND_CHAIN.length}`}
+        >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="bg-white rounded-3xl border-2 border-emerald-200 p-4 sm:p-6 space-y-4 shadow-sm">
@@ -962,6 +1014,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
             </div>
           </div>
         </div>
+        </CollapsibleLessonDrawer>
       )}
 
       {/* TAB 3: UNIT OFFICE DESKS */}
@@ -1064,9 +1117,16 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
               >
                 <span>{deskMsg.text}</span>
                 {placedTasks.length === DESK_TASKS.length && (
-                  <span className="text-xs font-extrabold text-emerald-800 shrink-0">
-                    ✓ എല്ലാ ഫയലുകളും പൂർത്തിയായി! താഴെ ചോദ്യത്തിന് ഉത്തരം നൽകാം.
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      scrollToActiveQuiz();
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold shrink-0"
+                  >
+                    അടുത്തത് · ക്വിസ് ➡️
+                  </button>
                 )}
               </motion.div>
             )}
@@ -1512,77 +1572,46 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
         </GameFullscreenShell>
       )}
 
-      {(activeTab === 'scrolls' || activeTab === 'mind_chain') && (
-        <OptionalLessonMiniGame
-          key={`l3_${activeTab}`}
-          lessonKey={`l3_${activeTab}` as MiniGameLessonKey}
-          onAwardXp={onAwardXp}
-          isCompleted={
-            isCompleted ||
-            completedLessonIds.includes(`l3_${activeTab}`) ||
-            completedSceneGames.includes(`l3_${activeTab}`)
-          }
-          onComplete={() =>
-            setCompletedSceneGames((prev) =>
-              prev.includes(`l3_${activeTab}`) ? prev : [...prev, `l3_${activeTab}`]
-            )
-          }
+      {(activeTab === 'unit_desks' || activeTab === 'newsroom') && (
+        <LessonCheckQuiz
+          lessonId={`l3_${activeTab}`}
+          savedAnswer={quizAnswers[`l3_${activeTab}`]}
+          onAnswered={(lessonId, selectedIdx, isCorrect) => {
+            onQuizAnswered(lessonId, selectedIdx, isCorrect);
+            onMarkLessonCompleted?.(lessonId);
+          }}
+          onNextLesson={handleAdvanceL3Tab}
+          nextLessonLabel={!isLastL3Tab ? 'അടുത്ത പാഠം ➡️' : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം ➡️'}
         />
       )}
 
-      <LessonCheckQuiz
-        lessonId={`l3_${activeTab}`}
-        savedAnswer={quizAnswers[`l3_${activeTab}`]}
-        onAnswered={(lessonId, selectedIdx, isCorrect) => {
-          onQuizAnswered(lessonId, selectedIdx, isCorrect);
-          onMarkLessonCompleted?.(lessonId);
-        }}
+      {/* 4. NAVIGATION & MAP STRICTLY BELOW LESSON */}
+      <LessonStepperNav
+        stepLabel={`ഘട്ടം 3 · ജില്ലാ തലം · പാഠം ${activeL3Idx + 1} / ${l3Tabs.length}: ${l3Tabs[activeL3Idx]?.label || ''}`}
+        statusHint={
+          !l3StepUnlocked
+            ? 'മുകളിലെ ക്വിസിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠം തുറക്കും!'
+            : undefined
+        }
+        currentStep={activeL3Idx}
+        totalSteps={l3Tabs.length}
+        prevLabel={activeL3Idx > 0 ? l3Tabs[activeL3Idx - 1].label : undefined}
+        onPrev={activeL3Idx > 0 ? () => setActiveTab(l3Tabs[activeL3Idx - 1].id) : undefined}
+        nextLabel={!isLastL3Tab ? l3Tabs[activeL3Idx + 1].label : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം'}
+        nextIsWorldAdvance={isLastL3Tab}
+        nextDisabled={!l3StepUnlocked}
+        onNext={handleAdvanceL3Tab}
       />
 
-      {(() => {
-        const tabs: {
-          id: L3Tab;
-          label: string;
-        }[] = [
-          { id: 'sky_catcher', label: '1. സ്കൈ ക്യാച്ചർ ഗെയിം' },
-          { id: 'scrolls', label: '2. ജ്ഞാനച്ചുരുൾ (പ്രവാചക സ്നേഹം ﷺ)' },
-          { id: 'mind_chain', label: '3. മനസ്സിന്റെ 5 പടവുകൾ' },
-          { id: 'unit_desks', label: '4. ഓഫീസ് ഡെസ്ക്' },
-          { id: 'newsroom', label: '5. ന്യൂസ്‌റൂം & മിനിറ്റ്സ്' },
-        ];
-        const idx = tabs.findIndex((t) => t.id === activeTab);
-        const isLast = idx === tabs.length - 1;
-        const currentLessonId = `l3_${activeTab}`;
-        const alreadyDone = isCompleted || completedLessonIds.includes(currentLessonId);
-        const quizDone = Boolean(quizAnswers[currentLessonId]);
-
-        const stepUnlocked = alreadyDone || quizDone;
-        const statusHint = !stepUnlocked
-          ? 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-          : undefined;
-
-        return (
-          <LessonStepperNav
-            stepLabel={`ഘട്ടം 3 · ജില്ലാ തലം · പാഠം ${idx + 1} / ${tabs.length}: ${tabs[idx]?.label || ''}`}
-            statusHint={statusHint}
-            currentStep={idx}
-            totalSteps={tabs.length}
-            prevLabel={idx > 0 ? tabs[idx - 1].label : undefined}
-            onPrev={idx > 0 ? () => setActiveTab(tabs[idx - 1].id) : undefined}
-            nextLabel={!isLast ? tabs[idx + 1].label : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം'}
-            nextIsWorldAdvance={isLast}
-            nextDisabled={!stepUnlocked}
-            onNext={() => {
-              onMarkLessonCompleted?.(currentLessonId);
-              if (!isLast) {
-                setActiveTab(tabs[idx + 1].id);
-              } else {
-                handleFinishLevel3();
-              }
-            }}
-          />
-        );
-      })()}
+      <LessonProgressTrack
+        stageTitle="ഘട്ടം 3 · ജില്ലാ തലം"
+        stageSubtitle="ആദർശ കവചം, ജ്ഞാനച്ചുരുൾ, ഓഫീസ് ഡെസ്ക് & ന്യൂസ്‌റൂം"
+        items={trackItems}
+        activeId={activeTab}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => setActiveTab(id as L3Tab)}
+      />
     </section>
   );
 };

@@ -230,35 +230,31 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
   const flagWaveGradId = `jeep-flag-wave-${rawUid}`;
   return (
     <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-300 bg-gradient-to-b from-sky-100 via-emerald-50 to-amber-50 shadow-lg">
-      {/* Top Friendly Action & Voice Header (Zero Reading Required!) */}
-      <div className="px-4 sm:px-6 py-3.5 bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-800 text-white flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="text-2xl sm:text-3xl shrink-0">🚐</span>
-          <div className="min-w-0">
-            <h2 className="text-base sm:text-xl font-extrabold leading-tight">
-              നമുക്ക് SKSSF പ്രചാരണ വാഹനം ഒരുക്കാം!
-            </h2>
-            <p className="text-[11px] sm:text-xs text-emerald-100 font-semibold">
-              വായിക്കാൻ അറിയില്ലെങ്കിലും കുഴപ്പമില്ല — വിരൽ (👆) കാണിക്കുന്നിടത്ത് തൊട്ടാലോ വലിച്ചിട്ടാലോ മതി!
-            </p>
-          </div>
+      {/* Clean Icon-First Header */}
+      <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-800 text-white flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xl sm:text-2xl shrink-0">🚐</span>
+          <h2 className="text-sm sm:text-base font-extrabold leading-tight">
+            SKSSF പ്രചാരണ വാഹനം
+          </h2>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
             onClick={playVoiceIntro}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shadow-sm transition-transform active:scale-95 whitespace-nowrap"
+            aria-label="ശബ്ദത്തിൽ കേൾക്കാം"
+            title="ശബ്ദത്തിൽ കേൾക്കാം"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shadow-2xs transition-transform active:scale-95"
           >
             <Volume2 className="w-4 h-4" />
-            <span>ശബ്ദത്തിൽ കേൾക്കാം</span>
           </button>
           {placedCount > 0 && (
             <button
               type="button"
               onClick={handleReset}
               aria-label="വീണ്ടും ഒരുക്കാം"
-              className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition-colors"
+              className="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -267,38 +263,30 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
       </div>
 
       {/* Interactive Animated Scenic Stage */}
-      <div className="relative px-3 sm:px-6 pt-5 pb-4 overflow-hidden">
-        {/* Progress indicator (Visual stars + count, no exam look!) */}
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-emerald-950">
-            <span>ഒരുക്കം:</span>
+      <div className="relative px-3 sm:px-5 pt-3 pb-4 overflow-hidden">
+        {/* Compact Visual Stars & Hearts Bar */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-1 text-xs font-extrabold text-emerald-950">
             {[0, 1, 2].map((i) => (
               <motion.span
                 key={i}
                 animate={i < placedCount ? { scale: [1, 1.35, 1] } : {}}
                 transition={{ duration: 0.35 }}
-                className={`text-lg ${i < placedCount ? 'opacity-100' : 'opacity-30 grayscale'}`}
+                className={`text-base ${i < placedCount ? 'opacity-100' : 'opacity-30 grayscale'}`}
               >
                 ⭐
               </motion.span>
             ))}
-            <span className="text-emerald-800 tabular-nums">({placedCount}/3)</span>
+            <span className="text-emerald-800 tabular-nums ml-0.5">{placedCount}/3</span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {!allPlaced && (
-              <span className="text-[11px] sm:text-xs font-extrabold text-rose-900 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-lg tabular-nums">
-                {Array.from({ length: maxMistakes })
-                  .map((_, i) => (i < maxMistakes - mistakes ? '❤️' : '🖤'))
-                  .join('')}
-              </span>
-            )}
-            {!allPlaced && !failed && (
-              <span className="text-[11px] sm:text-xs font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg">
-                👆 താഴെ നിന്ന് തിരഞ്ഞെടുത്ത് വണ്ടിയിൽ തൊടൂ
-              </span>
-            )}
-          </div>
+          {!allPlaced && (
+            <span className="text-xs font-extrabold text-rose-900 tabular-nums">
+              {Array.from({ length: maxMistakes })
+                .map((_, i) => (i < maxMistakes - mistakes ? '❤️' : '🖤'))
+                .join('')}
+            </span>
+          )}
         </div>
 
         {/* Scenic Road + Animated Vehicle Stage */}
@@ -668,7 +656,7 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
               ))}
             </svg>
 
-            {/* DROP ZONE 1: ROOF LOUDSPEAKER (Seated directly on Roof Rack y=74 — Zero Floating!) */}
+            {/* DROP ZONE 1: ROOF LOUDSPEAKER */}
             {!placed.speaker && (
               <div
                 onDragOver={(e) => e.preventDefault()}
@@ -681,19 +669,14 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleTapZone('speaker')}
-                aria-label="ലൗഡ്‌സ്പീക്കർ വെക്കാനുള്ള സ്ഥലം"
+                aria-label="ലൗഡ്‌സ്പീക്കർ"
                 className={`absolute left-[27%] top-[14%] w-[27%] h-[19%] rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                   selectedPart === 'speaker' || nextSuggestedPart === 'speaker'
                     ? 'border-2 border-dashed border-amber-500 bg-amber-200/75 shadow-md ring-4 ring-amber-300/60'
                     : 'border-2 border-dashed border-emerald-500/70 bg-white/75 hover:bg-amber-100/80'
                 }`}
               >
-                <div className="text-center leading-tight px-1">
-                  <span className="text-base sm:text-lg block">📢</span>
-                  <span className="text-[9px] sm:text-[10px] font-extrabold text-amber-950">
-                    മൈക്ക് ഇവിടെ
-                  </span>
-                </div>
+                <span className="text-xl sm:text-2xl">📢</span>
 
                 {(selectedPart === 'speaker' || (!selectedPart && nextSuggestedPart === 'speaker')) && (
                   <motion.span
@@ -707,7 +690,7 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
               </div>
             )}
 
-            {/* DROP ZONE 2: FRONT FLAGPOLE (Visible until placed; complete upright SKSSF flag renders right on the pole!) */}
+            {/* DROP ZONE 2: FRONT FLAGPOLE */}
             {!placed.flag && (
               <div
                 onDragOver={(e) => e.preventDefault()}
@@ -720,19 +703,14 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && handleTapZone('flag')}
-                aria-label="SKSSF കൊടി വെക്കാനുള്ള സ്ഥലം"
+                aria-label="SKSSF കൊടി"
                 className={`absolute left-[61.5%] top-[11%] w-[22%] h-[25.5%] rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                   selectedPart === 'flag' || nextSuggestedPart === 'flag'
                     ? 'border-2 border-dashed border-sky-500 bg-sky-200/85 shadow-md ring-4 ring-sky-300/60'
                     : 'border-2 border-dashed border-emerald-500/70 bg-white/80 hover:bg-sky-100/85'
                 }`}
               >
-                <div className="text-center leading-tight px-1">
-                  <span className="text-base sm:text-lg block">🚩</span>
-                  <span className="text-[9px] sm:text-[10px] font-extrabold text-sky-950">
-                    കൊടി ഇവിടെ
-                  </span>
-                </div>
+                <span className="text-xl sm:text-2xl">🚩</span>
 
                 {(selectedPart === 'flag' || (!selectedPart && nextSuggestedPart === 'flag')) && (
                   <motion.span
@@ -758,7 +736,7 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && handleTapZone('sticker')}
-              aria-label="SKSSF സ്റ്റിക്കർ ഒട്ടിക്കാനുള്ള സ്ഥലം"
+              aria-label="SKSSF സ്റ്റിക്കർ"
               className={`absolute left-[37%] top-[56%] w-[36%] h-[18%] rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                 placed.sticker
                   ? 'pointer-events-none'
@@ -771,14 +749,12 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                 <motion.div
                   initial={{ scale: 0.4, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="px-2 py-0.5 rounded bg-emerald-800 text-amber-200 text-[8.5px] sm:text-[11px] font-extrabold tracking-tight shadow-sm text-center leading-tight"
+                  className="px-2 py-0.5 rounded bg-emerald-800 text-amber-200 text-[9px] sm:text-[11px] font-extrabold tracking-tight shadow-sm text-center leading-tight"
                 >
-                  ✨ വിജ്ഞാനം · വിനയം · സേവനം
+                  ✨ SKSSF ✨
                 </motion.div>
               ) : (
-                <span className="text-[9px] sm:text-[10px] font-extrabold text-emerald-950 text-center leading-tight px-1">
-                  🏷️ സ്റ്റിക്കർ ഇവിടെ ഒട്ടിക്കാം
-                </span>
+                <span className="text-xl sm:text-2xl">🏷️</span>
               )}
 
               {!placed.sticker && (selectedPart === 'sticker' || (!selectedPart && nextSuggestedPart === 'sticker')) && (
@@ -801,116 +777,85 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
           </p>
         )}
 
-        {/* Failure Overlay or Draggable / Tappable Parts Tray */}
+        {/* Failure Overlay or Icon-First Parts Tray */}
         {failed ? (
-          <div className="mt-4 p-4 rounded-2xl bg-rose-950 text-white border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3 shadow-md">
-            <div>
-              <p className="text-sm sm:text-base font-extrabold text-amber-300">
-                ❌ ഭാഗങ്ങൾ തെറ്റായ സ്ഥലത്ത് വെച്ചു — ഈ ശ്രമം പരാജയപ്പെട്ടു!
-              </p>
-              <p className="text-xs text-rose-100 mt-0.5">
-                മൈക്ക് മേൽക്കൂരയിലും, കൊടി മുൻവശത്തും, സ്റ്റിക്കർ വാതിലിലും വെച്ചാൽ വണ്ടി ഉടൻ പുറപ്പെടും!
-              </p>
-            </div>
+          <div className="mt-3 p-3 rounded-2xl bg-rose-950 text-white border-2 border-rose-400 flex items-center justify-between gap-3 shadow-md">
+            <span className="text-lg font-extrabold text-amber-300">❌ 💔</span>
             <button
               type="button"
               onClick={handleReset}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-md active:scale-95"
+              aria-label="വീണ്ടും ശ്രമിക്കാം"
+              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold shadow-md active:scale-95"
             >
-              <RotateCcw className="w-4 h-4" /> 🔄 വീണ്ടും ശ്രമിക്കാം
+              <RotateCcw className="w-4 h-4" /> 🔄
             </button>
           </div>
         ) : !allPlaced ? (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {JEEP_PARTS.map((part) => {
-              const isDone = placed[part.id];
-              const isSelected = selectedPart === part.id;
-              const isSuggested = !selectedPart && nextSuggestedPart === part.id;
-              return (
-                <button
-                  key={part.id}
-                  type="button"
-                  draggable={!isDone}
-                  onDragStart={(e) => {
-                    sound.unlockAudio();
-                    setDraggingPart(part.id);
-                    setSelectedPart(part.id);
-                    e.dataTransfer.setData('text/plain', part.id);
-                  }}
-                  onClick={() => {
-                    sound.unlockAudio();
-                    if (isDone) return;
-                    if (isSelected) {
-                      // Second tap snaps it automatically so small kids never get stuck!
-                      placePart(part.id, part.id);
-                    } else {
-                      sound.playPop();
+          <div className="mt-3 space-y-1.5">
+            <div className="grid grid-cols-3 gap-2">
+              {JEEP_PARTS.map((part) => {
+                const isDone = placed[part.id];
+                const isSelected = selectedPart === part.id;
+                const isSuggested = !selectedPart && nextSuggestedPart === part.id;
+                return (
+                  <button
+                    key={part.id}
+                    type="button"
+                    draggable={!isDone}
+                    onDragStart={(e) => {
+                      sound.unlockAudio();
+                      setDraggingPart(part.id);
                       setSelectedPart(part.id);
-                      setWrongMsg(null);
-                    }
-                  }}
-                  disabled={isDone}
-                  className={`relative p-3.5 rounded-2xl border-2 text-left flex items-center gap-3 transition-all ${
-                    isDone
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70 cursor-default'
-                      : isSelected
-                      ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-md scale-[1.02]'
-                      : isSuggested
-                      ? 'bg-white border-emerald-500 text-slate-900 shadow-md ring-2 ring-emerald-300 hover:bg-emerald-50'
-                      : 'bg-white border-slate-200 text-slate-900 hover:border-emerald-400'
-                  }`}
-                >
-                  <span className="text-3xl shrink-0">{part.emoji}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-extrabold leading-snug break-words">{part.title}</p>
-                    <p className="text-[11px] font-semibold opacity-90 leading-snug break-words mt-0.5">
-                      {isDone
-                        ? '✅ ഭംഗിയായി വെച്ചു!'
+                      e.dataTransfer.setData('text/plain', part.id);
+                    }}
+                    onClick={() => {
+                      sound.unlockAudio();
+                      if (isDone) return;
+                      if (isSelected) {
+                        placePart(part.id, part.id);
+                      } else {
+                        sound.playPop();
+                        setSelectedPart(part.id);
+                        setWrongMsg(null);
+                      }
+                    }}
+                    disabled={isDone}
+                    aria-label={part.title}
+                    title={part.title}
+                    className={`relative py-3 px-2 rounded-2xl border-2 flex items-center justify-center gap-1.5 transition-all ${
+                      isDone
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-60 cursor-default'
                         : isSelected
-                        ? 'ഇനി വണ്ടിയിലെ തിളങ്ങുന്ന സ്ഥലത്ത് തൊടൂ!'
-                        : part.shortHint}
-                    </p>
-                  </div>
-                  {isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0" />
-                  ) : (
-                    (isSuggested || isSelected) && (
-                      <motion.span
-                        animate={{ x: [0, 4, 0] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                        className="text-xl shrink-0"
-                      >
-                        👆
-                      </motion.span>
-                    )
-                  )}
-                </button>
-              );
-            })}
+                        ? 'bg-amber-400 border-amber-600 text-slate-950 shadow-md scale-[1.03]'
+                        : isSuggested
+                        ? 'bg-white border-emerald-500 text-slate-900 shadow-md ring-2 ring-emerald-300 hover:bg-emerald-50'
+                        : 'bg-white border-slate-200 text-slate-900 hover:border-emerald-400'
+                    }`}
+                  >
+                    <span className="text-3xl">{part.emoji}</span>
+                    {isDone && <CheckCircle2 className="w-5 h-5 text-emerald-700" />}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedPart && (
+              <p className="text-[11px] font-extrabold text-emerald-900 text-center">
+                {JEEP_PARTS.find((p) => p.id === selectedPart)?.emoji}{' '}
+                {JEEP_PARTS.find((p) => p.id === selectedPart)?.title}
+              </p>
+            )}
           </div>
         ) : (
-          /* CELEBRATION BANNER WITH IMMEDIATE PHOTO BADGE SHARE + CONTINUE */
           <AnimatePresence>
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border-2 border-amber-300 shadow-lg space-y-3"
+              className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border-2 border-amber-300 shadow-lg flex flex-wrap items-center justify-between gap-2.5"
             >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4" /> ആദ്യ ദൗത്യം വിജയം! (+50 XP)
-                  </p>
-                  <h3 className="text-lg sm:text-xl font-extrabold mt-0.5">
-                    🎉 നമ്മുടെ SKSSF പ്രചാരണ വാഹനം യാത്ര തുടങ്ങി!
-                  </h3>
-                  <p className="text-xs sm:text-sm text-emerald-100 mt-0.5">
-                    ഇപ്പോൾ തന്നെ നിങ്ങളുടെ ഫോട്ടോയും പേരും ചേർത്ത് SKSSF കൊടിയുള്ള ബാഡ്ജ് കാർഡ് വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം, അല്ലെങ്കിൽ അടുത്ത യാത്രയിലേക്ക് കടക്കാം!
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              <span className="text-sm font-extrabold text-amber-300 inline-flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" /> 🎉 +50 XP
+              </span>
+              <div className="flex items-center gap-2">
                 {onOpenBadgeStudio && (
                   <button
                     type="button"
@@ -918,10 +863,10 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                       sound.playSuccess();
                       onOpenBadgeStudio('jeep_starter');
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm transition-transform active:scale-95"
+                    aria-label="ഫോട്ടോ ബാഡ്ജ്"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold shadow-sm active:scale-95"
                   >
-                    <Award className="w-4 h-4" />
-                    <span>📷 എന്റെ ഫോട്ടോ ചേർത്ത് ബാഡ്ജ് ഷെയർ ചെയ്യാം</span>
+                    <Award className="w-4 h-4" /> 📷
                   </button>
                 )}
                 {onProceedNext && (
@@ -931,9 +876,10 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                       sound.playClick();
                       onProceedNext();
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 text-xs sm:text-sm font-extrabold shadow-sm transition-transform active:scale-95"
+                    aria-label="അടുത്തത്"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-950 text-sm font-extrabold shadow-sm active:scale-95"
                   >
-                    <span>📖 അടുത്ത കഥയിലേക്ക് പോകാം →</span>
+                    ➡️
                   </button>
                 )}
               </div>
@@ -1052,17 +998,12 @@ export const MadrasaBoardActivity: React.FC<{
 
   return (
     <GameFullscreenShell title="🏫 സമസ്ത മദ്രസ ബോർഡ് (SKIMVB)" isGameDone={allDone}>
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-4 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-extrabold text-emerald-700">
-            🏫 രസകരമായ നിർമ്മാണ ഗെയിം · 1951 സമസ്ത വിദ്യാഭ്യാസ ബോർഡ് (SKIMVB)
-          </p>
-          <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-            നമ്മുടെ സമസ്ത മദ്രസയുടെ പ്രവേശന ബോർഡ് ഒരുക്കാം! ({count}/4)
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
+    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-950 text-xs font-extrabold tabular-nums">
+          🏫 {count}/4
+        </span>
+        <div className="flex items-center gap-1.5">
           <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold">
             {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '💔')).join('')}
           </span>
@@ -1071,20 +1012,20 @@ export const MadrasaBoardActivity: React.FC<{
             onClick={() => {
               sound.unlockAudio();
               narrator.speak(
-                'നമ്മുടെ സമസ്ത മദ്രസയുടെ ബോർഡ് ഒരുക്കാം! താഴെ നിന്ന് ഒരു ഭാഗം തിരഞ്ഞെടുത്ത് ശരിയായ സ്ഥലത്ത് വെക്കൂ. തെറ്റായ സ്ഥലത്ത് വെച്ചാൽ ഒരു ജീവൻ കുറയും!',
+                'നമ്മുടെ സമസ്ത മദ്രസയുടെ ബോർഡ് ഒരുക്കാം! താഴെ നിന്ന് ഒരു ഭാഗം തിരഞ്ഞെടുത്ത് ശരിയായ സ്ഥലത്ത് വെക്കൂ.',
                 '🏫 മദ്രസ ബോർഡ് ഒരുക്കാം'
               );
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 text-xs font-extrabold"
+            aria-label="കേൾക്കാം"
+            className="w-8 h-8 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-950 flex items-center justify-center"
           >
-            <Volume2 className="w-3.5 h-3.5" /> കേൾക്കാം
+            <Volume2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* Madrasa Entrance Arch Visual */}
-      <div className="relative rounded-2xl border-2 border-amber-200 bg-gradient-to-b from-sky-100 via-amber-50 to-emerald-100 p-4 sm:p-6 space-y-3">
-        {/* Top Arch Flag Slot */}
+      <div className="relative rounded-2xl border-2 border-amber-200 bg-gradient-to-b from-sky-100 via-amber-50 to-emerald-100 p-3.5 sm:p-4 space-y-2.5">
         <div className="flex justify-center">
           <button
             type="button"
@@ -1094,7 +1035,8 @@ export const MadrasaBoardActivity: React.FC<{
               snap('arch_flag');
             }}
             onClick={() => snap('arch_flag')}
-            className={`relative px-5 py-2.5 rounded-xl border-2 transition-all flex items-center gap-2 ${
+            aria-label="സമസ്ത പതാക"
+            className={`relative px-5 py-2 rounded-xl border-2 transition-all flex items-center gap-2 ${
               placed.arch_flag
                 ? 'bg-emerald-900 text-amber-200 border-amber-400 shadow'
                 : suggested === 'arch_flag' || selected === 'arch_flag'
@@ -1108,24 +1050,24 @@ export const MadrasaBoardActivity: React.FC<{
                   src="./assets/official/flag_111154.jpg"
                   alt="സമസ്ത പതാക"
                   referrerPolicy="no-referrer"
-                  className="w-8 h-8 object-contain rounded"
+                  className="w-7 h-7 object-contain rounded"
                 />
-                <span className="text-xs sm:text-sm font-extrabold">🌙 സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ</span>
+                <span className="text-xs font-extrabold">🌙 1926</span>
                 <img
                   src="./assets/official/flag_111138.jpg"
                   alt="SKSSF പതാക"
                   referrerPolicy="no-referrer"
-                  className="w-8 h-8 object-contain rounded"
+                  className="w-7 h-7 object-contain rounded"
                 />
               </>
             ) : (
-              <span className="text-xs font-extrabold">🚩 ഇവിടെ സമസ്ത & SKSSF പതാക വെക്കാം</span>
+              <span className="text-2xl">🚩</span>
             )}
             {!placed.arch_flag && (suggested === 'arch_flag' || selected === 'arch_flag') && (
               <motion.span
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute -top-5 right-2 text-2xl"
+                className="absolute -top-5 right-1 text-xl"
               >
                 👇
               </motion.span>
@@ -1137,7 +1079,8 @@ export const MadrasaBoardActivity: React.FC<{
         <button
           type="button"
           onClick={() => snap('main_board')}
-          className={`relative w-full py-4 px-4 rounded-2xl border-2 transition-all text-center ${
+          aria-label="മദ്രസ ബോർഡ്"
+          className={`relative w-full py-3.5 px-4 rounded-2xl border-2 transition-all text-center ${
             placed.main_board
               ? 'bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white border-amber-300 shadow-md'
               : suggested === 'main_board' || selected === 'main_board'
@@ -1146,24 +1089,17 @@ export const MadrasaBoardActivity: React.FC<{
           }`}
         >
           {placed.main_board ? (
-            <div>
-              <p className="text-sm sm:text-lg font-extrabold text-amber-200">
-                🏫 സമസ്ത കേരള ഇസ്‌ലാം മത വിദ്യാഭ്യാസ ബോർഡ്
-              </p>
-              <p className="text-[11px] sm:text-xs font-semibold text-emerald-100 mt-0.5">
-                1951 മുതൽ 11,000+ മദ്രസകളിലൂടെ അറിവിന്റെയും സൽസ്വഭാവത്തിന്റെയും വെളിച്ചം
-              </p>
-            </div>
+            <p className="text-sm font-extrabold text-amber-200">
+              🏫 SKIMVB · 1951 (11,000+)
+            </p>
           ) : (
-            <span className="text-xs sm:text-sm font-extrabold">
-              🏫 ഇവിടെ മദ്രസയുടെ പ്രധാന ബോർഡ് സ്ഥാപിക്കാം
-            </span>
+            <span className="text-2xl">🏫</span>
           )}
           {!placed.main_board && (suggested === 'main_board' || selected === 'main_board') && (
             <motion.span
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 0.8, repeat: Infinity }}
-              className="absolute -top-5 right-4 text-2xl"
+              className="absolute -top-5 right-4 text-xl"
             >
               👇
             </motion.span>
@@ -1171,11 +1107,12 @@ export const MadrasaBoardActivity: React.FC<{
         </button>
 
         {/* Left & Right Entrance Plaques */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => snap('motto_plaque')}
-            className={`relative p-3.5 rounded-xl border-2 transition-all text-center ${
+            aria-label="ആദർശ ഫലകം"
+            className={`relative p-3 rounded-xl border-2 transition-all text-center ${
               placed.motto_plaque
                 ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-xs'
                 : suggested === 'motto_plaque' || selected === 'motto_plaque'
@@ -1184,27 +1121,17 @@ export const MadrasaBoardActivity: React.FC<{
             }`}
           >
             {placed.motto_plaque ? (
-              <p className="text-xs sm:text-sm font-extrabold">
-                📖 “വിജ്ഞാനം · വിനയം · സേവനം”
-              </p>
+              <p className="text-xs font-extrabold">📖 ✅</p>
             ) : (
-              <span className="text-xs font-extrabold">📖 ആദർശ ഫലകം ഇവിടെ വെക്കാം</span>
-            )}
-            {!placed.motto_plaque && (suggested === 'motto_plaque' || selected === 'motto_plaque') && (
-              <motion.span
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute -top-5 right-3 text-2xl"
-              >
-                👇
-              </motion.span>
+              <span className="text-2xl">📖</span>
             )}
           </button>
 
           <button
             type="button"
             onClick={() => snap('notice_board')}
-            className={`relative p-3.5 rounded-xl border-2 transition-all text-center ${
+            aria-label="അറിയിപ്പ് ബോർഡ്"
+            className={`relative p-3 rounded-xl border-2 transition-all text-center ${
               placed.notice_board
                 ? 'bg-sky-50 border-sky-400 text-sky-950 shadow-xs'
                 : suggested === 'notice_board' || selected === 'notice_board'
@@ -1213,92 +1140,79 @@ export const MadrasaBoardActivity: React.FC<{
             }`}
           >
             {placed.notice_board ? (
-              <p className="text-xs sm:text-sm font-extrabold">
-                🗓️ മദ്രസ ക്ലാസ്സ് & SKSSF യൂണിറ്റ് അറിയിപ്പുകൾ
-              </p>
+              <p className="text-xs font-extrabold">🗓️ ✅</p>
             ) : (
-              <span className="text-xs font-extrabold">🗓️ അറിയിപ്പ് ബോർഡ് ഇവിടെ വെക്കാം</span>
-            )}
-            {!placed.notice_board && (suggested === 'notice_board' || selected === 'notice_board') && (
-              <motion.span
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute -top-5 right-3 text-2xl"
-              >
-                👇
-              </motion.span>
+              <span className="text-2xl">🗓️</span>
             )}
           </button>
         </div>
       </div>
 
-      {/* Tap Tray, Failure Retry Card, or Completion Card */}
       {failed ? (
-        <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-900">💔 3 തവണ തെറ്റായ സ്ഥലത്ത് വെച്ചു — കളി പരാജയപ്പെട്ടു!</p>
-            <p className="text-xs font-bold text-rose-700 mt-0.5">താഴെ നിന്ന് ഓരോ ഭാഗവും തിരഞ്ഞെടുത്ത് കൃത്യമായ സ്ഥലത്ത് വെച്ച് വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
+        <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-900">💔</span>
           <button
             type="button"
             onClick={resetBoard}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-xs font-extrabold shadow"
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow"
           >
-            <RotateCcw className="w-4 h-4" /> 🔄 വീണ്ടും ശ്രമിക്കാം
+            <RotateCcw className="w-4 h-4" /> 🔄
           </button>
         </div>
       ) : !allDone ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {MADRASA_PARTS.map((item) => {
-            const done = placed[item.id];
-            const isPicked = selected === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={() => {
-                  sound.unlockAudio();
-                  setSelected(item.id);
-                }}
-                onClick={() => {
-                  sound.playClick();
-                  setSelected(item.id);
-                }}
-                className={`p-2.5 rounded-xl border-2 text-left transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-70'
-                    : isPicked
-                    ? 'bg-amber-300 border-amber-600 text-slate-950 ring-2 ring-amber-200 cursor-grab'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-emerald-400 cursor-grab'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xl">{item.emoji}</span>
-                  {done ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
-                  ) : (
-                    isPicked && <span className="text-base">👆</span>
-                  )}
-                </div>
-                <p className="text-xs font-extrabold mt-1 leading-snug">{item.title}</p>
-              </button>
-            );
-          })}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-4 gap-2">
+            {MADRASA_PARTS.map((item) => {
+              const done = placed[item.id];
+              const isPicked = selected === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={done}
+                  draggable={!done}
+                  onDragStart={() => {
+                    sound.unlockAudio();
+                    setSelected(item.id);
+                  }}
+                  onClick={() => {
+                    sound.playClick();
+                    setSelected(item.id);
+                  }}
+                  aria-label={item.title}
+                  title={item.title}
+                  className={`py-2.5 rounded-xl border-2 flex items-center justify-center transition-all ${
+                    done
+                      ? 'bg-emerald-50 border-emerald-300 opacity-55'
+                      : isPicked
+                      ? 'bg-amber-300 border-amber-600 ring-2 ring-amber-200 cursor-grab'
+                      : 'bg-slate-50 border-slate-200 hover:border-emerald-400 cursor-grab'
+                  }`}
+                >
+                  <span className="text-2xl">{done ? '✅' : item.emoji}</span>
+                </button>
+              );
+            })}
+          </div>
+          {selected && (
+            <p className="text-[11px] font-bold text-emerald-900 text-center">
+              {MADRASA_PARTS.find((p) => p.id === selected)?.emoji}{' '}
+              {MADRASA_PARTS.find((p) => p.id === selected)?.title}
+            </p>
+          )}
         </div>
       ) : (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 flex flex-wrap items-center justify-between gap-2.5">
-          <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
-            🎉 മദ്രസ പ്രവേശന ബോർഡ് ഭംഗിയായി ഒരുങ്ങി! (+70 XP)
-          </p>
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-2.5">
+          <span className="text-sm font-extrabold text-emerald-950">🎉 +70 XP</span>
           {onOpenBadgeStudio && (
             <button
               type="button"
               onClick={() => onOpenBadgeStudio('madrasa_guardian')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
+              aria-label="ഫോട്ടോ ബാഡ്ജ്"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold"
             >
-              <Award className="w-4 h-4" /> ഫോട്ടോ ബാഡ്ജ് ഷെയർ ചെയ്യാം
+              <Award className="w-4 h-4" /> 📷
             </button>
           )}
         </div>
@@ -1415,16 +1329,11 @@ export const ViqayaRescueVehicleActivity: React.FC<{
 
   return (
     <GameFullscreenShell title="🚑 വിഖായ & അലേർട്ട് (ALERT) സേവന വാഹനം" isGameDone={allDone}>
-    <div className="bg-white rounded-2xl border-2 border-sky-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-xs font-extrabold text-sky-800">
-            🚑 രസകരമായ സേവന വാഹന ഗെയിം · വിഖായ &amp; അലേർട്ട് (ALERT) ദൗത്യം ({count}/4)
-          </p>
-          <h3 className="text-base font-extrabold text-slate-900">
-            18 സെക്കൻഡിനുള്ളിൽ സേവന വാഹനം സജ്ജമാക്കാം!
-          </h3>
-        </div>
+    <div className="bg-white rounded-2xl border-2 border-sky-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-900 text-xs font-extrabold tabular-nums">
+          🚑 {count}/4
+        </span>
         <div className="flex items-center gap-2">
           {!allDone && (
             <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold tabular-nums border ${timeLeft <= 6 ? 'bg-rose-600 text-white border-rose-800 animate-pulse' : 'bg-sky-50 text-sky-900 border-sky-200'}`}>
@@ -1435,9 +1344,10 @@ export const ViqayaRescueVehicleActivity: React.FC<{
             <button
               type="button"
               onClick={() => onOpenBadgeStudio('viqaya_hero')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
+              aria-label="ഫോട്ടോ ബാഡ്ജ്"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
             >
-              <Award className="w-3.5 h-3.5" /> ഫോട്ടോ ബാഡ്ജ്
+              <Award className="w-4 h-4" /> 📷
             </button>
           )}
         </div>
@@ -1474,36 +1384,34 @@ export const ViqayaRescueVehicleActivity: React.FC<{
               <line x1="158" y1="6" x2="158" y2="54" stroke="#475569" strokeWidth="2.6" strokeLinecap="round" />
               <circle cx="158" cy="5" r="2.6" fill="#F59E0B" />
               {placed.flag && (
-                <motion.g
-                  transform="translate(106, 7)"
-                  animate={{ skewY: [-2.4, 2.8, -1.8, 2.4, -2.4], scaleX: [1, 0.96, 1.01, 0.97, 1] }}
-                  transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ transformOrigin: '51px 16px' }}
-                >
-                  <rect x="0" y="0" width="51" height="31" rx="1.5" fill="#FFFFFF" stroke="#0F172A" strokeWidth="0.9" />
-                  {/* Trailing White Mosque Field (Left) */}
-                  <g transform="translate(5, 3)" fill="none" stroke="#0F172A" strokeWidth="0.9" strokeLinecap="round">
-                    <rect x="1.5" y="4" width="2.2" height="13" fill="#FFFFFF" />
-                    <path d="M 1,4 C 1,2 4.2,2 4.2,4 Z" fill="#0F172A" />
-                    <path d="M 5,15 C 5.8,8.5 11.2,6.5 12.5,4 C 13.8,6.5 19.2,8.5 20,15 Z" fill="#FFFFFF" />
-                    <line x1="12.5" y1="4" x2="12.5" y2="15" />
-                    <rect x="4" y="15" width="17" height="2.2" fill="#FFFFFF" />
-                  </g>
-                  {/* Hoist-Side Top-Right Sky Blue Canton Sewn to Pole */}
-                  <rect x="31" y="0" width="20" height="21" fill="#0EA5E9" />
-                  <g transform="translate(40.5, 11.2)">
-                    <circle cx="0" cy="0" r="5.5" fill="#FFFFFF" mask={`url(#${ambCrescentMaskId})`} />
-                    <polygon
-                      points="2.3,-4.2 2.8,-2.8 4.3,-2.7 3.1,-1.8 3.5,-0.4 2.3,-1.2 1.1,-0.4 1.5,-1.8 0.3,-2.7 1.8,-2.8"
-                      fill="#FFFFFF"
-                    />
-                  </g>
-                  {/* Bottom Green Band with Readable SKSSF */}
-                  <rect x="0" y="21" width="51" height="10" fill="#16A34A" />
-                  <text x="25.5" y="28.3" textAnchor="middle" fill="#FFFFFF" fontSize="6.6" fontWeight="900" letterSpacing="1.1">
-                    SKSSF
-                  </text>
-                </motion.g>
+                <g transform="translate(106, 7)">
+                  <motion.g
+                    animate={{ skewY: [-2.4, 2.8, -1.8, 2.4, -2.4], scaleX: [1, 0.96, 1.01, 0.97, 1] }}
+                    transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
+                    style={{ transformOrigin: '51px 16px' }}
+                  >
+                    <rect x="0" y="0" width="51" height="31" rx="1.5" fill="#FFFFFF" stroke="#0F172A" strokeWidth="0.9" />
+                    <g transform="translate(5, 3)" fill="none" stroke="#0F172A" strokeWidth="0.9" strokeLinecap="round">
+                      <rect x="1.5" y="4" width="2.2" height="13" fill="#FFFFFF" />
+                      <path d="M 1,4 C 1,2 4.2,2 4.2,4 Z" fill="#0F172A" />
+                      <path d="M 5,15 C 5.8,8.5 11.2,6.5 12.5,4 C 13.8,6.5 19.2,8.5 20,15 Z" fill="#FFFFFF" />
+                      <line x1="12.5" y1="4" x2="12.5" y2="15" />
+                      <rect x="4" y="15" width="17" height="2.2" fill="#FFFFFF" />
+                    </g>
+                    <rect x="31" y="0" width="20" height="21" fill="#0EA5E9" />
+                    <g transform="translate(40.5, 11.2)">
+                      <circle cx="0" cy="0" r="5.5" fill="#FFFFFF" mask={`url(#${ambCrescentMaskId})`} />
+                      <polygon
+                        points="2.3,-4.2 2.8,-2.8 4.3,-2.7 3.1,-1.8 3.5,-0.4 2.3,-1.2 1.1,-0.4 1.5,-1.8 0.3,-2.7 1.8,-2.8"
+                        fill="#FFFFFF"
+                      />
+                    </g>
+                    <rect x="0" y="21" width="51" height="10" fill="#16A34A" />
+                    <text x="25.5" y="28.3" textAnchor="middle" fill="#FFFFFF" fontSize="6.6" fontWeight="900" letterSpacing="1.1">
+                      SKSSF
+                    </text>
+                  </motion.g>
+                </g>
               )}
               <rect x="66" y="22" width="22" height="9" rx="4" fill="#EF4444" />
               <path d="M16 86 L16 38 Q16 30 26 30 L116 30 Q128 30 136 42 L152 58 L166 62 Q174 64 174 74 L174 86 Q174 92 166 92 L24 92 Q16 92 16 86 Z" fill="#FFFFFF" stroke="#0F766E" strokeWidth="3" />
@@ -1520,34 +1428,12 @@ export const ViqayaRescueVehicleActivity: React.FC<{
               <circle cx="138" cy="92" r="5" fill="#059669" />
             </svg>
           </motion.div>
-          <div>
-            <p className="text-sm font-extrabold text-emerald-950">
-              {allDone
-                ? '✅ വിഖായ സേവന വാഹനവും ഹജ്ജ് വിഖായ വിമാനവും സജ്ജം!'
-                : 'താഴെയുള്ള 4 സേവന ഉപകരണങ്ങളും വലിച്ചിട്ടോ തൊട്ടോ ഓടുന്ന വാഹനത്തിൽ കയറ്റൂ!'}
-            </p>
-            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              {placed.flag && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-sky-900 bg-sky-100 px-2 py-0.5 rounded">
-                  🚩 SKSSF പതാക
-                </span>
-              )}
-              {placed.speaker && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
-                  📢 മൈക്ക്
-                </span>
-              )}
-              {placed.aid_kit && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded">
-                  🩹 ഫസ്റ്റ്-എയ്ഡ്
-                </span>
-              )}
-              {placed.flight_banner && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded">
-                  ✈️ ഹജ്ജ് വിഖായ &amp; SIC
-                </span>
-              )}
-            </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {placed.flag && <span className="text-xl">🚩</span>}
+            {placed.speaker && <span className="text-xl">📢</span>}
+            {placed.aid_kit && <span className="text-xl">🩹</span>}
+            {placed.flight_banner && <span className="text-xl">✈️</span>}
+            {allDone && <span className="text-xl">✅</span>}
           </div>
         </div>
         <motion.div
@@ -1572,21 +1458,19 @@ export const ViqayaRescueVehicleActivity: React.FC<{
       </div>
 
       {failed ? (
-        <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-900">⏱️ അടിയന്തര സമയം കഴിഞ്ഞു — ദൗത്യം പരാജയപ്പെട്ടു!</p>
-            <p className="text-xs font-bold text-rose-700 mt-0.5">18 സെക്കൻഡിനുള്ളിൽ 4 സേവന ഉപകരണങ്ങളും വാഹനത്തിൽ കയറ്റണം! വേഗത്തിൽ വീണ്ടും ശ്രമിക്കാം.</p>
-          </div>
+        <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
+          <span className="text-lg font-extrabold text-rose-900">⏱️ ❌</span>
           <button
             type="button"
             onClick={resetRescue}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-xs font-extrabold shadow"
+            aria-label="വീണ്ടും ശ്രമിക്കാം"
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow"
           >
-            <RotateCcw className="w-4 h-4" /> 🔄 വീണ്ടും ശ്രമിക്കാം
+            <RotateCcw className="w-4 h-4" /> 🔄
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {RESCUE_PARTS.map((p) => {
             const done = placed[p.id];
             const isNext = nextId === p.id;
@@ -1601,19 +1485,17 @@ export const ViqayaRescueVehicleActivity: React.FC<{
                   e.dataTransfer.setData('text/plain', p.id);
                 }}
                 onClick={() => snap(p.id)}
-                className={`p-2.5 rounded-xl border-2 text-left transition-all ${
+                aria-label={p.label}
+                title={p.label}
+                className={`py-2.5 rounded-xl border-2 flex items-center justify-center transition-all ${
                   done
-                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-75'
+                    ? 'bg-emerald-50 border-emerald-300 opacity-60'
                     : isNext
-                    ? 'bg-amber-50 border-amber-400 text-slate-900 ring-2 ring-amber-200 cursor-grab'
-                    : 'bg-slate-50 border-slate-200 text-slate-800 hover:border-sky-400 cursor-grab'
+                    ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-200 cursor-grab'
+                    : 'bg-slate-50 border-slate-200 hover:border-sky-400 cursor-grab'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xl">{p.emoji}</span>
-                  {done ? <CheckCircle2 className="w-4 h-4 text-emerald-700" /> : isNext && <span>👆</span>}
-                </div>
-                <p className="text-xs font-extrabold mt-1">{p.label}</p>
+                <span className="text-2xl">{done ? '✅' : p.emoji}</span>
               </button>
             );
           })}

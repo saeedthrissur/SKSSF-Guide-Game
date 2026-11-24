@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import {
   AnimatedOceanLane,
+  CollapsibleLessonDrawer,
   DriftingCloudsAndSun,
   EasterEggItem,
   EasterEggSpot,
@@ -23,7 +24,7 @@ import {
   LessonStepperNav,
   SwayingGardenPlants,
 } from './GameEffects';
-import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { AnnouncementVehicleActivity } from './InteractiveMiniGames';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
@@ -125,6 +126,8 @@ interface StoryPrologueProps {
   xp: number;
   badgesCount: number;
   initialMode?: 'curiosity' | 'story';
+  initialLessonId?: string;
+  devUnlocked?: boolean;
   onStartAdventure: () => void;
   onOpenStoryboard: () => void;
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
@@ -148,10 +151,37 @@ const BEAT_SAVED_ACTION_KEYS: Record<string, string[]> = {
   p4: ['scene_game_p4'],
 };
 
+const PROLOGUE_FLAT_IDS = [
+  'prologue_curiosity',
+  'prologue_ch1',
+  'prologue_ch2',
+  'prologue_ch3',
+  'prologue_ch4',
+  'prologue_story',
+] as const;
+
+type PrologueFlatId = (typeof PROLOGUE_FLAT_IDS)[number];
+
+const PROLOGUE_TRACK_ITEMS: { id: PrologueFlatId; lessonId: PrologueFlatId; emoji: string; label: string }[] = [
+  { id: 'prologue_curiosity', lessonId: 'prologue_curiosity', emoji: '🚐', label: 'പ്രചാരണ വാഹനം' },
+  { id: 'prologue_ch1', lessonId: 'prologue_ch1', emoji: '🌌', label: 'പ്രപഞ്ചവും സൃഷ്ടാവും' },
+  { id: 'prologue_ch2', lessonId: 'prologue_ch2', emoji: '📖', label: 'ഖുർആനും നബി ﷺ' },
+  { id: 'prologue_ch3', lessonId: 'prologue_ch3', emoji: '🕌', label: '1926 സമസ്ത' },
+  { id: 'prologue_ch4', lessonId: 'prologue_ch4', emoji: '🏫', label: '1951 & 1989 SKSSF' },
+  { id: 'prologue_story', lessonId: 'prologue_story', emoji: '🏆', label: 'SKSSF ദൗത്യം' },
+];
+
+function resolvePrologueLessonId(initialLessonId?: string, initialMode?: 'curiosity' | 'story'): PrologueFlatId {
+  if (initialLessonId && (PROLOGUE_FLAT_IDS as readonly string[]).includes(initialLessonId)) {
+    return initialLessonId as PrologueFlatId;
+  }
+  return initialMode === 'story' ? 'prologue_ch1' : 'prologue_curiosity';
+}
+
 export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
-  xp,
-  badgesCount,
   initialMode = 'curiosity',
+  initialLessonId,
+  devUnlocked = false,
   onOpenStoryboard,
   onOpenBadgeStudio,
   onAwardXp,
@@ -164,13 +194,12 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
   collectedEggs = [],
   onClaimEasterEgg,
 }) => {
-  const [openingMode, setOpeningMode] = useState<'curiosity' | 'story'>(initialMode);
+  const [activeLessonId, setActiveLessonId] = useState<PrologueFlatId>(() =>
+    resolvePrologueLessonId(initialLessonId, initialMode)
+  );
   const [jeepCompleted, setJeepCompleted] = useState<boolean>(() =>
     Boolean(awardedActions.opening_jeep_ready || completedLessonIds.includes('prologue_curiosity'))
   );
-
-  const [beatIdx, setBeatIdx] = useState(0);
-  const [visitedBeats, setVisitedBeats] = useState<number[]>([0]);
   const [completedBeatGames, setCompletedBeatGames] = useState<string[]>(() =>
     PROLOGUE_BEATS.filter((b) =>
       (BEAT_SAVED_ACTION_KEYS[b.id] || []).some((k) => Boolean(awardedActions[k]))
@@ -179,352 +208,184 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
   const [glitterKey, setGlitterKey] = useState(0);
   const [glitterMsg, setGlitterMsg] = useState('');
 
-  const beat = PROLOGUE_BEATS[beatIdx];
-  const chapterQuizIds = [
-    'prologue_ch1',
-    'prologue_ch2',
-    'prologue_ch3',
-    'prologue_ch4',
-    'prologue_story',
-  ];
-  const activeChapterQuizId = chapterQuizIds[beatIdx] ?? 'prologue_story';
-  const prologueAlreadyDone = completedLessonIds.includes('prologue_story');
-  const curiosityAlreadyDone = completedLessonIds.includes('prologue_curiosity');
-  const jeepIsDone = jeepCompleted || Boolean(awardedActions.opening_jeep_ready) || curiosityAlreadyDone;
+  useEffect(() => {
+    setActiveLessonId(resolvePrologueLessonId(initialLessonId, initialMode));
+  }, [initialLessonId, initialMode]);
+
+  useEffect(() => {
+    onActiveLessonChange?.(activeLessonId);
+  }, [activeLessonId, onActiveLessonChange]);
+
+  const activeIndex = PROLOGUE_FLAT_IDS.indexOf(activeLessonId);
+  const isCuriosity = activeLessonId === 'prologue_curiosity';
+  const beatIdx = Math.max(0, activeIndex - 1);
+  const beat = PROLOGUE_BEATS[beatIdx] ?? PROLOGUE_BEATS[0];
+
+  const currentLessonAlreadyDone = completedLessonIds.includes(activeLessonId);
+  const currentQuizDone = Boolean(quizAnswers[activeLessonId]);
+  const canAdvance = devUnlocked || currentLessonAlreadyDone || currentQuizDone;
+
   const currentBeatGameDone =
-    prologueAlreadyDone ||
+    currentLessonAlreadyDone ||
     completedBeatGames.includes(beat.id) ||
     (BEAT_SAVED_ACTION_KEYS[beat.id] || []).some((k) => Boolean(awardedActions[k]));
-  const currentBeatQuizDone = Boolean(quizAnswers[activeChapterQuizId]);
-  const canProceedFromCuriosity =
-    curiosityAlreadyDone || Boolean(quizAnswers.prologue_curiosity);
-  const canAdvanceCurrentBeat = prologueAlreadyDone || currentBeatQuizDone;
 
   useEffect(() => {
-    if (Boolean(quizAnswers.prologue_curiosity) && !curiosityAlreadyDone) {
-      onMarkLessonCompleted?.('prologue_curiosity');
+    if (currentQuizDone && !currentLessonAlreadyDone) {
+      onMarkLessonCompleted?.(activeLessonId);
     }
-  }, [quizAnswers.prologue_curiosity, curiosityAlreadyDone, onMarkLessonCompleted]);
+  }, [activeLessonId, currentQuizDone, currentLessonAlreadyDone, onMarkLessonCompleted]);
 
   useEffect(() => {
-    if (
-      activeChapterQuizId === 'prologue_story' &&
-      Boolean(quizAnswers.prologue_story) &&
-      !prologueAlreadyDone
-    ) {
-      onMarkLessonCompleted?.('prologue_story');
-    }
-  }, [
-    activeChapterQuizId,
-    quizAnswers.prologue_story,
-    prologueAlreadyDone,
-    onMarkLessonCompleted,
-  ]);
-
-  useEffect(() => {
-    setOpeningMode(initialMode);
-  }, [initialMode]);
-
-  useEffect(() => {
-    onActiveLessonChange?.(openingMode === 'curiosity' ? 'prologue_curiosity' : 'prologue_story');
-  }, [openingMode, onActiveLessonChange]);
-
-  useEffect(() => {
-    if (openingMode === 'story') {
+    if (!isCuriosity) {
       narrator.speak(beat.speech, `${beat.emoji} ${beat.title}`);
     }
-  }, [openingMode, beatIdx, beat.speech, beat.emoji, beat.title]);
+  }, [isCuriosity, beat.id, beat.speech, beat.emoji, beat.title]);
 
-  const handleSelectBeat = (idx: number) => {
+  const goToPrologueLesson = (nextId: PrologueFlatId) => {
     sound.unlockAudio();
     sound.playPop();
-    if (idx === 4) {
+    const nextIdx = PROLOGUE_FLAT_IDS.indexOf(nextId);
+    if (nextIdx === 5) {
       sound.playSeagull();
       sound.playShipCreak();
-    } else if (idx === 2 || idx === 3) {
+    } else if (nextIdx === 3 || nextIdx === 4) {
       sound.playWriting();
     }
-    setBeatIdx(idx);
-    setVisitedBeats((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
-    onAwardXp(5, `prologue_beat_${idx}`);
-    setGlitterMsg(`${PROLOGUE_BEATS[idx].treasure} (+5 XP)`);
-    setGlitterKey((k) => k + 1);
+    setActiveLessonId(nextId);
+    if (nextIdx > 0) {
+      onAwardXp(5, `prologue_beat_${nextIdx - 1}`);
+      setGlitterMsg(`${PROLOGUE_BEATS[nextIdx - 1].treasure} (+5 XP)`);
+      setGlitterKey((k) => k + 1);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleAdvance = () => {
+    onMarkLessonCompleted?.(activeLessonId);
+    if (activeIndex < PROLOGUE_FLAT_IDS.length - 1) {
+      goToPrologueLesson(PROLOGUE_FLAT_IDS[activeIndex + 1]);
+    } else {
+      onOpenStoryboard();
+    }
+  };
+
+  const nextLessonTitle =
+    activeIndex < PROLOGUE_FLAT_IDS.length - 1
+      ? PROLOGUE_TRACK_ITEMS[activeIndex + 1].label
+      : 'സാഹചര്യ ബോർഡ്';
+
   return (
     <section className="space-y-4">
-      <LessonProgressTrack
-        stageTitle="ആമുഖ ഘട്ടം · നമ്മളും നമ്മുടെ ദൗത്യവും"
-        stageSubtitle="ഓരോ പാഠവും പൂർത്തിയാക്കി താഴെയുള്ള ചെറിയ ചോദ്യത്തിന് ഉത്തരം നൽകുമ്പോൾ അടുത്ത പാഠം തുറക്കും"
-        items={[
-          { id: 'curiosity', lessonId: 'prologue_curiosity', emoji: '✨', label: 'ദൗത്യ പരിചയം' },
-          { id: 'story', lessonId: 'prologue_story', emoji: '📖', label: 'പ്രപഞ്ചം · പ്രവാചകൻ ﷺ · സമസ്ത' },
-        ]}
-        activeId={openingMode}
-        completedLessonIds={completedLessonIds}
-        onSelectCompleted={(id) => setOpeningMode(id as 'curiosity' | 'story')}
-      />
+      <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
 
-      {/* MODE 1: FUN ANIMATED HANDS-ON OPENING ACTIVITY (STRICTLY 1 GAME + 1 QUIZ!) */}
-      {openingMode === 'curiosity' && (
+      {isCuriosity ? (
         <div className="space-y-4">
+          {/* 1. GAME FIRST */}
           <AnnouncementVehicleActivity
             onComplete={() => {
               setJeepCompleted(true);
+              window.setTimeout(() => scrollToActiveQuiz(), 850);
             }}
             onAwardXp={onAwardXp}
             onOpenBadgeStudio={onOpenBadgeStudio}
           />
 
-          {/* Photo Badge Studio Action (Never skips lessons!) */}
-          {onOpenBadgeStudio && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playPop();
-                  onOpenBadgeStudio(jeepCompleted ? 'jeep_starter' : 'starter_member');
-                }}
-                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-100 to-yellow-50 text-amber-950 border-2 border-amber-300 text-left hover:bg-amber-100 transition-all flex items-center gap-2.5 shadow-sm"
-              >
-                <span className="text-xl shrink-0">📷</span>
-                <div>
-                  <p className="text-xs sm:text-sm font-extrabold">എന്റെ ഫോട്ടോ ബാഡ്ജ് കാർഡ്</p>
-                  <p className="text-[11px] text-amber-800">SKSSF കൊടിയോടൊപ്പം വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം!</p>
-                </div>
-              </button>
-            </div>
-          )}
-
-          {/* Learning Check Quiz for Lesson 1 right after the Announcement Vehicle Game */}
+          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
           <LessonCheckQuiz
+            key="prologue-quiz-curiosity"
             lessonId="prologue_curiosity"
-            title="ഈ പാഠത്തിൽ നിന്ന് എന്ത് പഠിച്ചു? ഒരു ചെറിയ ചോദ്യം"
+            title="പാഠം 1 · ക്വിസ്"
             savedAnswer={quizAnswers.prologue_curiosity}
             onAnswered={(lid, idx, ok) => {
               onQuizAnswered(lid, idx, ok);
               onMarkLessonCompleted?.('prologue_curiosity');
             }}
+            onNextLesson={handleAdvance}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
           />
 
-          <LessonStepperNav
-            stepLabel="ആമുഖം · പാഠം 1 / 2: പ്രചാരണ വാഹനം ഒരുക്കാം"
-            currentStep={0}
-            totalSteps={2}
-            statusHint={
-              canProceedFromCuriosity
-                ? 'മിടുക്കൻ! പാഠം പൂർത്തിയായി — ഇനി അടുത്ത പാഠവും പുതിയ ഗെയിമും കളിക്കാം!'
-                : 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം കളിക്കൽ നിർബന്ധമില്ല)'
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key="prologue-lesson-curiosity"
+            emoji="🚐"
+            title="ദൗത്യ പരിചയം · പാഠം"
+            badgeText="1/6"
+            onSpeak={() =>
+              narrator.speak(
+                'എസ് കെ എസ് എസ് എഫ് പ്രചാരണ വാഹനവും നമ്മുടെ ദൗത്യവും! വിജ്ഞാനം, വിനയം, സേവനം എന്നതാണ് നമ്മുടെ പ്രസ്ഥാനത്തിന്റെ ആദർശം. സമ്മേളനങ്ങളും പഠനക്ലാസുകളും സേവന പ്രവർത്തനങ്ങളും നാട്ടിൽ എത്തിക്കാൻ നമുക്ക് ഒരുമിച്ച് പ്രവർത്തിക്കാം!',
+                '🚐 പ്രചാരണ വാഹനവും ദൗത്യവും'
+              )
             }
-            nextLabel="പ്രപഞ്ചം · പ്രവാചക മാതൃക ﷺ · സമസ്തയുടെ കഥ"
-            nextDisabled={!canProceedFromCuriosity}
-            onNext={() => {
-              onMarkLessonCompleted?.('prologue_curiosity');
-              setOpeningMode('story');
-              setBeatIdx(0);
+          >
+            <div className="rounded-2xl bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-950 text-white p-4 sm:p-5 space-y-3 border border-emerald-400/50">
+              <h3 className="text-base sm:text-lg font-extrabold text-amber-300">
+                🚐 പ്രചാരണ വാഹനവും നമ്മുടെ ദൗത്യവും
+              </h3>
+              <p className="text-sm text-emerald-50 leading-relaxed">
+                1926-ൽ സ്ഥാപിതമായ സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമയുടെ വിദ്യാർത്ഥി പ്രസ്ഥാനമാണ് 1989 ഫെബ്രുവരി 19-ന് പിറന്ന <strong>SKSSF</strong>. “വിജ്ഞാനം · വിനയം · സേവനം” എന്ന മുദ്രാവാക്യവുമായി നാട്ടിലെ മദ്രസകളിലും മഹല്ലുകളിലും ക്യാമ്പസുകളിലും നന്മയുടെ സന്ദേശം എത്തിക്കലാണ് നമ്മുടെ ദൗത്യം.
+              </p>
+              {onOpenBadgeStudio && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playPop();
+                    onOpenBadgeStudio(jeepCompleted ? 'jeep_starter' : 'starter_member');
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold transition-all inline-flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>📷</span>
+                  <span>ഫോട്ടോ ബാഡ്ജ്</span>
+                </button>
+              )}
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* 1. GAME FIRST */}
+          <OptionalLessonMiniGame
+            key={`prologue-game-${beat.id}`}
+            lessonKey={beat.id as MiniGameLessonKey}
+            onAwardXp={onAwardXp}
+            isCompleted={currentBeatGameDone}
+            onComplete={() => {
+              setCompletedBeatGames((prev) =>
+                prev.includes(beat.id) ? prev : [...prev, beat.id]
+              );
             }}
           />
-        </div>
-      )}
 
-      {/* MODE 2: CINEMATIC 5-CHAPTER STORY CHRONICLE */}
-      {openingMode === 'story' && (
-        <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-300 bg-slate-950 shadow-lg">
-          {/* Clean Status Bar ABOVE Image */}
-          <div className="px-4 py-2.5 bg-emerald-950 border-b border-white/15 flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs sm:text-sm font-extrabold text-amber-300 flex items-center gap-1.5">
-              <Compass className="w-4 h-4 shrink-0" />
-              <span>{beat.era}</span>
-            </div>
-            <div className="text-xs font-bold text-white tabular-nums">
-              🪙 {xp} XP · 🏅 {badgesCount} ബാഡ്ജുകൾ
-            </div>
-          </div>
+          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
+          <LessonCheckQuiz
+            key={`prologue-quiz-${activeLessonId}`}
+            lessonId={activeLessonId}
+            title={`പാഠം ${activeIndex + 1} · ക്വിസ്`}
+            savedAnswer={quizAnswers[activeLessonId]}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.(activeLessonId);
+            }}
+            onNextLesson={handleAdvance}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
+          />
 
-          {/* Distinct Per-Chapter Visual Stage */}
-          <div className="relative h-64 sm:h-80 w-full overflow-hidden">
-            {beat.id === 'p0_creator' && (
-              <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-emerald-950">
-                <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
-                  <defs>
-                    <radialGradient id="cosmosGlow" cx="50%" cy="35%" r="55%">
-                      <stop offset="0%" stopColor="#FDE047" stopOpacity="0.35" />
-                      <stop offset="60%" stopColor="#0F766E" stopOpacity="0.15" />
-                      <stop offset="100%" stopColor="#020617" stopOpacity="0" />
-                    </radialGradient>
-                  </defs>
-                  <rect width="800" height="320" fill="url(#cosmosGlow)" />
-                  <ellipse cx="400" cy="135" rx="220" ry="62" fill="none" stroke="#FDE047" strokeOpacity="0.28" strokeWidth="1.5" strokeDasharray="6 6" />
-                  <ellipse cx="400" cy="135" rx="140" ry="40" fill="none" stroke="#38BDF8" strokeOpacity="0.35" strokeWidth="1.5" />
-                  <circle cx="400" cy="96" r="24" fill="#FACC15" opacity="0.92" />
-                  <circle cx="230" cy="118" r="10" fill="#38BDF8" />
-                  <circle cx="575" cy="145" r="12" fill="#34D399" />
-                  <path d="M290 290 Q400 235 510 290 Z" fill="#065F46" />
-                  <path d="M400 265 Q400 205 400 165" stroke="#4ADE80" strokeWidth="6" strokeLinecap="round" fill="none" />
-                  <path d="M400 208 Q355 182 342 204 Q366 226 400 208 Z" fill="#22C55E" />
-                  <path d="M400 192 Q448 164 462 188 Q436 212 400 192 Z" fill="#10B981" />
-                  <circle cx="400" cy="158" r="12" fill="#FDE047" />
-                </svg>
-              </div>
-            )}
-
-            {beat.id === 'p0_prophet' && (
-              <div className="absolute inset-0 bg-gradient-to-b from-amber-950 via-emerald-950 to-slate-950">
-                <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
-                  <path d="M180 320 L180 120 Q400 10 620 120 L620 320 Z" fill="#064E3B" stroke="#FBBF24" strokeWidth="3" opacity="0.85" />
-                  <path d="M225 320 L225 138 Q400 48 575 138 L575 320 Z" fill="#022C22" stroke="#FDE047" strokeWidth="1.5" strokeDasharray="5 4" />
-                  <line x1="400" y1="42" x2="400" y2="96" stroke="#FDE047" strokeWidth="2.5" />
-                  <polygon points="384,96 416,96 422,126 378,126" fill="#F59E0B" stroke="#FEF08A" strokeWidth="2" />
-                  <circle cx="400" cy="112" r="24" fill="#FDE047" opacity="0.22" />
-                  <path d="M325 224 Q362 206 400 220 Q438 206 475 224 L465 258 Q432 246 400 256 Q368 246 335 258 Z" fill="#FFFBEB" stroke="#D97706" strokeWidth="3" />
-                  <line x1="400" y1="220" x2="400" y2="256" stroke="#B45309" strokeWidth="2" />
-                  <path d="M352 256 L422 292 M448 256 L378 292" stroke="#92400E" strokeWidth="8" strokeLinecap="round" />
-                </svg>
-              </div>
-            )}
-
-            {beat.id === 'p1' && (
-              <div className="absolute inset-0 bg-gradient-to-b from-[#4C0D23] via-[#7A1838] to-slate-950">
-                <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
-                  <rect x="130" y="135" width="540" height="150" rx="10" fill="#2A0814" stroke="#FBBF24" strokeWidth="2.5" />
-                  <path d="M295 135 Q400 50 505 135 Z" fill="#8C1D40" stroke="#FDE047" strokeWidth="2.5" />
-                  <circle cx="400" cy="64" r="10" fill="#FDE047" />
-                  {[185, 265, 345, 425, 505, 585].map((x) => (
-                    <path key={x} d={`M${x} 285 L${x} 185 Q${x + 22} 160 ${x + 44} 185 L${x + 44} 285 Z`} fill="#FDE68A" opacity="0.22" stroke="#FBBF24" strokeWidth="1.5" />
-                  ))}
-                  <text x="400" y="122" textAnchor="middle" fill="#FEF08A" fontSize="18" fontWeight="800">
-                    1926 · സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ
-                  </text>
-                </svg>
-              </div>
-            )}
-
-            {beat.id === 'p3' && (
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-900 via-emerald-900 to-teal-950 flex flex-col items-center justify-center px-6 pb-16">
-                <div className="relative z-20 flex flex-wrap items-center justify-center gap-4 sm:gap-8">
-                  <div className="p-3 rounded-2xl bg-white/95 shadow-lg text-center">
-                    <p className="text-2xl sm:text-3xl font-extrabold text-emerald-800">1951</p>
-                    <p className="text-[11px] font-extrabold text-slate-700 mt-0.5">11,000+ മദ്രസകൾ</p>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-amber-300 shadow-lg text-center">
-                    <p className="text-2xl sm:text-3xl font-extrabold text-slate-950">1989</p>
-                    <p className="text-[11px] font-extrabold text-slate-900 mt-0.5">SKSSF (17 വിങ്ങുകൾ)</p>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-sky-100 shadow-lg text-center">
-                    <p className="text-2xl sm:text-3xl font-extrabold text-sky-900">1993</p>
-                    <p className="text-[11px] font-extrabold text-sky-950 mt-0.5">SKSBV ബാലവേദി</p>
-                  </div>
+          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          <CollapsibleLessonDrawer
+            key={`prologue-lesson-${beat.id}`}
+            emoji={beat.emoji}
+            title={`പാഠം ${activeIndex + 1} · ${PROLOGUE_TRACK_ITEMS[activeIndex]?.label ?? ''}`}
+            badgeText={`${activeIndex + 1}/${PROLOGUE_FLAT_IDS.length}`}
+            onSpeak={() => narrator.speak(beat.speech, `${beat.emoji} ${beat.title}`)}
+          >
+            <div className="relative rounded-2xl overflow-hidden border border-emerald-300 bg-slate-950">
+              <div className="px-3.5 py-2 bg-emerald-950 border-b border-white/15 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 shrink-0" />
+                  <span>{beat.era}</span>
                 </div>
-              </div>
-            )}
-
-            {beat.id === 'p4' && (
-              <img
-                src="./src/assets/images/intro_heritage_harbor_1794947412830.jpg"
-                alt="SKSSF ഗൈഡ് ഗെയിം ചരിത്ര കപ്പലും നിധി പെട്ടിയും"
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            )}
-
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/20" />
-
-            <DriftingCloudsAndSun />
-            <FloatingSparkleField />
-            <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-            {onClaimEasterEgg && (
-              <EasterEggSpot
-                eggId="egg_harbor_moon"
-                collected={collectedEggs.includes('egg_harbor_moon')}
-                onClaim={onClaimEasterEgg}
-                className="absolute top-4 right-4 z-30"
-              />
-            )}
-
-            <div className="hidden sm:flex absolute bottom-20 left-4 z-20 items-end gap-2">
-              <FlutteringFlagPole variant="skju" />
-            </div>
-            <div className="hidden sm:flex absolute bottom-20 right-4 z-20 items-end gap-2">
-              <FlutteringFlagPole variant="skssf" />
-            </div>
-
-            <SwayingGardenPlants className="bottom-8" />
-            <AnimatedOceanLane boatLeft={`${18 + beatIdx * 16}%`} />
-          </div>
-
-          {/* Story Chronicle Panel Below Image */}
-          <div className="p-5 sm:p-6 bg-gradient-to-b from-slate-950 to-emerald-950 text-white space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-extrabold text-amber-300">
-                📖 കഥാ അദ്ധ്യായങ്ങൾ ({beatIdx + 1}/{PROLOGUE_BEATS.length})
-              </span>
-              <span className="text-[11px] font-bold text-emerald-200 tabular-nums">
-                അദ്ധ്യായം {beatIdx + 1} / {PROLOGUE_BEATS.length}
-              </span>
-            </div>
-
-            {/* Progress Bar + Visible Chapter Lock Map */}
-            <div className="w-full h-2 rounded-full bg-white/15 overflow-hidden">
-              <div
-                style={{ width: `${Math.round(((beatIdx + 1) / PROLOGUE_BEATS.length) * 100)}%` }}
-                className="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              {PROLOGUE_BEATS.map((b, idx) => {
-                const qId = chapterQuizIds[idx] ?? 'prologue_story';
-                const done = prologueAlreadyDone || Boolean(quizAnswers[qId]);
-                const prevDone =
-                  idx === 0 ||
-                  prologueAlreadyDone ||
-                  Boolean(quizAnswers[chapterQuizIds[idx - 1] ?? 'prologue_ch1']);
-                const reachable = idx === beatIdx || done || prevDone || idx < beatIdx;
-                return (
-                  <button
-                    key={b.id}
-                    type="button"
-                    onClick={() => {
-                      if (reachable) {
-                        handleSelectBeat(idx);
-                      } else {
-                        sound.playError();
-                        setGlitterMsg('🔒 ഈ അദ്ധ്യായവും ഗെയിമും തുറക്കാൻ ഇപ്പോഴത്തെ ചോദ്യത്തിന് ഉത്തരം നൽകൂ!');
-                        setGlitterKey((k) => k + 1);
-                      }
-                    }}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-extrabold border transition-all ${
-                      idx === beatIdx
-                        ? 'bg-amber-400 text-slate-950 border-amber-300'
-                        : done
-                        ? 'bg-emerald-800/80 text-emerald-100 border-emerald-500/60'
-                        : reachable
-                        ? 'bg-white/10 text-white border-white/25 hover:bg-white/20'
-                        : 'bg-white/5 text-emerald-200/70 border-white/15'
-                    }`}
-                  >
-                    <span>{done ? '✅' : idx === beatIdx ? '▶️' : reachable ? b.emoji : '🔒'}</span>
-                    <span>
-                      {idx + 1}. {b.title}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <motion.div
-              key={beat.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/10 border border-white/15 rounded-2xl p-4 sm:p-5 space-y-3"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg sm:text-2xl font-extrabold text-amber-300">
-                  {beat.emoji} {beat.title}
-                </h2>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {(beat.id === 'p0_creator' || beat.id === 'p0_prophet') && (
                     <button
                       type="button"
@@ -532,9 +393,9 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
                         sound.unlockAudio();
                         sound.playQuran('fatiha');
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 text-white border border-emerald-400 text-xs font-extrabold hover:bg-emerald-600"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-extrabold hover:bg-emerald-600"
                     >
-                      <BookOpen className="w-3.5 h-3.5" /> ഖുറാൻ പാരായണം
+                      <BookOpen className="w-3 h-3" /> ഖുറാൻ
                     </button>
                   )}
                   {beat.id === 'p1' && (
@@ -544,122 +405,189 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
                         sound.unlockAudio();
                         sound.playAdhanFull();
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 text-white border border-emerald-400 text-xs font-extrabold hover:bg-emerald-600"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-extrabold hover:bg-emerald-600"
                     >
-                      🕌 ബാങ്ക് വിളി
+                      🕌 ബാങ്ക്
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      narrator.speak(beat.speech, `${beat.emoji} ${beat.title}`);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300"
-                  >
-                    <Volume2 className="w-3.5 h-3.5" /> വീണ്ടും കേൾക്കാം
-                  </button>
                 </div>
               </div>
 
-              <p className="text-sm sm:text-base text-emerald-50 leading-relaxed font-medium">
-                {beat.story}
-              </p>
+              <div className="relative h-56 sm:h-72 w-full overflow-hidden">
+                {beat.id === 'p0_creator' && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-emerald-950">
+                    <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
+                      <defs>
+                        <radialGradient id="cosmosGlow" cx="50%" cy="35%" r="55%">
+                          <stop offset="0%" stopColor="#FDE047" stopOpacity="0.35" />
+                          <stop offset="60%" stopColor="#0F766E" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#020617" stopOpacity="0" />
+                        </radialGradient>
+                      </defs>
+                      <rect width="800" height="320" fill="url(#cosmosGlow)" />
+                      <ellipse cx="400" cy="135" rx="220" ry="62" fill="none" stroke="#FDE047" strokeOpacity="0.28" strokeWidth="1.5" strokeDasharray="6 6" />
+                      <ellipse cx="400" cy="135" rx="140" ry="40" fill="none" stroke="#38BDF8" strokeOpacity="0.35" strokeWidth="1.5" />
+                      <circle cx="400" cy="96" r="24" fill="#FACC15" opacity="0.92" />
+                      <circle cx="230" cy="118" r="10" fill="#38BDF8" />
+                      <circle cx="575" cy="145" r="12" fill="#34D399" />
+                      <path d="M290 290 Q400 235 510 290 Z" fill="#065F46" />
+                      <path d="M400 265 Q400 205 400 165" stroke="#4ADE80" strokeWidth="6" strokeLinecap="round" fill="none" />
+                      <path d="M400 208 Q355 182 342 204 Q366 226 400 208 Z" fill="#22C55E" />
+                      <path d="M400 192 Q448 164 462 188 Q436 212 400 192 Z" fill="#10B981" />
+                      <circle cx="400" cy="158" r="12" fill="#FDE047" />
+                    </svg>
+                  </div>
+                )}
 
-              {beat.id === 'p0_prophet' && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-400/20 via-emerald-500/20 to-amber-400/20 border-2 border-amber-300/70 space-y-2">
-                  <p className="text-xs sm:text-sm font-extrabold text-amber-300">
-                    ❤️ ഹൃദയത്തിൽ സൂക്ഷിക്കേണ്ട പ്രവാചക സ്നേഹ പാഠം:
-                  </p>
-                  <p className="text-xs sm:text-sm font-extrabold text-white leading-relaxed">
-                    “നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും ലോകത്തിന് കാരുണ്യമായി അയക്കപ്പെട്ട മുഹമ്മദ് നബി ﷺ പഠിപ്പിച്ച ഉത്തമ മാതൃകയും സുന്നത്തും പിന്തുടരലാണ്. നമ്മെ ഏറെ സ്നേഹിച്ച തിരുനബി ﷺ കാണിച്ചുതന്ന സൽസ്വഭാവത്തിന്റെ പാത മുറുകെ പിടിച്ച് തിന്മകളിൽ നിന്ന് നാം എപ്പോഴും അകന്നുനിൽക്കണം.”
-                  </p>
+                {beat.id === 'p0_prophet' && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-amber-950 via-emerald-950 to-slate-950">
+                    <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
+                      <path d="M180 320 L180 120 Q400 10 620 120 L620 320 Z" fill="#064E3B" stroke="#FBBF24" strokeWidth="3" opacity="0.85" />
+                      <path d="M225 320 L225 138 Q400 48 575 138 L575 320 Z" fill="#022C22" stroke="#FDE047" strokeWidth="1.5" strokeDasharray="5 4" />
+                      <line x1="400" y1="42" x2="400" y2="96" stroke="#FDE047" strokeWidth="2.5" />
+                      <polygon points="384,96 416,96 422,126 378,126" fill="#F59E0B" stroke="#FEF08A" strokeWidth="2" />
+                      <circle cx="400" cy="112" r="24" fill="#FDE047" opacity="0.22" />
+                      <path d="M325 224 Q362 206 400 220 Q438 206 475 224 L465 258 Q432 246 400 256 Q368 246 335 258 Z" fill="#FFFBEB" stroke="#D97706" strokeWidth="3" />
+                      <line x1="400" y1="220" x2="400" y2="256" stroke="#B45309" strokeWidth="2" />
+                      <path d="M352 256 L422 292 M448 256 L378 292" stroke="#92400E" strokeWidth="8" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                )}
+
+                {beat.id === 'p1' && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-[#4C0D23] via-[#7A1838] to-slate-950">
+                    <svg viewBox="0 0 800 320" className="w-full h-full object-cover" aria-hidden="true">
+                      <rect x="130" y="135" width="540" height="150" rx="10" fill="#2A0814" stroke="#FBBF24" strokeWidth="2.5" />
+                      <path d="M295 135 Q400 50 505 135 Z" fill="#8C1D40" stroke="#FDE047" strokeWidth="2.5" />
+                      <circle cx="400" cy="64" r="10" fill="#FDE047" />
+                      {[185, 265, 345, 425, 505, 585].map((x) => (
+                        <path key={x} d={`M${x} 285 L${x} 185 Q${x + 22} 160 ${x + 44} 185 L${x + 44} 285 Z`} fill="#FDE68A" opacity="0.22" stroke="#FBBF24" strokeWidth="1.5" />
+                      ))}
+                      <text x="400" y="122" textAnchor="middle" fill="#FEF08A" fontSize="18" fontWeight="800">
+                        1926 · സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ
+                      </text>
+                    </svg>
+                  </div>
+                )}
+
+                {beat.id === 'p3' && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-900 via-emerald-900 to-teal-950 flex flex-col items-center justify-center px-6 pb-16">
+                    <div className="relative z-20 flex flex-wrap items-center justify-center gap-4 sm:gap-8">
+                      <div className="p-3 rounded-2xl bg-white/95 shadow-lg text-center">
+                        <p className="text-2xl sm:text-3xl font-extrabold text-emerald-800">1951</p>
+                        <p className="text-[11px] font-extrabold text-slate-700 mt-0.5">11,000+ മദ്രസകൾ</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-amber-300 shadow-lg text-center">
+                        <p className="text-2xl sm:text-3xl font-extrabold text-slate-950">1989</p>
+                        <p className="text-[11px] font-extrabold text-slate-900 mt-0.5">SKSSF (17 വിങ്ങുകൾ)</p>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-sky-100 shadow-lg text-center">
+                        <p className="text-2xl sm:text-3xl font-extrabold text-sky-900">1993</p>
+                        <p className="text-[11px] font-extrabold text-sky-950 mt-0.5">SKSBV ബാലവേദി</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {beat.id === 'p4' && (
+                  <img
+                    src="./src/assets/images/intro_heritage_harbor_1794947412830.jpg"
+                    alt="SKSSF ഗൈഡ് ഗെയിം ചരിത്ര കപ്പലും നിധി പെട്ടിയും"
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                )}
+
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/20" />
+                <DriftingCloudsAndSun />
+                <FloatingSparkleField />
+                {onClaimEasterEgg && (
+                  <EasterEggSpot
+                    eggId="egg_harbor_moon"
+                    collected={collectedEggs.includes('egg_harbor_moon')}
+                    onClaim={onClaimEasterEgg}
+                    className="absolute top-4 right-4 z-30"
+                  />
+                )}
+                <div className="hidden sm:flex absolute bottom-20 left-4 z-20 items-end gap-2">
+                  <FlutteringFlagPole variant="skju" />
                 </div>
-              )}
-
-              <ul className="space-y-1.5 pt-2 border-t border-white/10">
-                {beat.highlights.map((item) => (
-                  <li key={item} className="text-xs sm:text-sm text-amber-100 flex items-start gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="pt-2 border-t border-white/10 text-xs font-bold text-amber-200">
-                {beat.treasure}
+                <div className="hidden sm:flex absolute bottom-20 right-4 z-20 items-end gap-2">
+                  <FlutteringFlagPole variant="skssf" />
+                </div>
+                <SwayingGardenPlants className="bottom-8" />
+                <AnimatedOceanLane boatLeft={`${18 + beatIdx * 16}%`} />
               </div>
-            </motion.div>
 
-            {/* MANDATORY ANIMATED 2D GAME FOR EVERY CHAPTER OF LESSON 2 */}
-            <div className="text-slate-900">
-              <OptionalLessonMiniGame
-                key={`prologue-game-${beat.id}`}
-                lessonKey={beat.id as MiniGameLessonKey}
-                onAwardXp={onAwardXp}
-                isCompleted={currentBeatGameDone}
-                onComplete={() => {
-                  setCompletedBeatGames((prev) =>
-                    prev.includes(beat.id) ? prev : [...prev, beat.id]
-                  );
-                }}
-              />
+              <motion.div
+                key={beat.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 sm:p-5 bg-gradient-to-b from-slate-950 to-emerald-950 text-white space-y-3"
+              >
+                <h2 className="text-base sm:text-xl font-extrabold text-amber-300">
+                  {beat.emoji} {beat.title}
+                </h2>
+
+                <p className="text-sm text-emerald-50 leading-relaxed font-medium">
+                  {beat.story}
+                </p>
+
+                {beat.id === 'p0_prophet' && (
+                  <div className="p-3.5 rounded-xl bg-amber-400/15 border border-amber-300/60 space-y-1">
+                    <p className="text-xs font-extrabold text-amber-300">
+                      ❤️ പ്രവാചക സ്നേഹ പാഠം
+                    </p>
+                    <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
+                      “നമ്മൾ ചെയ്യുന്ന ഓരോ നന്മയും ലോകത്തിന് കാരുണ്യമായി അയക്കപ്പെട്ട മുഹമ്മദ് നബി ﷺ പഠിപ്പിച്ച ഉത്തമ മാതൃകയും സുന്നത്തും പിന്തുടരലാണ്. നമ്മെ ഏറെ സ്നേഹിച്ച തിരുനബി ﷺ കാണിച്ചുതന്ന സൽസ്വഭാവത്തിന്റെ പാത മുറുകെ പിടിച്ച് തിന്മകളിൽ നിന്ന് നാം എപ്പോഴും അകന്നുനിൽക്കണം.”
+                    </p>
+                  </div>
+                )}
+
+                <ul className="space-y-1.5 pt-2 border-t border-white/10">
+                  {beat.highlights.map((item) => (
+                    <li key={item} className="text-xs sm:text-sm text-amber-100 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="pt-2 border-t border-white/10 text-xs font-bold text-amber-200">
+                  {beat.treasure}
+                </div>
+              </motion.div>
             </div>
-
-            {/* LEARNING CHECK QUIZ ON EVERY CHAPTER OF LESSON 2 */}
-            <div className="text-slate-900">
-              <LessonCheckQuiz
-                key={`prologue-quiz-${activeChapterQuizId}`}
-                lessonId={activeChapterQuizId}
-                title={`അദ്ധ്യായം ${beatIdx + 1} · എന്ത് പഠിച്ചു? ഒരു ചെറിയ ചോദ്യം`}
-                savedAnswer={quizAnswers[activeChapterQuizId]}
-                onAnswered={(lid, idx, ok) => {
-                  onQuizAnswered(lid, idx, ok);
-                  if (activeChapterQuizId === 'prologue_story') {
-                    onMarkLessonCompleted?.('prologue_story');
-                  }
-                }}
-              />
-
-              <LessonStepperNav
-                stepLabel={`ആമുഖം · അദ്ധ്യായം ${beatIdx + 1} / ${PROLOGUE_BEATS.length}: ${beat.title}`}
-                currentStep={beatIdx}
-                totalSteps={PROLOGUE_BEATS.length}
-                prevLabel={beatIdx > 0 ? PROLOGUE_BEATS[beatIdx - 1].title : 'ദൗത്യ പരിചയം'}
-                onPrev={() => {
-                  if (beatIdx > 0) {
-                    handleSelectBeat(beatIdx - 1);
-                  } else {
-                    setOpeningMode('curiosity');
-                  }
-                }}
-                statusHint={
-                  !canAdvanceCurrentBeat
-                    ? 'ഈ പാഠം മനസ്സിലാക്കി മുകളിലുള്ള ചോദ്യത്തിന് ഉത്തരം നൽകിയാൽ അടുത്ത അദ്ധ്യായവും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-                    : beatIdx < PROLOGUE_BEATS.length - 1
-                    ? `അദ്ധ്യായം ${beatIdx + 1} പൂർത്തിയായി — ഇനി അടുത്ത ഗെയിമും പാഠവും കളിക്കാം!`
-                    : 'ആമുഖം മുഴുവൻ പൂർത്തിയായി — ഇനി സാഹചര്യ ബോർഡിലെ ഗെയിമുകളും കഥകളും തുടങ്ങാം!'
-                }
-                nextLabel={
-                  beatIdx < PROLOGUE_BEATS.length - 1
-                    ? PROLOGUE_BEATS[beatIdx + 1].title
-                    : 'സാഹചര്യ ബോർഡ് (നന്മയുടെ തിരഞ്ഞെടുപ്പ്)'
-                }
-                nextIsWorldAdvance={beatIdx === PROLOGUE_BEATS.length - 1}
-                nextDisabled={!canAdvanceCurrentBeat}
-                onNext={() => {
-                  if (beatIdx < PROLOGUE_BEATS.length - 1) {
-                    handleSelectBeat(beatIdx + 1);
-                  } else {
-                    onMarkLessonCompleted?.('prologue_story');
-                    onOpenStoryboard();
-                  }
-                }}
-              />
-            </div>
-          </div>
+          </CollapsibleLessonDrawer>
         </div>
       )}
+
+      {/* 4. NAVIGATION BELOW EVERYTHING */}
+      <LessonStepperNav
+        stepLabel={`ആമുഖം · ${activeIndex + 1}/${PROLOGUE_FLAT_IDS.length}`}
+        currentStep={activeIndex}
+        totalSteps={PROLOGUE_FLAT_IDS.length}
+        prevLabel={activeIndex > 0 ? PROLOGUE_TRACK_ITEMS[activeIndex - 1].label : undefined}
+        onPrev={
+          activeIndex > 0
+            ? () => goToPrologueLesson(PROLOGUE_FLAT_IDS[activeIndex - 1])
+            : undefined
+        }
+        nextLabel={nextLessonTitle}
+        nextIsWorldAdvance={activeIndex === PROLOGUE_FLAT_IDS.length - 1}
+        nextDisabled={!canAdvance}
+        onNext={handleAdvance}
+      />
+
+      <LessonProgressTrack
+        stageTitle="ആമുഖ ഘട്ടം · 6 പാഠങ്ങൾ"
+        stageSubtitle="ഓരോ പാഠത്തിലും ഗെയിമും ക്വിസും പൂർത്തിയാക്കി മുന്നേറാം"
+        items={PROLOGUE_TRACK_ITEMS}
+        activeId={activeLessonId}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
+        onSelectCompleted={(id) => goToPrologueLesson(id as PrologueFlatId)}
+      />
     </section>
   );
 };
@@ -895,6 +823,8 @@ const STORYBOARD_CHAPTERS: StoryboardChapter[] = [
 ];
 
 interface VisualStoryboardArenaProps {
+  initialTab?: string;
+  devUnlocked?: boolean;
   onAwardXp: (amount: number, actionId: string) => void;
   onUnlockBadge: (badge: string) => void;
   onGoToMission1: () => void;
@@ -908,6 +838,8 @@ interface VisualStoryboardArenaProps {
 }
 
 export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
+  initialTab,
+  devUnlocked = false,
   onAwardXp,
   onUnlockBadge,
   onGoToMission1,
@@ -919,7 +851,13 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
   collectedEggs = [],
   onClaimEasterEgg,
 }) => {
-  const [chapterIdx, setChapterIdx] = useState(0);
+  const resolveInitialIdx = (tab?: string) => {
+    if (!tab) return 0;
+    const found = STORYBOARD_CHAPTERS.findIndex((c) => c.id === tab);
+    return found >= 0 ? found : 0;
+  };
+
+  const [chapterIdx, setChapterIdx] = useState(() => resolveInitialIdx(initialTab));
   const [pickedBranchId, setPickedBranchId] = useState<string | null>(null);
   const [visitedBranches, setVisitedBranches] = useState<string[]>([]);
   const [completedSbGames, setCompletedSbGames] = useState<string[]>([]);
@@ -929,32 +867,37 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
   const sbGameKeys: MiniGameLessonKey[] = ['sb_ch1', 'sb_ch2', 'sb_ch3', 'storyboard'];
   const sbQuizIds = ['storyboard_ch1', 'storyboard_ch2', 'storyboard_ch3', 'storyboard'];
 
+  useEffect(() => {
+    if (initialTab) {
+      const idx = resolveInitialIdx(initialTab);
+      setChapterIdx(idx);
+      setPickedBranchId(null);
+    }
+  }, [initialTab]);
+
   const chapter = STORYBOARD_CHAPTERS[chapterIdx];
   const activeSbGameKey = sbGameKeys[chapterIdx] ?? 'storyboard';
   const activeSbQuizId = sbQuizIds[chapterIdx] ?? 'storyboard';
   const activeBranch =
     chapter.branches.find((b) => b.id === pickedBranchId) || null;
   const currentChapterQuizDone = Boolean(quizAnswers[activeSbQuizId]);
-  const storyboardAlreadyCompleted = completedLessonIds.includes('storyboard');
+  const currentChapterCompleted =
+    completedLessonIds.includes(activeSbQuizId) || completedLessonIds.includes('storyboard');
   const isLastChapter = chapterIdx === STORYBOARD_CHAPTERS.length - 1;
   const currentSbGameDone =
-    storyboardAlreadyCompleted || completedSbGames.includes(activeSbGameKey);
-  const canAdvanceCurrentChapter = storyboardAlreadyCompleted || currentChapterQuizDone;
+    currentChapterCompleted || completedSbGames.includes(activeSbGameKey);
+  const canAdvanceCurrentChapter =
+    devUnlocked || currentChapterCompleted || currentChapterQuizDone;
 
   useEffect(() => {
-    onActiveLessonChange?.('storyboard');
-  }, [onActiveLessonChange]);
+    onActiveLessonChange?.(activeSbQuizId);
+  }, [activeSbQuizId, onActiveLessonChange]);
 
   useEffect(() => {
-    if (isLastChapter && currentChapterQuizDone && !storyboardAlreadyCompleted) {
-      onMarkLessonCompleted?.('storyboard');
+    if (currentChapterQuizDone && !completedLessonIds.includes(activeSbQuizId)) {
+      onMarkLessonCompleted?.(activeSbQuizId);
     }
-  }, [
-    isLastChapter,
-    currentChapterQuizDone,
-    storyboardAlreadyCompleted,
-    onMarkLessonCompleted,
-  ]);
+  }, [activeSbQuizId, currentChapterQuizDone, completedLessonIds, onMarkLessonCompleted]);
 
   useEffect(() => {
     if (activeBranch) {
@@ -997,361 +940,251 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
     }
   };
 
+  const handleAdvanceStoryboard = () => {
+    onMarkLessonCompleted?.(activeSbQuizId);
+    if (!isLastChapter) {
+      handleSelectChapter(chapterIdx + 1);
+    } else {
+      sound.playUnlock();
+      onMarkLessonCompleted?.('storyboard');
+      onGoToMission1();
+    }
+  };
+
   const oppositeBranch = activeBranch
     ? chapter.branches.find((b) => b.id !== activeBranch.id) || null
     : null;
 
-  const sbCompletedIds = STORYBOARD_CHAPTERS.filter((ch, idx) =>
-    storyboardAlreadyCompleted || Boolean(quizAnswers[sbQuizIds[idx]])
-  ).map((ch) => ch.id);
+  const nextSbLabel = !isLastChapter
+    ? STORYBOARD_CHAPTERS[chapterIdx + 1].title
+    : '🧭 എന്റെ SKSSF യാത്ര';
 
   return (
     <section className="space-y-4">
+      {/* 1. GAME FIRST */}
+      <OptionalLessonMiniGame
+        key={`sb-game-${activeSbGameKey}`}
+        lessonKey={activeSbGameKey}
+        onAwardXp={onAwardXp}
+        isCompleted={currentSbGameDone}
+        onComplete={() =>
+          setCompletedSbGames((prev) =>
+            prev.includes(activeSbGameKey) ? prev : [...prev, activeSbGameKey]
+          )
+        }
+      />
+
+      {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
+      <LessonCheckQuiz
+        key={`sb-quiz-${activeSbQuizId}`}
+        lessonId={activeSbQuizId}
+        title={`കഥ ${chapterIdx + 1} · ക്വിസ്`}
+        savedAnswer={quizAnswers[activeSbQuizId]}
+        onAnswered={(lid, idx, ok) => {
+          onQuizAnswered(lid, idx, ok);
+          onMarkLessonCompleted?.(activeSbQuizId);
+        }}
+        onNextLesson={handleAdvanceStoryboard}
+        nextLessonLabel={!isLastChapter ? 'അടുത്ത പാഠം' : 'എന്റെ SKSSF യാത്ര'}
+      />
+
+      {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+      <CollapsibleLessonDrawer
+        key={`sb-lesson-${chapter.id}`}
+        emoji={chapter.emoji}
+        title={`കഥ ${chapterIdx + 1} · പാഠം & തീരുമാനം`}
+        badgeText={`${chapterIdx + 1}/${STORYBOARD_CHAPTERS.length}`}
+        onSpeak={() =>
+          narrator.speak(
+            activeBranch ? activeBranch.outcomeSpeech : chapter.sceneSpeech,
+            activeBranch ? activeBranch.outcomeTitle : chapter.title
+          )
+        }
+      >
+        <AnimatePresence mode="wait">
+          {!activeBranch ? (
+            <motion.div
+              key={`scene-${chapter.id}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="bg-white rounded-2xl border border-emerald-200 overflow-hidden"
+            >
+              <div className="relative h-56 sm:h-80 w-full bg-slate-950 overflow-hidden">
+                <img
+                  src={chapter.sceneImage}
+                  alt={chapter.sceneImageAlt}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                <FloatingSparkleField />
+                <SwayingGardenPlants />
+                {onClaimEasterEgg && (
+                  <EasterEggSpot
+                    eggId="egg_story_lantern"
+                    collected={collectedEggs.includes('egg_story_lantern')}
+                    onClaim={onClaimEasterEgg}
+                    className="absolute top-3 left-3 z-30"
+                  />
+                )}
+              </div>
+
+              <div className="p-4 sm:p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-extrabold text-emerald-700">{chapter.tag}</p>
+                  <h3 className="text-base sm:text-xl font-extrabold text-slate-900">
+                    {chapter.emoji} {chapter.title}
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {chapter.storyText}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 space-y-2.5">
+                  <p className="text-xs sm:text-sm font-extrabold text-emerald-950 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>{chapter.questionPrompt}</span>
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {chapter.branches.map((branch) => (
+                      <button
+                        key={branch.id}
+                        type="button"
+                        onClick={() => handlePickChoice(branch)}
+                        className="p-3.5 rounded-2xl border-2 border-b-4 border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-600 text-left transition-all flex items-start gap-2.5"
+                      >
+                        <span className="text-xl leading-none shrink-0 mt-0.5">
+                          {branch.choiceEmoji}
+                        </span>
+                        <p className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
+                          {branch.choiceLabel}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`outcome-${activeBranch.id}`}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className={`relative bg-white rounded-2xl border-2 overflow-hidden ${
+                activeBranch.isPositive ? 'border-emerald-500' : 'border-red-400'
+              }`}
+            >
+              <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
+
+              <div className="relative h-56 sm:h-80 w-full bg-slate-950 overflow-hidden">
+                <img
+                  src={activeBranch.outcomeImage}
+                  alt={activeBranch.outcomeImageAlt}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+                {activeBranch.isPositive && <FloatingSparkleField />}
+                <SwayingGardenPlants />
+              </div>
+
+              <div className="p-4 sm:p-5 space-y-3.5">
+                <div>
+                  <h3
+                    className={`text-base sm:text-xl font-extrabold ${
+                      activeBranch.isPositive ? 'text-emerald-900' : 'text-red-900'
+                    }`}
+                  >
+                    {activeBranch.choiceEmoji} {activeBranch.outcomeTitle}
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed mt-1.5">
+                    {activeBranch.outcomeStory}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+                    <p className="text-xs font-extrabold text-emerald-900 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ഗുണവശം
+                    </p>
+                    <p className="text-xs text-emerald-950 leading-relaxed">
+                      {activeBranch.prosText}
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+                    <p className="text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      ശ്രദ്ധിക്കേണ്ടത്
+                    </p>
+                    <p className="text-xs text-amber-950 leading-relaxed">
+                      {activeBranch.consText}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setPickedBranchId(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-bold hover:bg-slate-50"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> തിരികെ
+                  </button>
+
+                  {oppositeBranch && (
+                    <button
+                      type="button"
+                      onClick={() => handlePickChoice(oppositeBranch)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-100 border border-amber-300 text-amber-950 text-xs font-extrabold hover:bg-amber-200"
+                    >
+                      🔄 മറ്റേ തീരുമാനം കാണൂ
+                    </button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </CollapsibleLessonDrawer>
+
+      {/* 4. NAVIGATION BELOW EVERYTHING */}
+      <LessonStepperNav
+        stepLabel={`സാഹചര്യ ബോർഡ് · ${chapterIdx + 1}/${STORYBOARD_CHAPTERS.length}`}
+        currentStep={chapterIdx}
+        totalSteps={STORYBOARD_CHAPTERS.length}
+        prevLabel={
+          chapterIdx > 0 ? STORYBOARD_CHAPTERS[chapterIdx - 1].title : undefined
+        }
+        onPrev={chapterIdx > 0 ? () => handleSelectChapter(chapterIdx - 1) : undefined}
+        nextLabel={nextSbLabel}
+        nextIsWorldAdvance={isLastChapter}
+        nextDisabled={!canAdvanceCurrentChapter}
+        onNext={handleAdvanceStoryboard}
+      />
+
       <LessonProgressTrack
-        stageTitle="📖 സാഹചര്യ ബോർഡ് · നന്മയുടെ തിരഞ്ഞെടുപ്പ്"
-        stageSubtitle="ഓരോ കഥയിലും രസകരമായ സമസ്ത/SKSSF ഗെയിമും ചെറിയ ചോദ്യവുമുണ്ട് — ചോദ്യത്തിന് ഉത്തരം നൽകുമ്പോൾ അടുത്ത ഗെയിമും കഥയും തുറക്കും!"
+        stageTitle="📖 സാഹചര്യ ബോർഡ് · 4 പാഠങ്ങൾ"
+        stageSubtitle="ഓരോ കഥയിലും ഗെയിമും ക്വിസും പൂർത്തിയാക്കി മുന്നേറാം"
         items={[
-          { id: 'sb0_roots', lessonId: 'sb0_roots', emoji: '🕌', label: 'വഖഫ് & പണ്ഡിത പാരമ്പര്യം' },
-          { id: 'sb1', lessonId: 'sb1', emoji: '🕊️', label: '1995 ടാഗോർ ഹാൾ & TREND' },
-          { id: 'sb2', lessonId: 'sb2', emoji: '🌙', label: 'ഇഖ്‌ലാസ് & സഹചാരി' },
-          { id: 'sb3', lessonId: 'sb3', emoji: '📱', label: 'സൈബർ മര്യാദ & സൈകോൺ' },
+          { id: 'sb0_roots', lessonId: 'storyboard_ch1', emoji: '🕌', label: 'വഖഫ് & പണ്ഡിത പാരമ്പര്യം' },
+          { id: 'sb1', lessonId: 'storyboard_ch2', emoji: '🕊️', label: '1995 ടാഗോർ ഹാൾ & TREND' },
+          { id: 'sb2', lessonId: 'storyboard_ch3', emoji: '🌙', label: 'ഇഖ്‌ലാസ് & സഹചാരി' },
+          { id: 'sb3', lessonId: 'storyboard', emoji: '📱', label: 'സൈബർ മര്യാദ & സൈകോൺ' },
         ]}
         activeId={chapter.id}
-        completedLessonIds={sbCompletedIds}
+        completedLessonIds={completedLessonIds}
+        devUnlocked={devUnlocked}
         onSelectCompleted={(id) => {
           const nextIdx = STORYBOARD_CHAPTERS.findIndex((c) => c.id === id);
           if (nextIdx >= 0) handleSelectChapter(nextIdx);
         }}
       />
-
-      <AnimatePresence mode="wait">
-        {!activeBranch ? (
-          <motion.div
-            key={`scene-${chapter.id}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            className="bg-white rounded-3xl border-2 border-emerald-200 overflow-hidden shadow-md"
-          >
-            {/* Header Bar Above Image */}
-            <div className="px-4 py-2.5 bg-emerald-950 text-white flex items-center justify-between gap-2">
-              <span className="text-xs font-extrabold text-amber-300">{chapter.tag}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  narrator.speak(chapter.sceneSpeech, chapter.title);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300"
-              >
-                <Volume2 className="w-3.5 h-3.5" /> കഥ കേൾക്കാം
-              </button>
-            </div>
-
-            <div className="relative h-64 sm:h-96 w-full bg-slate-950 overflow-hidden">
-              <img
-                src={chapter.sceneImage}
-                alt={chapter.sceneImageAlt}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-              <FloatingSparkleField />
-              <SwayingGardenPlants />
-              {onClaimEasterEgg && (
-                <EasterEggSpot
-                  eggId="egg_story_lantern"
-                  collected={collectedEggs.includes('egg_story_lantern')}
-                  onClaim={onClaimEasterEgg}
-                  className="absolute top-3 left-3 z-30"
-                />
-              )}
-            </div>
-
-            <div className="p-5 sm:p-6 space-y-5">
-              <div className="space-y-2">
-                <h3 className="text-lg sm:text-2xl font-extrabold text-slate-900">
-                  {chapter.emoji} {chapter.title}
-                </h3>
-                <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-                  {chapter.storyText}
-                </p>
-              </div>
-
-              <div className="pt-4 border-t border-slate-200 space-y-3">
-                <p className="text-sm sm:text-base font-extrabold text-emerald-950 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-500 shrink-0" />
-                  <span>{chapter.questionPrompt}</span>
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {chapter.branches.map((branch) => (
-                    <button
-                      key={branch.id}
-                      type="button"
-                      onClick={() => handlePickChoice(branch)}
-                      className="p-4 rounded-2xl border-2 border-b-4 border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-600 text-left transition-all card-3d-tilt flex items-start gap-3"
-                    >
-                      <span className="text-2xl leading-none shrink-0 mt-0.5">
-                        {branch.choiceEmoji}
-                      </span>
-                      <div>
-                        <p className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
-                          {branch.choiceLabel}
-                        </p>
-                        <p className="text-[11px] font-bold text-emerald-700 mt-1.5">
-                          അടുത്ത ഇമേജിൽ ഫലം കാണാൻ ടാപ്പ് ചെയ്യൂ →
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* DEDICATED SAMASTHA / SKSSF / TREND / SAHACHARI GAME ON EVERY STORYBOARD CHAPTER! */}
-              <OptionalLessonMiniGame
-                key={`sb-game-${activeSbGameKey}`}
-                lessonKey={activeSbGameKey}
-                onAwardXp={onAwardXp}
-                isCompleted={currentSbGameDone}
-                onComplete={() =>
-                  setCompletedSbGames((prev) =>
-                    prev.includes(activeSbGameKey) ? prev : [...prev, activeSbGameKey]
-                  )
-                }
-              />
-
-              {/* LEARNING CHECK QUIZ ON EVERY STORYBOARD CHAPTER (UNLOCKS NEXT GAME & CHAPTER!) */}
-              <LessonCheckQuiz
-                key={`sb-quiz-${activeSbQuizId}`}
-                lessonId={activeSbQuizId}
-                title={`കഥ ${chapterIdx + 1} · എന്ത് പഠിച്ചു? ഒരു ചെറിയ ചോദ്യം`}
-                savedAnswer={quizAnswers[activeSbQuizId]}
-                onAnswered={(lid, idx, ok) => {
-                  onQuizAnswered(lid, idx, ok);
-                  if (isLastChapter) {
-                    onMarkLessonCompleted?.('storyboard');
-                  }
-                }}
-              />
-
-              <LessonStepperNav
-                stepLabel={`സാഹചര്യ ബോർഡ് · കഥ ${chapterIdx + 1} / ${STORYBOARD_CHAPTERS.length}: ${chapter.title}`}
-                currentStep={chapterIdx}
-                totalSteps={STORYBOARD_CHAPTERS.length}
-                prevLabel={
-                  chapterIdx > 0 ? STORYBOARD_CHAPTERS[chapterIdx - 1].title : undefined
-                }
-                onPrev={chapterIdx > 0 ? () => handleSelectChapter(chapterIdx - 1) : undefined}
-                statusHint={
-                  canAdvanceCurrentChapter
-                    ? isLastChapter
-                      ? 'സാഹചര്യ ബോർഡ് പൂർത്തിയായി — ഇനി 🧭 എന്റെ SKSSF യാത്ര (POV ഗെയിം) കളിക്കാം!'
-                      : 'ഈ കഥ പൂർത്തിയായി — ഇനി അടുത്ത ഗെയിമും കഥയും കളിക്കാം!'
-                    : 'ഈ കഥ മനസ്സിലാക്കി താഴെയുള്ള ചോദ്യത്തിന് മറുപടി നൽകിയാൽ അടുത്ത കഥയും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-                }
-                nextLabel={
-                  !isLastChapter
-                    ? STORYBOARD_CHAPTERS[chapterIdx + 1].title
-                    : '🧭 എന്റെ SKSSF യാത്ര (POV ഗെയിം)'
-                }
-                nextIsWorldAdvance={isLastChapter}
-                nextDisabled={!canAdvanceCurrentChapter}
-                onNext={() => {
-                  if (!isLastChapter) {
-                    handleSelectChapter(chapterIdx + 1);
-                  } else {
-                    onMarkLessonCompleted?.('storyboard');
-                    onGoToMission1();
-                  }
-                }}
-              />
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key={`outcome-${activeBranch.id}`}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            className={`relative bg-white rounded-3xl border-2 overflow-hidden shadow-md ${
-              activeBranch.isPositive ? 'border-emerald-500' : 'border-red-400'
-            }`}
-          >
-            <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
-
-            {/* Header Bar Above Outcome Image */}
-            <div
-              className={`px-4 py-2.5 flex items-center justify-between gap-2 text-white ${
-                activeBranch.isPositive ? 'bg-emerald-700' : 'bg-red-800'
-              }`}
-            >
-              <span className="text-xs font-extrabold">
-                {activeBranch.isPositive
-                  ? '✅ നല്ല തീരുമാനത്തിന്റെ ഫലം'
-                  : '⚠️ തെറ്റായ തീരുമാനത്തിന്റെ ഫലം'}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  narrator.speak(activeBranch.outcomeSpeech, activeBranch.outcomeTitle);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-400 text-slate-950 text-xs font-extrabold hover:bg-amber-300"
-              >
-                <Volume2 className="w-3.5 h-3.5" /> ഫലം കേൾക്കാം
-              </button>
-            </div>
-
-            <div className="relative h-64 sm:h-96 w-full bg-slate-950 overflow-hidden">
-              <img
-                src={activeBranch.outcomeImage}
-                alt={activeBranch.outcomeImageAlt}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-              {activeBranch.isPositive && <FloatingSparkleField />}
-              <SwayingGardenPlants />
-            </div>
-
-            <div className="p-5 sm:p-6 space-y-4">
-              <div>
-                <h3
-                  className={`text-lg sm:text-2xl font-extrabold ${
-                    activeBranch.isPositive ? 'text-emerald-900' : 'text-red-900'
-                  }`}
-                >
-                  {activeBranch.choiceEmoji} {activeBranch.outcomeTitle}
-                </h3>
-                <p className="text-sm sm:text-base text-slate-700 leading-relaxed mt-2">
-                  {activeBranch.outcomeStory}
-                </p>
-              </div>
-
-              <div
-                className={`p-4 rounded-2xl border-2 space-y-1 ${
-                  activeBranch.isPositive
-                    ? 'bg-emerald-950 text-white border-emerald-500'
-                    : 'bg-red-950 text-white border-red-500'
-                }`}
-              >
-                <p className="text-xs font-extrabold text-amber-300">
-                  {activeBranch.isPositive
-                    ? '💚 തിരുനബി ﷺ പഠിപ്പിച്ച നന്മയുടെ പാത!'
-                    : '⚠️ തെറ്റായ വഴിയിൽ നിന്ന് മാറിനിൽക്കാം!'}
-                </p>
-                <p className="text-xs sm:text-sm font-bold leading-relaxed">
-                  {activeBranch.isPositive
-                    ? 'നല്ല തിരഞ്ഞെടുപ്പ്! ഓരോ നന്മയും മുഹമ്മദ് നബി ﷺ കാണിച്ചുതന്ന സൽസ്വഭാവത്തിന്റെയും കാരുണ്യത്തിന്റെയും പാത പിന്തുടരലാണ്.'
-                    : 'ശ്രദ്ധിക്കണം കൂട്ടുകാരേ! തിന്മയുടെ വഴികൾ ഒഴിവാക്കി, നമ്മെ ഏറെ സ്നേഹിച്ച മുഹമ്മദ് നബി ﷺ പഠിപ്പിച്ച നന്മയുടെ പാതയാണ് നാം എപ്പോഴും പിൻപറ്റേണ്ടത്.'}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                  <p className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ഗുണവശം (നന്മ / നേട്ടം)
-                  </p>
-                  <p className="text-xs sm:text-sm text-emerald-950 leading-relaxed">
-                    {activeBranch.prosText}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
-                  <p className="text-xs sm:text-sm font-extrabold text-amber-950 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                    ദോഷവശം / ശ്രദ്ധിക്കേണ്ടത്
-                  </p>
-                  <p className="text-xs sm:text-sm text-amber-950 leading-relaxed">
-                    {activeBranch.consText}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setPickedBranchId(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs font-bold hover:bg-slate-50"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" /> കഥയിലേക്ക് തിരികെ
-                </button>
-
-                {oppositeBranch && (
-                  <button
-                    type="button"
-                    onClick={() => handlePickChoice(oppositeBranch)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-100 border border-amber-300 text-amber-950 text-xs font-extrabold hover:bg-amber-200"
-                  >
-                    🔄 മറ്റേ തീരുമാനം എടുത്താൽ എന്ത് സംഭവിക്കും? (ചിത്രം കാണൂ)
-                  </button>
-                )}
-              </div>
-
-              <OptionalLessonMiniGame
-                key={`sb-out-game-${activeSbGameKey}`}
-                lessonKey={activeSbGameKey}
-                onAwardXp={onAwardXp}
-                isCompleted={currentSbGameDone}
-                onComplete={() =>
-                  setCompletedSbGames((prev) =>
-                    prev.includes(activeSbGameKey) ? prev : [...prev, activeSbGameKey]
-                  )
-                }
-              />
-
-              <LessonCheckQuiz
-                key={`sb-out-quiz-${activeSbQuizId}`}
-                lessonId={activeSbQuizId}
-                title={`കഥ ${chapterIdx + 1} · എന്ത് പഠിച്ചു? ഒരു ചെറിയ ചോദ്യം`}
-                savedAnswer={quizAnswers[activeSbQuizId]}
-                onAnswered={(lid, idx, ok) => {
-                  onQuizAnswered(lid, idx, ok);
-                  if (isLastChapter) {
-                    onMarkLessonCompleted?.('storyboard');
-                  }
-                }}
-              />
-
-              <LessonStepperNav
-                stepLabel={`സാഹചര്യ ബോർഡ് · കഥ ${chapterIdx + 1} / ${STORYBOARD_CHAPTERS.length}: ${chapter.title}`}
-                currentStep={chapterIdx}
-                totalSteps={STORYBOARD_CHAPTERS.length}
-                prevLabel={
-                  chapterIdx > 0 ? STORYBOARD_CHAPTERS[chapterIdx - 1].title : undefined
-                }
-                onPrev={chapterIdx > 0 ? () => handleSelectChapter(chapterIdx - 1) : undefined}
-                statusHint={
-                  canAdvanceCurrentChapter
-                    ? isLastChapter
-                      ? 'സാഹചര്യ ബോർഡ് പൂർത്തിയായി — ഇനി 🧭 എന്റെ SKSSF യാത്ര (POV ഗെയിം) കളിക്കാം!'
-                      : 'ഈ കഥ പൂർത്തിയായി — ഇനി അടുത്ത ഗെയിമും കഥയും കളിക്കാം!'
-                    : 'ഈ കഥ മനസ്സിലാക്കി താഴെയുള്ള ചോദ്യത്തിന് മറുപടി നൽകിയാൽ അടുത്ത കഥയും പുതിയ ഗെയിമും തുറക്കും! (ഗെയിം സ്കിപ്പ് ചെയ്യാനും സൗകര്യമുണ്ട്)'
-                }
-                nextLabel={
-                  !isLastChapter
-                    ? STORYBOARD_CHAPTERS[chapterIdx + 1].title
-                    : '🧭 എന്റെ SKSSF യാത്ര (POV ഗെയിം)'
-                }
-                nextIsWorldAdvance={isLastChapter}
-                nextDisabled={!canAdvanceCurrentChapter}
-                onNext={() => {
-                  if (!isLastChapter) {
-                    handleSelectChapter(chapterIdx + 1);
-                  } else {
-                    sound.playUnlock();
-                    onMarkLessonCompleted?.('storyboard');
-                    onGoToMission1();
-                  }
-                }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 };

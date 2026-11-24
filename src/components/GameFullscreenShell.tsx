@@ -227,17 +227,23 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     onSkipGame?.();
   };
 
+  const [showTitleTip, setShowTitleTip] = useState(false);
+
   if (isSkipped && !isFullscreen) {
     return (
-      <div className="rounded-2xl border-2 border-slate-200 bg-slate-50 px-4 py-3 flex flex-wrap items-center justify-between gap-2.5 shadow-xs">
-        <div className="min-w-0">
-          <p className="text-xs sm:text-sm font-extrabold text-slate-800 leading-snug break-words">
-            ⏭️ ഗെയിം സ്കിപ്പ് ചെയ്തു: {title}
-          </p>
-          <p className="text-[11px] font-semibold text-slate-600 mt-0.5 leading-snug">
-            ഗെയിം കളിക്കൽ നിർബന്ധമില്ല — പാഠം മനസ്സിലാക്കി താഴെയുള്ള ചോദ്യത്തിന് മറുപടി നൽകിയാൽ അടുത്ത പാഠവും പുതിയ ഗെയിമും തുറക്കും!
-          </p>
-        </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 flex items-center justify-between gap-2 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            setShowTitleTip((v) => !v);
+          }}
+          aria-label={title}
+          className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-700"
+        >
+          <span>⏭️</span>
+          {showTitleTip && <span className="leading-snug break-words">{title}</span>}
+        </button>
         <button
           type="button"
           onClick={() => {
@@ -246,10 +252,11 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
             lastActiveGameShellId = shellId;
             setIsSkipped(false);
           }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold whitespace-nowrap shrink-0"
+          aria-label="കളിക്കാം"
+          title="കളിക്കാം"
+          className="inline-flex items-center justify-center w-9 h-8 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white shrink-0"
         >
-          <Gamepad2 className="w-3.5 h-3.5" />
-          <span>ഗെയിം തുറക്കാം</span>
+          <Gamepad2 className="w-4 h-4" />
         </button>
       </div>
     );
@@ -268,38 +275,45 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
           }}
         >
           <div className="max-w-6xl w-full mx-auto flex flex-col gap-1.5 sm:gap-2 flex-1 min-h-0">
-            {/* Compact Video-Player Top Control Strip */}
-            <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/95 border border-emerald-700/70 text-white shadow-md shrink-0">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-extrabold text-amber-300 leading-tight break-words">
-                  {title}
-                </p>
-                {subtitle && (
-                  <p className="hidden sm:block text-[11px] font-semibold text-emerald-100 leading-tight break-words mt-0.5">
-                    {subtitle}
-                  </p>
+            {/* Compact Icon-First Fullscreen Top Bar */}
+            <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-950/95 border border-emerald-700/70 text-white shadow-md shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  setShowTitleTip((v) => !v);
+                }}
+                aria-label={title}
+                className="flex items-center gap-1.5 min-w-0 text-left"
+              >
+                <span className="text-base shrink-0">🎮</span>
+                {showTitleTip && (
+                  <span className="text-xs font-extrabold text-amber-300 leading-tight break-words">
+                    {title}
+                    {subtitle ? ` · ${subtitle}` : ''}
+                  </span>
                 )}
-              </div>
+              </button>
               <div className="flex items-center gap-1.5 shrink-0">
                 {allowSkip && !isGameDone && (
                   <button
                     type="button"
                     onClick={handleSkip}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-[11px] sm:text-xs font-extrabold transition-colors whitespace-nowrap"
+                    aria-label="ഗെയിം സ്കിപ്പ് ചെയ്യുക"
+                    title="സ്കിപ്പ്"
+                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-amber-300 transition-colors"
                   >
-                    <SkipForward className="w-3.5 h-3.5 text-amber-300" />
-                    <span>ഗെയിം സ്കിപ്പ് ചെയ്യുക</span>
+                    <SkipForward className="w-4 h-4" />
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={exitFullscreen}
-                  title="ഫുൾ സ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കാം"
+                  title="ചെറുതാക്കാം"
                   aria-label="ഫുൾ സ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കാം"
-                  className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] sm:text-xs font-extrabold shadow-xs transition-transform active:scale-95 whitespace-nowrap"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xs transition-transform active:scale-95"
                 >
                   <VideoFullscreenExitIcon className="w-4 h-4" />
-                  <span>ചെറുതാക്കാം</span>
                 </button>
               </div>
             </div>
@@ -322,45 +336,55 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
         }}
         className={`space-y-1.5 ${className}`}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-[11px] font-bold text-slate-500">
-            🎮 രസകരമായ ഗെയിം · ഫോൺ തിരിച്ചുപിടിച്ചാൽ ഓട്ടോ ഫുൾ സ്ക്രീൻ ആകും
-          </span>
-          <div className="flex flex-wrap items-center justify-end gap-1.5 ml-auto">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setShowTitleTip((v) => !v);
+            }}
+            aria-label={title}
+            title={title}
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-950 text-xs font-extrabold"
+          >
+            <span>🎮</span>
+            {showTitleTip && <span className="leading-snug break-words">{title}</span>}
+          </button>
+          <div className="flex items-center justify-end gap-1.5 ml-auto">
             {allowSkip && !isGameDone && (
               <button
                 type="button"
                 onClick={handleSkip}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-800 text-xs font-extrabold shadow-xs transition-colors whitespace-nowrap"
+                title="സ്കിപ്പ്"
+                aria-label="ഗെയിം സ്കിപ്പ് ചെയ്യാം"
+                className="inline-flex items-center justify-center w-8 h-7 rounded-lg bg-slate-100 hover:bg-amber-100 border border-slate-300 text-slate-700 transition-colors"
               >
-                <SkipForward className="w-3.5 h-3.5 text-slate-600" />
-                <span>ഗെയിം സ്കിപ്പ് ചെയ്യുക</span>
+                <SkipForward className="w-3.5 h-3.5 text-slate-700" />
               </button>
             )}
             <button
               type="button"
               onClick={enterFullscreen}
-              title="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
-              aria-label="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs transition-colors whitespace-nowrap"
+              title="ഫുൾ സ്ക്രീൻ"
+              aria-label="ഫുൾ സ്ക്രീൻ"
+              className="inline-flex items-center justify-center w-8 h-7 rounded-lg bg-slate-900 hover:bg-emerald-800 text-amber-300 transition-colors"
             >
-              <VideoFullscreenEnterIcon className="w-4 h-4 text-amber-300" />
-              <span>ഫുൾ സ്ക്രീൻ</span>
+              <VideoFullscreenEnterIcon className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Game Viewport with Video-Player Style Bottom-Right Fullscreen Corner Button */}
+        {/* Game Viewport with Corner Fullscreen Icon */}
         <div className="relative">
           {children}
           <button
             type="button"
             onClick={enterFullscreen}
-            title="ഫുൾ സ്ക്രീനിൽ തുറക്കാം"
+            title="ഫുൾ സ്ക്രീൻ"
             aria-label="ഫുൾ സ്ക്രീനിൽ തുറക്കാം"
-            className="absolute top-2.5 right-2.5 z-30 w-9 h-9 rounded-lg bg-slate-950/75 hover:bg-slate-950 text-white border border-white/30 shadow-md flex items-center justify-center backdrop-blur-xs transition-transform active:scale-95"
+            className="absolute top-2.5 right-2.5 z-30 w-8 h-8 rounded-lg bg-slate-950/75 hover:bg-slate-950 text-white border border-white/30 shadow-md flex items-center justify-center backdrop-blur-xs transition-transform active:scale-95"
           >
-            <VideoFullscreenEnterIcon className="w-5 h-5" />
+            <VideoFullscreenEnterIcon className="w-4 h-4" />
           </button>
         </div>
       </div>
