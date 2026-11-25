@@ -679,18 +679,110 @@ export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
 };
 
 /* ============================================================================
- * 4. ISLAMIC LIBRARY BOOK ADAB SHELF GAME (ലൈബ്രറി കിതാബ് ക്രമം)
+ * 4. ISLAMIC LIBRARY BOOK ADAB SHELF GAME (തടി അലമാര / മേശയുടെ തട്ടുകൾ & കിതാബുകൾ)
  * ========================================================================== */
 const LIBRARY_SHELVES = [
-  { rank: 1, id: 'quran', emoji: '📗', label: 'വിശുദ്ധ ഖുർആൻ (മുസ്ഹഫ്)', shelfHint: 'ഏറ്റവും മുകളിൽ' },
-  { rank: 2, id: 'tafseer', emoji: '📖', label: 'തഫ്സീർ (ഖുർആൻ വ്യാഖ്യാനം)', shelfHint: 'തട്ട് 2' },
-  { rank: 3, id: 'hadith', emoji: '📜', label: 'ഹദീസ് ഗ്രന്ഥങ്ങൾ', shelfHint: 'തട്ട് 3' },
-  { rank: 4, id: 'fiqh', emoji: '⚖️', label: 'ഫിഖ്ഹ് (കർമ്മശാസ്ത്രം)', shelfHint: 'തട്ട് 4' },
-  { rank: 5, id: 'history', emoji: '🕌', label: 'അഖീദ & സമസ്ത ചരിത്രം', shelfHint: 'തട്ട് 5' },
-  { rank: 6, id: 'general', emoji: '📓', label: 'പൊതുവിജ്ഞാനം & സത്യധാര', shelfHint: 'ഏറ്റവും താഴെ' },
+  {
+    rank: 1,
+    id: 'quran',
+    emoji: '📗',
+    label: 'വിശുദ്ധ ഖുർആൻ (മുസ്ഹഫ്)',
+    shortTitle: 'അൽ-ഖുർആൻ',
+    shelfHint: 'ഏറ്റവും മുകളിലെ തട്ട്',
+    coverColor: '#065F46',
+    spineColor: '#047857',
+    goldTrim: '#FBBF24',
+  },
+  {
+    rank: 2,
+    id: 'tafseer',
+    emoji: '📖',
+    label: 'തഫ്സീർ (ഖുർആൻ വ്യാഖ്യാനം)',
+    shortTitle: 'തഫ്സീർ',
+    shelfHint: 'രണ്ടാം തട്ട്',
+    coverColor: '#0F766E',
+    spineColor: '#115E59',
+    goldTrim: '#FDE68A',
+  },
+  {
+    rank: 3,
+    id: 'hadith',
+    emoji: '📜',
+    label: 'ഹദീസ് ഗ്രന്ഥങ്ങൾ',
+    shortTitle: 'സ്വഹീഹ് ഹദീസ്',
+    shelfHint: 'മൂന്നാം തട്ട്',
+    coverColor: '#7C2D12',
+    spineColor: '#9A3412',
+    goldTrim: '#FCD34D',
+  },
+  {
+    rank: 4,
+    id: 'fiqh',
+    emoji: '⚖️',
+    label: 'ഫിഖ്ഹ് (കർമ്മശാസ്ത്രം)',
+    shortTitle: 'ഫിഖ്ഹ് കിതാബ്',
+    shelfHint: 'നാലാം തട്ട്',
+    coverColor: '#1E3A8A',
+    spineColor: '#1D4ED8',
+    goldTrim: '#93C5FD',
+  },
+  {
+    rank: 5,
+    id: 'history',
+    emoji: '🕌',
+    label: 'അഖീദ & സമസ്ത ചരിത്രം',
+    shortTitle: 'സമസ്ത ചരിത്രം',
+    shelfHint: 'അഞ്ചാം തട്ട്',
+    coverColor: '#581C87',
+    spineColor: '#6B21A8',
+    goldTrim: '#E9D5FF',
+  },
+  {
+    rank: 6,
+    id: 'general',
+    emoji: '📓',
+    label: 'പൊതുവിജ്ഞാനം & സത്യധാര',
+    shortTitle: 'സത്യധാര / മാസിക',
+    shelfHint: 'ഏറ്റവും താഴത്തെ തട്ട്',
+    coverColor: '#334155',
+    spineColor: '#475569',
+    goldTrim: '#CBD5E1',
+  },
 ] as const;
 
 const BOX_ORDER = ['fiqh', 'quran', 'general', 'hadith', 'history', 'tafseer'] as const;
+
+const KitabMiniSvg: React.FC<{
+  id: string;
+  coverColor: string;
+  goldTrim: string;
+}> = ({ id, coverColor, goldTrim }) => (
+  <svg viewBox="0 0 64 44" className="w-12 h-9 shrink-0 drop-shadow-xs" aria-hidden="true">
+    {id === 'quran' ? (
+      /* Open Mushaf resting respectfully on wooden Rehal stand */
+      <g>
+        <path d="M14 40 L32 28 L50 40" stroke="#92400E" strokeWidth="3.2" fill="none" strokeLinecap="round" />
+        <path d="M22 40 L32 33 L42 40" stroke="#B45309" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        <path d="M10 14 Q22 10 32 18 Q42 10 54 14 L52 30 Q42 26 32 32 Q22 26 12 30 Z" fill="#FFFBEB" stroke="#065F46" strokeWidth="2.2" />
+        <line x1="32" y1="18" x2="32" y2="32" stroke="#D97706" strokeWidth="1.5" />
+        <line x1="16" y1="19" x2="27" y2="21" stroke="#059669" strokeWidth="1.4" />
+        <line x1="16" y1="24" x2="27" y2="26" stroke="#059669" strokeWidth="1.4" />
+        <line x1="37" y1="21" x2="48" y2="19" stroke="#059669" strokeWidth="1.4" />
+        <line x1="37" y1="26" x2="48" y2="24" stroke="#059669" strokeWidth="1.4" />
+        <circle cx="32" cy="9" r="3" fill="#FBBF24" />
+      </g>
+    ) : (
+      /* Hardbound Kitab stack on desk shelf */
+      <g>
+        <rect x="8" y="10" width="48" height="28" rx="4" fill={coverColor} stroke="#0F172A" strokeWidth="1.6" />
+        <rect x="13" y="14" width="38" height="20" rx="2" fill="none" stroke={goldTrim} strokeWidth="1.5" />
+        <rect x="8" y="10" width="7" height="28" rx="2" fill="#0F172A" opacity="0.25" />
+        <line x1="11" y1="35" x2="53" y2="35" stroke="#FEF3C7" strokeWidth="2.2" />
+        <circle cx="32" cy="24" r="5" fill={goldTrim} opacity="0.9" />
+      </g>
+    )}
+  </svg>
+);
 
 export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
   xpKey,
@@ -702,23 +794,28 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
   const [placed, setPlaced] = useState<string[]>(
     isCompleted ? LIBRARY_SHELVES.map((s) => s.id) : []
   );
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [lives, setLives] = useState<number>(3);
+  const [feedback, setFeedback] = useState<string | null>(
+    isCompleted ? null : '👇 താഴെ മേശയിൽ കിടക്കുന്ന ഒരു കിതാബ് തൊട്ട്, മുകളിലെ തടി അലമാരയിലെ ശരിയായ തട്ടിൽ വെക്കൂ!'
+  );
   const [won, setWon] = useState(isCompleted);
+  const failed = lives <= 0 && !won;
 
   const handlePlaceOnShelf = (shelfId: string) => {
     sound.unlockAudio();
-    if (placed.includes(shelfId)) return;
+    if (failed || won || placed.includes(shelfId)) return;
     if (!selectedBookId) {
-      setFeedback('👆 ആദ്യം താഴത്തെ ബോക്സിൽ നിന്ന് ഒരു കിതാബ് തിരഞ്ഞെടുക്കൂ!');
+      setFeedback('👆 ആദ്യം താഴത്തെ മേശയിൽ നിന്ന് ഒരു കിതാബ് തിരഞ്ഞെടുക്കൂ!');
       return;
     }
     if (selectedBookId !== shelfId) {
       sound.playError();
       const chosen = LIBRARY_SHELVES.find((s) => s.id === selectedBookId);
+      setLives((l) => Math.max(0, l - 1));
       setFeedback(
         shelfId === 'quran'
-          ? '⚠️ ഏറ്റവും മുകളിലെ തട്ട് വിശുദ്ധ ഖുർആനിന് (📗) മാത്രമുള്ളതാണ്!'
-          : `⚠️ ${chosen?.emoji} ${chosen?.label} — ശരിയായ അദബ് തട്ടിൽ വെക്കൂ!`
+          ? '❌ തെറ്റി! ഏറ്റവും മുകളിലെ തട്ട് വിശുദ്ധ ഖുർആനിന് (മുസ്ഹഫ്) മാത്രമുള്ളതാണ്! (1 ഹൃദയം നഷ്ടമായി)'
+          : `❌ തെറ്റി! ${chosen?.label} — അദബ് ക്രമപ്രകാരം ശരിയായ തട്ടിൽ വെക്കൂ! (1 ഹൃദയം നഷ്ടമായി)`
       );
       return;
     }
@@ -727,13 +824,13 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
     const placedBook = LIBRARY_SHELVES.find((s) => s.id === shelfId);
     setPlaced(next);
     setSelectedBookId(null);
-    setFeedback(`✅ ${placedBook?.emoji} ${placedBook?.label}`);
+    setFeedback(`✅ മനോഹരം! ${placedBook?.label} ശരിയായ തട്ടിൽ അദബോടെ വെച്ചു.`);
     if (next.length === LIBRARY_SHELVES.length && !won) {
       setWon(true);
       sound.playHoist();
       onAwardXp(30, `library_adab_${xpKey}`);
       onComplete?.();
-      narrator.speak('മനോഹരം! വിശുദ്ധ ഖുർആൻ ഏറ്റവും മുകളിലായി ഇസ്‌ലാമിക അദബോടെ ലൈബ്രറി ഒരുക്കി!');
+      narrator.speak('മനോഹരം! വിശുദ്ധ ഖുർആൻ ഏറ്റവും മുകളിലായി ഇസ്‌ലാമിക അദബോടെ കിതാബ് അലമാര ഒരുക്കി!');
       window.setTimeout(() => scrollToActiveQuiz(), 900);
     }
   };
@@ -742,85 +839,155 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
     sound.playClick();
     setPlaced([]);
     setSelectedBookId(null);
-    setFeedback(null);
+    setLives(3);
+    setFeedback('👇 താഴെ മേശയിൽ കിടക്കുന്ന ഒരു കിതാബ് തൊട്ട്, മുകളിലെ തടി അലമാരയിലെ ശരിയായ തട്ടിൽ വെക്കൂ!');
     setWon(false);
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 sm:p-4 space-y-3 shadow-sm">
       <CompactGameBar
         icon="📚"
-        progress={`${placed.length}/${LIBRARY_SHELVES.length}`}
-        title="📚 ഇസ്‌ലാമിക് ലൈബ്രറി — കിതാബ് അദബ് ക്രമം"
-        subtitle="താഴത്തെ ബോക്സിൽ നിന്ന് കിതാബ് തിരഞ്ഞെടുത്ത് ഖുർആൻ ഏറ്റവും മുകളിലും തുടർന്ന് തഫ്സീർ, ഹദീസ്, ഫിഖ്ഹ്, ചരിത്രം, പൊതുപുസ്തകങ്ങൾ എന്ന ക്രമത്തിൽ വെക്കൂ!"
+        progress={`❤️ ${lives}/3 · ${placed.length}/${LIBRARY_SHELVES.length}`}
+        title="📚 മദ്രസാ കിതാബ് അലമാര — അദബ് ക്രമം"
+        subtitle="ഖുർആൻ ഏറ്റവും മുകളിൽ, തുടർന്ന് തഫ്സീർ, ഹദീസ്, ഫിഖ്ഹ്, ചരിത്രം, സത്യധാര എന്ന ക്രമത്തിൽ തടി അലമാരയുടെ തട്ടുകളിൽ അടുക്കിവെക്കൂ!"
         done={won}
         onReset={reset}
       />
 
-      {/* Wooden Bookshelf (Top to Bottom) */}
-      <div className="rounded-2xl border-2 border-amber-700 bg-amber-950/95 p-2.5 space-y-1.5">
-        {LIBRARY_SHELVES.map((shelf) => {
-          const isPlaced = placed.includes(shelf.id);
-          return (
-            <button
-              key={shelf.id}
-              type="button"
-              disabled={isPlaced}
-              onClick={() => handlePlaceOnShelf(shelf.id)}
-              className={`w-full px-3 py-2 rounded-xl border-2 text-left flex items-center justify-between gap-2 transition-all ${
-                isPlaced
-                  ? 'bg-emerald-100 border-emerald-400 text-emerald-950'
-                  : selectedBookId
-                  ? 'bg-amber-50 border-amber-400 text-amber-950 hover:bg-amber-100 animate-pulse'
-                  : 'bg-amber-900/60 border-amber-700 text-amber-100'
-              }`}
-            >
-              <span className="text-xs font-extrabold tabular-nums">
-                #{shelf.rank} · {shelf.shelfHint}
-              </span>
-              <span className="text-xs sm:text-sm font-extrabold">
-                {isPlaced ? `${shelf.emoji} ${shelf.label} ✅` : '📥'}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Realistic Wooden Bookcase / Table Shelf Structure */}
+      <div className="relative rounded-2xl bg-gradient-to-b from-[#6B3A18] via-[#4A250E] to-[#361A09] p-2.5 sm:p-3.5 border-4 border-[#8B4E23] shadow-lg">
+        {/* Top Wooden Cornice Molding */}
+        <div className="h-3 rounded-t-lg bg-gradient-to-r from-[#9A5B2C] via-[#C27D38] to-[#9A5B2C] border-b-2 border-[#3E1E0B] mb-2 flex items-center justify-center">
+          <span className="text-[9px] font-black tracking-widest text-amber-100 uppercase">
+            🕌 മദ്രസാ കിതാബ് അലമാര · മുകളിൽ നിന്ന് താഴേക്ക്
+          </span>
+        </div>
 
-      {/* Book Box */}
-      {!won && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-          {BOX_ORDER.map((bookId) => {
-            const book = LIBRARY_SHELVES.find((s) => s.id === bookId)!;
-            const done = placed.includes(book.id);
-            const active = selectedBookId === book.id;
+        {/* Side Pillars + 6 Shelf Compartments */}
+        <div className="border-x-4 border-[#8B4E23] bg-[#2B1508]/90 px-2 py-2 space-y-2 rounded-b-lg">
+          {LIBRARY_SHELVES.map((shelf) => {
+            const isPlaced = placed.includes(shelf.id);
+            const isNextHint = selectedBookId === shelf.id;
             return (
-              <button
-                key={book.id}
-                type="button"
-                disabled={done}
-                onClick={() => {
-                  sound.playClick();
-                  setSelectedBookId(book.id);
-                  setFeedback(`${book.emoji} ${book.label}`);
-                }}
-                className={`px-2.5 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center gap-1.5 transition-all ${
-                  done
-                    ? 'bg-slate-100 border-slate-200 text-slate-400 opacity-45'
-                    : active
-                    ? 'bg-emerald-700 text-white border-emerald-950 scale-[1.02]'
-                    : 'bg-amber-50 text-slate-900 border-amber-300 hover:bg-amber-100'
-                }`}
-              >
-                <span className="text-lg shrink-0">{book.emoji}</span>
-                <span className="text-left leading-tight break-words">{book.label}</span>
-              </button>
+              <div key={shelf.id} className="space-y-1">
+                <button
+                  type="button"
+                  disabled={isPlaced || failed}
+                  onClick={() => handlePlaceOnShelf(shelf.id)}
+                  className={`w-full px-3 py-2 rounded-lg border-2 text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer ${
+                    isPlaced
+                      ? 'bg-gradient-to-r from-amber-50 via-white to-emerald-50 border-emerald-400 text-slate-900 shadow-inner'
+                      : selectedBookId
+                      ? 'bg-amber-950/60 border-dashed border-amber-400 text-amber-100 hover:bg-amber-900/70'
+                      : 'bg-[#3A1E0D]/80 border-amber-800/70 text-amber-200/90'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-7 h-7 rounded-lg bg-amber-900/90 border border-amber-600/70 text-amber-200 text-xs font-black flex items-center justify-center shrink-0">
+                      {shelf.rank}
+                    </span>
+                    {isPlaced ? (
+                      <KitabMiniSvg
+                        id={shelf.id}
+                        coverColor={shelf.coverColor}
+                        goldTrim={shelf.goldTrim}
+                      />
+                    ) : (
+                      <div className="w-12 h-9 rounded-md border border-dashed border-amber-500/50 bg-black/25 flex items-center justify-center text-base shrink-0">
+                        {isNextHint ? '👇' : '📥'}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className={`text-[10px] font-bold ${isPlaced ? 'text-emerald-700' : 'text-amber-300'}`}>
+                        {shelf.shelfHint}
+                      </p>
+                      <p className={`text-xs sm:text-sm font-extrabold leading-tight break-words ${isPlaced ? 'text-slate-900' : 'text-amber-100'}`}>
+                        {isPlaced ? `${shelf.label} ✅` : 'ഇവിടെ കിതാബ് വെക്കാം'}
+                      </p>
+                    </div>
+                  </div>
+                  {isPlaced && (
+                    <span className="text-lg shrink-0">{shelf.emoji}</span>
+                  )}
+                </button>
+                {/* Solid Teak Wood Shelf Plank */}
+                <div className="h-2 rounded-sm bg-gradient-to-r from-[#7C441E] via-[#B46E36] to-[#7C441E] shadow-sm border-b border-[#2C1406]" />
+              </div>
             );
           })}
         </div>
+
+        {/* Wooden Bookcase Feet */}
+        <div className="flex items-center justify-between px-4 pt-1">
+          <div className="w-6 h-2.5 rounded-b-md bg-[#7C441E] border border-[#3E1E0B]" />
+          <div className="w-6 h-2.5 rounded-b-md bg-[#7C441E] border border-[#3E1E0B]" />
+        </div>
+      </div>
+
+      {/* Fail State */}
+      {failed && (
+        <div className="p-3.5 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-extrabold text-rose-900">💔 3 തെറ്റുകൾ സംഭവിച്ചു!</p>
+            <p className="text-xs font-bold text-rose-700">
+              ഖുർആൻ → തഫ്സീർ → ഹദീസ് → ഫിഖ്ഹ് → ചരിത്രം → പൊതുപുസ്തകങ്ങൾ എന്ന ക്രമത്തിൽ വീണ്ടും അടുക്കിവെക്കൂ.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={reset}
+            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-600 cursor-pointer"
+          >
+            🔄 വീണ്ടും ശ്രമിക്കാം
+          </button>
+        </div>
       )}
 
-      {feedback && (
-        <p className="text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5">
+      {/* Wooden Study Desk Tray Holding Books to Pick */}
+      {!won && !failed && (
+        <div className="rounded-2xl bg-amber-50/90 border-2 border-amber-300 p-2.5 space-y-2">
+          <p className="text-[11px] font-extrabold text-amber-950">
+            🪑 മേശയിലുള്ള കിതാബുകൾ (ഒന്ന് തൊട്ട് മുകളിലെ ശരിയായ തട്ടിൽ വെക്കൂ):
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {BOX_ORDER.map((bookId) => {
+              const book = LIBRARY_SHELVES.find((s) => s.id === bookId)!;
+              const done = placed.includes(book.id);
+              const active = selectedBookId === book.id;
+              return (
+                <button
+                  key={book.id}
+                  type="button"
+                  disabled={done}
+                  onClick={() => {
+                    sound.playClick();
+                    setSelectedBookId(book.id);
+                    setFeedback(`👆 തിരഞ്ഞെടുത്തു: ${book.label} — ഇനി മുകളിലെ ശരിയായ തട്ടിൽ തൊടൂ!`);
+                  }}
+                  className={`px-2.5 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
+                    done
+                      ? 'bg-slate-100 border-slate-200 text-slate-400 opacity-45 cursor-default'
+                      : active
+                      ? 'bg-emerald-700 text-white border-emerald-950 ring-2 ring-emerald-300 scale-[1.01]'
+                      : 'bg-white text-slate-900 border-amber-300 hover:border-emerald-500 hover:bg-emerald-50/40'
+                  }`}
+                >
+                  <KitabMiniSvg
+                    id={book.id}
+                    coverColor={book.coverColor}
+                    goldTrim={book.goldTrim}
+                  />
+                  <span className="text-left leading-tight break-words">{book.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {feedback && !failed && (
+        <p className="text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
           {feedback}
         </p>
       )}

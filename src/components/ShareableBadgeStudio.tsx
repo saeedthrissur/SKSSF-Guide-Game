@@ -277,33 +277,9 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       drawImageContain(ctx, skssfFlag, 814, 112, 148, 128);
     }
 
-    const drawCenteredFit = (
+    const drawOpticalCenteredFit = (
       text: string,
       centerX: number,
-      y: number,
-      maxPx: number,
-      startSize: number,
-      minSize: number,
-      weight: number | string = 700,
-      family = '"Noto Sans Malayalam", sans-serif'
-    ) => {
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'alphabetic';
-      ctx.direction = 'ltr';
-      let size = startSize;
-      ctx.font = `normal ${weight} ${size}px ${family}`;
-      while (size > minSize && ctx.measureText(text).width > maxPx) {
-        size -= 2;
-        ctx.font = `normal ${weight} ${size}px ${family}`;
-      }
-      ctx.fillText(text, centerX, y);
-      ctx.restore();
-    };
-
-    const drawLeftFit = (
-      text: string,
-      leftX: number,
       y: number,
       maxPx: number,
       startSize: number,
@@ -317,23 +293,39 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.direction = 'ltr';
       let size = startSize;
       ctx.font = `normal ${weight} ${size}px ${family}`;
-      while (size > minSize && ctx.measureText(text).width > maxPx) {
+      let metrics = ctx.measureText(text);
+      const getVisualW = (m: TextMetrics) => {
+        const hasBox =
+          typeof m.actualBoundingBoxLeft === 'number' &&
+          typeof m.actualBoundingBoxRight === 'number' &&
+          m.actualBoundingBoxRight + m.actualBoundingBoxLeft > 0;
+        return hasBox ? m.actualBoundingBoxRight + m.actualBoundingBoxLeft : m.width;
+      };
+      while (size > minSize && Math.max(metrics.width, getVisualW(metrics)) > maxPx) {
         size -= 1;
         ctx.font = `normal ${weight} ${size}px ${family}`;
+        metrics = ctx.measureText(text);
       }
-      ctx.fillText(text, leftX, y);
+      const leftBear =
+        typeof metrics.actualBoundingBoxLeft === 'number' ? metrics.actualBoundingBoxLeft : 0;
+      const rightBear =
+        typeof metrics.actualBoundingBoxRight === 'number' && metrics.actualBoundingBoxRight > 0
+          ? metrics.actualBoundingBoxRight
+          : metrics.width;
+      const visualCenterOffset = (rightBear - leftBear) / 2;
+      ctx.fillText(text, Math.round(centerX - visualCenterOffset), y);
       ctx.restore();
     };
 
     ctx.fillStyle = '#065F46';
-    drawCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 170, 500, 32, 22, 800);
+    drawOpticalCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 166, 500, 32, 20, 800);
     ctx.fillStyle = '#92400E';
-    drawCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 210, 500, 22, 16, 700);
+    drawOpticalCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 208, 500, 22, 15, 700);
 
     // Golden Circular User Photo Frame (or Emblem if no photo uploaded)
     const cx = 540;
-    const cy = 468;
-    const radius = 165;
+    const cy = 434;
+    const radius = 152;
 
     ctx.beginPath();
     ctx.arc(cx, cy, radius + 12, 0, Math.PI * 2);
@@ -356,69 +348,73 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.direction = 'ltr';
-      ctx.font = 'normal 400 120px sans-serif';
-      ctx.fillText(badge.emoji, cx, cy + 8);
+      ctx.font = 'normal 400 112px sans-serif';
+      ctx.fillText(badge.emoji, cx, cy + 6);
       ctx.restore();
     }
 
-    // Ribbon Badge Title
+    // Ribbon Badge Title (dead centered)
     ctx.fillStyle = badge.accentFrom;
     ctx.beginPath();
-    ctx.roundRect(140, 682, 800, 92, 24);
+    ctx.roundRect(140, 626, 800, 86, 24);
     ctx.fill();
 
     ctx.fillStyle = '#FEF3C7';
-    drawCenteredFit(`${badge.emoji} ${badge.title}`, 540, 742, 740, 36, 22, 800);
+    drawOpticalCenteredFit(`${badge.emoji} ${badge.title}`, 540, 682, 740, 34, 20, 800);
 
-    // User Name & Place
+    // User Name & Place (dead centered)
     ctx.fillStyle = '#0F172A';
-    drawCenteredFit(displayName, 540, 864, 840, 48, 26, 800);
+    drawOpticalCenteredFit(displayName, 540, 790, 840, 46, 24, 800);
 
     ctx.fillStyle = '#047857';
-    drawCenteredFit(displayPlace, 540, 914, 820, 28, 18, 700);
+    drawOpticalCenteredFit(displayPlace, 540, 838, 820, 28, 17, 700);
 
-    // Subtitle
+    // Subtitle (dead centered)
     ctx.fillStyle = '#334155';
-    drawCenteredFit(badge.subtitle, 540, 982, 840, 24, 16, 600);
+    drawOpticalCenteredFit(badge.subtitle, 540, 896, 840, 23, 15, 600);
 
-    // XP & Rank Strip
+    // XP & Rank Strip (dead centered)
     ctx.fillStyle = '#F1F5F9';
     ctx.beginPath();
-    ctx.roundRect(120, 1014, 840, 74, 18);
+    ctx.roundRect(120, 926, 840, 68, 18);
     ctx.fill();
     ctx.strokeStyle = '#CBD5E1';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawCenteredFit(`⭐ ${xp} XP  ·  ${rank}`, 540, 1060, 780, 26, 17, 800);
+    drawOpticalCenteredFit(`⭐ ${xp} XP  ·  ${rank}`, 540, 969, 780, 25, 16, 800);
 
-    // Scannable QR Code + App Link Invite Strip
+    // Symmetrically Centered Scannable QR Code + App Link Invite Strip
     ctx.fillStyle = '#ECFDF5';
     ctx.beginPath();
-    ctx.roundRect(120, 1106, 840, 140, 20);
+    ctx.roundRect(120, 1014, 840, 232, 22);
     ctx.fill();
     ctx.strokeStyle = '#6EE7B7';
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
     if (qrImg) {
+      const qrSize = 112;
+      const qrX = 540 - qrSize / 2;
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(142, 1118, 116, 116);
-      ctx.drawImage(qrImg, 146, 1122, 108, 108);
+      ctx.beginPath();
+      ctx.roundRect(qrX - 6, 1028, qrSize + 12, qrSize + 12, 12);
+      ctx.fill();
+      ctx.drawImage(qrImg, qrX, 1034, qrSize, qrSize);
     }
 
     ctx.fillStyle = '#064E3B';
-    drawLeftFit('📲 നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ!', 282, 1154, 650, 24, 16, 800);
+    drawOpticalCenteredFit('📲 നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ!', 540, 1178, 780, 23, 15, 800);
     ctx.fillStyle = '#047857';
-    drawLeftFit('QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ:', 282, 1188, 650, 19, 14, 700);
+    drawOpticalCenteredFit('QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ', 540, 1206, 780, 17, 13, 700);
     ctx.fillStyle = '#0F172A';
-    drawLeftFit(
+    drawOpticalCenteredFit(
       appUrl.replace(/^https?:\/\//, ''),
-      282,
-      1222,
-      650,
-      17,
+      540,
+      1232,
+      780,
+      16,
       12,
       700,
       '"Plus Jakarta Sans", sans-serif'
@@ -746,16 +742,16 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   {xp} XP · {rank}
                 </div>
 
-                {/* Live Scannable QR Code + App Link Preview */}
-                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-left">
+                {/* Live Scannable QR Code + App Link Preview (Dead Centered) */}
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col items-center gap-2 text-center">
                   {qrDataUrl && (
                     <img
                       src={qrDataUrl}
                       alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
-                      className="w-14 h-14 rounded-lg bg-white p-1 border border-emerald-200 shrink-0"
+                      className="w-16 h-16 rounded-lg bg-white p-1 border border-emerald-200 shrink-0"
                     />
                   )}
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 w-full text-center">
                     <p className="text-[11px] font-extrabold text-emerald-950 leading-snug">
                       📲 നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ!
                     </p>

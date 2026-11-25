@@ -35,6 +35,26 @@ function drawImageContain(
   ctx.drawImage(img, dx, dy, w, h);
 }
 
+function drawOpticalCenteredLine(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  centerX: number,
+  y: number
+): void {
+  ctx.save();
+  ctx.textAlign = 'left';
+  ctx.direction = 'ltr';
+  const m = ctx.measureText(text);
+  const leftBear = typeof m.actualBoundingBoxLeft === 'number' ? m.actualBoundingBoxLeft : 0;
+  const rightBear =
+    typeof m.actualBoundingBoxRight === 'number' && m.actualBoundingBoxRight > 0
+      ? m.actualBoundingBoxRight
+      : m.width;
+  const visualCenterOffset = (rightBear - leftBear) / 2;
+  ctx.fillText(text, Math.round(centerX - visualCenterOffset), y);
+  ctx.restore();
+}
+
 function wrapCenteredText(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -51,7 +71,7 @@ function wrapCenteredText(
     const testLine = line ? `${line} ${words[i]}` : words[i];
     const metrics = ctx.measureText(testLine);
     if (metrics.width > maxWidth && line) {
-      ctx.fillText(line, x, currentY);
+      drawOpticalCenteredLine(ctx, line, x, currentY);
       line = words[i];
       currentY += lineHeight;
     } else {
@@ -59,7 +79,7 @@ function wrapCenteredText(
     }
   }
   if (line) {
-    ctx.fillText(line, x, currentY);
+    drawOpticalCenteredLine(ctx, line, x, currentY);
   }
   return currentY;
 }
@@ -219,15 +239,14 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       ctx.fillText('SKJU · SKSSF', crestCx, crestCy + 8);
     }
 
-    // Certificate Titles
-    ctx.textAlign = 'center';
+    // Certificate Titles (optically centered)
     ctx.fillStyle = '#7F1D1D';
     ctx.font = '700 26px "Noto Sans Malayalam", sans-serif';
-    ctx.fillText('SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”', 800, 294);
+    drawOpticalCenteredLine(ctx, 'SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”', 800, 294);
 
     ctx.fillStyle = '#064E3B';
     ctx.font = '800 48px "Noto Sans Malayalam", sans-serif';
-    ctx.fillText('വിജയ സർട്ടിഫിക്കറ്റ്', 800, 356);
+    drawOpticalCenteredLine(ctx, 'വിജയ സർട്ടിഫിക്കറ്റ്', 800, 356);
 
     // Ornamental gold divider line
     ctx.strokeStyle = '#D97706';
@@ -260,21 +279,36 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       family = '"Noto Sans Malayalam", sans-serif'
     ) => {
       ctx.save();
-      ctx.textAlign = 'center';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
       ctx.direction = 'ltr';
       let size = startSize;
       ctx.font = `normal ${weight} ${size}px ${family}`;
-      while (size > minSize && ctx.measureText(text).width > maxPx) {
-        size -= 2;
+      let metrics = ctx.measureText(text);
+      const getVisualW = (m: TextMetrics) => {
+        const hasBox =
+          typeof m.actualBoundingBoxLeft === 'number' &&
+          typeof m.actualBoundingBoxRight === 'number' &&
+          m.actualBoundingBoxRight + m.actualBoundingBoxLeft > 0;
+        return hasBox ? m.actualBoundingBoxRight + m.actualBoundingBoxLeft : m.width;
+      };
+      while (size > minSize && Math.max(metrics.width, getVisualW(metrics)) > maxPx) {
+        size -= 1;
         ctx.font = `normal ${weight} ${size}px ${family}`;
+        metrics = ctx.measureText(text);
       }
-      ctx.fillText(text, centerX, y);
+      const leftBear =
+        typeof metrics.actualBoundingBoxLeft === 'number' ? metrics.actualBoundingBoxLeft : 0;
+      const rightBear =
+        typeof metrics.actualBoundingBoxRight === 'number' && metrics.actualBoundingBoxRight > 0
+          ? metrics.actualBoundingBoxRight
+          : metrics.width;
+      ctx.fillText(text, Math.round(centerX - (rightBear - leftBear) / 2), y);
       ctx.restore();
     };
 
     // Recipient Name & Place (dynamically positioned so zero overlap!)
-    const nameY = Math.max(588, lastLineY + 86);
+    const nameY = Math.max(582, lastLineY + 80);
     ctx.fillStyle = '#0F172A';
     drawCenteredFit(displayName, 800, nameY, 1220, 52, 26, 800);
 
@@ -287,54 +321,51 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     ctx.stroke();
 
     ctx.fillStyle = '#047857';
-    drawCenteredFit(displayUnit, 800, nameY + 60, 1180, 28, 18, 700);
+    drawCenteredFit(displayUnit, 800, nameY + 58, 1180, 28, 18, 700);
 
     // Achievement Summary Box
-    const boxY = Math.max(720, nameY + 96);
+    const boxY = Math.max(706, nameY + 90);
     ctx.fillStyle = '#F0FDF4';
     ctx.beginPath();
-    ctx.roundRect(190, boxY, 1220, 134, 18);
+    ctx.roundRect(190, boxY, 1220, 124, 18);
     ctx.fill();
     ctx.strokeStyle = '#86EFAC';
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawCenteredFit(`നേടിയ സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${rank}`, 800, boxY + 52, 1140, 27, 18, 800);
+    drawCenteredFit(`നേടിയ സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${rank}`, 800, boxY + 48, 1140, 27, 18, 800);
 
     ctx.fillStyle = '#334155';
     const badgeLine =
       badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും ഭംഗിയായി പൂർത്തിയാക്കി';
-    drawCenteredFit(`ലഭിച്ച ബാഡ്ജുകൾ: ${badgeLine}`, 800, boxY + 98, 1140, 21, 14, 600);
+    drawCenteredFit(`ലഭിച്ച ബാഡ്ജുകൾ: ${badgeLine}`, 800, boxY + 92, 1140, 21, 14, 600);
 
-    // Footer with Scannable QR Code + App Link
+    // Symmetrically Centered Footer with QR Code + App Link + Date
     if (qrImg) {
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(108, 922, 110, 110);
+      ctx.fillRect(110, 916, 110, 110);
       ctx.strokeStyle = '#059669';
       ctx.lineWidth = 2.5;
-      ctx.strokeRect(108, 922, 110, 110);
-      ctx.drawImage(qrImg, 113, 927, 100, 100);
+      ctx.strokeRect(110, 916, 110, 110);
+      ctx.drawImage(qrImg, 115, 921, 100, 100);
     }
 
-    ctx.save();
-    ctx.direction = 'ltr';
-    ctx.textAlign = 'left';
     ctx.fillStyle = '#065F46';
-    ctx.font = 'normal 800 20px "Noto Sans Malayalam", sans-serif';
-    ctx.fillText('📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ', 234, 958);
+    drawCenteredFit('📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ', 800, 948, 920, 21, 15, 800);
     ctx.fillStyle = '#0F172A';
-    ctx.font = 'normal 600 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(appUrl.replace(/^https?:\/\//, ''), 234, 990);
+    drawCenteredFit(
+      appUrl.replace(/^https?:\/\//, ''),
+      800,
+      978,
+      920,
+      16,
+      12,
+      600,
+      '"Plus Jakarta Sans", sans-serif'
+    );
     ctx.fillStyle = '#475569';
-    ctx.font = 'normal 600 19px "Noto Sans Malayalam", sans-serif';
-    ctx.fillText(`തീയതി: ${issueDate}`, 234, 1024);
-
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#065F46';
-    ctx.font = 'normal 800 22px "Noto Sans Malayalam", sans-serif';
-    ctx.fillText('SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”', 1480, 1020);
-    ctx.restore();
+    drawCenteredFit(`തീയതി: ${issueDate}  ·  SKSSF ഗൈഡ് ഗെയിം`, 800, 1012, 920, 19, 14, 700);
 
     return canvas;
   };
@@ -590,28 +621,25 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             </p>
           </div>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600 border-t border-slate-200">
-            <div className="flex items-center gap-2.5 text-left">
-              {qrDataUrl && (
-                <img
-                  src={qrDataUrl}
-                  alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
-                  className="w-14 h-14 rounded-lg bg-white p-1 border border-emerald-300 shrink-0"
-                />
-              )}
-              <div className="leading-snug">
-                <p className="text-[11px] font-extrabold text-emerald-900">
-                  📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ
-                </p>
-                <p className="text-[10px] font-semibold text-slate-700 break-all">
-                  {appUrl.replace(/^https?:\/\//, '')}
-                </p>
-                <p className="text-[11px] text-slate-600 mt-0.5">തീയതി: {issueDate}</p>
-              </div>
+          <div className="pt-4 flex flex-col items-center justify-center gap-2.5 text-xs text-slate-600 border-t border-slate-200 text-center">
+            {qrDataUrl && (
+              <img
+                src={qrDataUrl}
+                alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
+                className="w-16 h-16 rounded-lg bg-white p-1 border border-emerald-300 shrink-0"
+              />
+            )}
+            <div className="leading-snug text-center">
+              <p className="text-[11px] font-extrabold text-emerald-900">
+                📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ
+              </p>
+              <p className="text-[10px] font-semibold text-slate-700 break-all">
+                {appUrl.replace(/^https?:\/\//, '')}
+              </p>
+              <p className="text-[11px] text-slate-600 mt-0.5">
+                തീയതി: {issueDate} · SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”
+              </p>
             </div>
-            <span className="font-extrabold text-emerald-900 text-center sm:text-right">
-              SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”
-            </span>
           </div>
         </div>
       </div>

@@ -36,6 +36,8 @@ import {
 } from '../utils/sound';
 import { RunHistoryEntry } from '../utils/gameStorage';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
+import { useLessonFlow } from '../utils/lessonFlowContext';
+import { scrollDirectToQuiz } from './LessonCheckQuiz';
 
 interface GlitterBurstProps {
   triggerKey: number;
@@ -989,7 +991,7 @@ export const AudioLoadingFloatBadge: React.FC = () => {
   );
 };
 
-/* Reusable Default-Collapsed Lesson Drawer (Icon-first; expands full lesson title & content ONLY when tapped!) */
+/* Reusable Default-OPEN Lesson Drawer with Mandatory Confirm CTA to Unlock Quiz */
 export const CollapsibleLessonDrawer: React.FC<{
   title?: string;
   emoji?: string;
@@ -1001,18 +1003,51 @@ export const CollapsibleLessonDrawer: React.FC<{
   title = 'പാഠം വായിക്കാം',
   emoji = '📖',
   badgeText,
-  defaultOpen = false,
+  defaultOpen = true,
   onSpeak,
   children,
 }) => {
+  const {
+    activeLessonId,
+    confirmLesson,
+    isLessonConfirmed,
+    registerLessonDrawer,
+  } = useLessonFlow();
   const [open, setOpen] = useState(defaultOpen);
+  const [showInfo, setShowInfo] = useState(false);
+
+  // Register presence of this lesson drawer on the page so LessonCheckQuiz enforces confirmation
+  useEffect(() => {
+    registerLessonDrawer(true);
+    return () => registerLessonDrawer(false);
+  }, [registerLessonDrawer]);
+
+  // Keep drawer open when navigating to a new lesson
+  useEffect(() => {
+    setOpen(defaultOpen);
+    setShowInfo(false);
+  }, [activeLessonId, defaultOpen]);
+
+  const confirmed = isLessonConfirmed(activeLessonId);
+
+  const handleConfirmLesson = () => {
+    sound.unlockAudio();
+    sound.playSuccess();
+    confirmLesson(activeLessonId);
+    window.setTimeout(() => {
+      scrollDirectToQuiz();
+    }, 140);
+  };
 
   return (
     <div
       data-lesson-drawer="true"
-      className="rounded-2xl border-2 border-emerald-200 bg-white shadow-xs overflow-hidden scroll-mt-20"
+      data-lesson-drawer-confirmed={confirmed ? 'true' : 'false'}
+      className={`rounded-2xl border-2 bg-white shadow-sm overflow-hidden scroll-mt-20 transition-colors ${
+        confirmed ? 'border-emerald-300' : 'border-amber-400 ring-2 ring-amber-100'
+      }`}
     >
-      <div className="px-3.5 py-2 flex items-center justify-between gap-2 bg-emerald-50/70">
+      <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 bg-gradient-to-r from-emerald-50 via-white to-amber-50/70">
         <button
           type="button"
           onClick={() => {
@@ -1022,22 +1057,56 @@ export const CollapsibleLessonDrawer: React.FC<{
           }}
           aria-expanded={open}
           aria-label={title}
-          className="flex items-center gap-2 min-w-0 flex-1 text-left"
+          className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
         >
+          {!confirmed && (
+            <motion.span
+              animate={{ x: [0, 4, 0] }}
+              transition={{ repeat: Infinity, duration: 1.0 }}
+              className="text-base shrink-0"
+              aria-hidden="true"
+            >
+              👉
+            </motion.span>
+          )}
           <span className="text-lg shrink-0" aria-hidden="true">
             {emoji}
           </span>
-          <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words">
-            {open ? title : 'പാഠം തുറക്കാം'}
-          </span>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words block">
+              {title}
+            </span>
+            {!confirmed && (
+              <span className="text-[11px] font-bold text-amber-800 block">
+                പാഠം വായിച്ച് താഴെ ഉറപ്പിച്ചാൽ ക്വിസ് തുറക്കും
+              </span>
+            )}
+          </div>
           {badgeText && (
             <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 tabular-nums">
               {badgeText}
             </span>
           )}
+          {confirmed && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full shrink-0">
+              <CheckCircle2 className="w-3 h-3" /> വായിച്ചു
+            </span>
+          )}
         </button>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setShowInfo((v) => !v);
+            }}
+            aria-label="പാഠം വിവരണം"
+            title="പാഠം വിവരണം"
+            className="w-8 h-8 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 flex items-center justify-center cursor-pointer"
+          >
+            <Info className="w-4 h-4" />
+          </button>
           {onSpeak && (
             <button
               type="button"
@@ -1047,7 +1116,7 @@ export const CollapsibleLessonDrawer: React.FC<{
               }}
               aria-label="പാഠം കേൾക്കാം"
               title="പാഠം കേൾക്കാം"
-              className="w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-2xs transition-transform active:scale-95"
+              className="w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-2xs transition-transform active:scale-95 cursor-pointer"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -1061,12 +1130,18 @@ export const CollapsibleLessonDrawer: React.FC<{
             }}
             aria-expanded={open}
             aria-label={open ? 'പാഠം ചുരുക്കാം' : 'പാഠം തുറക്കാം'}
-            className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center"
+            className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center cursor-pointer"
           >
             {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
       </div>
+
+      {showInfo && (
+        <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
+          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള <strong>“✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> അമർത്തിയാൽ മാത്രമേ ക്വിസ് തുറക്കൂ!
+        </div>
+      )}
 
       <AnimatePresence initial={false}>
         {open && (
@@ -1077,7 +1152,47 @@ export const CollapsibleLessonDrawer: React.FC<{
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-emerald-100"
           >
-            <div className="p-3.5 sm:p-5 space-y-4">{children}</div>
+            <div className="p-3.5 sm:p-5 space-y-4">
+              {children}
+
+              {/* Mandatory Lesson Confirmation CTA to Unlock Quiz */}
+              <div className="pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-2.5">
+                {confirmed ? (
+                  <div className="w-full flex flex-wrap items-center justify-between gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-900">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      പാഠം ഉറപ്പിച്ചു — ഇനി താഴത്തെ ക്വിസിന് ഉത്തരം നൽകാം!
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        scrollDirectToQuiz();
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                    >
+                      <span>❓ ക്വിസിലേക്ക്</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleConfirmLesson}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-900 shadow-md flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
+                  >
+                    <motion.span
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.9 }}
+                      className="text-base"
+                    >
+                      👆
+                    </motion.span>
+                    <span>✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

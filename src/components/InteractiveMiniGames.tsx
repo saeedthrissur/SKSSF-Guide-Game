@@ -1223,37 +1223,66 @@ export const MadrasaBoardActivity: React.FC<{
 };
 
 /* ============================================================================
- * 3. LEVEL 4 MINI-ACTIVITY: VIQAYA RELIEF VAN & GLOBAL FLIGHT PREP
+ * 3. LEVEL 4 MINI-ACTIVITY: VIQAYA & ALERT EMERGENCY RESCUE DRIVING GAME
  * ========================================================================== */
+interface ViqayaMissionDef {
+  id: number;
+  title: string;
+  targetName: string;
+  needIcon: string;
+  needLabel: string;
+  hazardIcon: string;
+  hazardLabel: string;
+  roadBg: string;
+  goalCount: number;
+  speech: string;
+}
 
-type RescuePartId = 'flag' | 'aid_kit' | 'speaker' | 'flight_banner';
-
-const RESCUE_PARTS: { id: RescuePartId; emoji: string; label: string; speech: string }[] = [
+const VIQAYA_MISSIONS: ViqayaMissionDef[] = [
   {
-    id: 'flag',
-    emoji: '🚩',
-    label: 'SKSSF പതാക',
-    speech: 'SKSSF പതാക വിഖായ സേവന വാഹനത്തിൽ ഉയർന്നു!',
+    id: 1,
+    title: 'ദൗത്യം 1 · പ്രളയ രക്ഷാദൗത്യം',
+    targetName: 'ദുരിതാശ്വാസ ക്യാമ്പ്',
+    needIcon: '📦',
+    needLabel: 'ഭക്ഷ്യ & കുടിവെള്ള കിറ്റ്',
+    hazardIcon: '🌊',
+    hazardLabel: 'വെള്ളക്കെട്ട് / തടസ്സം',
+    roadBg: 'from-slate-800 via-slate-700 to-slate-800',
+    goalCount: 3,
+    speech: 'പ്രളയബാധിതർക്കുള്ള ഭക്ഷ്യക്കിറ്റും കുടിവെള്ളവും സുരക്ഷിതമായി ക്യാമ്പിൽ എത്തിച്ചു!',
   },
   {
-    id: 'speaker',
-    emoji: '📢',
-    label: 'അറിയിപ്പ് മൈക്ക്',
-    speech: 'ദുരന്തനിവാരണ അറിയിപ്പുകൾക്കായി മൈക്ക് സജ്ജമാക്കി!',
+    id: 2,
+    title: 'ദൗത്യം 2 · അടിയന്തര ആശുപത്രി എക്സ്പ്രസ്',
+    targetName: 'സഹചാരി / മെഡിക്കൽ കോളേജ്',
+    needIcon: '🩸',
+    needLabel: 'രക്തദാനം & മരുന്ന് കിറ്റ്',
+    hazardIcon: '🚧',
+    hazardLabel: 'റോഡ് ബ്ലോക്ക്',
+    roadBg: 'from-slate-900 via-slate-800 to-slate-900',
+    goalCount: 3,
+    speech: 'അടിയന്തര മരുന്നുകളും രക്തദാന സഹായവും കൃത്യസമയത്ത് ആശുപത്രിയിൽ എത്തിച്ചു!',
   },
   {
-    id: 'aid_kit',
-    emoji: '🩹',
-    label: 'ഫസ്റ്റ്-എയ്ഡ് & കുടിവെള്ളം',
-    speech: 'വിഖായ ഫസ്റ്റ്-എയ്ഡ് കിറ്റും ശുദ്ധജലവും വാഹനത്തിൽ കയറ്റി!',
-  },
-  {
-    id: 'flight_banner',
-    emoji: '✈️',
-    label: 'ഹജ്ജ് വിഖായ & പ്രവാസി സെൽ',
-    speech: 'മക്കയിലും മദീനയിലും പ്രവാസലോകത്തും സേവനം എത്തിക്കുന്ന ഗ്ലോബൽ ദൗത്യം സജ്ജമായി!',
+    id: 3,
+    title: 'ദൗത്യം 3 · ഹജ്ജ് & പ്രവാസി വിഖായ',
+    targetName: 'ഹജ്ജ് ക്യാമ്പ് & തീർത്ഥാടകർ',
+    needIcon: '💧',
+    needLabel: 'സംസം / കുടിവെള്ളം & വീൽചെയർ സഹായം',
+    hazardIcon: '⚠️',
+    hazardLabel: 'തിരക്ക് / തടസ്സം',
+    roadBg: 'from-emerald-950 via-slate-800 to-emerald-950',
+    goalCount: 3,
+    speech: 'ഹജ്ജ് തീർത്ഥാടകർക്കും പ്രവാസികൾക്കും വേണ്ട വിഖായ സേവനം ഭംഗിയായി പൂർത്തിയാക്കി!',
   },
 ];
+
+interface RoadObj {
+  uid: number;
+  lane: 0 | 1 | 2;
+  y: number; // 0 to 100
+  kind: 'aid' | 'hazard';
+}
 
 export const ViqayaRescueVehicleActivity: React.FC<{
   onAwardXp: (amount: number, actionId: string) => void;
@@ -1261,247 +1290,386 @@ export const ViqayaRescueVehicleActivity: React.FC<{
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
   onComplete?: () => void;
 }> = ({ onAwardXp, onUnlockBadge, onOpenBadgeStudio, onComplete }) => {
-  const [placed, setPlaced] = useState<Record<RescuePartId, boolean>>({
-    flag: false,
-    speaker: false,
-    aid_kit: false,
-    flight_banner: false,
-  });
-  const [finished, setFinished] = useState(false);
-  const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(18);
+  const [missionIdx, setMissionIdx] = useState(0);
+  const [lane, setLane] = useState<0 | 1 | 2>(1);
+  const [objects, setObjects] = useState<RoadObj[]>([]);
+  const [collected, setCollected] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [playing, setPlaying] = useState(false);
+  const [won, setWon] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [statusMsg, setStatusMsg] = useState(
+    '🚑 വിഖായ ആംബുലൻസ് ഇടത്തോട്ടും വലത്തോട്ടും നീക്കി സഹായ കിറ്റുകൾ ശേഖരിക്കൂ, തടസ്സങ്ങൾ ഒഴിവാക്കൂ!'
+  );
+  const [hitFlash, setHitFlash] = useState(false);
+
+  const laneRef = useRef<0 | 1 | 2>(1);
+  const missionRef = useRef(0);
+  const collectedRef = useRef(0);
+  const livesRef = useRef(3);
+  const uidRef = useRef(1);
   const rawUid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const ambCrescentMaskId = `amb-flag-crescent-${rawUid}`;
 
-  const count = Object.values(placed).filter(Boolean).length;
-  const allDone = count === 4;
-  const nextId = RESCUE_PARTS.find((p) => !placed[p.id])?.id ?? null;
+  laneRef.current = lane;
+  missionRef.current = missionIdx;
+  collectedRef.current = collected;
+  livesRef.current = lives;
 
-  useEffect(() => {
-    if (!started || allDone || failed) return;
-    const id = window.setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          sound.playError();
-          setFailed(true);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [started, allDone, failed]);
+  const currentMission = VIQAYA_MISSIONS[missionIdx] ?? VIQAYA_MISSIONS[0];
 
-  const resetRescue = () => {
-    sound.playClick();
-    setPlaced({ flag: false, speaker: false, aid_kit: false, flight_banner: false });
-    setFinished(false);
-    setStarted(false);
-    setTimeLeft(18);
-    setFailed(false);
-  };
-
-  const snap = (id: RescuePartId) => {
+  const moveLane = (dir: -1 | 1) => {
+    if (!playing || won || failed) return;
     sound.unlockAudio();
-    if (placed[id] || failed) return;
-    if (!started) setStarted(true);
-    const next = { ...placed, [id]: true };
-    setPlaced(next);
-    const total = Object.values(next).filter(Boolean).length;
-    sound.playSuccess(total);
-    onAwardXp(10, `viqaya_prep_${id}`);
-    const item = RESCUE_PARTS.find((p) => p.id === id);
-    if (total === 4 && !finished) {
-      setFinished(true);
-      sound.playHoist();
-      onAwardXp(30, 'viqaya_prep_complete');
-      onUnlockBadge?.('🚑 വിഖായ വളണ്ടിയർ');
-      onComplete?.();
-      narrator.speak(
-        'അടിപൊളി! വിഖായ സഹായ വാഹനവും പ്രവാസി ഗ്ലോബൽ സേവന ദൗത്യവും പൂർണ്ണമായി സജ്ജമായി!',
-        '🚑 വിഖായ & ഗ്ലോബൽ ദൗത്യം തയ്യാർ!'
-      );
-    } else if (item) {
-      narrator.speak(item.speech, `${item.emoji} ${item.label}`);
-    }
+    sound.playClick();
+    setLane((prev) => {
+      const next = Math.max(0, Math.min(2, prev + dir)) as 0 | 1 | 2;
+      laneRef.current = next;
+      return next;
+    });
   };
+
+  // Keyboard support (Left / Right arrows)
+  useEffect(() => {
+    if (!playing || won || failed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        moveLane(-1);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        moveLane(1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [playing, won, failed]);
+
+  // Game Loop: smooth 60ms ticks
+  useEffect(() => {
+    if (!playing || won || failed) return;
+    let tick = 0;
+
+    const timer = window.setInterval(() => {
+      tick += 1;
+      const mIdx = missionRef.current;
+      const mDef = VIQAYA_MISSIONS[mIdx];
+      const speed = 3.2 + mIdx * 0.7;
+
+      setObjects((prev) => {
+        const nextList: RoadObj[] = [];
+        for (const obj of prev) {
+          const ny = obj.y + speed;
+          // Collision window near bottom ambulance (y between 72 and 90)
+          if (ny >= 72 && ny <= 90 && obj.lane === laneRef.current) {
+            if (obj.kind === 'aid') {
+              const newCount = collectedRef.current + 1;
+              collectedRef.current = newCount;
+              setCollected(newCount);
+              sound.playSuccess(newCount);
+              if (newCount >= mDef.goalCount) {
+                if (mIdx + 1 < VIQAYA_MISSIONS.length) {
+                  const nextMission = VIQAYA_MISSIONS[mIdx + 1];
+                  missionRef.current = mIdx + 1;
+                  collectedRef.current = 0;
+                  setMissionIdx(mIdx + 1);
+                  setCollected(0);
+                  onAwardXp(15, `viqaya_mission_${mDef.id}`);
+                  setStatusMsg(`✅ ${mDef.title} വിജയിച്ചു! അടുത്തത്: ${nextMission.title}`);
+                  narrator.speak(mDef.speech);
+                  return [];
+                } else {
+                  setWon(true);
+                  setPlaying(false);
+                  sound.playHoist();
+                  onAwardXp(40, 'viqaya_prep_complete');
+                  onUnlockBadge?.('🚑 വിഖായ വളണ്ടിയർ');
+                  onComplete?.();
+                  setStatusMsg('🎉 മൂന്ന് വിഖായ & അലേർട്ട് രക്ഷാദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി!');
+                  narrator.speak('അടിപൊളി! പ്രളയ ദുരിതാശ്വാസം, ആശുപത്രി എക്സ്പ്രസ്, ഹജ്ജ് സേവനം എന്നീ മൂന്ന് വിഖായ ദൗത്യങ്ങളും വിജയിച്ചു!');
+                  return [];
+                }
+              } else {
+                setStatusMsg(`✅ ${mDef.needLabel} ശേഖരിച്ചു! (${newCount}/${mDef.goalCount})`);
+              }
+            } else {
+              // Hit hazard!
+              const nextLives = Math.max(0, livesRef.current - 1);
+              livesRef.current = nextLives;
+              setLives(nextLives);
+              sound.playError();
+              setHitFlash(true);
+              window.setTimeout(() => setHitFlash(false), 320);
+              if (nextLives <= 0) {
+                setFailed(true);
+                setPlaying(false);
+                setStatusMsg('💔 വാഹനത്തിന് 3 തവണ തടസ്സമേറ്റു! വീണ്ടും ശ്രദ്ധയോടെ ഓടിക്കാം.');
+                return [];
+              } else {
+                setStatusMsg(`⚠️ ${mDef.hazardLabel} തട്ടി! ശ്രദ്ധിച്ച് ലെയിൻ മാറ്റൂ! (ബാക്കി ❤️ ${nextLives})`);
+              }
+            }
+            continue;
+          }
+          if (ny < 104) {
+            nextList.push({ ...obj, y: ny });
+          }
+        }
+
+        // Spawn a new aid kit or hazard every 13 ticks
+        if (tick % 13 === 0) {
+          const spawnLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+          const isHazard = Math.random() < 0.48;
+          nextList.push({
+            uid: uidRef.current++,
+            lane: spawnLane,
+            y: -8,
+            kind: isHazard ? 'hazard' : 'aid',
+          });
+        }
+        return nextList;
+      });
+    }, 65);
+
+    return () => window.clearInterval(timer);
+  }, [playing, won, failed, onAwardXp, onUnlockBadge, onComplete]);
+
+  const startOrReset = () => {
+    sound.unlockAudio();
+    sound.playPop();
+    missionRef.current = 0;
+    collectedRef.current = 0;
+    livesRef.current = 3;
+    laneRef.current = 1;
+    setMissionIdx(0);
+    setCollected(0);
+    setLives(3);
+    setLane(1);
+    setObjects([]);
+    setWon(false);
+    setFailed(false);
+    setPlaying(true);
+    setStatusMsg('🚑 ദൗത്യം 1 തുടങ്ങി! ഭക്ഷ്യക്കിറ്റുകൾ (📦) ശേഖരിക്കൂ, വെള്ളക്കെട്ട് (🌊) ഒഴിവാക്കൂ!');
+  };
+
+  const lanePercent = lane === 0 ? '16.6%' : lane === 1 ? '50%' : '83.3%';
 
   return (
-    <GameFullscreenShell title="🚑 വിഖായ & അലേർട്ട് (ALERT) സേവന വാഹനം" isGameDone={allDone}>
-    <div className="bg-white rounded-2xl border-2 border-sky-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-900 text-xs font-extrabold tabular-nums">
-          🚑 {count}/4
-        </span>
-        <div className="flex items-center gap-2">
-          {!allDone && (
-            <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold tabular-nums border ${timeLeft <= 6 ? 'bg-rose-600 text-white border-rose-800 animate-pulse' : 'bg-sky-50 text-sky-900 border-sky-200'}`}>
-              ⏱️ {timeLeft}s
+    <GameFullscreenShell
+      title="🚑 വിഖായ & അലേർട്ട് (ALERT) രക്ഷാദൗത്യം"
+      subtitle="3 അടിയന്തര സേവന ദൗത്യങ്ങൾ · ആംബുലൻസ് ഓടിച്ച് സഹായം എത്തിക്കാം"
+      isGameDone={won}
+    >
+      <div className="bg-white rounded-2xl border-2 border-sky-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
+        {/* Top Mission HUD */}
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 text-white rounded-xl px-3 py-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-extrabold text-amber-300">
+              {currentMission.title} ({missionIdx + 1}/3)
+            </p>
+            <p className="text-xs font-bold text-sky-100">
+              ലക്ഷ്യം: {currentMission.needIcon} {collected}/{currentMission.goalCount} → {currentMission.targetName}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/50 text-xs font-extrabold">
+              {Array.from({ length: 3 })
+                .map((_, i) => (i < lives ? '❤️' : '💔'))
+                .join('')}
             </span>
-          )}
-          {allDone && onOpenBadgeStudio && (
-            <button
-              type="button"
-              onClick={() => onOpenBadgeStudio('viqaya_hero')}
-              aria-label="ഫോട്ടോ ബാഡ്ജ്"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold"
-            >
-              <Award className="w-4 h-4" /> 📷
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Live Moving Scenic Road + Relief Van + Global Flight Drop Target */}
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
-          e.preventDefault();
-          const dropped = e.dataTransfer.getData('text/plain') as RescuePartId;
-          if (dropped) snap(dropped);
-          else if (nextId) snap(nextId);
-        }}
-        className="relative rounded-2xl bg-gradient-to-b from-sky-100 via-white to-emerald-50 border-2 border-sky-300 p-4 pb-8 overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4"
-      >
-        <div className="flex items-center gap-3 relative z-10">
-          <motion.div
-            animate={allDone ? { x: 0, y: 0 } : { x: [-3, 5, -3], y: [0, -2, 0] }}
-            transition={allDone ? { duration: 0.4 } : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-28 sm:w-36 shrink-0"
-          >
-            <svg viewBox="0 0 185 112" className="w-full h-auto drop-shadow-md" aria-label="വിഖായ സേവന ആംബുലൻസ്">
-              <defs>
-                {/* Exact Official Crescent Mask: Opening Upper-Right Toward Flagpole (Hoist Right, Flying Left!) */}
-                <mask id={ambCrescentMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="20" height="20">
-                  <rect x="-12" y="-12" width="24" height="24" fill="black" />
-                  <circle cx="0" cy="0" r="5.5" fill="white" />
-                  <circle cx="2" cy="-1.7" r="4.6" fill="black" />
-                </mask>
-              </defs>
-              <ellipse cx="90" cy="104" rx="70" ry="6" fill="#0F172A" opacity="0.22" />
-              {/* Upright Front Hood Flagpole + Fluttering Backward-Streaming Official SKSSF Flag */}
-              <line x1="158" y1="6" x2="158" y2="54" stroke="#475569" strokeWidth="2.6" strokeLinecap="round" />
-              <circle cx="158" cy="5" r="2.6" fill="#F59E0B" />
-              {placed.flag && (
-                <g transform="translate(106, 7)">
-                  <motion.g
-                    animate={{ skewY: [-2.4, 2.8, -1.8, 2.4, -2.4], scaleX: [1, 0.96, 1.01, 0.97, 1] }}
-                    transition={{ duration: 1.0, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{ transformOrigin: '51px 16px' }}
-                  >
-                    <rect x="0" y="0" width="51" height="31" rx="1.5" fill="#FFFFFF" stroke="#0F172A" strokeWidth="0.9" />
-                    <g transform="translate(5, 3)" fill="none" stroke="#0F172A" strokeWidth="0.9" strokeLinecap="round">
-                      <rect x="1.5" y="4" width="2.2" height="13" fill="#FFFFFF" />
-                      <path d="M 1,4 C 1,2 4.2,2 4.2,4 Z" fill="#0F172A" />
-                      <path d="M 5,15 C 5.8,8.5 11.2,6.5 12.5,4 C 13.8,6.5 19.2,8.5 20,15 Z" fill="#FFFFFF" />
-                      <line x1="12.5" y1="4" x2="12.5" y2="15" />
-                      <rect x="4" y="15" width="17" height="2.2" fill="#FFFFFF" />
-                    </g>
-                    <rect x="31" y="0" width="20" height="21" fill="#0EA5E9" />
-                    <g transform="translate(40.5, 11.2)">
-                      <circle cx="0" cy="0" r="5.5" fill="#FFFFFF" mask={`url(#${ambCrescentMaskId})`} />
-                      <polygon
-                        points="2.3,-4.2 2.8,-2.8 4.3,-2.7 3.1,-1.8 3.5,-0.4 2.3,-1.2 1.1,-0.4 1.5,-1.8 0.3,-2.7 1.8,-2.8"
-                        fill="#FFFFFF"
-                      />
-                    </g>
-                    <rect x="0" y="21" width="51" height="10" fill="#16A34A" />
-                    <text x="25.5" y="28.3" textAnchor="middle" fill="#FFFFFF" fontSize="6.6" fontWeight="900" letterSpacing="1.1">
-                      SKSSF
-                    </text>
-                  </motion.g>
-                </g>
-              )}
-              <rect x="66" y="22" width="22" height="9" rx="4" fill="#EF4444" />
-              <path d="M16 86 L16 38 Q16 30 26 30 L116 30 Q128 30 136 42 L152 58 L166 62 Q174 64 174 74 L174 86 Q174 92 166 92 L24 92 Q16 92 16 86 Z" fill="#FFFFFF" stroke="#0F766E" strokeWidth="3" />
-              <rect x="18" y="72" width="154" height="10" fill="#0284C7" />
-              <rect x="18" y="82" width="154" height="8" fill="#16A34A" />
-              <path d="M118 37 L130 37 L146 56 L118 56 Z" fill="#7DD3FC" stroke="#0369A1" strokeWidth="2" />
-              <rect x="26" y="40" width="42" height="22" rx="4" fill="#E0F2FE" stroke="#0369A1" strokeWidth="1.5" />
-              <rect x="81" y="41" width="22" height="7" rx="1.5" fill="#DC2626" />
-              <rect x="88.5" y="33.5" width="7" height="22" rx="1.5" fill="#DC2626" />
-              <rect x="167" y="67" width="7" height="10" rx="2" fill="#FACC15" />
-              <circle cx="46" cy="92" r="13" fill="#0F172A" stroke="#CBD5E1" strokeWidth="2.5" />
-              <circle cx="46" cy="92" r="5" fill="#059669" />
-              <circle cx="138" cy="92" r="13" fill="#0F172A" stroke="#CBD5E1" strokeWidth="2.5" />
-              <circle cx="138" cy="92" r="5" fill="#059669" />
-            </svg>
-          </motion.div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {placed.flag && <span className="text-xl">🚩</span>}
-            {placed.speaker && <span className="text-xl">📢</span>}
-            {placed.aid_kit && <span className="text-xl">🩹</span>}
-            {placed.flight_banner && <span className="text-xl">✈️</span>}
-            {allDone && <span className="text-xl">✅</span>}
+            {won && onOpenBadgeStudio && (
+              <button
+                type="button"
+                onClick={() => onOpenBadgeStudio('viqaya_hero')}
+                aria-label="ഫോട്ടോ ബാഡ്ജ്"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold cursor-pointer"
+              >
+                <Award className="w-3.5 h-3.5" /> ബാഡ്ജ്
+              </button>
+            )}
           </div>
         </div>
-        <motion.div
-          animate={{ x: [0, 14, 0], y: [0, -6, 0] }}
-          transition={{ duration: 2.1, repeat: Infinity }}
-          className={`text-4xl relative z-10 transition-opacity ${placed.flight_banner ? 'opacity-100' : 'opacity-45'}`}
-        >
-          ✈️
-        </motion.div>
-        {/* Rolling asphalt strip underneath */}
-        <div className="absolute inset-x-0 bottom-0 h-5 bg-slate-700 overflow-hidden">
-          <motion.div
-            animate={{ x: [0, -64] }}
-            transition={{ duration: 0.75, repeat: Infinity, ease: 'linear' }}
-            className="flex items-center gap-6 pt-2 px-3 w-[150%]"
-          >
-            {Array.from({ length: 16 }).map((_, i) => (
-              <div key={i} className="w-8 h-1 rounded-full bg-amber-300 shrink-0" />
-            ))}
-          </motion.div>
-        </div>
-      </div>
 
-      {failed ? (
-        <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-900">⏱️ ❌</span>
-          <button
-            type="button"
-            onClick={resetRescue}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow"
-          >
-            <RotateCcw className="w-4 h-4" /> 🔄
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-4 gap-2">
-          {RESCUE_PARTS.map((p) => {
-            const done = placed[p.id];
-            const isNext = nextId === p.id;
+        {/* 3-Lane Rescue Highway Stage */}
+        <div
+          className={`relative h-[285px] sm:h-[315px] rounded-2xl bg-gradient-to-b ${currentMission.roadBg} border-4 overflow-hidden select-none transition-colors ${
+            hitFlash ? 'border-rose-500 ring-4 ring-rose-300' : 'border-emerald-700'
+          }`}
+        >
+          {/* Side green grass shoulders */}
+          <div className="absolute inset-y-0 left-0 w-3 bg-emerald-700/90 border-r-2 border-amber-300/70" />
+          <div className="absolute inset-y-0 right-0 w-3 bg-emerald-700/90 border-l-2 border-amber-300/70" />
+
+          {/* Dashed Lane Dividers */}
+          <div className="absolute inset-y-0 left-1/3 w-1 border-l-2 border-dashed border-amber-300/55" />
+          <div className="absolute inset-y-0 left-2/3 w-1 border-l-2 border-dashed border-amber-300/55" />
+
+          {/* Tap-Direct-Lane Invisible Click Zones for ultra-easy mobile control */}
+          {playing && (
+            <div className="absolute inset-0 z-10 grid grid-cols-3">
+              {([0, 1, 2] as const).map((targetLane) => (
+                <button
+                  key={targetLane}
+                  type="button"
+                  aria-label={`ലെയിൻ ${targetLane + 1}`}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    laneRef.current = targetLane;
+                    setLane(targetLane);
+                  }}
+                  className="h-full w-full bg-transparent active:bg-white/5 cursor-pointer"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Falling Aid Kits & Hazards */}
+          {objects.map((obj) => {
+            const leftPos = obj.lane === 0 ? '16.6%' : obj.lane === 1 ? '50%' : '83.3%';
             return (
-              <button
-                key={p.id}
-                type="button"
-                disabled={done}
-                draggable={!done}
-                onDragStart={(e) => {
-                  sound.unlockAudio();
-                  e.dataTransfer.setData('text/plain', p.id);
-                }}
-                onClick={() => snap(p.id)}
-                aria-label={p.label}
-                title={p.label}
-                className={`py-2.5 rounded-xl border-2 flex items-center justify-center transition-all ${
-                  done
-                    ? 'bg-emerald-50 border-emerald-300 opacity-60'
-                    : isNext
-                    ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-200 cursor-grab'
-                    : 'bg-slate-50 border-slate-200 hover:border-sky-400 cursor-grab'
+              <div
+                key={obj.uid}
+                style={{ left: leftPos, top: `${obj.y}%` }}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col items-center justify-center w-12 h-12 rounded-2xl border-2 shadow-lg ${
+                  obj.kind === 'aid'
+                    ? 'bg-emerald-500/95 border-amber-300 text-white'
+                    : 'bg-rose-600/95 border-rose-200 text-white'
                 }`}
               >
-                <span className="text-2xl">{done ? '✅' : p.emoji}</span>
-              </button>
+                <span className="text-2xl leading-none">
+                  {obj.kind === 'aid' ? currentMission.needIcon : currentMission.hazardIcon}
+                </span>
+              </div>
             );
           })}
+
+          {/* Player Viqaya Ambulance (Top-Down + Flag Crest SVG) */}
+          <motion.div
+            animate={{ left: lanePercent }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            style={{ top: '80%' }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none w-20 sm:w-24"
+          >
+            <svg viewBox="0 0 110 130" className="w-full h-auto drop-shadow-[0_8px_12px_rgba(0,0,0,0.5)]">
+              <defs>
+                <mask id={ambCrescentMaskId} maskUnits="userSpaceOnUse" x="-10" y="-10" width="20" height="20">
+                  <rect x="-12" y="-12" width="24" height="24" fill="black" />
+                  <circle cx="0" cy="0" r="5" fill="white" />
+                  <circle cx="2" cy="-1.5" r="4" fill="black" />
+                </mask>
+              </defs>
+              {/* Headlight beams */}
+              <polygon points="24,14 10,0 40,0" fill="#FEF08A" opacity="0.35" />
+              <polygon points="86,14 70,0 100,0" fill="#FEF08A" opacity="0.35" />
+              {/* Ambulance Body */}
+              <rect x="20" y="14" width="70" height="106" rx="14" fill="#FFFFFF" stroke="#0F766E" strokeWidth="3.5" />
+              {/* Side SKSSF Green & Blue Stripes */}
+              <rect x="22" y="24" width="6" height="84" rx="2" fill="#0284C7" />
+              <rect x="82" y="24" width="6" height="84" rx="2" fill="#16A34A" />
+              {/* Front Windshield */}
+              <path d="M30 28 Q55 20 80 28 L76 44 L34 44 Z" fill="#7DD3FC" stroke="#0369A1" strokeWidth="2" />
+              {/* Flashing Red/Blue Siren Bar */}
+              <rect x="33" y="48" width="21" height="8" rx="3" fill="#EF4444" />
+              <rect x="56" y="48" width="21" height="8" rx="3" fill="#3B82F6" />
+              {/* Medical Cross Emblem on Roof */}
+              <rect x="49" y="64" width="12" height="32" rx="2" fill="#DC2626" />
+              <rect x="39" y="74" width="32" height="12" rx="2" fill="#DC2626" />
+              {/* Mini Badge Label */}
+              <rect x="32" y="102" width="46" height="12" rx="4" fill="#065F46" />
+              <text x="55" y="111" textAnchor="middle" fill="#FEF08A" fontSize="8" fontWeight="900">
+                VIQAYA
+              </text>
+            </svg>
+          </motion.div>
+
+          {/* Start / Fail / Win Center Overlays */}
+          {!playing && !won && !failed && (
+            <div className="absolute inset-0 z-30 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3 text-white">
+              <div className="text-4xl">🚑</div>
+              <h4 className="text-base sm:text-lg font-extrabold text-amber-300">
+                വിഖായ & അലേർട്ട് (ALERT) രക്ഷാദൗത്യം
+              </h4>
+              <p className="text-xs font-semibold text-slate-200 max-w-sm leading-relaxed">
+                3 ദൗത്യങ്ങൾ: പ്രളയ രക്ഷാദൗത്യം (📦), ആശുപത്രി എക്സ്പ്രസ് (🩸), ഹജ്ജ് വിഖായ (💧).
+                ലെയിൻ മാറ്റി സഹായ കിറ്റുകൾ ശേഖരിക്കൂ, തടസ്സങ്ങൾ ഒഴിവാക്കൂ!
+              </p>
+              <button
+                type="button"
+                onClick={startOrReset}
+                className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-extrabold border-b-4 border-emerald-800 shadow-lg cursor-pointer"
+              >
+                🚨 ഡ്രൈവിംഗ് തുടങ്ങാം!
+              </button>
+            </div>
+          )}
+
+          {failed && (
+            <div className="absolute inset-0 z-30 bg-rose-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3 text-white">
+              <div className="text-4xl">💔</div>
+              <h4 className="text-base sm:text-lg font-extrabold text-rose-200">
+                ദൗത്യം പരാജയപ്പെട്ടു!
+              </h4>
+              <p className="text-xs font-semibold text-rose-100 max-w-sm">
+                തടസ്സങ്ങൾ ഒഴിവാക്കി സഹായ കിറ്റുകൾ സുരക്ഷിതമായി എത്തിക്കാൻ ഒരിക്കൽ കൂടി ശ്രമിക്കൂ.
+              </p>
+              <button
+                type="button"
+                onClick={startOrReset}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" /> വീണ്ടും ശ്രമിക്കാം
+              </button>
+            </div>
+          )}
+
+          {won && (
+            <div className="absolute inset-0 z-30 bg-emerald-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3 text-white">
+              <div className="text-4xl">🏆</div>
+              <h4 className="text-base sm:text-lg font-extrabold text-amber-300">
+                വിഖായ & അലേർട്ട് ദൗത്യം വിജയിച്ചു! (+40 XP)
+              </h4>
+              <p className="text-xs font-semibold text-emerald-100 max-w-sm">
+                പ്രളയ ദുരിതാശ്വാസം, ആശുപത്രി മരുന്ന് വിതരണം, ഹജ്ജ് സേവനം എന്നിവ സുരക്ഷിതമായി പൂർത്തിയാക്കി!
+              </p>
+              <button
+                type="button"
+                onClick={startOrReset}
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700 cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4" /> വീണ്ടും കളിക്കാം
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Tactile Steering Controls + Legend */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            disabled={!playing}
+            onClick={() => moveLane(-1)}
+            className="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-sm font-extrabold border-b-4 border-slate-950 active:scale-95 transition-transform cursor-pointer"
+          >
+            ⬅️ ഇടത്തോട്ട്
+          </button>
+          <div className="px-2.5 py-1.5 rounded-xl bg-sky-50 border border-sky-200 text-[11px] font-extrabold text-sky-950 text-center">
+            {currentMission.needIcon} എടുക്കാം · {currentMission.hazardIcon} ഒഴിവാക്കാം
+          </div>
+          <button
+            type="button"
+            disabled={!playing}
+            onClick={() => moveLane(1)}
+            className="flex-1 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-sm font-extrabold border-b-4 border-slate-950 active:scale-95 transition-transform cursor-pointer"
+          >
+            വലത്തോട്ട് ➡️
+          </button>
+        </div>
+
+        <p className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-center">
+          {statusMsg}
+        </p>
+      </div>
     </GameFullscreenShell>
   );
 };
