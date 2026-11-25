@@ -303,6 +303,19 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
         })}
       </div>
 
+      {/* More Lessons Coming Soon Banner */}
+      <div className="rounded-3xl border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-4 sm:p-5 text-center shadow-2xs space-y-1.5">
+        <p className="text-lg" aria-hidden="true">
+          ✨🚀📚
+        </p>
+        <h3 className="text-sm sm:text-base font-extrabold text-emerald-950">
+          കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
+        </h3>
+        <p className="text-xs font-semibold text-slate-600">
+          More Lessons &amp; Interactive Missions Coming Soon! · ഇപ്പോൾ {totalCount} പാഠങ്ങൾ ലഭ്യമാണ്.
+        </p>
+      </div>
+
       {/* Silent Unmarked Access Modal — ONLY opens after 7 rapid taps on the corner icon */}
       {codePromptOpen && (
         <div

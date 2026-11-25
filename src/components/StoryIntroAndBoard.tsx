@@ -291,21 +291,7 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
             onOpenBadgeStudio={onOpenBadgeStudio}
           />
 
-          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-          <LessonCheckQuiz
-            key="prologue-quiz-curiosity"
-            lessonId="prologue_curiosity"
-            title="പാഠം 1 · ക്വിസ്"
-            savedAnswer={quizAnswers.prologue_curiosity}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.('prologue_curiosity');
-            }}
-            onNextLesson={handleAdvance}
-            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key="prologue-lesson-curiosity"
             emoji="🚐"
@@ -341,6 +327,20 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
               )}
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER LESSON) */}
+          <LessonCheckQuiz
+            key="prologue-quiz-curiosity"
+            lessonId="prologue_curiosity"
+            title="പാഠം 1 · ക്വിസ്"
+            savedAnswer={quizAnswers.prologue_curiosity}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.('prologue_curiosity');
+            }}
+            onNextLesson={handleAdvance}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -357,21 +357,7 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
             }}
           />
 
-          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-          <LessonCheckQuiz
-            key={`prologue-quiz-${activeLessonId}`}
-            lessonId={activeLessonId}
-            title={`പാഠം ${activeIndex + 1} · ക്വിസ്`}
-            savedAnswer={quizAnswers[activeLessonId]}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.(activeLessonId);
-            }}
-            onNextLesson={handleAdvance}
-            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key={`prologue-lesson-${beat.id}`}
             emoji={beat.emoji}
@@ -559,6 +545,20 @@ export const StoryPrologueTheater: React.FC<StoryPrologueProps> = ({
               </motion.div>
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER LESSON) */}
+          <LessonCheckQuiz
+            key={`prologue-quiz-${activeLessonId}`}
+            lessonId={activeLessonId}
+            title={`പാഠം ${activeIndex + 1} · ക്വിസ്`}
+            savedAnswer={quizAnswers[activeLessonId]}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.(activeLessonId);
+            }}
+            onNextLesson={handleAdvance}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextLessonTitle}`}
+          />
         </div>
       )}
 
@@ -974,21 +974,7 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
         }
       />
 
-      {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-      <LessonCheckQuiz
-        key={`sb-quiz-${activeSbQuizId}`}
-        lessonId={activeSbQuizId}
-        title={`കഥ ${chapterIdx + 1} · ക്വിസ്`}
-        savedAnswer={quizAnswers[activeSbQuizId]}
-        onAnswered={(lid, idx, ok) => {
-          onQuizAnswered(lid, idx, ok);
-          onMarkLessonCompleted?.(activeSbQuizId);
-        }}
-        onNextLesson={handleAdvanceStoryboard}
-        nextLessonLabel={!isLastChapter ? 'അടുത്ത പാഠം' : 'എന്റെ SKSSF യാത്ര'}
-      />
-
-      {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+      {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
       <CollapsibleLessonDrawer
         key={`sb-lesson-${chapter.id}`}
         emoji={chapter.emoji}
@@ -1152,6 +1138,20 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
           )}
         </AnimatePresence>
       </CollapsibleLessonDrawer>
+
+      {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER LESSON) */}
+      <LessonCheckQuiz
+        key={`sb-quiz-${activeSbQuizId}`}
+        lessonId={activeSbQuizId}
+        title={`കഥ ${chapterIdx + 1} · ക്വിസ്`}
+        savedAnswer={quizAnswers[activeSbQuizId]}
+        onAnswered={(lid, idx, ok) => {
+          onQuizAnswered(lid, idx, ok);
+          onMarkLessonCompleted?.(activeSbQuizId);
+        }}
+        onNextLesson={handleAdvanceStoryboard}
+        nextLessonLabel={!isLastChapter ? 'അടുത്ത പാഠം' : 'എന്റെ SKSSF യാത്ര'}
+      />
 
       {/* 4. NAVIGATION BELOW EVERYTHING */}
       <LessonStepperNav

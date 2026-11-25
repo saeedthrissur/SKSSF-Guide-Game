@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Award, CheckCircle2, RotateCcw, Sparkles, Volume2 } from 'lucide-react';
 import { sound } from '../utils/sound';

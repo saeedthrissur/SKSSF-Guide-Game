@@ -1162,19 +1162,103 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
         </GameFullscreenShell>
       )}
 
-      {/* 2. QUIZ (OPEN BY DEFAULT RIGHT BELOW THE GAME!) */}
-      <LessonCheckQuiz
-        lessonId={`l2_${activeTab}`}
-        savedAnswer={quizAnswers[`l2_${activeTab}`]}
-        onAnswered={(lid, idx, ok) => {
-          onQuizAnswered(lid, idx, ok);
-          onMarkLessonCompleted?.(`l2_${activeTab}`);
-        }}
-        onNextLesson={handleAdvanceL2Tab}
-        nextLessonLabel={!isLastL2Tab ? 'അടുത്ത പാഠം ➡️' : 'ഘട്ടം 3 · ജില്ലാ തലം ➡️'}
-      />
+      {/* 2. LESSON DRAWERS OPEN BY DEFAULT RIGHT BELOW GAME LAUNCHER */}
+      {activeTab === 'memory' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-memory"
+          emoji="🃏"
+          title="പതാകകളും അടയാളങ്ങളും · പാഠം"
+          badgeText={`${matchedPairs.length}/4`}
+          onSpeak={() =>
+            narrator.speak(
+              'സമസ്തയുടെയും പോഷക സംഘടനകളുടെയും ഔദ്യോഗിക പതാകകളും അടയാളങ്ങളും നമ്മുടെ കൂട്ടായ്മയുടെയും പൈതൃകത്തിന്റെയും പ്രതീകങ്ങളാണ്. ഇവയെ ബഹുമാനത്തോടെയും ഉത്തരവാദിത്തത്തോടെയും ഉയർത്തിപ്പിടിക്കാം.',
+              '🃏 പതാകകളും അടയാളങ്ങളും'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">🚩 പോഷക സംഘടനകളുടെ ഐക്യം</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമയുടെ കീഴിൽ SKSSF, SKSBV, SYS, SKJM തുടങ്ങിയ പോഷക സംഘടനകൾ ഒരൊറ്റ ആദർശത്തിലും പണ്ഡിത നേതൃത്വത്തിലും അണിനിരക്കുന്നു.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-amber-950">🌟 പതാകയുടെ മര്യാദ</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                ഓരോ സമ്മേളനത്തിലും യൂണിറ്റ് പരിപാടിയിലും പതാക വൃത്തിയായി സൂക്ഷിക്കുകയും കൃത്യമായ അച്ചടക്കത്തോടെ ഉയർത്തുകയും ചെയ്യുന്നത് സംഘടനാ മര്യാദയാണ്.
+              </p>
+            </div>
+          </div>
+        </CollapsibleLessonDrawer>
+      )}
 
-      {/* 3. COLLAPSIBLE LESSON DRAWERS STRICTLY BELOW QUIZ */}
+      {activeTab === 'madrasa_board' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-madrasa-board"
+          emoji="🏫"
+          title="1951 സമസ്ത വിദ്യാഭ്യാസ ബോർഡ് (SKIMVB) · പാഠം"
+          badgeText="SKIMVB"
+          onSpeak={() =>
+            narrator.speak(
+              '1951 സെപ്റ്റംബർ 17-ന് രൂപീകൃതമായ സമസ്ത കേരള ഇസ്‌ലാം മത വിദ്യാഭ്യാസ ബോർഡ് ഇന്ന് പതിനൊന്നായിരത്തിലധികം മദ്രസകളിലായി ലക്ഷക്കണക്കിന് വിദ്യാർത്ഥികൾക്ക് ഏകീകൃത സിലബസും പൊതുപരീക്ഷയും നൽകുന്നു.',
+              '🏫 സമസ്ത വിദ്യാഭ്യാസ ബോർഡ്'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">📚 ഏകീകൃത പാഠ്യപദ്ധതിയും പൊതുപരീക്ഷയും</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                1 മുതൽ 12 വരെ ക്ലാസുകളിലേക്കുള്ള കൃത്യമായ പാഠപുസ്തകങ്ങളും പൊതുപരീക്ഷകളും പരിശീലനം നേടിയ മുഅല്ലിമീങ്ങളുടെ സേവനവും SKIMVB-യെ ലോകോത്തര മാതൃകയാക്കുന്നു.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-sky-950">🌱 അൽബിർ · SNEC · സമസ്ത ആഗോള മദ്രസകൾ</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                കേരളത്തിന് പുറമേ ഇന്ത്യയിലെ വിവിധ സംസ്ഥാനങ്ങളിലും ഗൾഫ്-വിദേശ രാജ്യങ്ങളിലും സമസ്ത മദ്രസകളും അൽബിർ പ്രീ-സ്കൂളുകളും ഉന്നത വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളും പ്രവർത്തിക്കുന്നു.
+              </p>
+            </div>
+          </div>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {activeTab === 'dispatch' && (
+        <CollapsibleLessonDrawer
+          key="l2-drawer-dispatch"
+          emoji="🚑"
+          title="SKSSF-ന്റെ 17 സബ് വിങ്ങുകളും സേവന ദൗത്യവും · പാഠം"
+          badgeText={`${solvedCases.length}/${HELPDESK_CASES.length}`}
+          onSpeak={() =>
+            narrator.speak(
+              'വിദ്യാഭ്യാസം, ആതുരസേവനം, ദുരന്തനിവാരണം, പ്രബോധനം, മാധ്യമം, കല, ക്യാമ്പസ് എന്നിങ്ങനെ സമൂഹത്തിന്റെ എല്ലാ മേഖലകളിലും സേവനം എത്തിക്കാൻ SKSSF-ന് പതിനേഴോളം സബ് വിങ്ങുകളുണ്ട്. സഹചാരി, വിഖായ, ട്രെൻഡ്, ഇബാദ്, സൈകോൺ, സർഗ്ഗലയം എന്നിവ ഇതിൽ പ്രധാനമാണ്.',
+              '🚑 17 സബ് വിങ്ങുകൾ'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">🚑 വിഖായ & സഹചാരി</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                ദുരന്തമുഖത്തെ സന്നദ്ധ സേവനം, ആംബുലൻസ്, രക്തദാനം, ആശുപത്രി-ചികിത്സാ സഹായം എന്നിവ ഏകോപിപ്പിക്കുന്നു.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-sky-950">🎓 ട്രെൻഡ് · ക്യാമ്പസ് · സൈകോൺ</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                കരിയർ ഗൈഡൻസ്, സിവിൽ സർവീസ് പരിശീലനം, കോളേജ് ക്യാമ്പസ് പ്രവർത്തനം, സൈബർ ബോധവൽക്കരണം എന്നിവ നയിക്കുന്നു.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-amber-950">🕌 ഇബാദ് · ത്വലബ · സർഗ്ഗലയം</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                ആത്മീയ-ദഅ്‌വത്ത് പ്രബോധനം, ദർസ്-അറബിക് കോളേജ് വിദ്യാർത്ഥി കൂട്ടായ്മ, കലാ-സാഹിത്യ വേദികൾ എന്നിവ സജീവമാക്കുന്നു.
+              </p>
+            </div>
+          </div>
+        </CollapsibleLessonDrawer>
+      )}
+
       {activeTab === 'tiers' && (
         <CollapsibleLessonDrawer
           key="l2-drawer-tiers"
@@ -1787,6 +1871,18 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
         </div>
         </CollapsibleLessonDrawer>
       )}
+
+      {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER LESSON) */}
+      <LessonCheckQuiz
+        lessonId={`l2_${activeTab}`}
+        savedAnswer={quizAnswers[`l2_${activeTab}`]}
+        onAnswered={(lid, idx, ok) => {
+          onQuizAnswered(lid, idx, ok);
+          onMarkLessonCompleted?.(`l2_${activeTab}`);
+        }}
+        onNextLesson={handleAdvanceL2Tab}
+        nextLessonLabel={!isLastL2Tab ? 'അടുത്ത പാഠം ➡️' : 'ഘട്ടം 3 · ജില്ലാ തലം ➡️'}
+      />
 
       {/* 4. NAVIGATION & PROGRESS TRACK STRICTLY BELOW LESSON */}
       <LessonStepperNav

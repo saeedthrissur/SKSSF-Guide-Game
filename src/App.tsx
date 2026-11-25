@@ -57,6 +57,10 @@ import {
   HeartBreakEvent,
   HeartBreakFlightOverlay,
 } from './utils/gameLivesContext';
+import {
+  FloatingPageNavigator,
+  LessonFlowProvider,
+} from './utils/lessonFlowContext';
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -579,8 +583,30 @@ export default function App() {
 
   const [touchedNavLabel, setTouchedNavLabel] = useState<string | null>(null);
 
+  const quizDoneMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    Object.keys(quizAnswers).forEach((k) => {
+      if (quizAnswers[k]) map[k] = true;
+    });
+    return map;
+  }, [quizAnswers]);
+
+  // Automatically scroll to the top whenever the user moves to a different lesson or stage
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [activeLessonId, stage, currentLevel]);
+
   return (
     <GameLivesProvider lives={lives} maxLives={3} lastBreakEvent={heartBreakEvent}>
+    <LessonFlowProvider
+      activeLessonId={activeLessonId}
+      quizDoneLessons={quizDoneMap}
+      devUnlocked={devUnlocked}
+      onOpenAllLessons={() => {
+        setLessonsMapOpen(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
+    >
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Slim Sticky Top Bar — Single Settings Icon Only + Icon-First Status */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-2xs">
@@ -1108,7 +1134,9 @@ export default function App() {
           SKSSF ഗൈഡ് ഗെയിം · നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? · “വിജ്ഞാനം, വിനയം, സേവനം”
         </p>
       </footer>
+      <FloatingPageNavigator visible={!lessonsMapOpen} />
     </div>
+    </LessonFlowProvider>
     </GameLivesProvider>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, ChevronUp, Info, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 

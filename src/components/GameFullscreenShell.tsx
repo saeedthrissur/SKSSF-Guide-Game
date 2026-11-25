@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import {
   BookOpen,
   CheckCircle2,

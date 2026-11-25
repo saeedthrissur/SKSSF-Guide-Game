@@ -85,308 +85,370 @@ const InStageStoryModal: React.FC<{
 );
 
 /* ============================================================================
- * ERA 1 (1921–1924): REALISTIC MECHANICAL WOODEN CHEST + BRASS KEY UNLOCK
- * (The ONLY chest in the entire app — with real brass key turn, padlock pop,
- *  3D lid rotation, golden light beams & rising historical parchment scrolls!)
+ * ERA 1 (1921–1926): MALABAR DHOW HERITAGE RESCUE VOYAGE (3-Lane Sailing Game!)
+ * Dodge storms & reefs while collecting the 3 golden 1921–1926 historical scrolls.
  * ========================================================================== */
+interface SeaObj {
+  uid: number;
+  lane: 0 | 1 | 2;
+  y: number;
+  kind: 'scroll' | 'storm' | 'reef';
+  artifactIdx?: number;
+}
+
 const RealisticChestUnlockGame: React.FC<{
   artifacts: EraArtifactItem[];
   collectedIds: string[];
   onCollect: (art: EraArtifactItem) => void;
 }> = ({ artifacts, collectedIds, onCollect }) => {
-  const [keyProgress, setKeyProgress] = useState<number>(
-    collectedIds.some((id) => artifacts.some((a) => a.id === id)) ? 100 : 0
-  );
-  const [chestOpen, setChestOpen] = useState<boolean>(
-    collectedIds.some((id) => artifacts.some((a) => a.id === id))
-  );
-  const [unlocking, setUnlocking] = useState(false);
-  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(24);
-  const [started, setStarted] = useState<boolean>(false);
+  const [boatLane, setBoatLane] = useState<0 | 1 | 2>(1);
+  const [seaObjs, setSeaObjs] = useState<SeaObj[]>([]);
+  const [lives, setLives] = useState<number>(3);
+  const [playing, setPlaying] = useState<boolean>(false);
   const [failed, setFailed] = useState<boolean>(false);
-  const allCollected = artifacts.every((a) => collectedIds.includes(a.id));
+  const [hitFlash, setHitFlash] = useState<boolean>(false);
+  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string>(
+    '⛵ ഉരു ഇടത്തോട്ടും വലത്തോട്ടും നീക്കി 1921–1926 കാലത്തെ 3 സുവർണ്ണ ചരിത്ര ചുരുളുകൾ ശേഖരിക്കൂ! കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കൂ.'
+  );
+
+  const laneRef = useRef<0 | 1 | 2>(1);
+  const livesRef = useRef<number>(3);
+  const collectedRef = useRef<string[]>(collectedIds);
+  const activeArtRef = useRef<EraArtifactItem | null>(null);
+  const uidRef = useRef<number>(1);
+
+  laneRef.current = boatLane;
+  livesRef.current = lives;
+  collectedRef.current = collectedIds;
+  activeArtRef.current = activeArt;
+
+  const collectedCount = artifacts.filter((a) => collectedIds.includes(a.id)).length;
+  const allCollected = collectedCount === artifacts.length;
+
+  const steer = (dir: -1 | 1) => {
+    if (!playing || failed || allCollected) return;
+    sound.unlockAudio();
+    sound.playClick();
+    setBoatLane((prev) => {
+      const next = Math.max(0, Math.min(2, prev + dir)) as 0 | 1 | 2;
+      laneRef.current = next;
+      return next;
+    });
+  };
 
   useEffect(() => {
-    if (!started || allCollected || failed) return;
-    const id = window.setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          setFailed(true);
-          sound.playError();
-          return 0;
+    if (!playing || failed || allCollected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        e.preventDefault();
+        steer(-1);
+      } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        e.preventDefault();
+        steer(1);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [playing, failed, allCollected]);
+
+  useEffect(() => {
+    if (!playing || failed || allCollected) return;
+    let tick = 0;
+
+    const interval = window.setInterval(() => {
+      // Pause movement gently while player reads a discovered scroll card
+      if (activeArtRef.current) return;
+      tick += 1;
+
+      setSeaObjs((prev) => {
+        const nextList: SeaObj[] = [];
+        for (const obj of prev) {
+          const ny = obj.y + 3.4;
+          if (ny >= 72 && ny <= 90 && obj.lane === laneRef.current) {
+            if (obj.kind === 'scroll') {
+              const missing = artifacts.filter((a) => !collectedRef.current.includes(a.id));
+              const picked = missing[0];
+              if (picked) {
+                sound.playUnlock();
+                onCollect(picked);
+                setActiveArt(picked);
+                setStatusMsg(`📜 കണ്ടെത്തി: ${picked.label}!`);
+                if (missing.length <= 1) {
+                  setPlaying(false);
+                  sound.playHoist();
+                  setStatusMsg('🎉 മൂന്ന് ചരിത്ര ചുരുളുകളും സുരക്ഷിതമായി തീരത്തെത്തിച്ചു!');
+                }
+              }
+            } else {
+              const nextLives = Math.max(0, livesRef.current - 1);
+              livesRef.current = nextLives;
+              setLives(nextLives);
+              sound.playError();
+              setHitFlash(true);
+              window.setTimeout(() => setHitFlash(false), 320);
+              if (nextLives <= 0) {
+                setFailed(true);
+                setPlaying(false);
+                setStatusMsg('💔 കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും ഉരു തട്ടി! വീണ്ടും ശ്രമിക്കാം.');
+                return [];
+              } else {
+                setStatusMsg(
+                  obj.kind === 'storm'
+                    ? `⛈️ കൊടുങ്കാറ്റ് അടിച്ചു! ശ്രദ്ധിച്ച് തുഴയൂ (❤️ ${nextLives})`
+                    : `🪨 പാറക്കെട്ടിൽ തട്ടി! ലെയിൻ മാറ്റൂ (❤️ ${nextLives})`
+                );
+              }
+            }
+            continue;
+          }
+          if (ny < 104) {
+            nextList.push({ ...obj, y: ny });
+          }
         }
-        return t - 1;
+
+        if (tick % 14 === 0) {
+          const spawnLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+          const r = Math.random();
+          const kind: SeaObj['kind'] = r < 0.45 ? 'scroll' : r < 0.75 ? 'storm' : 'reef';
+          nextList.push({
+            uid: uidRef.current++,
+            lane: spawnLane,
+            y: -8,
+            kind,
+          });
+        }
+        return nextList;
       });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [started, allCollected, failed]);
+    }, 65);
 
-  const resetEra1 = () => {
-    sound.playClick();
-    setTimeLeft(24);
+    return () => window.clearInterval(interval);
+  }, [playing, failed, allCollected, artifacts, onCollect]);
+
+  const startVoyage = () => {
+    sound.unlockAudio();
+    sound.playPop();
+    livesRef.current = 3;
+    laneRef.current = 1;
+    setLives(3);
+    setBoatLane(1);
+    setSeaObjs([]);
     setFailed(false);
-    setStarted(false);
-    setChestOpen(false);
-    setKeyProgress(0);
+    setActiveArt(null);
+    setPlaying(true);
+    setStatusMsg('⛵ യാത്ര തുടങ്ങി! സുവർണ്ണ ചുരുളുകൾ (📜) ശേഖരിക്കൂ, കൊടുങ്കാറ്റും (⛈️) പാറയും (🪨) ഒഴിവാക്കൂ!');
   };
 
-  const triggerChestUnlock = () => {
-    if (chestOpen || unlocking || failed) return;
-    setStarted(true);
-    setUnlocking(true);
-    setKeyProgress(100);
-    sound.playClick();
-    window.setTimeout(() => {
-      sound.playUnlock();
-      setChestOpen(true);
-      setUnlocking(false);
-    }, 450);
-  };
-
-  const handleSliderChange = (val: number) => {
-    if (failed) return;
-    setStarted(true);
-    setKeyProgress(val);
-    if (val >= 92 && !chestOpen) {
-      triggerChestUnlock();
-    }
-  };
+  const lanePercent = boatLane === 0 ? '16.6%' : boatLane === 1 ? '50%' : '83.3%';
 
   return (
-    <div className="p-4 sm:p-5 bg-gradient-to-b from-[#1f130a] via-[#2d1b0e] to-[#120a05] text-white space-y-4">
-      <div className="flex items-center justify-between gap-2 bg-black/35 border border-amber-400/35 rounded-xl px-3 py-1.5">
-        <span className="text-xs font-extrabold text-amber-200 tabular-nums">
-          🗝️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
+    <div className="p-3.5 sm:p-5 bg-gradient-to-b from-[#0b2545] via-[#134074] to-[#081c36] text-white space-y-3">
+      {/* Top Voyage HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/35 border border-sky-400/35 rounded-xl px-3 py-2">
+        <span className="text-xs font-extrabold text-amber-300 tabular-nums">
+          ⛵ 1921–1926 ചരിത്ര കടൽയാത്ര · 📜 {collectedCount}/{artifacts.length}
         </span>
-        <span className={`text-xs font-extrabold tabular-nums px-2.5 py-0.5 rounded-lg ${timeLeft <= 6 ? 'bg-rose-600 text-white' : 'bg-amber-400/20 text-amber-200'}`}>
-          ⏱️ {timeLeft}s
+        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-lg bg-rose-500/20 border border-rose-400/50">
+          {Array.from({ length: 3 })
+            .map((_, i) => (i < lives ? '❤️' : '💔'))
+            .join('')}
         </span>
       </div>
-      {failed && !allCollected && (
-        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-200">⏰ 🔒</span>
-          <button type="button" onClick={resetEra1} aria-label="വീണ്ടും ശ്രമിക്കാം" className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700">
-            🔄
+
+      {/* Animated Malabar Sea Stage */}
+      <div
+        className={`relative h-[270px] sm:h-[300px] rounded-2xl border-4 overflow-hidden select-none bg-gradient-to-b from-[#0c4a6e] via-[#0369a1] to-[#082f49] transition-colors ${
+          hitFlash ? 'border-rose-400 ring-4 ring-rose-400/40' : 'border-amber-400/60'
+        }`}
+      >
+        {/* Subtle shimmering sea lane guides */}
+        <div className="absolute inset-y-0 left-1/3 w-px border-l-2 border-dashed border-sky-200/25" />
+        <div className="absolute inset-y-0 left-2/3 w-px border-l-2 border-dashed border-sky-200/25" />
+
+        {/* Animated wave sparkles */}
+        {[18, 48, 78].map((yPos, idx) => (
+          <motion.div
+            key={idx}
+            animate={{ x: [-12, 12, -12] }}
+            transition={{ duration: 2.8 + idx * 0.6, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ top: `${yPos}%` }}
+            className="absolute inset-x-6 flex justify-between text-sky-200/20 text-xl pointer-events-none"
+          >
+            <span>〰️</span>
+            <span>〰️</span>
+            <span>〰️</span>
+          </motion.div>
+        ))}
+
+        {/* Direct tap-lane controls */}
+        {playing && !activeArt && (
+          <div className="absolute inset-0 z-10 grid grid-cols-3">
+            {([0, 1, 2] as const).map((tLane) => (
+              <button
+                key={tLane}
+                type="button"
+                aria-label={`കടൽപ്പാത ${tLane + 1}`}
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  laneRef.current = tLane;
+                  setBoatLane(tLane);
+                }}
+                className="h-full w-full bg-transparent active:bg-white/10 cursor-pointer"
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Incoming Scrolls & Hazards */}
+        {seaObjs.map((obj) => {
+          const leftPos = obj.lane === 0 ? '16.6%' : obj.lane === 1 ? '50%' : '83.3%';
+          return (
+            <div
+              key={obj.uid}
+              style={{ left: leftPos, top: `${obj.y}%` }}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none w-12 h-12 rounded-2xl border-2 flex items-center justify-center shadow-lg ${
+                obj.kind === 'scroll'
+                  ? 'bg-amber-400 border-yellow-100 text-slate-950'
+                  : obj.kind === 'storm'
+                  ? 'bg-slate-800/95 border-sky-300 text-white'
+                  : 'bg-rose-800/95 border-rose-300 text-white'
+              }`}
+            >
+              <span className="text-2xl leading-none">
+                {obj.kind === 'scroll' ? '📜' : obj.kind === 'storm' ? '⛈️' : '🪨'}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Illustrated Malabar Wooden Uru / Dhow SVG */}
+        <motion.div
+          animate={{ left: lanePercent, rotate: [-2, 2, -2] }}
+          transition={{
+            left: { type: 'spring', stiffness: 360, damping: 26 },
+            rotate: { duration: 2.2, repeat: Infinity, ease: 'easeInOut' },
+          }}
+          style={{ top: '80%' }}
+          className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none w-20 sm:w-24"
+        >
+          <svg viewBox="0 0 110 120" className="w-full h-auto drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]">
+            {/* Water wake */}
+            <ellipse cx="55" cy="108" rx="34" ry="8" fill="#BAE6FD" opacity="0.35" />
+            {/* Wooden Malabar Uru Hull */}
+            <path d="M55 10 Q85 42 82 92 Q55 108 28 92 Q25 42 55 10 Z" fill="#78350F" stroke="#FDE68A" strokeWidth="2.5" />
+            <path d="M55 18 Q76 45 74 86 Q55 98 36 86 Q34 45 55 18 Z" fill="#92400E" />
+            {/* Cross wooden deck planks */}
+            <line x1="36" y1="52" x2="74" y2="52" stroke="#451A03" strokeWidth="2.5" />
+            <line x1="36" y1="72" x2="74" y2="72" stroke="#451A03" strokeWidth="2.5" />
+            {/* Billowing White Sail */}
+            <path d="M55 24 Q92 48 55 76 Q42 50 55 24 Z" fill="#FFFBEB" stroke="#D97706" strokeWidth="2" />
+            {/* Mast & Green Heritage Pennant */}
+            <circle cx="55" cy="54" r="4" fill="#FBBF24" />
+            <polygon points="55,10 74,16 55,22" fill="#16A34A" />
+          </svg>
+        </motion.div>
+
+        {/* Start Overlay */}
+        {!playing && !allCollected && !failed && (
+          <div className="absolute inset-0 z-30 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3">
+            <div className="text-4xl">⛵</div>
+            <h4 className="text-base sm:text-lg font-extrabold text-amber-300">
+              മലബാർ ഉരു — 1921–1926 ചരിത്ര രക്ഷായാത്ര
+            </h4>
+            <p className="text-xs font-semibold text-sky-100 max-w-sm leading-relaxed">
+              1921-ന് ശേഷമുള്ള പ്രക്ഷുബ്ധ കാലത്തെ വെല്ലുവിളികളെ (⛈️, 🪨) മറികടന്ന്, സുവർണ്ണ ചരിത്ര ചുരുളുകൾ (📜) ശേഖരിച്ച് സുരക്ഷിതമായി തീരത്തെത്തിക്കൂ!
+            </p>
+            <button
+              type="button"
+              onClick={startVoyage}
+              className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 shadow-lg cursor-pointer"
+            >
+              ⛵ കടൽയാത്ര തുടങ്ങാം!
+            </button>
+          </div>
+        )}
+
+        {/* Fail Overlay */}
+        {failed && !allCollected && (
+          <div className="absolute inset-0 z-30 bg-rose-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3">
+            <div className="text-4xl">💔</div>
+            <h4 className="text-base font-extrabold text-rose-200">ഉരുവിന് 3 തവണ ആഘാതമേറ്റു!</h4>
+            <p className="text-xs font-semibold text-rose-100 max-w-xs">
+              കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കി ചരിത്ര ചുരുളുകൾ ശേഖരിക്കാൻ വീണ്ടും ശ്രമിക്കാം.
+            </p>
+            <button
+              type="button"
+              onClick={startVoyage}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" /> വീണ്ടും തുഴയാം
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Steering Controls */}
+      {!allCollected && (
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            disabled={!playing || Boolean(activeArt)}
+            onClick={() => steer(-1)}
+            className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
+          >
+            ⬅️ ഇടത്തോട്ട്
+          </button>
+          <span className="text-[11px] font-bold text-sky-100 px-2 text-center">
+            📜 ശേഖരിക്കൂ · ⛈️🪨 ഒഴിവാക്കൂ
+          </span>
+          <button
+            type="button"
+            disabled={!playing || Boolean(activeArt)}
+            onClick={() => steer(1)}
+            className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
+          >
+            വലത്തോട്ട് ➡️
           </button>
         </div>
       )}
-      {/* Realistic 3D-Shaded Wooden Chest SVG Stage */}
-      <div className="relative rounded-2xl border border-amber-500/35 bg-gradient-to-b from-amber-950/70 via-[#2a170b] to-[#120904] p-4 sm:p-5 overflow-hidden">
-        {/* Ambient golden glow rays when open */}
-        <AnimatePresence>
-          {chestOpen && (
-            <motion.div
-              initial={{ opacity: 0, scaleY: 0.3 }}
-              animate={{ opacity: 1, scaleY: 1 }}
-              transition={{ duration: 0.6 }}
-              className="pointer-events-none absolute inset-x-0 top-0 h-56 origin-bottom bg-gradient-to-t from-amber-300/35 via-yellow-200/15 to-transparent"
-              style={{ clipPath: 'polygon(18% 100%, 82% 100%, 100% 0%, 0% 0%)' }}
-            />
-          )}
-        </AnimatePresence>
 
-        <div className="relative z-10 flex flex-col items-center">
-          {/* Mechanical Wooden Chest SVG with 3D Lid Rotation & Padlock Animation */}
-          <svg
-            viewBox="0 0 360 210"
-            className="w-full max-w-sm h-auto drop-shadow-[0_14px_20px_rgba(0,0,0,0.65)]"
-            role="img"
-            aria-label="ചരിത്ര രേഖാ പെട്ടി"
-          >
-            <defs>
-              <linearGradient id="woodDark" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8B4513" />
-                <stop offset="50%" stopColor="#5C2D0C" />
-                <stop offset="100%" stopColor="#3B1A06" />
-              </linearGradient>
-              <linearGradient id="woodLid" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#A65E26" />
-                <stop offset="65%" stopColor="#6E3510" />
-                <stop offset="100%" stopColor="#4A2107" />
-              </linearGradient>
-              <linearGradient id="brassMetal" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#FDE68A" />
-                <stop offset="45%" stopColor="#D97706" />
-                <stop offset="100%" stopColor="#92400E" />
-              </linearGradient>
-              <radialGradient id="goldGlow" cx="50%" cy="65%" r="55%">
-                <stop offset="0%" stopColor="#FEF08A" stopOpacity="0.95" />
-                <stop offset="55%" stopColor="#F59E0B" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-
-            {/* Floor shadow */}
-            <ellipse cx="180" cy="194" rx="135" ry="12" fill="rgba(0,0,0,0.55)" />
-
-            {/* Open Chest Interior Glow & Velvet */}
-            {chestOpen && (
-              <g>
-                <rect x="64" y="88" width="232" height="30" rx="6" fill="#3F0D12" />
-                <ellipse cx="180" cy="94" rx="110" ry="38" fill="url(#goldGlow)" />
-                {/* Parchment tips peeking inside */}
-                <rect x="92" y="74" width="38" height="24" rx="4" fill="#FEF3C7" stroke="#B45309" strokeWidth="1.5" transform="rotate(-8 111 86)" />
-                <rect x="160" y="68" width="40" height="26" rx="4" fill="#FFFBEB" stroke="#B45309" strokeWidth="1.5" />
-                <rect x="228" y="75" width="38" height="24" rx="4" fill="#FEF3C7" stroke="#B45309" strokeWidth="1.5" transform="rotate(7 247 87)" />
-              </g>
-            )}
-
-            {/* Animated Heavy Wooden Lid */}
-            <motion.g
-              initial={false}
-              animate={
-                chestOpen
-                  ? { y: -42, scaleY: 0.42, opacity: 0.92 }
-                  : { y: 0, scaleY: 1, opacity: 1 }
-              }
-              transition={{ type: 'spring', stiffness: 120, damping: 14 }}
-              style={{ transformOrigin: '180px 92px' }}
+      {/* Collected Historical Scroll Chips (Always Re-Readable!) */}
+      <div className="grid grid-cols-3 gap-2">
+        {artifacts.map((art) => {
+          const found = collectedIds.includes(art.id);
+          return (
+            <button
+              key={art.id}
+              type="button"
+              disabled={!found}
+              onClick={() => {
+                if (!found) return;
+                sound.playClick();
+                setActiveArt(art);
+              }}
+              className={`p-2.5 rounded-xl border-2 text-center transition-all ${
+                found
+                  ? 'bg-emerald-900/80 border-emerald-400 text-white cursor-pointer hover:bg-emerald-800'
+                  : 'bg-white/5 border-white/15 text-sky-200/60 cursor-default'
+              }`}
             >
-              <path
-                d="M54 96 Q54 44 106 40 L254 40 Q306 44 306 96 Z"
-                fill="url(#woodLid)"
-                stroke="#3B1A06"
-                strokeWidth="3"
-              />
-              {/* Wood plank lines on lid */}
-              <line x1="62" y1="68" x2="298" y2="68" stroke="#3B1A06" strokeWidth="2" opacity="0.65" />
-              <line x1="56" y1="84" x2="304" y2="84" stroke="#3B1A06" strokeWidth="2" opacity="0.65" />
-              {/* Brass bands on lid */}
-              <rect x="86" y="40" width="16" height="56" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-              <rect x="258" y="40" width="16" height="56" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-              {/* Brass rivets */}
-              {[50, 72, 88].map((ry) => (
-                <g key={ry}>
-                  <circle cx="94" cy={ry} r="2.3" fill="#FFFBEB" />
-                  <circle cx="266" cy={ry} r="2.3" fill="#FFFBEB" />
-                </g>
-              ))}
-            </motion.g>
-
-            {/* Chest Base Box */}
-            <rect
-              x="56"
-              y="96"
-              width="248"
-              height="92"
-              rx="8"
-              fill="url(#woodDark)"
-              stroke="#2C1204"
-              strokeWidth="3"
-            />
-            {/* Wood planks */}
-            <line x1="58" y1="126" x2="302" y2="126" stroke="#2C1204" strokeWidth="2" opacity="0.7" />
-            <line x1="58" y1="156" x2="302" y2="156" stroke="#2C1204" strokeWidth="2" opacity="0.7" />
-            {/* Brass vertical straps & bottom trim */}
-            <rect x="86" y="96" width="16" height="92" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-            <rect x="258" y="96" width="16" height="92" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-            <rect x="54" y="94" width="252" height="10" rx="3" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-            <rect x="54" y="180" width="252" height="10" rx="3" fill="url(#brassMetal)" stroke="#78350F" strokeWidth="1.5" />
-
-            {/* Side iron ring handles */}
-            <circle cx="52" cy="142" r="9" fill="none" stroke="url(#brassMetal)" strokeWidth="4" />
-            <circle cx="308" cy="142" r="9" fill="none" stroke="url(#brassMetal)" strokeWidth="4" />
-
-            {/* Center Brass Lock Plate + Animated Padlock Shackle */}
-            <g>
-              <rect
-                x="156"
-                y="90"
-                width="48"
-                height="48"
-                rx="9"
-                fill="url(#brassMetal)"
-                stroke="#78350F"
-                strokeWidth="2.5"
-              />
-              {/* Keyhole */}
-              <circle cx="180" cy="111" r="6" fill="#1C0A00" />
-              <path d="M177 115 L183 115 L185 129 L175 129 Z" fill="#1C0A00" />
-
-              {/* Animated Brass Key inserting & rotating inside the keyhole */}
-              {!chestOpen && keyProgress > 10 && (
-                <motion.g
-                  animate={{
-                    rotate: unlocking || keyProgress >= 92 ? 90 : (keyProgress / 100) * 65,
-                  }}
-                  style={{ transformOrigin: '180px 115px' }}
-                >
-                  <circle cx="180" cy="115" r="11" fill="none" stroke="#FEF08A" strokeWidth="4" />
-                  <line x1="180" y1="126" x2="180" y2="150" stroke="#FDE047" strokeWidth="4" strokeLinecap="round" />
-                  <line x1="180" y1="142" x2="188" y2="142" stroke="#FDE047" strokeWidth="3" />
-                  <line x1="180" y1="148" x2="186" y2="148" stroke="#FDE047" strokeWidth="3" />
-                </motion.g>
-              )}
-            </g>
-          </svg>
-
-          {/* Mechanical Key Slide/Turn Control when Locked */}
-          {!chestOpen ? (
-            <div className="w-full max-w-md mt-2 p-3 rounded-2xl bg-black/45 border border-amber-400/40 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🗝️</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={keyProgress}
-                  onChange={(e) => handleSliderChange(Number(e.target.value))}
-                  aria-label="പൂട്ട് തുറക്കുക"
-                  className="w-full accent-amber-400 h-3 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={triggerChestUnlock}
-                  aria-label="തുറക്കാം"
-                  className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold transition-colors shrink-0"
-                >
-                  🔓
-                </button>
-              </div>
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-full mt-3"
-            >
-              <div className="grid grid-cols-3 gap-2">
-                {artifacts.map((art, idx) => {
-                  const found = collectedIds.includes(art.id);
-                  return (
-                    <motion.button
-                      key={art.id}
-                      type="button"
-                      initial={{ opacity: 0, y: 14 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.08 }}
-                      onClick={() => {
-                        setActiveArt(art);
-                        onCollect(art);
-                      }}
-                      aria-label={art.label}
-                      title={art.label}
-                      className={`p-3 rounded-xl border-2 flex items-center justify-center gap-1.5 transition-all ${
-                        found
-                          ? 'bg-emerald-900/75 border-emerald-400 text-white'
-                          : 'bg-amber-100 border-amber-500 text-slate-950 hover:bg-amber-200 shadow-md'
-                      }`}
-                    >
-                      <span className="text-2xl">{art.emoji}</span>
-                      <span className="text-sm font-extrabold">{found ? '✅' : '📜'}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </div>
+              <div className="text-xl">{found ? art.emoji : '🔒'}</div>
+              <p className="text-[10px] font-extrabold mt-0.5 leading-tight line-clamp-2">
+                {found ? art.label : 'ചരിത്ര ചുരുൾ'}
+              </p>
+            </button>
+          );
+        })}
       </div>
+
+      <p className="text-xs font-bold text-amber-200 bg-black/30 border border-white/10 rounded-xl px-3 py-2 text-center">
+        {statusMsg}
+      </p>
 
       <InStageStoryModal
         artifact={activeArt}
-        badgeText="📜 1921–1924 ചരിത്ര രേഖ (+15 XP)"
+        badgeText="📜 1921–1926 ചരിത്ര രേഖ (+15 XP)"
         onClose={() => setActiveArt(null)}
       />
     </div>

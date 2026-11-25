@@ -734,23 +734,7 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
         }
       />
 
-      {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-      {onQuizAnswered && (
-        <LessonCheckQuiz
-          key={`pov-quiz-${activeLessonId}`}
-          lessonId={activeLessonId}
-          title={`POV പാഠം ${chapterIdx + 1} · ക്വിസ്`}
-          savedAnswer={quizAnswers[activeLessonId]}
-          onAnswered={(lid, idx, ok) => {
-            onQuizAnswered(lid, idx, ok);
-            onMarkLessonCompleted?.(activeLessonId);
-          }}
-          onNextLesson={handleAdvancePov}
-          nextLessonLabel={!isLastPov ? `അടുത്ത പാഠം: ${nextPovLabel}` : 'ഘട്ടം 1 · യൂണിറ്റ് തലം'}
-        />
-      )}
-
-      {/* 3. SINGLE FLAT LESSON (COLLAPSED BY DEFAULT — NO NESTED CHAPTER SWITCHER!) */}
+      {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
       <CollapsibleLessonDrawer
         key={`pov-lesson-${chapter.id}`}
         emoji={chapter.emoji}
@@ -1007,6 +991,22 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
           </motion.div>
         </div>
       </CollapsibleLessonDrawer>
+
+      {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER LESSON) */}
+      {onQuizAnswered && (
+        <LessonCheckQuiz
+          key={`pov-quiz-${activeLessonId}`}
+          lessonId={activeLessonId}
+          title={`POV പാഠം ${chapterIdx + 1} · ക്വിസ്`}
+          savedAnswer={quizAnswers[activeLessonId]}
+          onAnswered={(lid, idx, ok) => {
+            onQuizAnswered(lid, idx, ok);
+            onMarkLessonCompleted?.(activeLessonId);
+          }}
+          onNextLesson={handleAdvancePov}
+          nextLessonLabel={!isLastPov ? `അടുത്ത പാഠം: ${nextPovLabel}` : 'ഘട്ടം 1 · യൂണിറ്റ് തലം'}
+        />
+      )}
 
       {/* 4. NAVIGATION BELOW EVERYTHING */}
       <LessonStepperNav

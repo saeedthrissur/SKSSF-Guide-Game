@@ -420,6 +420,42 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
     title: 'സൈബർ മര്യാദ & പ്രതിരോധം',
   },
+  {
+    id: 'l4_sahachari',
+    stage: 'world',
+    level: 4,
+    tab: 'sahachari',
+    emoji: '🤝',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സഹചാരി റിലീഫ് സെല്ലും ജീവകാരുണ്യവും',
+  },
+  {
+    id: 'l4_trend_career',
+    stage: 'world',
+    level: 4,
+    tab: 'trend_career',
+    emoji: '🎓',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'ട്രെൻഡ് (TREND) & കരിയർ വഴികാട്ടി',
+  },
+  {
+    id: 'l4_sargalayam',
+    stage: 'world',
+    level: 4,
+    tab: 'sargalayam',
+    emoji: '🎨',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സർഗ്ഗലയം & ഇസ്‌ലാമിക കലാവേദി',
+  },
+  {
+    id: 'l4_green_earth',
+    stage: 'world',
+    level: 4,
+    tab: 'green_earth',
+    emoji: '🌿',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'ഹരിത ക്യാമ്പസും പരിസ്ഥിതി സംരക്ഷണവും',
+  },
 ];
 
 const STORAGE_KEY = 'skssf_guide_completed_lessons_v1';

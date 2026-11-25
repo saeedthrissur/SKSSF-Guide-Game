@@ -307,13 +307,15 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                const dragged = e.dataTransfer.getData('text/plain') || draggingId || selectedId || item.id;
-                snap(dragged, item.id);
+                const dragged = e.dataTransfer.getData('text/plain') || draggingId || selectedId;
+                if (dragged) snap(dragged, item.id);
               }}
-              onClick={() => snap(selectedId || item.id, item.id)}
+              onClick={() => {
+                if (selectedId) snap(selectedId, item.id);
+              }}
               role="button"
               tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && snap(selectedId || item.id, item.id)}
+              onKeyDown={(e) => e.key === 'Enter' && selectedId && snap(selectedId, item.id)}
               className={`absolute ${item.xClass} ${item.yClass} ${item.wClass} rounded-xl transition-all cursor-pointer p-2 text-center ${
                 isPlaced
                   ? item.id === 'thoranam'
@@ -406,11 +408,7 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
                   }}
                   onClick={() => {
                     sound.playClick();
-                    if (active) {
-                      snap(item.id, item.id);
-                    } else {
-                      setSelectedId(item.id);
-                    }
+                    setSelectedId(item.id);
                   }}
                   aria-label={item.label}
                   title={item.label}
@@ -2206,13 +2204,167 @@ export const PhotoCropEditGame: React.FC<HandsOnGameProps> = ({
 };
 
 /* ============================================================================
- * 9. MADRASA TROPHY STICKER, GIFT PACKING & SCRATCH-TO-WIN GAME!
+ * 9. ALBIRR & SKSBV MAJLISUL MA'ARIF TROPHY, GIFT PACKING & REAL CANVAS SCRATCH!
  * ========================================================================== */
-const GIFT_TASKS = [
-  { id: 'trophy_sticker', emoji: '🏷️', label: 'ട്രോഫിയിൽ SKSSF സ്റ്റിക്കർ ഒട്ടിക്കാം', target: '🏆 ഒന്നാം സമ്മാന ട്രോഫി' },
-  { id: 'gift_ribbon', emoji: '🎀', label: 'സമ്മാനപ്പൊതിയിൽ റിബ്ബൺ കെട്ടാം', target: '🎁 കുട്ടികളുടെ സമ്മാന ബോക്സ്' },
-  { id: 'cert_seal', emoji: '🌟', label: 'സർട്ടിഫിക്കറ്റിൽ സ്വർണ്ണ സീൽ വെക്കാം', target: '📜 മദ്രസ അഭിനന്ദന പത്രം' },
-];
+const GIFT_SLOTS = [
+  { id: 'trophy_sticker', label: 'ഒന്നാം സമ്മാന ട്രോഫി', needHint: 'SKSSF സ്റ്റിക്കർ ഒട്ടിക്കൂ' },
+  { id: 'gift_ribbon', label: 'കുട്ടികളുടെ സമ്മാന ബോക്സ്', needHint: 'സ്വർണ്ണ റിബ്ബൺ കെട്ടൂ' },
+  { id: 'cert_seal', label: 'അഭിനന്ദന സർട്ടിഫിക്കറ്റ്', needHint: 'മെഴുക് സീൽ വെക്കൂ' },
+] as const;
+
+const GIFT_TRAY_ITEMS = [
+  { id: 'gift_ribbon', emoji: '🎀', label: 'സ്വർണ്ണ റിബ്ബൺ', isDecoy: false },
+  { id: 'decoy_broken', emoji: '🗑️', label: 'കീറിയ പേപ്പർ (വേണ്ട!)', isDecoy: true },
+  { id: 'trophy_sticker', emoji: '🏷️', label: 'SKSSF സ്റ്റിക്കർ', isDecoy: false },
+  { id: 'decoy_tape', emoji: '🧷', label: 'തുരുമ്പിച്ച പിൻ (വേണ്ട!)', isDecoy: true },
+  { id: 'cert_seal', emoji: '🏅', label: 'സ്വർണ്ണ വാക്സ് സീൽ', isDecoy: false },
+] as const;
+
+const PrizeArtSvg: React.FC<{ slotId: string; done: boolean }> = ({ slotId, done }) => {
+  if (slotId === 'trophy_sticker') {
+    return (
+      <svg viewBox="0 0 90 90" className="w-16 h-16 mx-auto drop-shadow-sm" aria-hidden="true">
+        <path d="M24 18 H66 V38 C66 54 56 62 45 62 C34 62 24 54 24 38 Z" fill="#F59E0B" stroke="#92400E" strokeWidth="2.5" />
+        <path d="M24 24 H14 C14 38 18 46 25 46" fill="none" stroke="#D97706" strokeWidth="4" strokeLinecap="round" />
+        <path d="M66 24 H76 C76 38 72 46 65 46" fill="none" stroke="#D97706" strokeWidth="4" strokeLinecap="round" />
+        <rect x="40" y="61" width="10" height="12" fill="#B45309" />
+        <rect x="26" y="72" width="38" height="10" rx="3" fill="#451A03" />
+        {done ? (
+          <g>
+            <rect x="30" y="29" width="30" height="16" rx="3" fill="#065F46" stroke="#FEF08A" strokeWidth="1.5" />
+            <text x="45" y="40" textAnchor="middle" fill="#FEF08A" fontSize="8" fontWeight="900">
+              SKSSF
+            </text>
+          </g>
+        ) : (
+          <rect x="31" y="30" width="28" height="14" rx="3" fill="#FEF3C7" stroke="#92400E" strokeWidth="1.5" strokeDasharray="3 2" />
+        )}
+      </svg>
+    );
+  }
+  if (slotId === 'gift_ribbon') {
+    return (
+      <svg viewBox="0 0 90 90" className="w-16 h-16 mx-auto drop-shadow-sm" aria-hidden="true">
+        <rect x="18" y="34" width="54" height="44" rx="6" fill="#0EA5E9" stroke="#0369A1" strokeWidth="2.5" />
+        <rect x="14" y="26" width="62" height="12" rx="4" fill="#0284C7" stroke="#075985" strokeWidth="2.2" />
+        {done ? (
+          <g>
+            <rect x="40" y="26" width="10" height="52" fill="#FACC15" />
+            <rect x="18" y="51" width="54" height="9" fill="#FACC15" />
+            <ellipse cx="36" cy="21" rx="9" ry="6" fill="#F43F5E" />
+            <ellipse cx="54" cy="21" rx="9" ry="6" fill="#F43F5E" />
+            <circle cx="45" cy="22" r="4" fill="#FACC15" />
+          </g>
+        ) : (
+          <rect x="40" y="26" width="10" height="52" fill="#E0F2FE" opacity="0.55" strokeDasharray="3 2" stroke="#0369A1" />
+        )}
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 90 90" className="w-16 h-16 mx-auto drop-shadow-sm" aria-hidden="true">
+      <rect x="14" y="18" width="62" height="54" rx="5" fill="#FFFBEB" stroke="#065F46" strokeWidth="2.5" />
+      <rect x="20" y="24" width="50" height="42" rx="2" fill="none" stroke="#D97706" strokeWidth="1.5" />
+      <line x1="27" y1="35" x2="63" y2="35" stroke="#065F46" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="30" y1="44" x2="60" y2="44" stroke="#64748B" strokeWidth="2" strokeLinecap="round" />
+      {done ? (
+        <g>
+          <circle cx="56" cy="56" r="10" fill="#DC2626" stroke="#FDE047" strokeWidth="2" />
+          <polygon points="56,50 58,54 62,54 59,57 60,61 56,58 52,61 53,57 50,54 54,54" fill="#FEF08A" />
+        </g>
+      ) : (
+        <circle cx="56" cy="56" r="9" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5" strokeDasharray="3 2" />
+      )}
+    </svg>
+  );
+};
+
+const MetallicScratchCard: React.FC<{
+  onRevealed: () => void;
+}> = ({ onRevealed }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingRef = useRef(false);
+  const revealedRef = useRef(false);
+  const strokesRef = useRef(0);
+  const [pct, setPct] = useState(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    grad.addColorStop(0, '#D97706');
+    grad.addColorStop(0.5, '#FDE68A');
+    grad.addColorStop(1, '#B45309');
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Metallic shine lines + prompt
+    ctx.fillStyle = '#451A03';
+    ctx.font = 'bold 16px "Noto Sans Malayalam", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✨ വിരൽ ഉരച്ച് സ്ക്രാച്ച് ചെയ്യൂ! ✨', canvas.width / 2, canvas.height / 2 + 6);
+  }, []);
+
+  const scratchAt = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas || revealedRef.current) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 24, 0, Math.PI * 2);
+    ctx.fill();
+
+    strokesRef.current += 1;
+    const approx = Math.min(100, Math.round((strokesRef.current / 22) * 100));
+    setPct(approx);
+    if (strokesRef.current % 5 === 0) sound.playPop();
+
+    if (approx >= 100 && !revealedRef.current) {
+      revealedRef.current = true;
+      onRevealed();
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-amber-500 shadow-md bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 min-h-[110px] flex items-center justify-center p-4 select-none touch-none">
+        <div className="text-center text-white space-y-1 pointer-events-none">
+          <p className="text-xs font-extrabold text-amber-300">🌟 അൽബിർ & മജ്‌ലിസുൽ മആരിഫ് സമ്മാനം</p>
+          <p className="text-base sm:text-lg font-extrabold">🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം! ✨</p>
+        </div>
+        <canvas
+          ref={canvasRef}
+          width={380}
+          height={116}
+          onPointerDown={(e) => {
+            drawingRef.current = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+            scratchAt(e.clientX, e.clientY);
+          }}
+          onPointerMove={(e) => {
+            if (drawingRef.current) scratchAt(e.clientX, e.clientY);
+          }}
+          onPointerUp={() => {
+            drawingRef.current = false;
+          }}
+          className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs font-extrabold text-amber-900 px-1">
+        <span>👆 സ്വർണ്ണ ഫോയിൽ വിരൽ കൊണ്ട് ഉരയ്ക്കൂ</span>
+        <span className="tabular-nums">{pct}%</span>
+      </div>
+    </div>
+  );
+};
 
 export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
   xpKey,
@@ -2222,179 +2374,209 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
   onComplete,
   isCompleted = false,
 }) => {
-  const [doneIds, setDoneIds] = useState<string[]>(isCompleted ? GIFT_TASKS.map((t) => t.id) : []);
-  const [selected, setSelected] = useState<string | null>(GIFT_TASKS[0].id);
+  const [doneIds, setDoneIds] = useState<string[]>(
+    isCompleted ? GIFT_SLOTS.map((t) => t.id) : []
+  );
+  const [selected, setSelected] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [scratched, setScratched] = useState(isCompleted);
-  const [scratchProgress, setScratchProgress] = useState(isCompleted ? 100 : 0);
   const [lives, setLives] = useState(3);
-  const failed = lives === 0 && !scratched;
-  const won = doneIds.length === 3 && scratched;
+  const [timeLeft, setTimeLeft] = useState(35);
+  const [started, setStarted] = useState(false);
+  const [msg, setMsg] = useState<string>(
+    '👇 താഴെ നിന്ന് ശരിയായ സ്റ്റിക്കർ/റിബ്ബൺ/സീൽ തിരഞ്ഞെടുത്ത് ശരിയായ സമ്മാനത്തിൽ വെക്കൂ! (അനാവശ്യ സാധനങ്ങൾ ഒഴിവാക്കണം)'
+  );
 
-  const snapTask = (itemId: string, slotId: string) => {
+  const won = doneIds.length === 3 && scratched;
+  const failed = (lives <= 0 || timeLeft <= 0) && !won;
+
+  useEffect(() => {
+    if (!started || won || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, won, failed]);
+
+  const snapTask = (itemId: string | null, slotId: string) => {
     sound.unlockAudio();
     if (failed || won || doneIds.includes(slotId)) return;
-    if (itemId !== slotId) {
-      sound.playError();
-      setLives((l) => Math.max(0, l - 1));
+    if (!itemId) {
+      setMsg('👆 ആദ്യം താഴത്തെ ട്രേയിൽ നിന്ന് ഒരു സാധനം തൊടൂ!');
       return;
     }
+    if (!started) setStarted(true);
+
+    const trayItem = GIFT_TRAY_ITEMS.find((i) => i.id === itemId);
+    if (trayItem?.isDecoy || itemId !== slotId) {
+      sound.playError();
+      setLives((l) => Math.max(0, l - 1));
+      setSelected(null);
+      setMsg(
+        trayItem?.isDecoy
+          ? `❌ ${trayItem.label} — ഇത് സമ്മാനത്തിന് യോജിക്കില്ല! (1 ഹൃദയം നഷ്ടമായി)`
+          : '❌ തെറ്റായ സ്ഥലത്താണ് വെച്ചത്! ശരിയായ ട്രോഫി/ബോക്സ്/സർട്ടിഫിക്കറ്റ് നോക്കി വെക്കൂ. (1 ഹൃദയം നഷ്ടമായി)'
+      );
+      return;
+    }
+
     const next = [...doneIds, slotId];
     setDoneIds(next);
     setDragging(null);
-    const rem = GIFT_TASKS.find((g) => !next.includes(g.id));
-    setSelected(rem ? rem.id : null);
+    setSelected(null);
     sound.playSuccess(next.length);
+    setMsg(
+      next.length === 3
+        ? '🎉 മൂന്ന് സമ്മാനങ്ങളും ഒരുങ്ങി! ഇനി താഴത്തെ സ്വർണ്ണ സ്ക്രാച്ച് കാർഡ് വിരൽ കൊണ്ട് ഉരച്ച് തുറക്കൂ!'
+        : `✅ മനോഹരം! ബാക്കി ${3 - next.length} എണ്ണം കൂടി പൂർത്തിയാക്കാം.`
+    );
   };
 
-  const rubScratchCard = () => {
-    if (scratched || doneIds.length < 3 || failed) return;
-    sound.unlockAudio();
-    const next = Math.min(100, scratchProgress + 35);
-    setScratchProgress(next);
-    sound.playPop();
-    if (next >= 100) {
-      setScratched(true);
-      sound.playHoist();
-      onAwardXp(35, `hands_${xpKey}`);
-      onComplete?.();
-      narrator.speak('അടിപൊളി! മദ്രസയിലെ കുട്ടികൾക്കുള്ള ട്രോഫിയും സമ്മാനങ്ങളും സ്ക്രാച്ച് കാർഡും തയ്യാറായി!', title);
-    }
+  const handleScratchRevealed = () => {
+    if (scratched || failed) return;
+    setScratched(true);
+    sound.playHoist();
+    onAwardXp(35, `hands_${xpKey}`);
+    onComplete?.();
+    narrator.speak(
+      'അടിപൊളി! അൽബിർ കിഡ്‌സ് ഫെസ്റ്റിലെയും SKSBV മജ്‌ലിസുൽ മആരിഫിലെയും ട്രോഫികളും സമ്മാനങ്ങളും സ്ക്രാച്ച് കാർഡും വിജയകരമായി പൂർത്തിയാക്കി!',
+      title
+    );
   };
 
   const reset = () => {
     sound.playClick();
     setDoneIds([]);
-    setSelected(GIFT_TASKS[0].id);
+    setSelected(null);
+    setDragging(null);
     setScratched(false);
-    setScratchProgress(0);
     setLives(3);
+    setTimeLeft(35);
+    setStarted(false);
+    setMsg('👇 താഴെ നിന്ന് ശരിയായ സ്റ്റിക്കർ/റിബ്ബൺ/സീൽ തിരഞ്ഞെടുത്ത് ശരിയായ സമ്മാനത്തിൽ വെക്കൂ!');
   };
 
   return (
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
       <GameShellHeader
-        badge="🏆 ട്രോഫി സ്റ്റിക്കർ · സമ്മാന പാക്കിംഗ് · സ്ക്രാച്ച്"
+        badge="🏆 ട്രോഫി · സമ്മാന പാക്കിംഗ് · സ്ക്രാച്ച് കാർഡ്"
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`❤️ ${lives}/3 · ${doneIds.length + (scratched ? 1 : 0)}/4`}
+        progressText={`❤️ ${lives}/3 · ⏱️ ${timeLeft}s · ${doneIds.length + (scratched ? 1 : 0)}/4`}
       />
 
-      {/* Gift Table (Icon-First Slots) */}
-      <div className="grid grid-cols-3 gap-2 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 select-none">
-        {GIFT_TASKS.map((t) => {
-          const isDone = doneIds.includes(t.id);
-          const isTarget = selected === t.id || dragging === t.id;
+      {/* Illustrated Gift & Trophy Stage */}
+      <div className="grid grid-cols-3 gap-2.5 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 select-none">
+        {GIFT_SLOTS.map((slot) => {
+          const isDone = doneIds.includes(slot.id);
           return (
-            <div
-              key={t.id}
+            <button
+              key={slot.id}
+              type="button"
+              disabled={isDone || failed}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 e.preventDefault();
-                snapTask(e.dataTransfer.getData('text/plain') || dragging || selected || t.id, t.id);
+                const dropped = e.dataTransfer.getData('text/plain') || dragging || selected;
+                snapTask(dropped, slot.id);
               }}
-              onClick={() => snapTask(selected || t.id, t.id)}
-              className={`p-3 rounded-xl border-2 text-center cursor-pointer transition-all space-y-1 ${
+              onClick={() => snapTask(selected, slot.id)}
+              className={`p-2.5 rounded-xl border-2 text-center transition-all space-y-1 cursor-pointer ${
                 isDone
-                  ? 'bg-emerald-700 text-white border-emerald-900 shadow-md'
-                  : isTarget
-                  ? 'border-dashed border-amber-500 bg-amber-100 ring-2 ring-amber-300'
-                  : 'border-dashed border-emerald-400 bg-white'
+                  ? 'bg-emerald-50 border-emerald-500 shadow-sm'
+                  : selected
+                  ? 'border-dashed border-amber-500 bg-amber-50 hover:bg-amber-100'
+                  : 'border-dashed border-slate-300 bg-white'
               }`}
             >
-              <motion.p
-                animate={isDone ? { scale: [1, 1.15, 1] } : {}}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="text-3xl"
-              >
-                {t.target.split(' ')[0]} {isDone ? '✨' : ''}
-              </motion.p>
-              <p className="text-lg">
-                {isDone ? '✅' : t.emoji}
+              <PrizeArtSvg slotId={slot.id} done={isDone} />
+              <p className="text-[11px] font-extrabold text-slate-900 leading-tight">{slot.label}</p>
+              <p className={`text-[10px] font-bold ${isDone ? 'text-emerald-700' : 'text-amber-800'}`}>
+                {isDone ? '✅ തയ്യാർ!' : slot.needHint}
               </p>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* Draggable Stickers & Ribbons Icon Tray */}
-      {doneIds.length < 3 && (
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-3 gap-2">
-            {GIFT_TASKS.map((t) => {
-              const done = doneIds.includes(t.id);
-              const active = selected === t.id;
+      {/* Item Tray WITH 2 Decoy Distractors (No auto-snap!) */}
+      {doneIds.length < 3 && !failed && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {GIFT_TRAY_ITEMS.map((item) => {
+              const done = !item.isDecoy && doneIds.includes(item.id);
+              const active = selected === item.id;
               return (
                 <button
-                  key={t.id}
+                  key={item.id}
                   type="button"
                   disabled={done}
                   draggable={!done}
                   onDragStart={(e) => {
                     sound.unlockAudio();
-                    setDragging(t.id);
-                    setSelected(t.id);
-                    e.dataTransfer.setData('text/plain', t.id);
+                    if (!started) setStarted(true);
+                    setDragging(item.id);
+                    setSelected(item.id);
+                    e.dataTransfer.setData('text/plain', item.id);
                   }}
                   onClick={() => {
                     sound.playClick();
-                    if (active) snapTask(t.id, t.id);
-                    else setSelected(t.id);
+                    if (!started) setStarted(true);
+                    if (item.isDecoy) {
+                      sound.playError();
+                      setLives((l) => Math.max(0, l - 1));
+                      setMsg(`❌ ${item.label} — വേണ്ടാത്ത സാധനം തൊട്ടതിനാൽ 1 ഹൃദയം നഷ്ടമായി!`);
+                      return;
+                    }
+                    setSelected(item.id);
+                    setMsg(`👆 തിരഞ്ഞെടുത്തു: ${item.emoji} ${item.label} — ഇനി മുകളിലെ ശരിയായ സമ്മാനത്തിൽ തൊടൂ!`);
                   }}
-                  aria-label={t.label}
-                  title={t.label}
-                  className={`py-2.5 rounded-xl border-2 flex items-center justify-center text-2xl transition-all ${
+                  className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                     done
-                      ? 'bg-emerald-50 border-emerald-300 opacity-55'
+                      ? 'bg-emerald-50 border-emerald-300 opacity-45 cursor-default'
                       : active
-                      ? 'bg-amber-400 border-amber-600 shadow-sm'
-                      : 'bg-slate-50 border-slate-200 hover:border-emerald-400'
+                      ? 'bg-amber-400 border-amber-700 text-slate-950 scale-[1.03] shadow-sm'
+                      : 'bg-slate-50 border-slate-200 hover:border-emerald-400 text-slate-800'
                   }`}
                 >
-                  {done ? '✅' : t.emoji}
+                  <span className="text-2xl leading-none">{done ? '✅' : item.emoji}</span>
+                  <span className="text-[10px] font-extrabold leading-tight text-center">
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
           </div>
-          {selected && (
-            <p className="text-[11px] font-bold text-emerald-900 text-center">
-              {GIFT_TASKS.find((g) => g.id === selected)?.emoji}{' '}
-              {GIFT_TASKS.find((g) => g.id === selected)?.label}
-            </p>
-          )}
+          <p className="text-xs font-bold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 text-center">
+            {msg}
+          </p>
         </div>
       )}
 
-      {/* Bonus Scratch & Win Star Foil Card */}
-      {doneIds.length === 3 && !scratched && (
-        <button
-          type="button"
-          onPointerMove={(e) => {
-            if (e.buttons > 0) rubScratchCard();
-          }}
-          onClick={rubScratchCard}
-          aria-label="സ്ക്രാച്ച് ചെയ്യൂ"
-          className="w-full p-4 rounded-2xl border-2 border-amber-500 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-slate-950 text-center space-y-1 shadow-md cursor-pointer"
-        >
-          <p className="text-2xl font-extrabold">
-            ✨ 👆 {scratchProgress}%
-          </p>
-        </button>
+      {/* Real HTML5 Canvas Metallic Scratch Card! */}
+      {doneIds.length === 3 && !scratched && !failed && (
+        <MetallicScratchCard onRevealed={handleScratchRevealed} />
       )}
 
       {failed && (
         <FailOverlay
-          headline="തെറ്റായ സമ്മാനപ്പൊതി! അവസരങ്ങൾ തീർന്നു"
-          note="ഓരോ സ്റ്റിക്കറും റിബ്ബണും ശരിയായ ബോക്സിൽ തന്നെ ഒട്ടിക്കാൻ വീണ്ടും ശ്രമിക്കാം!"
+          headline={timeLeft <= 0 ? '⏱️ സമയം തീർന്നു! പരാജയപ്പെട്ടു' : '💔 3 തെറ്റുകൾ! സമ്മാന ഒരുക്കം പരാജയപ്പെട്ടു'}
+          note="വേണ്ടാത്ത സാധനങ്ങൾ (🗑️, 🧷) തൊടാതെയും ശരിയായ സമ്മാനത്തിൽ കൃത്യമായ സാധനം വെച്ചും സമയത്തിനുള്ളിൽ പൂർത്തിയാക്കൂ!"
           onRetry={reset}
         />
       )}
 
       {won && (
         <WinOverlay
-          headline="🏆 മദ്രസ ട്രോഫികളും സമ്മാനങ്ങളും സ്ക്രാച്ച് നിധിയും വിജയം! (+35 XP)"
-          note="മദ്രസയിലെ കൂട്ടുകാർക്കായി ട്രോഫി സ്റ്റിക്കറും സമ്മാനപ്പൊതിയും സ്നേഹത്തോടെ ഒരുങ്ങി!"
+          headline="🏆 അൽബിർ & SKSBV ട്രോഫികളും സമ്മാനങ്ങളും സ്ക്രാച്ച് കാർഡും വിജയം! (+35 XP)"
+          note="മദ്രസയിലെ കൂട്ടുകാർക്കായി ട്രോഫി സ്റ്റിക്കറും സമ്മാനപ്പൊതിയും സ്വർണ്ണ സീലും ഭംഗിയായി ഒരുങ്ങി!"
           onReplay={reset}
         />
       )}

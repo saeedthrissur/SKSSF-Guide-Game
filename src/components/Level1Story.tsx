@@ -976,21 +976,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             </div>
           </GameFullscreenShell>
 
-          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-          <LessonCheckQuiz
-            key={`l1-quiz-${activeLessonId}`}
-            lessonId={activeLessonId}
-            title={`${board.year} · ക്വിസ്`}
-            savedAnswer={quizAnswers[activeLessonId]}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.(activeLessonId);
-            }}
-            onNextLesson={handleAdvanceL1}
-            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key={`l1-era-info-${board.id}`}
             emoji={board.emoji}
@@ -1042,6 +1028,20 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
               )}
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ */}
+          <LessonCheckQuiz
+            key={`l1-quiz-${activeLessonId}`}
+            lessonId={activeLessonId}
+            title={`${board.year} · ക്വിസ്`}
+            savedAnswer={quizAnswers[activeLessonId]}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.(activeLessonId);
+            }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
+          />
         </div>
       )}
 
@@ -1099,20 +1099,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             </div>
           </GameFullscreenShell>
 
-          {/* 2. QUIZ OPEN BY DEFAULT */}
-          <LessonCheckQuiz
-            lessonId="l1_flags"
-            title="പതാക നിർമ്മാണം · ക്വിസ്"
-            savedAnswer={quizAnswers.l1_flags}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.('l1_flags');
-            }}
-            onNextLesson={handleAdvanceL1}
-            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key="l1-flags-lesson"
             emoji="🚩"
@@ -1133,6 +1120,19 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
               </div>
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ */}
+          <LessonCheckQuiz
+            lessonId="l1_flags"
+            title="പതാക നിർമ്മാണം · ക്വിസ്"
+            savedAnswer={quizAnswers.l1_flags}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.('l1_flags');
+            }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
+          />
         </div>
       )}
 
@@ -1154,20 +1154,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             }}
           />
 
-          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-          <LessonCheckQuiz
-            lessonId="l1_cosmic"
-            title="വിശ്വാസ ശൃംഖല · ക്വിസ്"
-            savedAnswer={quizAnswers.l1_cosmic}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.('l1_cosmic');
-            }}
-            onNextLesson={handleAdvanceL1}
-            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key="l1-cosmic-lesson"
             emoji="🌱"
@@ -1336,6 +1323,19 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
               </div>
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ */}
+          <LessonCheckQuiz
+            lessonId="l1_cosmic"
+            title="വിശ്വാസ ശൃംഖല · ക്വിസ്"
+            savedAnswer={quizAnswers.l1_cosmic}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.('l1_cosmic');
+            }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel={`അടുത്ത പാഠം: ${nextL1Label}`}
+          />
         </div>
       )}
 
@@ -1357,20 +1357,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
             }}
           />
 
-          {/* 2. QUIZ OPEN BY DEFAULT RIGHT AFTER GAME */}
-          <LessonCheckQuiz
-            lessonId="l1_roots"
-            title="സമസ്തയുടെ വേരുകൾ · ക്വിസ്"
-            savedAnswer={quizAnswers.l1_roots}
-            onAnswered={(lid, idx, ok) => {
-              onQuizAnswered(lid, idx, ok);
-              onMarkLessonCompleted?.('l1_roots');
-            }}
-            onNextLesson={handleAdvanceL1}
-            nextLessonLabel="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
-          />
-
-          {/* 3. COLLAPSED LESSON BELOW QUIZ */}
+          {/* 2. LESSON OPEN BY DEFAULT RIGHT AFTER GAME LAUNCHER */}
           <CollapsibleLessonDrawer
             key="l1-roots-lesson"
             emoji="📚"
@@ -1429,6 +1416,19 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
               })}
             </div>
           </CollapsibleLessonDrawer>
+
+          {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ */}
+          <LessonCheckQuiz
+            lessonId="l1_roots"
+            title="സമസ്തയുടെ വേരുകൾ · ക്വിസ്"
+            savedAnswer={quizAnswers.l1_roots}
+            onAnswered={(lid, idx, ok) => {
+              onQuizAnswered(lid, idx, ok);
+              onMarkLessonCompleted?.('l1_roots');
+            }}
+            onNextLesson={handleAdvanceL1}
+            nextLessonLabel="ഘട്ടം 2 · ക്ലസ്റ്റർ & മേഖലാ തലം"
+          />
         </div>
       )}
 

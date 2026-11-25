@@ -791,21 +791,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
         </div>
       )}
 
-      {/* 2. QUIZ (OPEN BY DEFAULT RIGHT BELOW THE GAME!) */}
-      {activeTab !== 'unit_desks' && activeTab !== 'newsroom' && (
-        <LessonCheckQuiz
-          lessonId={`l3_${activeTab}`}
-          savedAnswer={quizAnswers[`l3_${activeTab}`]}
-          onAnswered={(lessonId, selectedIdx, isCorrect) => {
-            onQuizAnswered(lessonId, selectedIdx, isCorrect);
-            onMarkLessonCompleted?.(lessonId);
-          }}
-          onNextLesson={handleAdvanceL3Tab}
-          nextLessonLabel={!isLastL3Tab ? 'അടുത്ത പാഠം ➡️' : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം ➡️'}
-        />
-      )}
-
-      {/* 3. COLLAPSIBLE LESSON FOR SKY CATCHER */}
+      {/* 2. LESSON OPEN BY DEFAULT RIGHT BELOW GAME LAUNCHER */}
       {activeTab === 'sky_catcher' && (
         <CollapsibleLessonDrawer
           key="l3-sky-note"
@@ -1015,6 +1001,20 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           </div>
         </div>
         </CollapsibleLessonDrawer>
+      )}
+
+      {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ FOR SKY CATCHER / SCROLLS / MIND CHAIN */}
+      {activeTab !== 'unit_desks' && activeTab !== 'newsroom' && (
+        <LessonCheckQuiz
+          lessonId={`l3_${activeTab}`}
+          savedAnswer={quizAnswers[`l3_${activeTab}`]}
+          onAnswered={(lessonId, selectedIdx, isCorrect) => {
+            onQuizAnswered(lessonId, selectedIdx, isCorrect);
+            onMarkLessonCompleted?.(lessonId);
+          }}
+          onNextLesson={handleAdvanceL3Tab}
+          nextLessonLabel={!isLastL3Tab ? 'അടുത്ത പാഠം ➡️' : 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം ➡️'}
+        />
       )}
 
       {/* TAB 3: UNIT OFFICE DESKS */}
@@ -1570,6 +1570,72 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           )}
         </div>
         </GameFullscreenShell>
+      )}
+
+      {activeTab === 'unit_desks' && (
+        <CollapsibleLessonDrawer
+          key="l3-drawer-unit-desks"
+          emoji="📋"
+          title="യൂണിറ്റ് ഓഫീസും ഭാരവാഹി ചുമതലകളും · പാഠം"
+          badgeText="ഓഫീസ് അച്ചടക്കം"
+          onSpeak={() =>
+            narrator.speak(
+              'ഒരു യൂണിറ്റ് കമ്മിറ്റിയിൽ പ്രസിഡന്റ്, ജനറൽ സെക്രട്ടറി, ട്രഷറർ എന്നിവർക്ക് കൃത്യമായ ചുമതലകളുണ്ട്. യോഗ തീരുമാനങ്ങൾ മിനിറ്റ്സ് ബുക്കിൽ എഴുതി ഒപ്പുവെക്കുന്നതും വരവ്-ചെലവ് കണക്കുകൾ സുതാര്യമായി സൂക്ഷിക്കുന്നതും സംഘടനാ വിശ്വാസ്യത വർദ്ധിപ്പിക്കുന്നു.',
+              '📋 യൂണിറ്റ് ഓഫീസ് ചുമതലകൾ'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-amber-950">👑 പ്രസിഡന്റ്</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                യോഗങ്ങളിൽ അധ്യക്ഷത വഹിക്കുക, എല്ലാവരെയും ഒന്നിച്ച് കൊണ്ടുപോകുക, മിനിറ്റ്സ് ഒപ്പുവെച്ച് അംഗീകരിക്കുക.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">📝 ജനറൽ സെക്രട്ടറി</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                യോഗം വിളിച്ചുചേർക്കുക, മിനിറ്റ്സ് ബുക്കും അംഗത്വ രജിസ്റ്ററും സൂക്ഷിക്കുക, മേൽകമ്മിറ്റി സർക്കുലറുകൾ നടപ്പാക്കുക.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-sky-950">💰 ട്രഷറർ</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                വരവ്-ചെലവ്-നീക്കിയിരിപ്പ് കണക്കുകളും രസീതുകളും കൃത്യമായി സൂക്ഷിച്ച് ഓരോ യോഗത്തിലും അവതരിപ്പിക്കുക.
+              </p>
+            </div>
+          </div>
+        </CollapsibleLessonDrawer>
+      )}
+
+      {activeTab === 'newsroom' && (
+        <CollapsibleLessonDrawer
+          key="l3-drawer-newsroom"
+          emoji="📰"
+          title="മാധ്യമ & വാർത്താ പരിശീലനം · പാഠം"
+          badgeText="മീഡിയ അദബ്"
+          onSpeak={() =>
+            narrator.speak(
+              'പരിപാടികളുടെ വാർത്തകളും പ്രസ്താവനകളും തയ്യാറാക്കുമ്പോൾ സത്യസന്ധത, കൃത്യത, മാന്യമായ ഭാഷ എന്നിവ നിർബന്ധമാണ്. വസ്തുതകൾ ഉറപ്പുവരുത്തി മാത്രം വാർത്തകൾ പങ്കുവെക്കുക.',
+              '📰 മാധ്യമ പരിശീലനം'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">✅ സത്യസന്ധതയും കൃത്യതയും</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                തീയതി, സ്ഥലം, അതിഥികളുടെ പേരുകൾ, പരിപാടിയുടെ ലക്ഷ്യം എന്നിവ തെറ്റില്ലാതെ പരിശോധിച്ച് മാത്രമേ വാർത്തയും പോസ്റ്ററും പുറത്തുവിടാവൂ.
+              </p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+              <p className="text-xs sm:text-sm font-extrabold text-amber-950">🎙️ മാന്യമായ ഭാഷയും ഉത്തരവാദിത്തവും</p>
+              <p className="text-xs text-slate-700 leading-relaxed">
+                അതിശയോക്തികളും പ്രകോപനങ്ങളും ഒഴിവാക്കി, സമൂഹത്തിന് നന്മയും പ്രചോദനവും പകരുന്ന മാന്യമായ ഭാഷയാണ് നല്ല മാധ്യമ പ്രവർത്തനത്തിന്റെ അടയാളം.
+              </p>
+            </div>
+          </div>
+        </CollapsibleLessonDrawer>
       )}
 
       {(activeTab === 'unit_desks' || activeTab === 'newsroom') && (

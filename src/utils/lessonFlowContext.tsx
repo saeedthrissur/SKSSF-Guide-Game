@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Compass,
   X,
@@ -91,10 +91,7 @@ export const LessonFlowProvider: React.FC<{
     }
   }, [confirmedLessons]);
 
-  // Reset drawer count cleanly when switching lessons
-  useEffect(() => {
-    setDrawerCount(0);
-  }, [activeLessonId]);
+  // CollapsibleLessonDrawer instances self-register on mount and clean up on unmount.
 
   const confirmLesson = useCallback(
     (lessonId?: string) => {
@@ -286,8 +283,8 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
                 type="button"
                 onClick={() => jumpTo('[data-lesson-game="true"]')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                  nextTarget === 'game'
-                    ? 'bg-amber-100 text-amber-950 border border-amber-300'
+                  !gameDone && !lessonDone
+                    ? 'bg-emerald-50 text-emerald-950 border border-emerald-300 hover:bg-emerald-100'
                     : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200/80'
                 }`}
               >
