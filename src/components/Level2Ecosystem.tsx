@@ -23,6 +23,7 @@ import {
   OfficialSksbvFlagImg,
   OfficialSkssfFlagImg,
 } from './SvgArtwork';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import {
   CollapsibleLessonDrawer,
   EasterEggItem,
@@ -848,29 +849,27 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                   {memoryToast}
                 </span>
               )}
-              <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900">
-                ❤️ {Math.max(0, 6 - memoryMistakes)}/6
-              </span>
+              <GameShatterLives
+                lives={Math.max(0, 6 - memoryMistakes)}
+                maxLives={6}
+                dark={false}
+                compact
+              />
             </div>
 
             {memoryFailed && (
-              <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
-                <span className="text-sm font-extrabold text-rose-900">💔 0/6</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setMemoryMistakes(0);
-                    setFlippedUids([]);
-                    setMatchedPairs([]);
-                    setMemoryToast(null);
-                  }}
-                  aria-label="വീണ്ടും ശ്രമിക്കാം"
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700"
-                >
-                  🔄
-                </button>
-              </div>
+              <GameDefeatBurstOverlay
+                title="പതാക മെമ്മറി തോറ്റു!"
+                reason="6 കവചങ്ങളും തകർന്നു — പതാകകളും പേരുകളും ഓർത്തുവെച്ച് വീണ്ടും കളിക്കാം!"
+                onRetry={() => {
+                  sound.playClick();
+                  setMemoryMistakes(0);
+                  setFlippedUids([]);
+                  setMatchedPairs([]);
+                  setMemoryToast(null);
+                }}
+                overlay={false}
+              />
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -960,10 +959,12 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                 <span className="text-xs font-bold text-slate-600">
                   🚑 സഹായ ദൗത്യം {caseIdx + 1} / {HELPDESK_CASES.length}
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                  {'❤️'.repeat(Math.max(0, 3 - dispatchMistakes))}
-                  {'💔'.repeat(Math.min(3, dispatchMistakes))}
-                </span>
+                <GameShatterLives
+                  lives={Math.max(0, 3 - dispatchMistakes)}
+                  maxLives={3}
+                  dark={false}
+                  compact
+                />
                 {combo > 1 && (
                   <span className="inline-flex items-center gap-1 text-xs font-extrabold text-red-700">
                     <Flame className="w-4 h-4 text-orange-500" /> Combo x{combo} 🔥
@@ -996,26 +997,17 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             </div>
 
             {dispatchFailed && (
-              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-extrabold text-rose-900">💥 സഹായ ദൗത്യം പരാജയപ്പെട്ടു!</p>
-                  <p className="text-xs font-semibold text-rose-800">
-                    3 തവണ തെറ്റായ വിംഗിലേക്ക് അയച്ചു. കൃത്യമായ സബ് വിംഗിലേക്ക് സഹായം എത്തിക്കാൻ വീണ്ടും ശ്രമിക്കാം!
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setDispatchMistakes(0);
-                    setCombo(0);
-                    setDispatchToast(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
-                >
-                  🔄 വീണ്ടും ശ്രമിക്കാം
-                </button>
-              </div>
+              <GameDefeatBurstOverlay
+                title="സഹായ ദൗത്യം പരാജയപ്പെട്ടു!"
+                reason="3 തവണ തെറ്റായ വിംഗിലേക്ക് അയച്ചു. കൃത്യമായ സബ് വിംഗിലേക്ക് സഹായം എത്തിക്കാൻ വീണ്ടും ശ്രമിക്കാം!"
+                onRetry={() => {
+                  sound.playClick();
+                  setDispatchMistakes(0);
+                  setCombo(0);
+                  setDispatchToast(null);
+                }}
+                overlay={false}
+              />
             )}
 
             <div

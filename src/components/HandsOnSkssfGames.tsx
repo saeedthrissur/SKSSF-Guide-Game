@@ -5,6 +5,7 @@ import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { useGameFullscreen } from './GameFullscreenShell';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 
 export interface HandsOnGameProps {
   xpKey: string;
@@ -77,44 +78,14 @@ const FailOverlay: React.FC<{
   headline: string;
   note: string;
   onRetry: () => void;
-}> = ({ headline, note, onRetry }) => {
-  const [showInfo, setShowInfo] = useState(false);
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.94 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="p-2.5 rounded-2xl bg-gradient-to-r from-rose-900 via-red-900 to-rose-950 text-white border-2 border-rose-300 shadow-md space-y-2"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            sound.playClick();
-            setShowInfo((v) => !v);
-          }}
-          className="inline-flex items-center gap-1.5 text-sm font-extrabold text-amber-300"
-        >
-          <span>❌</span>
-          <Info className="w-4 h-4 text-rose-200" />
-        </button>
-        <button
-          type="button"
-          onClick={onRetry}
-          aria-label="വീണ്ടും ശ്രമിക്കാം"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold shrink-0 shadow"
-        >
-          <RotateCcw className="w-4 h-4" /> 🔄
-        </button>
-      </div>
-      {showInfo && (
-        <div className="text-[11px] text-rose-100 font-semibold leading-snug border-t border-white/15 pt-1.5">
-          <p className="font-extrabold text-amber-200">{headline}</p>
-          <p>{note}</p>
-        </div>
-      )}
-    </motion.div>
-  );
-};
+}> = ({ headline, note, onRetry }) => (
+  <GameDefeatBurstOverlay
+    title={headline}
+    reason={note}
+    onRetry={onRetry}
+    overlay={false}
+  />
+);
 
 const GameShellHeader: React.FC<{
   badge: string;
@@ -122,12 +93,14 @@ const GameShellHeader: React.FC<{
   subtitle: string;
   done: boolean;
   progressText: string;
-}> = ({ badge, title, subtitle, done, progressText }) => {
+  lives?: number;
+  maxLives?: number;
+}> = ({ badge, title, subtitle, done, progressText, lives, maxLives = 3 }) => {
   const [showInfo, setShowInfo] = useState(false);
   const iconOnly = badge.trim().split(/\s+/)[0] || '🎮';
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -147,9 +120,14 @@ const GameShellHeader: React.FC<{
             </span>
           )}
         </div>
-        <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-100 text-emerald-900 tabular-nums shrink-0">
-          {progressText}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {typeof lives === 'number' && (
+            <GameShatterLives lives={lives} maxLives={maxLives} dark={false} compact />
+          )}
+          <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-100 text-emerald-900 tabular-nums shrink-0">
+            {progressText}
+          </span>
+        </div>
       </div>
       {showInfo && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 space-y-0.5">
@@ -281,7 +259,8 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`❤️ ${lives}/3 · ${placed.length}/${POSTER_ITEMS.length}`}
+        lives={lives}
+        progressText={`${placed.length}/${POSTER_ITEMS.length}`}
       />
 
       {/* Live Animated Brick Wall / Madrasa Gate Backdrop */}
@@ -445,8 +424,25 @@ export const PosterWallStickGame: React.FC<HandsOnGameProps & { variant?: 'wall'
 };
 
 /* ============================================================================
- * 2. SCRATCH & CLEAN MADRASA BOARD GAME (Real Canvas Rub/Wipe-to-Clean!)
+ * 2. MADRASA CHALKBOARD DUST-BUSTER & WET-INK AVOIDANCE GAME
+ *    Tap chalk dust clouds to clean the classroom board before the bell rings,
+ *    while avoiding pulsing wet golden calligraphy ink drops!
  * ========================================================================== */
+const DUST_SPOTS = [
+  { id: 'd1', x: 18, y: 26, size: 'w-16 h-14' },
+  { id: 'd2', x: 50, y: 22, size: 'w-20 h-14' },
+  { id: 'd3', x: 82, y: 28, size: 'w-16 h-14' },
+  { id: 'd4', x: 22, y: 74, size: 'w-18 h-14' },
+  { id: 'd5', x: 52, y: 76, size: 'w-20 h-14' },
+  { id: 'd6', x: 80, y: 72, size: 'w-16 h-14' },
+];
+
+const WET_INK_TRAPS = [
+  { id: 'ink1', x: 34, y: 48 },
+  { id: 'ink2', x: 66, y: 48 },
+  { id: 'ink3', x: 50, y: 50 },
+];
+
 export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
   xpKey,
   title,
@@ -455,15 +451,15 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
   onComplete,
   isCompleted = false,
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const drawingRef = useRef(false);
-  const wipedCellsRef = useRef<Set<string>>(new Set());
-  const [cleanPct, setCleanPct] = useState(isCompleted ? 100 : 0);
+  const [wipedIds, setWipedIds] = useState<string[]>(isCompleted ? DUST_SPOTS.map((d) => d.id) : []);
+  const [shields, setShields] = useState(3);
   const [won, setWon] = useState(isCompleted);
   const [failed, setFailed] = useState(false);
+  const [failReason, setFailReason] = useState('');
   const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(20);
-  const [brushPos, setBrushPos] = useState<{ x: number; y: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState(22);
+  const [tick, setTick] = useState(0);
+  const [alertText, setAlertText] = useState<string>('☁️ ചോക്ക് പൊടി മാത്രം തൊട്ട് തുടയ്ക്കൂ! 💧 നനഞ്ഞ സ്വർണ്ണ മഷിയിൽ തൊടരുത്!');
 
   useEffect(() => {
     if (!started || won || failed) return;
@@ -471,6 +467,7 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
       setTimeLeft((prev) => {
         if (prev <= 1) {
           setFailed(true);
+          setFailReason('മദ്രസ ബെൽ അടിച്ചു! 22 സെക്കൻഡിനുള്ളിൽ ബോർഡിലെ 6 പൊടിപ്പാടുകളും തുടയ്ക്കണം.');
           sound.playError();
           return 0;
         }
@@ -480,208 +477,151 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
     return () => window.clearInterval(id);
   }, [started, won, failed]);
 
-  const initDustLayer = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#94A3B8';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  useEffect(() => {
+    if (won || failed) return;
+    const moveId = window.setInterval(() => {
+      setTick((t) => t + 1);
+    }, 900);
+    return () => window.clearInterval(moveId);
+  }, [won, failed]);
 
-    // Chalk dust streaks & smudges
-    for (let i = 0; i < 42; i++) {
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(226,232,240,0.45)' : 'rgba(71,85,105,0.35)';
-      ctx.beginPath();
-      ctx.arc(
-        (i * 47) % canvas.width,
-        (i * 31) % canvas.height,
-        14 + (i % 4) * 8,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
+  const wipeDust = (id: string) => {
+    sound.unlockAudio();
+    if (won || failed || wipedIds.includes(id)) return;
+    if (!started) setStarted(true);
+    const next = [...wipedIds, id];
+    setWipedIds(next);
+    sound.playSuccess(next.length);
+    setAlertText(`🧽 നന്ന്! ${next.length}/${DUST_SPOTS.length} പൊടിപ്പാടുകൾ തുടച്ചു മാറ്റി!`);
+    if (next.length >= DUST_SPOTS.length) {
+      setWon(true);
+      sound.playHoist();
+      onAwardXp(30, `hands_${xpKey}`);
+      onComplete?.();
+      narrator.speak('മനോഹരം! നനഞ്ഞ മഷി തട്ടാതെ മദ്രസ ബോർഡ് മുഴുവൻ വൃത്തിയായി തിളക്കി!', title);
     }
-    ctx.fillStyle = '#1E293B';
-    ctx.font = 'bold 34px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🧽 ✨', canvas.width / 2, canvas.height / 2 + 10);
   };
 
-  useEffect(() => {
-    if (!isCompleted) {
-      initDustLayer();
-    }
-  }, [isCompleted]);
-
-  const scratchAt = (clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas || won || failed) return;
+  const hitWetInk = () => {
+    sound.unlockAudio();
+    if (won || failed) return;
     if (!started) setStarted(true);
-    const rect = canvas.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((clientY - rect.top) / rect.height) * canvas.height;
-    setBrushPos({ x: clientX - rect.left, y: clientY - rect.top });
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.arc(x, y, 36, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Track 10x5 coverage grid for instant accurate percentage
-    const gx = Math.max(0, Math.min(9, Math.floor((x / canvas.width) * 10)));
-    const gy = Math.max(0, Math.min(4, Math.floor((y / canvas.height) * 5)));
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        const nx = gx + dx;
-        const ny = gy + dy;
-        if (nx >= 0 && nx < 10 && ny >= 0 && ny < 5) {
-          wipedCellsRef.current.add(`${nx}_${ny}`);
-        }
-      }
-    }
-    const pct = Math.min(100, Math.round((wipedCellsRef.current.size / 42) * 100));
-    if (pct !== cleanPct) {
-      setCleanPct(pct);
-      if (pct >= 78 && !won) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        setCleanPct(100);
-        setWon(true);
-        sound.playHoist();
-        onAwardXp(30, `hands_${xpKey}`);
-        onComplete?.();
-        narrator.speak('മനോഹരം! മദ്രസ ബോർഡ് മുഴുവൻ വൃത്തിയായി തിളങ്ങുന്നു!', title);
-      }
+    sound.playError();
+    const nextShields = Math.max(0, shields - 1);
+    setShields(nextShields);
+    setAlertText('💧 അയ്യോ! നനഞ്ഞ കലിഗ്രഫി മഷിയിൽ തൊട്ടു — 1 കവചം പൊട്ടി!');
+    if (nextShields <= 0) {
+      setFailed(true);
+      setFailReason('നനഞ്ഞ മഷിയിൽ 3 തവണ തൊട്ടതിനാൽ ബോർഡിലെ എഴുത്ത് മങ്ങി! വീണ്ടും ശ്രമിക്കാം.');
     }
   };
 
   const reset = () => {
     sound.playClick();
-    wipedCellsRef.current.clear();
-    setCleanPct(0);
+    setWipedIds([]);
+    setShields(3);
     setWon(false);
     setFailed(false);
+    setFailReason('');
     setStarted(false);
-    setTimeLeft(20);
-    setTimeout(initDustLayer, 30);
+    setTimeLeft(22);
+    setAlertText('☁️ ചോക്ക് പൊടി മാത്രം തൊട്ട് തുടയ്ക്കൂ! 💧 നനഞ്ഞ സ്വർണ്ണ മഷിയിൽ തൊടരുത്!');
   };
 
+  const cleanPct = Math.round((wipedIds.length / DUST_SPOTS.length) * 100);
+
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3.5 shadow-sm">
+    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-4 sm:p-5 space-y-3 shadow-sm">
       <GameShellHeader
-        badge="🧽"
+        badge="🧹"
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`🧽 ${cleanPct}% · ⏱️ ${timeLeft}s`}
+        lives={shields}
+        progressText={`🧽 ${wipedIds.length}/${DUST_SPOTS.length} · ⏱️ ${timeLeft}s`}
       />
 
-      <div className="relative rounded-2xl border-4 border-amber-700 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 overflow-hidden min-h-[215px] sm:min-h-[235px] select-none touch-none shadow-inner">
-        {/* Sparkling Clean Revealed Madrasa Board Underneath */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center text-white space-y-2">
-          <motion.div
-            animate={{ scale: [1, 1.04, 1] }}
-            transition={{ duration: 2.4, repeat: Infinity }}
-            className="text-2xl sm:text-3xl"
-          >
-            🏫 ✨ 🚩
-          </motion.div>
-          <p className="text-base sm:text-xl font-extrabold text-amber-300">
-            സമസ്ത കേരള ഇസ്‌ലാം മത വിദ്യാഭ്യാസ ബോർഡ് (1951)
+      <p className="text-[11px] sm:text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5 text-center">
+        {alertText}
+      </p>
+
+      <div className="relative rounded-2xl border-4 border-amber-700 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 overflow-hidden min-h-[225px] sm:min-h-[245px] select-none shadow-inner">
+        {/* Sparkling Clean Revealed Madrasa Board Facts */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center text-white space-y-1.5 pointer-events-none">
+          <div className="text-xl sm:text-2xl">🏫 ✨ 🚩</div>
+          <p className="text-sm sm:text-lg font-extrabold text-amber-300">
+            1951 SKIMVB · സമസ്ത വിദ്യാഭ്യാസ ബോർഡ്
           </p>
           <p className="text-xs sm:text-sm font-bold text-emerald-100">
-            11,000+ മദ്രസകൾ · 1989 SKSSF · 1993 SKSBV ബാലവേദി
+            1989 SKSSF · 1993 SKSBV ബാലവേദി · 11,000+ മദ്രസകൾ
           </p>
           <p className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-white/15 text-amber-200">
             “വിജ്ഞാനം · വിനയം · സേവനം”
           </p>
         </div>
 
-        {/* Scratch-Off Dust Canvas */}
-        {!won && (
-          <canvas
-            ref={canvasRef}
-            width={620}
-            height={230}
-            onPointerDown={(e) => {
-              if (failed) return;
-              sound.unlockAudio();
-              drawingRef.current = true;
-              (e.currentTarget as HTMLCanvasElement).setPointerCapture(e.pointerId);
-              scratchAt(e.clientX, e.clientY);
-            }}
-            onPointerMove={(e) => {
-              if (!drawingRef.current || failed) return;
-              scratchAt(e.clientX, e.clientY);
-            }}
-            onPointerUp={() => {
-              drawingRef.current = false;
-              setBrushPos(null);
-            }}
-            onPointerCancel={() => {
-              drawingRef.current = false;
-              setBrushPos(null);
-            }}
-            className={`relative z-10 w-full h-[215px] sm:h-[235px] block ${failed ? 'cursor-not-allowed opacity-70' : 'cursor-crosshair'}`}
-          />
-        )}
+        {/* Chalk Dust Clouds to Tap & Wipe */}
+        {!won &&
+          DUST_SPOTS.map((spot) => {
+            if (wipedIds.includes(spot.id)) return null;
+            return (
+              <motion.button
+                key={spot.id}
+                type="button"
+                disabled={failed}
+                initial={{ scale: 0.9 }}
+                animate={{ scale: [0.96, 1.04, 0.96] }}
+                transition={{ duration: 2.1, repeat: Infinity }}
+                onClick={() => wipeDust(spot.id)}
+                style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
+                aria-label="ചോക്ക് പൊടി തുടയ്ക്കൂ"
+                className={`absolute -translate-x-1/2 -translate-y-1/2 ${spot.size} rounded-full bg-slate-200/95 hover:bg-white border-2 border-slate-400 shadow-lg flex flex-col items-center justify-center cursor-pointer active:scale-90 z-10`}
+              >
+                <span className="text-xl leading-none">☁️</span>
+                <span className="text-[9px] font-extrabold text-slate-700">തുടയ്ക്കൂ</span>
+              </motion.button>
+            );
+          })}
 
-        {brushPos && !won && !failed && (
-          <div
-            style={{ left: brushPos.x - 18, top: brushPos.y - 18 }}
-            className="absolute z-20 pointer-events-none text-3xl drop-shadow"
-          >
-            🧽
-          </div>
-        )}
+        {/* Moving Wet Calligraphy Ink Drops — DO NOT TOUCH */}
+        {!won &&
+          !failed &&
+          WET_INK_TRAPS.map((ink, idx) => {
+            const offsetX = Math.sin((tick + idx * 2) * 0.9) * 10;
+            const offsetY = Math.cos((tick + idx) * 0.8) * 14;
+            return (
+              <motion.button
+                key={ink.id}
+                type="button"
+                animate={{
+                  left: `${Math.max(14, Math.min(86, ink.x + offsetX))}%`,
+                  top: `${Math.max(20, Math.min(82, ink.y + offsetY))}%`,
+                }}
+                transition={{ duration: 0.8, ease: 'easeInOut' }}
+                onClick={hitWetInk}
+                aria-label="നനഞ്ഞ മഷി — തൊടരുത്"
+                className="absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1.5 rounded-full bg-rose-600/95 hover:bg-rose-500 border-2 border-amber-300 text-white shadow-lg flex items-center gap-0.5 cursor-pointer z-20"
+              >
+                <span className="text-sm leading-none">💧</span>
+                <span className="text-[9px] font-extrabold whitespace-nowrap">മഷി!</span>
+              </motion.button>
+            );
+          })}
       </div>
 
-      {/* Progress Bar + Quick Brush Helper for Accessibility */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex-1 min-w-[160px] h-3 rounded-full bg-slate-200 overflow-hidden">
-          <div
-            style={{ width: `${cleanPct}%` }}
-            className={`h-full transition-all duration-150 ${
-              failed ? 'bg-rose-500' : 'bg-gradient-to-r from-emerald-500 to-amber-400'
-            }`}
-          />
-        </div>
-        {!won && !failed && (
-          <button
-            type="button"
-            onClick={() => {
-              sound.unlockAudio();
-              sound.playPop();
-              if (!started) setStarted(true);
-              const nextPct = Math.min(100, cleanPct + 25);
-              setCleanPct(nextPct);
-              const canvas = canvasRef.current;
-              const ctx = canvas?.getContext('2d');
-              if (canvas && ctx) {
-                ctx.globalCompositeOperation = 'destination-out';
-                ctx.fillRect(0, 0, (canvas.width * nextPct) / 100, canvas.height);
-              }
-              if (nextPct >= 100) {
-                setWon(true);
-                sound.playHoist();
-                onAwardXp(30, `hands_${xpKey}`);
-                onComplete?.();
-              }
-            }}
-            aria-label="തുടയ്ക്കൂ"
-            className="px-4 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-lg font-extrabold"
-          >
-            🧽
-          </button>
-        )}
+      <div className="h-2.5 rounded-full bg-slate-200 overflow-hidden">
+        <div
+          style={{ width: `${cleanPct}%` }}
+          className={`h-full transition-all duration-200 ${
+            failed ? 'bg-rose-500' : 'bg-gradient-to-r from-emerald-500 to-amber-400'
+          }`}
+        />
       </div>
 
       {failed && (
         <FailOverlay
-          headline="സമയം കഴിഞ്ഞു — ബോർഡ് മുഴുവൻ വൃത്തിയായില്ല!"
-          note="ക്ലാസ് തുടങ്ങുന്നതിന് മുൻപ് 20 സെക്കൻഡിനുള്ളിൽ പൊടി മുഴുവൻ തുടയ്ക്കണം — വീണ്ടും ശ്രമിക്കാം!"
+          headline="ബോർഡ് വൃത്തിയാക്കൽ പരാജയപ്പെട്ടു!"
+          note={failReason || 'നനഞ്ഞ മഷിയിൽ തൊടാതെ 22 സെക്കൻഡിനുള്ളിൽ 6 പൊടിപ്പാടുകളും തുടയ്ക്കണം!'}
           onRetry={reset}
         />
       )}
@@ -689,7 +629,7 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
       {won && (
         <WinOverlay
           headline="✨ മദ്രസ ബോർഡ് തിളങ്ങി! (+30 XP)"
-          note="പൊടി മുഴുവൻ തുടച്ച് മദ്രസ ബോർഡ് വൃത്തിയാക്കി!"
+          note="നനഞ്ഞ കലിഗ്രഫി മഷി തട്ടാതെ പൊടി മുഴുവൻ തുടച്ച് ബോർഡ് വൃത്തിയാക്കി!"
           onReplay={reset}
         />
       )}
@@ -717,6 +657,7 @@ const PAINT_COLORS: ArchPaintColor[] = [
   { id: 'emerald', label: 'ഇസ്‌ലാമിക് പച്ച', fill: '#059669', stroke: '#065F46', swatchBg: '#D1FAE5' },
   { id: 'gold', label: 'സ്വർണ്ണ മഞ്ഞ', fill: '#D97706', stroke: '#92400E', swatchBg: '#FEF3C7' },
   { id: 'pearl', label: 'തൂവെള്ള', fill: '#F8FAFC', stroke: '#94A3B8', swatchBg: '#F1F5F9' },
+  { id: 'mud_spill', label: '⚠️ കരിയും ചെളിയും (വേണ്ട!)', fill: '#44403C', stroke: '#1C1917', swatchBg: '#FEE2E2' },
 ];
 
 const ARCH_PARTS: {
@@ -761,8 +702,30 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
   );
   const [splashKey, setSplashKey] = useState(0);
   const [won, setWon] = useState(isCompleted);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [started, setStarted] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [failNote, setFailNote] = useState('');
+  const [warnMsg, setWarnMsg] = useState<string | null>(null);
 
   const paintedCount = Object.keys(paintedParts).length;
+
+  useEffect(() => {
+    if (!started || won || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setFailed(true);
+          setFailNote('ഉദ്ഘാടന സമയം കഴിഞ്ഞു! 30 സെക്കൻഡിനുള്ളിൽ 6 കമാന ഭാഗങ്ങളും ഭംഗിയായി പെയിന്റ് ചെയ്യണം.');
+          sound.playError();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, won, failed]);
 
   const completeArch = () => {
     if (!won) {
@@ -776,7 +739,21 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
   };
 
   const paintRegion = (partId: ArchPartId) => {
+    if (won || failed) return;
     sound.unlockAudio();
+    if (!started) setStarted(true);
+    if (selectedColor.id === 'mud_spill') {
+      sound.playError();
+      const nextShields = Math.max(0, shields - 1);
+      setShields(nextShields);
+      setWarnMsg('⚠️ ചെളി നിറം കമാനത്തിൽ അടിക്കരുത്! 1 കവചം പൊട്ടി — നല്ല നിറം തിരഞ്ഞെടുക്കൂ!');
+      if (nextShields <= 0) {
+        setFailed(true);
+        setFailNote('ചെളി നിറം 3 തവണ അടിച്ചതിനാൽ സ്വാഗത കമാനം വൃത്തികേടായി! വീണ്ടും ശ്രമിക്കാം.');
+      }
+      return;
+    }
+    setWarnMsg(null);
     sound.playPop();
     setSplashKey((k) => k + 1);
     const next: Partial<Record<ArchPartId, string>> = {
@@ -789,19 +766,16 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
     }
   };
 
-  const applyPresetPalette = () => {
-    sound.unlockAudio();
-    const preset: Partial<Record<ArchPartId, string>> = {};
-    ARCH_PARTS.forEach((p) => {
-      preset[p.id] = p.presetFill;
-    });
-    setPaintedParts(preset);
-    completeArch();
-  };
-
   const reset = () => {
     sound.playClick();
     setPaintedParts({});
+    setSelectedColor(PAINT_COLORS[2]);
+    setShields(3);
+    setTimeLeft(30);
+    setStarted(false);
+    setFailed(false);
+    setFailNote('');
+    setWarnMsg(null);
     setWon(false);
   };
 
@@ -815,29 +789,46 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
           title={title}
           subtitle={subtitle}
           done={won}
-          progressText={`${paintedCount}/6`}
+          lives={shields}
+          progressText={`${paintedCount}/6 · ⏱️ ${timeLeft}s`}
         />
       )}
 
       {/* Compact Color Bar */}
-      <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950 flex items-center justify-between gap-2">
+      <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950 flex flex-wrap items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white border border-emerald-300 text-xs">
           <span className="w-3.5 h-3.5 rounded-full border border-slate-400" style={{ backgroundColor: selectedColor.fill }} />
           <span>{selectedColor.label}</span>
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            sound.playClick();
-            setSidebarOpen((v) => !v);
-          }}
-          aria-label="നിറങ്ങൾ"
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-800 text-white text-xs font-extrabold"
-        >
-          {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-          <span>🎨</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {isFullscreen && (
+            <>
+              <GameShatterLives lives={shields} maxLives={3} dark={false} compact />
+              <span className="px-2 py-0.5 rounded-lg bg-white border border-emerald-200 text-[11px] tabular-nums">
+                ⏱️ {timeLeft}s
+              </span>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setSidebarOpen((v) => !v);
+            }}
+            aria-label="നിറങ്ങൾ"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-emerald-800 text-white text-xs font-extrabold"
+          >
+            {sidebarOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+            <span>🎨</span>
+          </button>
+        </div>
       </div>
+
+      {warnMsg && !won && !failed && (
+        <p className="text-xs font-extrabold text-rose-800 bg-rose-50 border border-rose-300 rounded-xl px-3 py-1.5 text-center">
+          {warnMsg}
+        </p>
+      )}
 
       {/* UNIFIED SIDE-BY-SIDE STUDIO: Pure Welcome Arch Canvas + Color & Part Sidebar */}
       <div
@@ -1019,14 +1010,8 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
           <aside className="rounded-2xl border-2 border-slate-200 bg-slate-50 p-2.5 flex flex-col gap-2.5 overflow-y-auto max-h-[68dvh]">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-1">
-                <p className="text-[11px] font-extrabold text-slate-900">🎨 1. നിറം:</p>
-                <button
-                  type="button"
-                  onClick={applyPresetPalette}
-                  className="px-2 py-0.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 text-[10px] font-extrabold whitespace-nowrap"
-                >
-                  ✨ ഓട്ടോ നിറം
-                </button>
+                <p className="text-[11px] font-extrabold text-slate-900">🎨 1. നിറം തിരഞ്ഞെടുക്കൂ:</p>
+                <span className="text-[10px] font-bold text-rose-700">ചെളി ഒഴിവാക്കൂ!</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-1 gap-1">
                 {PAINT_COLORS.map((c) => {
@@ -1098,6 +1083,14 @@ export const PaintRollerGame: React.FC<HandsOnGameProps> = ({
           </aside>
         )}
       </div>
+
+      {failed && (
+        <FailOverlay
+          headline="സ്വാഗത കമാനം പെയിന്റ് ചെയ്യൽ പരാജയപ്പെട്ടു!"
+          note={failNote || '30 സെക്കൻഡിനുള്ളിൽ ചെളി നിറം ഒഴിവാക്കി 6 ഭാഗങ്ങളും പെയിന്റ് ചെയ്യണം!'}
+          onRetry={reset}
+        />
+      )}
 
       {won && (
         <WinOverlay
@@ -1341,7 +1334,8 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`${placed.length}/${STAGE_PARTS.length} · ${'❤️'.repeat(Math.max(0, 3 - mistakes))}${'💔'.repeat(mistakes)}`}
+        lives={Math.max(0, 3 - mistakes)}
+        progressText={`${placed.length}/${STAGE_PARTS.length}`}
       />
 
       {wrongFlash && !won && !failed && (
@@ -1595,7 +1589,8 @@ export const UnitRoomDecorGame: React.FC<HandsOnGameProps> = ({
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`${placed.length}/${ROOM_ITEMS.length} · ${'❤️'.repeat(Math.max(0, 3 - mistakes))}${'💔'.repeat(mistakes)}`}
+        lives={Math.max(0, 3 - mistakes)}
+        progressText={`${placed.length}/${ROOM_ITEMS.length}`}
       />
 
       {wrongFlash && !won && !failed && (
@@ -2420,8 +2415,8 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
       setSelected(null);
       setMsg(
         trayItem?.isDecoy
-          ? `❌ ${trayItem.label} — ഇത് സമ്മാനത്തിന് യോജിക്കില്ല! (1 ഹൃദയം നഷ്ടമായി)`
-          : '❌ തെറ്റായ സ്ഥലത്താണ് വെച്ചത്! ശരിയായ ട്രോഫി/ബോക്സ്/സർട്ടിഫിക്കറ്റ് നോക്കി വെക്കൂ. (1 ഹൃദയം നഷ്ടമായി)'
+          ? `❌ ${trayItem.label} — ഇത് സമ്മാനത്തിന് യോജിക്കില്ല! (1 കവചം പൊട്ടി)`
+          : '❌ തെറ്റായ സ്ഥലത്താണ് വെച്ചത്! ശരിയായ ട്രോഫി/ബോക്സ്/സർട്ടിഫിക്കറ്റ് നോക്കി വെക്കൂ. (1 കവചം പൊട്ടി)'
       );
       return;
     }
@@ -2469,7 +2464,8 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
         title={title}
         subtitle={subtitle}
         done={won}
-        progressText={`❤️ ${lives}/3 · ⏱️ ${timeLeft}s · ${doneIds.length + (scratched ? 1 : 0)}/4`}
+        lives={lives}
+        progressText={`⏱️ ${timeLeft}s · ${doneIds.length + (scratched ? 1 : 0)}/4`}
       />
 
       {/* Illustrated Gift & Trophy Stage */}
@@ -2532,7 +2528,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
                     if (item.isDecoy) {
                       sound.playError();
                       setLives((l) => Math.max(0, l - 1));
-                      setMsg(`❌ ${item.label} — വേണ്ടാത്ത സാധനം തൊട്ടതിനാൽ 1 ഹൃദയം നഷ്ടമായി!`);
+                      setMsg(`❌ ${item.label} — വേണ്ടാത്ത സാധനം തൊട്ടതിനാൽ 1 കവചം പൊട്ടി!`);
                       return;
                     }
                     setSelected(item.id);
@@ -2567,7 +2563,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
 
       {failed && (
         <FailOverlay
-          headline={timeLeft <= 0 ? '⏱️ സമയം തീർന്നു! പരാജയപ്പെട്ടു' : '💔 3 തെറ്റുകൾ! സമ്മാന ഒരുക്കം പരാജയപ്പെട്ടു'}
+          headline={timeLeft <= 0 ? '⏱️ സമയം തീർന്നു! പരാജയപ്പെട്ടു' : '💥 3 കവചങ്ങളും തകർന്നു! സമ്മാന ഒരുക്കം പരാജയപ്പെട്ടു'}
           note="വേണ്ടാത്ത സാധനങ്ങൾ (🗑️, 🧷) തൊടാതെയും ശരിയായ സമ്മാനത്തിൽ കൃത്യമായ സാധനം വെച്ചും സമയത്തിനുള്ളിൽ പൂർത്തിയാക്കൂ!"
           onRetry={reset}
         />

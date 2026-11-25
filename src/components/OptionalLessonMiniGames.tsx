@@ -5,6 +5,15 @@ import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import {
+  AirplaneSicFlightConfig,
+  AirplaneSicFlightGame,
+  BalloonPopArcadeConfig,
+  BalloonPopArcadeGame,
+  HelicopterRescueDropConfig,
+  HelicopterRescueDropGame,
+} from './NewVehicleArcadeGames';
 
 import {
   FoodPackDeliverGame,
@@ -145,7 +154,10 @@ type SceneGameConfig =
   | FlagHoistConfig
   | ShipSailConfig
   | BalloonClimbConfig
-  | CyberArcadeConfig;
+  | CyberArcadeConfig
+  | AirplaneSicFlightConfig
+  | HelicopterRescueDropConfig
+  | BalloonPopArcadeConfig;
 
 const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = {
   p0_creator: {
@@ -325,34 +337,38 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '🕌 അടിപൊളി! പണ്ഡിത പരമ്പരയും വഖഫ് പള്ളി പൈതൃകവും ഭംഗിയായി സംരക്ഷിച്ചു! (+25 XP)',
   },
   sb_ch2: {
-    engine: 'road_vehicle_drive',
-    title: '🚌 SKSSF ട്രെൻഡ് (TREND) & 1995 ടാഗോർ ഹാൾ വിജ്ഞാന ബസ് യാത്ര!',
-    subtitle: 'വിജ്ഞാന ബസ് ഓടിച്ച് 1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സിലും SKSSF TREND TASTE & Educare കേന്ദ്രങ്ങളിലും എത്തൂ!',
-    vehicleType: 'bus',
-    weather: 'sunny',
-    driveLabel: '⛽ വിജ്ഞാന ബസ് ഓടിക്കൂ!',
-    serveLabel: '🎓 വിദ്യാർത്ഥികളെ കയറ്റൂ!',
-    stops: [
+    engine: 'airplane_sic_flight',
+    title: '✈️ സമസ്ത സമ്മേളന & 1995 സമാധാന സദസ്സ് എയർപോർട്ട് വിമാന യാത്ര!',
+    subtitle: 'കോഴിക്കോട് എയർപോർട്ട് റൺവേയിൽ നിന്ന് വിമാനം പറത്തി കൊടുങ്കാറ്റ് ഒഴിവാക്കി 1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സിലും TREND വിദ്യാഭ്യാസ ഹബിലും എത്തി സുരക്ഷിതമായി ലാൻഡ് ചെയ്യൂ!',
+    departureAirport: 'കോഴിക്കോട് എയർപോർട്ട്',
+    arrivalAirport: 'സമസ്ത സമ്മേളന നഗരി എയർപോർട്ട്',
+    hubs: [
       {
         id: 'tagore',
+        lane: 0,
         emoji: '🕊️',
-        label: 'സ്റ്റോപ്പ് 1 · 1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സ്',
-        reward: 'ശംസുൽ ഉലമ കാണിച്ചുതന്ന സമാധാനത്തിന്റെയും മതസൗഹാർദ്ദത്തിന്റെയും സന്ദേശം നേടി!',
+        shortLabel: '1995 സമാധാന സദസ്സ്',
+        label: '1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സ്',
+        note: 'ശംസുൽ ഉലമ കാണിച്ചുതന്ന സമാധാനത്തിന്റെയും മതസൗഹാർദ്ദത്തിന്റെയും സന്ദേശം നേടി!',
       },
       {
         id: 'taste',
+        lane: 2,
         emoji: '🎤',
-        label: 'സ്റ്റോപ്പ് 2 · SKSSF TREND — TASTE പരിശീലനം',
-        reward: 'വിദ്യാർത്ഥികൾക്കുള്ള TASTE വ്യക്തിത്വ വികസനവും സോഫ്റ്റ് സ്കിൽ ക്ലാസ്സും പൂർത്തിയാക്കി!',
+        shortLabel: 'TREND TASTE',
+        label: 'SKSSF TREND — TASTE പരിശീലനം',
+        note: 'വിദ്യാർത്ഥികൾക്കുള്ള TASTE വ്യക്തിത്വ വികസനവും സോഫ്റ്റ് സ്കിൽ ക്ലാസ്സും പൂർത്തിയാക്കി!',
       },
       {
         id: 'eduhub',
+        lane: 1,
         emoji: '🎓',
-        label: 'സ്റ്റോപ്പ് 3 · TREND EduHub & SKSSF Educare',
-        reward: 'സിവിൽ സർവീസ് (Future India), CA & ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടി നേടി!',
+        shortLabel: 'TREND EduHub',
+        label: 'TREND EduHub & SKSSF Educare',
+        note: 'സിവിൽ സർവീസ് (Future India), CA & ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടി നേടി!',
       },
     ],
-    doneMessage: '🚌 ഗംഭീരം! സമാധാനവും വിജ്ഞാനവും പകരുന്ന SKSSF ട്രെൻഡ് ബസ് യാത്ര വിജയിച്ചു! (+25 XP)',
+    doneMessage: '✈️ ഗംഭീരം! സമസ്ത സമ്മേളന നഗരി റൺവേയിൽ വിമാനം സുരക്ഷിതമായി ലാൻഡ് ചെയ്തു! (+25 XP)',
   },
   sb_ch3: {
     engine: 'road_vehicle_drive',
@@ -521,34 +537,37 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '🚐 സൂപ്പർ! മൂന്ന് പ്രധാന സേവന കേന്ദ്രങ്ങളിലും SKSSF വാൻ സഹായം എത്തിച്ചു! (+25 XP)',
   },
   l2_dawa_age: {
-    engine: 'road_vehicle_drive',
-    title: '🚲 പ്രായപാത സൈക്കിൾ യാത്ര!',
-    subtitle: 'സൈക്കിൾ ചവിട്ടി SKSBV → SKSSF (14–40) → SYS (18+) എന്നീ 3 സംഘടനാ മൈൽക്കല്ലുകൾ കടന്നുപോകൂ!',
-    vehicleType: 'bicycle',
-    weather: 'sunny',
-    driveLabel: '🚲 സൈക്കിൾ ചവിട്ടൂ!',
-    serveLabel: '⭐ മൈൽക്കല്ല് തൊടൂ!',
-    stops: [
+    engine: 'balloon_pop_arcade',
+    title: '🎈 പ്രായപാത ബലൂൺ ആർക്കേഡ് (SKSBV · SKSSF 14–40 · SYS 18+)!',
+    subtitle: 'ആകാശത്തേക്ക് പറക്കുന്ന ശരിയായ സംഘടനാ ബലൂണുകൾ തൊട്ട് പൊട്ടിക്കൂ — ചുവന്ന 💣 കെണി ബലൂൺ തൊടരുത്!',
+    targets: [
       {
         id: 'sksbv',
         emoji: '🎒',
-        label: 'മൈൽക്കല്ല് 1 · SKSBV (മദ്രസ പ്രായം)',
-        reward: 'മദ്രസയിലെ ബാലവേദി SKSBV-യിൽ നിന്ന് നല്ല ശീലങ്ങൾ തുടങ്ങി!',
+        label: 'SKSBV മദ്രസ',
+        color: '#059669',
+        note: 'മദ്രസയിലെ ബാലവേദി SKSBV-യിൽ നിന്ന് നല്ല ശീലങ്ങൾ തുടങ്ങി!',
       },
       {
         id: 'skssf',
         emoji: '🚩',
-        label: 'മൈൽക്കല്ല് 2 · SKSSF (14 മുതൽ 40 വരെ)',
-        reward: '40 വയസ്സ് വരെയും SKSSF-ൽ സജീവമായി പ്രവർത്തിക്കാൻ കഴിയും!',
+        label: 'SKSSF 14–40',
+        color: '#0284C7',
+        note: '14 മുതൽ 40 വയസ്സ് വരെയും SKSSF-ൽ സജീവമായി പ്രവർത്തിക്കാൻ കഴിയും!',
       },
       {
         id: 'sys',
         emoji: '🤝',
-        label: 'മൈൽക്കല്ല് 3 · SYS (18+ ഒരുമിച്ച് പ്രവർത്തിക്കാം)',
-        reward: 'SKSSF-ൽ പ്രവർത്തിക്കുന്നവർക്കും 18+ ആയാൽ SYS-ലും പ്രവർത്തിക്കാം!',
+        label: 'SYS 18+',
+        color: '#D97706',
+        note: 'SKSSF-ൽ പ്രവർത്തിക്കുന്നവർക്കും 18+ ആയാൽ SYS-ലും ഒരുമിച്ച് പ്രവർത്തിക്കാം!',
       },
     ],
-    doneMessage: '🚲 മിടുക്കൻ! പ്രായപാതയിലെ മൂന്ന് സംഘടനാ മൈൽക്കല്ലുകളും സൈക്കിളിൽ താണ്ടി! (+25 XP)',
+    decoys: [
+      { emoji: '💣', label: 'അലസത' },
+      { emoji: '💣', label: 'വഴക്ക്' },
+    ],
+    doneMessage: '🎈 മിടുക്കൻ! പ്രായപാതയിലെ മൂന്ന് സംഘടനാ ബലൂണുകളും കൃത്യമായി പൊട്ടിച്ചു! (+25 XP)',
   },
   l2_vault: {
     engine: 'road_vehicle_drive',
@@ -610,76 +629,79 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '🌿 മനോഹരം! സൽസ്വഭാവ പൂന്തോട്ടം മുഴുവൻ പൂത്തുലഞ്ഞു! (+25 XP)',
   },
   l3_mind_chain: {
-    engine: 'balloon_altitude_climb',
-    title: '🎈 SKSSF ട്രെൻഡ് (TREND) — TASTE & കരിയർ വളർച്ചാ ഹോട്ട് എയർ ബലൂൺ!',
-    subtitle: '“🔥 ജ്വാല ഉയർത്തൂ!” അമർത്തി നല്ല ചിന്തകളിലൂടെയും SKSSF TREND (TASTE · Educare · Future India IAS · TREND CA) പടവുകളിലൂടെയും ഉയരങ്ങളിലേക്ക് പറക്കൂ!',
-    gates: [
-      { id: 'g1', emoji: '🤲', label: '1. ഉറച്ച വിശ്വാസവും സൽസ്വഭാവവും', note: 'അല്ലാഹുവിലുള്ള വിശ്വാസത്തോടെ ബലൂൺ പറന്നുയർന്നു!' },
-      { id: 'g2', emoji: '🎤', label: '2. TREND — TASTE വ്യക്തിത്വ വികസനം', note: 'ആത്മവിശ്വാസവും പ്രസംഗ-ആശയവിനിമയ കഴിവും നേടി മേഘങ്ങൾക്ക് മുകളിലെത്തി!' },
-      { id: 'g3', emoji: '🎓', label: '3. SKSSF Educare & TREND EduHub', note: 'സ്കോളർഷിപ്പും ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടിയും സ്വന്തമാക്കി!' },
-      { id: 'g4', emoji: '🏛️', label: '4. Future India IAS & TREND CA', note: 'സിവിൽ സർവീസ്, ചാർട്ടേഡ് അക്കൗണ്ടൻസി ലക്ഷ്യങ്ങളിലേക്ക് ഉയർന്നു!' },
-      { id: 'g5', emoji: '🌟', label: '5. വിനയമുള്ള നേതൃത്വവും സേവനവും', note: 'അറിവും വിനയവും ചേർന്ന ഉത്തമ SKSSF പ്രവർത്തകനായി കൊടുമുടിയിൽ എത്തി!' },
+    engine: 'balloon_pop_arcade',
+    title: '🎈 SKSSF ട്രെൻഡ് (TREND) & നല്ല ചിന്തകൾ ബലൂൺ ആർക്കേഡ്!',
+    subtitle: 'നല്ല ചിന്തകളുടെയും TREND വളർച്ചയുടെയും ബലൂണുകൾ പൊട്ടിക്കൂ! ചുവന്ന 💣 നെഗറ്റീവ് ബലൂണുകൾ ഒഴിവാക്കൂ!',
+    targets: [
+      { id: 'g1', emoji: '🤲', label: 'വിശ്വാസം', color: '#059669', note: 'അല്ലാഹുവിലുള്ള ഉറച്ച വിശ്വാസവും സൽസ്വഭാവവും നേടി!' },
+      { id: 'g2', emoji: '🎤', label: 'TREND TASTE', color: '#0284C7', note: 'ആത്മവിശ്വാസവും പ്രസംഗ-ആശയവിനിമയ കഴിവും നേടി!' },
+      { id: 'g3', emoji: '🎓', label: 'Educare', color: '#7C3AED', note: 'സ്കോളർഷിപ്പും ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടിയും സ്വന്തമാക്കി!' },
+      { id: 'g4', emoji: '🌟', label: 'വിനയം', color: '#D97706', note: 'അറിവും വിനയവും ചേർന്ന ഉത്തമ SKSSF പ്രവർത്തകനായി ഉയർന്നു!' },
     ],
-    doneMessage: '🎈 വിസ്മയം! SKSSF ട്രെൻഡ് (TREND) വളർച്ചാ ബലൂണിൽ അഞ്ച് പടവുകളും വിജയകരമായി കയറി! (+25 XP)',
+    decoys: [
+      { emoji: '💣', label: 'അഹങ്കാരം' },
+      { emoji: '💣', label: 'സമയനഷ്ടം' },
+    ],
+    doneMessage: '🎈 വിസ്മയം! നല്ല ചിന്തകളുടെയും TREND വളർച്ചയുടെയും ബലൂണുകൾ കൃത്യമായി നേടി! (+25 XP)',
   },
   l4_compass: {
-    engine: 'ship_harbor_sail',
-    title: '🧭 SKSSF ഓർഗാനെറ്റ് (Organet) & ട്രെൻഡ് (TREND) സംഘാടക കപ്പൽ യാത്ര!',
-    subtitle: 'തിരമാലകളിലൂടെ കപ്പൽ നിയന്ത്രിച്ച് ശൂറ, ഓർഗാനെറ്റ് പ്ലാനിംഗ്, ജിറാഫും ഏണിയും എന്നീ 3 ദീപസ്തംഭങ്ങളിൽ എത്തൂ!',
-    islands: [
+    engine: 'train_station_voyage',
+    title: '🚂 SKSSF ഓർഗാനെറ്റ് (Organet) & സംഘാടന എക്സ്പ്രസ് തീവണ്ടി!',
+    subtitle: 'തീവണ്ടി ഓടിച്ച് ശൂറ, 5 ചോദ്യങ്ങൾ (ഓർഗാനെറ്റ്), ജിറാഫും ഏണിയും എന്നീ 3 സ്റ്റേഷനുകളിൽ കൃത്യമായി ബ്രേക്ക് ചെയ്ത് കോച്ചുകൾ ഘടിപ്പിക്കൂ!',
+    stations: [
       {
         id: 'c_shura',
-        lane: 0,
-        emoji: '🤝',
-        label: 'ദീപസ്തംഭം 1 · ശൂറ (കൂടിയാലോചന)',
-        note: 'എല്ലാവരോടും ആലോചിച്ച് തീരുമാനമെടുക്കുന്ന ശൂറ ദീപസ്തംഭം കടന്നു!',
+        year: 'ശൂറ',
+        label: 'കൂടിയാലോചന സ്റ്റേഷൻ',
+        coachColor: '#047857',
+        note: 'എല്ലാവരോടും ആലോചിച്ച് തീരുമാനമെടുക്കുന്ന ശൂറ കോച്ച് തീവണ്ടിയിൽ ഘടിപ്പിച്ചു!',
       },
       {
         id: 'c_time',
-        lane: 2,
-        emoji: '⏰',
-        label: 'ദീപസ്തംഭം 2 · ഓർഗാനെറ്റ് & 5 ചോദ്യങ്ങൾ',
-        note: 'എന്ത്, എന്തിന്, എപ്പോൾ, എവിടെ, ആര് — കൃത്യമായ ഓർഗാനെറ്റ് പ്ലാനിംഗ് ദ്വീപ് കടന്നു!',
+        year: '5W',
+        label: 'ഓർഗാനെറ്റ് പ്ലാനിംഗ്',
+        coachColor: '#0284C7',
+        note: 'എന്ത്, എന്തിന്, എപ്പോൾ, എവിടെ, ആര് — കൃത്യമായ ഓർഗാനെറ്റ് പ്ലാനിംഗ് കോച്ച് ചേർത്തു!',
       },
       {
         id: 'c_giraffe',
-        lane: 1,
-        emoji: '🦒',
-        label: 'ദീപസ്തംഭം 3 · ജിറാഫും ഏണിയും & TREND കാഴ്ചപ്പാട്',
-        note: 'ദൂരക്കാഴ്ചയോടെ കൂടെയുള്ളവരെ ഉയർത്തുന്ന സംഘാടക തുറമുഖത്ത് എത്തി!',
+        year: '🦒',
+        label: 'ജിറാഫും ഏണിയും',
+        coachColor: '#D97706',
+        note: 'ദൂരക്കാഴ്ചയോടെ കൂടെയുള്ളവരെ ഉയർത്തുന്ന സംഘാടക കോച്ചും ചേർത്തു!',
       },
     ],
-    doneMessage: '🧭 അടിപൊളി! SKSSF ഓർഗാനെറ്റ് & ട്രെൻഡ് കപ്പൽ എല്ലാ ദീപസ്തംഭങ്ങളും സുരക്ഷിതമായി കടന്നു! (+25 XP)',
+    doneMessage: '🚂 അടിപൊളി! SKSSF ഓർഗാനെറ്റ് എക്സ്പ്രസ് തീവണ്ടി എല്ലാ സ്റ്റേഷനുകളും വിജയകരമായി കടന്നു! (+25 XP)',
   },
   l4_crisis: {
-    engine: 'road_vehicle_drive',
-    title: '🚑 വിഖായ & അലേർട്ട് (ALERT) മഴക്കാല രക്ഷാ വണ്ടി!',
-    subtitle: 'പെരുമഴയിലൂടെ മിന്നുന്ന SKSSF വിഖായ–അലേർട്ട് രക്ഷാ വണ്ടി ഓടിച്ച് 3 ദുരിതാശ്വാസ കേന്ദ്രങ്ങളിൽ സഹായം എത്തിക്കൂ!',
-    vehicleType: 'ambulance',
-    weather: 'rainy',
-    driveLabel: '🚨 വിഖായ വണ്ടി ഓടിക്കൂ!',
-    serveLabel: '🩹 സഹായം കൈമാറൂ!',
-    stops: [
+    engine: 'helicopter_rescue_drop',
+    title: '🚁 വിഖായ & അലേർട്ട് (ALERT) രക്ഷാ ഹെലികോപ്റ്റർ എയർഡ്രോപ്പ്!',
+    subtitle: 'കൊടുങ്കാറ്റ് (⛈️) ഇല്ലാത്തപ്പോൾ ഹെലികോപ്റ്റർ ഗ്രൗണ്ട് ഹെലിപാഡിന് മുകളിൽ എത്തുമ്പോൾ 🪂 രക്ഷാ കിറ്റ് ഇറക്കൂ!',
+    kitEmoji: '🩹',
+    pads: [
       {
         id: 'lpc',
         emoji: '🧭',
-        label: 'സ്റ്റോപ്പ് 1 · വിഖായ & ALERT കൺട്രോൾ പോസ്റ്റ്',
-        reward: 'ഫോൺ ഓഫ് ചെയ്യാതെ Leader–Plan–Communicate ടീമിനെ ഏകോപിപ്പിച്ചു!',
+        shortLabel: 'ALERT പോസ്റ്റ്',
+        label: 'വിഖായ & ALERT കൺട്രോൾ പോസ്റ്റ്',
+        note: 'ഫോൺ ഓഫ് ചെയ്യാതെ Leader–Plan–Communicate ടീമിനെ ഏകോപിപ്പിച്ചു!',
       },
       {
         id: 'camp',
         emoji: '⛺',
-        label: 'സ്റ്റോപ്പ് 2 · സഹചാരി ദുരിതാശ്വാസ ക്യാമ്പ്',
-        reward: 'മഴയിൽ കുടുങ്ങിയ കുടുംബങ്ങൾക്ക് കുടിവെള്ളവും ഭക്ഷണവും ഫസ്റ്റ്-എയ്ഡും നൽകി!',
+        shortLabel: 'ദുരിതാശ്വാസ ക്യാമ്പ്',
+        label: 'സഹചാരി ദുരിതാശ്വാസ ക്യാമ്പ്',
+        note: 'മഴയിൽ കുടുങ്ങിയ കുടുംബങ്ങൾക്ക് കുടിവെള്ളവും ഭക്ഷണവും ഫസ്റ്റ്-എയ്ഡും ഇറക്കി!',
       },
       {
         id: 'unity',
-        emoji: '🕊️',
-        label: 'സ്റ്റോപ്പ് 3 · നാടിന്റെ ഐക്യ സംഗമം',
-        reward: 'അഭിപ്രായവ്യത്യാസങ്ങൾ ശാന്തമായി പരിഹരിച്ച് കൂട്ടായ്മ തിരിച്ചുപിടിച്ചു!',
+        emoji: '🏥',
+        shortLabel: 'മെഡിക്കൽ ക്യാമ്പ്',
+        label: 'അടിയന്തര മെഡിക്കൽ ക്യാമ്പ്',
+        note: 'പ്രതിസന്ധിയിൽ കൃത്യസമയത്ത് മരുന്നും രക്ഷാ കിറ്റും എത്തിച്ചു!',
       },
     ],
-    doneMessage: '🚑 സല്യൂട്ട്! പെരുമഴയിലും വിഖായ & അലേർട്ട് രക്ഷാ വണ്ടി എല്ലാ കേന്ദ്രങ്ങളിലും സേവനം എത്തിച്ചു! (+25 XP)',
+    doneMessage: '🚁 സല്യൂട്ട്! വിഖായ & അലേർട്ട് ഹെലികോപ്റ്റർ എല്ലാ ക്യാമ്പുകളിലും കൃത്യമായി സഹായം എത്തിച്ചു! (+25 XP)',
   },
   l4_cyber_shield: {
     engine: 'cyber_shield_arcade',
@@ -718,62 +740,58 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '🛡️ ഡിജിറ്റൽ വിജയം! SKSSF സൈബർ വിംഗ് കവചം കൊണ്ട് ടവർ 100% സുരക്ഷിതമാക്കി! (+25 XP)',
   },
   pov_journey: {
-    engine: 'flag_rope_hoist',
-    title: '🚩 എന്റെ യൂണിറ്റ് പതാക ഉയർത്തൽ ചലഞ്ച് (POV ഗെയിം)!',
-    subtitle: 'സമയം തീരുന്നതിന് മുൻപ് വേഗത്തിൽ കയർ വലിച്ച് SKSSF യൂണിറ്റ് പതാക കൊടിമരത്തിന്റെ മുകളിൽ ഉയർത്തൂ — വൈകിയാൽ പരാജയപ്പെടും!',
-    levels: [
-      { pct: 25, emoji: '🤝', label: 'യൂണിറ്റ് അസംബ്ലി', note: 'നാട്ടിലെ കൂട്ടുകാരെയെല്ലാം ഒരുമിച്ച് അണിനിരത്തി!' },
-      { pct: 50, emoji: '📖', label: 'വിജ്ഞാന പ്രതിജ്ഞ', note: 'അറിവും അദബും കാത്തുസൂക്ഷിക്കുമെന്ന് പ്രതിജ്ഞയെടുത്തു!' },
-      { pct: 75, emoji: '🚑', label: 'സേവന സന്നദ്ധത', note: 'വിഖായയും സഹചാരിയും നാടിന് താങ്ങായി ഉയർന്നു!' },
-      { pct: 100, emoji: '🚩', label: 'SKSSF യൂണിറ്റ് പതാക വാനിൽ!', note: '🎉 SKSSF യൂണിറ്റ് പതാക അഭിമാനത്തോടെ വാനിൽ പാറിപ്പറന്നു!' },
+    engine: 'helicopter_rescue_drop',
+    title: '🚁 എന്റെ യൂണിറ്റ് — സമ്മേളന നോട്ടീസും കിറ്റും എയർഡ്രോപ്പ് (POV)!',
+    subtitle: 'ഹെലികോപ്റ്റർ മഹല്ലിലെ 3 കേന്ദ്രങ്ങൾക്ക് മുകളിൽ എത്തുമ്പോൾ കൊടുങ്കാറ്റ് ഒഴിവാക്കി 🪂 യൂണിറ്റ് കിറ്റ് ഇറക്കൂ!',
+    kitEmoji: '📦',
+    pads: [
+      { id: 'pj1', emoji: '🕌', shortLabel: 'മഹല്ല് പള്ളി', label: 'മഹല്ല് പള്ളി മുറ്റം', note: 'മഹല്ല് പള്ളിയിൽ ജുമുഅ അറിയിപ്പും നോട്ടീസും എത്തിച്ചു!' },
+      { id: 'pj2', emoji: '🏫', shortLabel: 'മദ്‌റസ ഹാൾ', label: 'മദ്‌റസ പഠന ഹാൾ', note: 'SKSBV വിദ്യാർത്ഥികൾക്ക് പഠന കിറ്റും നോട്ട്ബുക്കുകളും നൽകി!' },
+      { id: 'pj3', emoji: '🏠', shortLabel: 'യൂണിറ്റ് ഓഫീസ്', label: 'SKSSF യൂണിറ്റ് ഓഫീസ്', note: 'യൂണിറ്റ് അസംബ്ലിക്ക് വേണ്ട എല്ലാ ഒരുക്കങ്ങളും പൂർത്തിയാക്കി!' },
     ],
-    doneMessage: '🚩 മനോഹരം! യൂണിറ്റ് പ്രവർത്തനത്തിന്റെ ആദ്യ പതാക സമയത്തിനുള്ളിൽ വാനിൽ ഉയർത്തി! (+25 XP)',
+    doneMessage: '🚁 മനോഹരം! എന്റെ യൂണിറ്റിലെ മൂന്ന് കേന്ദ്രങ്ങളിലും കൃത്യമായി എയർഡ്രോപ്പ് പൂർത്തിയാക്കി! (+25 XP)',
   },
   l4_climb: {
-    engine: 'balloon_altitude_climb',
-    title: '🗼 ശാഖ മുതൽ ഗ്ലോബൽ (SIC) വരെ — ആഗോള ഘടനാ ബലൂൺ യാത്ര!',
-    subtitle: '“🔥 ജ്വാല ഉയർത്തൂ!” അമർത്തി 5 സംഘടനാ പടവുകളിലൂടെ ഉയരങ്ങളിലേക്ക് പറക്കൂ — തണുത്തു താഴെ വീണാൽ പരാജയപ്പെടും!',
-    gates: [
-      { id: 'gl1', emoji: '🏠', label: '1. ശാഖാ യൂണിറ്റ് (നാടിന്റെ അടിത്തറ)', note: 'മഹല്ലിലെ ശാഖാ യൂണിറ്റിൽ നിന്ന് യാത്ര തുടങ്ങി!' },
-      { id: 'gl2', emoji: '🤝', label: '2. ക്ലസ്റ്റർ & മേഖലാ കമ്മിറ്റി', note: 'അയൽ യൂണിറ്റുകളെ കൂട്ടിയിണക്കി മേഖലാ ഉയരത്തിലേക്ക് കയറി!' },
-      { id: 'gl3', emoji: '🏛️', label: '3. ജില്ലാ & സംസ്ഥാന കമ്മിറ്റി', note: 'സംസ്ഥാനതല ക്യാമ്പയിനുകളുടെ ഉയരത്തിലേക്ക് പറന്നുയർന്നു!' },
-      { id: 'gl4', emoji: '🇮🇳', label: '4. ദേശീയ (SKSSF നാഷണൽ) സാന്നിധ്യം', note: 'ഇന്ത്യയിലെ മറ്റു സംസ്ഥാനങ്ങളിലേക്കും വിദ്യാഭ്യാസ-സേവന വെളിച്ചമെത്തി!' },
-      { id: 'gl5', emoji: '🌍', label: '5. ഗ്ലോബൽ വിഖായ & SIC (ആഗോളം)', note: 'മക്ക-മദീന ഹജ്ജ് സേവനവും പ്രവാസ ലോകത്തെ കൂട്ടായ്മയും നേടി കൊടുമുടിയിൽ എത്തി!' },
+    engine: 'airplane_sic_flight',
+    title: '✈️ ശാഖ മുതൽ ഗ്ലോബൽ SIC വരെ — അന്താരാഷ്ട്ര വിമാന യാത്ര!',
+    subtitle: 'കരിപ്പൂർ എയർപോർട്ട് റൺവേയിൽ നിന്ന് പറന്നുയർന്ന് കൊടുങ്കാറ്റ് ഒഴിവാക്കി ദുബായ് SIC, റിയാദ് SIC, സമസ്ത സമ്മേളന നഗരിയിലേക്ക് പ്രവർത്തകരെ എത്തിക്കൂ!',
+    departureAirport: 'കരിപ്പൂർ (കോഴിക്കോട്) എയർപോർട്ട്',
+    arrivalAirport: 'സമസ്ത ആഗോള സമ്മേളന എയർപോർട്ട്',
+    hubs: [
+      { id: 'sic_dxb', lane: 0, emoji: '🇦🇪', shortLabel: 'ദുബായ് SIC', label: 'യു.എ.ഇ — ദുബായ് SIC സെന്റർ', note: 'ദുബായ് സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC) പ്രവർത്തകരെ വിമാനത്തിൽ ചേർത്തു!' },
+      { id: 'sic_ruh', lane: 2, emoji: '🇸🇦', shortLabel: 'റിയാദ് SIC & ഹജ്ജ്', label: 'സൗദി — റിയാദ് SIC & മക്ക ഹജ്ജ് വിഖായ', note: 'റിയാദ് SIC കേന്ദ്രവും മക്ക-മദീന ഹജ്ജ് വിഖായ സേവനവും സന്ദർശിച്ചു!' },
+      { id: 'sic_conf', lane: 1, emoji: '🌍', shortLabel: 'സമസ്ത സമ്മേളനം', label: 'സമസ്ത അന്താരാഷ്ട്ര സമ്മേളന നഗരി', note: 'പ്രവാസ ലോകത്തെ എല്ലാ SIC പ്രതിനിധികളുമായി സമസ്ത സമ്മേളന നഗരിയിലേക്ക് എത്തി!' },
     ],
-    doneMessage: '🌍 ഗംഭീരം! ശാഖ മുതൽ ഗ്ലോബൽ (SIC) വരെയുള്ള സംഘടനാ ഉയരങ്ങൾ വിജയകരമായി കീഴടക്കി! (+25 XP)',
+    doneMessage: '✈️🌍 വിസ്മയം! ഗ്ലോബൽ SIC കേന്ദ്രങ്ങളിലൂടെ സമസ്ത സമ്മേളന റൺവേയിൽ സുരക്ഷിതമായി ലാൻഡ് ചെയ്തു! (+25 XP)',
   },
   l4_sahachari: {
-    engine: 'road_vehicle_drive',
-    title: '🤝 സഹചാരി റിലീഫ് സെൽ — കാരുണ്യ സേവന യാത്ര!',
-    subtitle: 'സഹചാരി സേവന ആംബുലൻസ് ഓടിച്ച് 3 കേന്ദ്രങ്ങളിലും ചികിത്സാ സഹായവും രക്തദാനവും എത്തിക്കൂ!',
-    vehicleType: 'ambulance',
-    weather: 'rainy',
-    driveLabel: '🚑 സഹചാരി ഓടിക്കൂ',
-    serveLabel: '🤝 സഹായം നൽകൂ',
-    stops: [
+    engine: 'ship_harbor_sail',
+    title: '⛵ സഹചാരി കായൽ ആംബുലൻസ് ബോട്ട് സേവനം!',
+    subtitle: 'പാറക്കെട്ടുകളും ചുഴികളും ഒഴിവാക്കി കായലിലൂടെ സഹചാരി ബോട്ട് ഓടിച്ച് 3 കേന്ദ്രങ്ങളിലും രക്തദാനവും മരുന്നും ഭക്ഷ്യക്കിറ്റും എത്തിക്കൂ!',
+    islands: [
       {
         id: 'sah1',
+        lane: 0,
         emoji: '🩸',
         label: 'മെഡിക്കൽ കോളേജ് ബ്ലഡ് ബാങ്ക്',
-        actionLabel: '🩸 രക്തദാന സേവനം',
-        reward: 'അടിയന്തര ഘട്ടത്തിൽ രോഗിക്ക് സമയത്ത് രക്തം എത്തിച്ചു — മാഷാ അല്ലാഹ്!',
+        note: 'അടിയന്തര ഘട്ടത്തിൽ രോഗിക്ക് സമയത്ത് രക്തം എത്തിച്ചു — മാഷാ അല്ലാഹ്!',
       },
       {
         id: 'sah2',
+        lane: 2,
         emoji: '💊',
         label: 'ഡയാലിസിസ് & ചികിത്സാ കേന്ദ്രം',
-        actionLabel: '💊 ചികിത്സാ കിറ്റ് നൽകൂ',
-        reward: 'നിർധന രോഗിക്ക് മരുന്നും സഹചാരി ചികിത്സാ സഹായവും കൈമാറി!',
+        note: 'നിർധന രോഗിക്ക് മരുന്നും സഹചാരി ചികിത്സാ സഹായവും കൈമാറി!',
       },
       {
         id: 'sah3',
+        lane: 1,
         emoji: '🏠',
         label: 'സഹചാരി ഭവന & ഭക്ഷ്യ കിറ്റ് കേന്ദ്രം',
-        actionLabel: '🍱 കരുതൽ കിറ്റ് നൽകൂ',
-        reward: 'ജാതി-മത ഭേദമന്യേ അവശത അനുഭവിക്കുന്ന കുടുംബത്തിന് ആശ്വാസം എത്തിച്ചു!',
+        note: 'ജാതി-മത ഭേദമന്യേ അവശത അനുഭവിക്കുന്ന കുടുംബത്തിന് ആശ്വാസം എത്തിച്ചു!',
       },
     ],
-    doneMessage: '🤝 അൽഹംദുലില്ലാഹ്! സഹചാരി റിലീഫ് സെൽ കാരുണ്യ ദൗത്യം വിജയകരമായി പൂർത്തിയാക്കി! (+25 XP)',
+    doneMessage: '⛵ അൽഹംദുലില്ലാഹ്! സഹചാരി കായൽ ആംബുലൻസ് ബോട്ട് കാരുണ്യ ദൗത്യം വിജയകരമായി പൂർത്തിയാക്കി! (+25 XP)',
   },
   l4_trend_career: {
     engine: 'balloon_altitude_climb',
@@ -864,58 +882,14 @@ const InStageFailOverlay: React.FC<{
   reason: string;
   scoreText?: string;
   onRetry: () => void;
-}> = ({ title = '⚠️', reason, scoreText, onRetry }) => {
-  const [showInfo, setShowInfo] = useState(false);
-  return (
-    <div className="absolute inset-0 z-40 bg-slate-950/88 backdrop-blur-xs flex items-center justify-center p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="max-w-xs w-full rounded-2xl border-2 border-rose-400 bg-slate-900/95 text-white p-4 text-center shadow-2xl space-y-3"
-      >
-        <div className="text-4xl">⚠️</div>
-        {scoreText && (
-          <p className="text-xs font-extrabold text-rose-200 bg-rose-950/70 border border-rose-500/40 rounded-lg px-3 py-1 inline-block tabular-nums">
-            {scoreText}
-          </p>
-        )}
-        <div className="flex items-center justify-center gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setShowInfo((v) => !v);
-            }}
-            aria-label="വിവരം"
-            className="w-11 h-11 rounded-xl bg-white/15 hover:bg-white/25 text-amber-300 flex items-center justify-center"
-          >
-            <Info className="w-5 h-5" />
-          </button>
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.94 }}
-            onClick={() => {
-              sound.playClick();
-              onRetry();
-            }}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow-lg"
-          >
-            <RotateCcw className="w-5 h-5" />
-            <span>🔄</span>
-          </motion.button>
-        </div>
-        {showInfo && (
-          <div className="rounded-xl bg-slate-800/90 border border-slate-700 p-2.5 text-left space-y-1">
-            <p className="text-xs font-extrabold text-amber-300 leading-snug">{title}</p>
-            <p className="text-[11px] font-bold text-slate-200 leading-relaxed">{reason}</p>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-};
+}> = ({ title = '💥 ഷീൽഡുകൾ തകർന്നു!', reason, scoreText, onRetry }) => (
+  <GameDefeatBurstOverlay
+    title={title}
+    reason={reason}
+    scoreText={scoreText}
+    onRetry={onRetry}
+  />
+);
 
 /* ============================================================================
  * ICON-FIRST ARCADE GAME PEDALS (NO BORING TEXT LABELS — INSTANTLY RECOGNIZABLE!)
@@ -2190,33 +2164,20 @@ const RoadVehicleDriveGame: React.FC<{
           isFullscreen ? 'min-h-[78dvh]' : 'min-h-[345px] sm:min-h-[395px]'
         }`}
       >
-        {/* TOP HUD INSIDE GAME SCREEN (ICON-FIRST) */}
+        {/* TOP HUD INSIDE GAME SCREEN */}
         <div className="relative z-20 px-3 pt-2.5 flex items-center justify-between gap-2 pointer-events-none">
           <div className="flex items-center gap-1.5">
-            <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold backdrop-blur-xs tabular-nums">
+            <span className="px-2.5 py-1 rounded-xl bg-slate-950/85 text-amber-300 text-xs font-extrabold backdrop-blur-xs tabular-nums">
               {config.weather === 'evening' ? '💡' : '✅'} {servedStops.length}/{config.stops.length}
             </span>
             <span className="px-2.5 py-1 rounded-xl bg-emerald-950/85 text-emerald-200 text-xs font-extrabold tabular-nums">
               ⭐ {score}
             </span>
-            {missedStops.length > 0 && (
-              <span className="px-2.5 py-1 rounded-xl bg-rose-900/90 text-rose-100 text-xs font-extrabold tabular-nums">
-                ❌ {missedStops.length}
-              </span>
-            )}
           </div>
 
-          <span className="px-2.5 py-1 rounded-xl bg-white/95 text-emerald-950 text-xs font-extrabold shadow-xs">
-            {won
-              ? '🎉'
-              : canServeNow
-              ? '✨👇'
-              : inStopZone && driving && !isCurrentServed
-              ? '🛑'
-              : driving
-              ? '🚗'
-              : '🅿️'}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <GameShatterLives lives={Math.max(0, 3 - missedStops.length)} maxLives={3} compact />
+          </div>
         </div>
 
         {/* MIDDLE SCENIC ROAD VIEWPORT */}
@@ -2319,13 +2280,13 @@ const RoadVehicleDriveGame: React.FC<{
             />
           )}
 
-          {/* SINGLE APPROACHING STOP / LAMP POST (Zero 3-at-once clutter!) */}
+          {/* SINGLE APPROACHING STOP: STREETLAMP POST (EVENING ONLY) OR GROUND-LEVEL BUILDING (MOSQUE / HOSPITAL / HOME)! */}
           {stopX !== null && activeStop && (
             <div
               style={{ left: `${stopX}%` }}
               className="absolute bottom-20 sm:bottom-24 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none"
             >
-              {/* Soft Golden Light Cone shining onto road when streetlamp is LIT */}
+              {/* Soft Golden Light Cone shining onto road ONLY when streetlamp is LIT */}
               {isCurrentServed && config.weather === 'evening' && (
                 <div
                   className="pointer-events-none absolute top-11 -z-10 w-40 h-40 opacity-70"
@@ -2337,7 +2298,7 @@ const RoadVehicleDriveGame: React.FC<{
               )}
 
               <div
-                className={`mb-1 px-2 py-0.5 rounded-lg text-xs font-extrabold whitespace-nowrap shadow-md ${
+                className={`mb-1 px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold whitespace-nowrap shadow-md ${
                   isCurrentServed
                     ? 'bg-emerald-600 text-white'
                     : isCurrentMissed
@@ -2348,45 +2309,104 @@ const RoadVehicleDriveGame: React.FC<{
                 }`}
               >
                 {isCurrentServed
-                  ? '✅'
+                  ? `✅ ${activeStop.label}`
                   : isCurrentMissed
-                  ? '❌'
+                  ? '❌ വിട്ടുപോയി!'
                   : inStopZone
                   ? driving
-                    ? '🛑'
-                    : '👇'
-                  : `${activeStop.emoji} #${currentIdx + 1}`}
+                    ? '🛑 നിർത്തൂ!'
+                    : '👇 ഇപ്പോൾ അമർത്തൂ!'
+                  : `${activeStop.emoji} ${activeStop.label}`}
               </div>
 
-              {/* Stop Emblem / Lamp Head */}
-              <div
-                className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 flex items-center justify-center text-2xl sm:text-3xl shadow-xl transition-all ${
-                  isCurrentServed
-                    ? 'bg-amber-300 border-yellow-100 text-slate-950 shadow-[0_0_32px_rgba(253,224,71,0.95)] scale-105'
-                    : isCurrentMissed
-                    ? 'bg-rose-900 border-rose-400 text-white opacity-75'
-                    : inStopZone
-                    ? 'bg-amber-400 border-white text-slate-950 ring-4 ring-amber-200/80'
-                    : 'bg-slate-900/95 border-amber-300/70 text-white'
-                }`}
-              >
-                <span>
-                  {isCurrentServed
-                    ? config.weather === 'evening'
-                      ? '💡'
-                      : '✅'
-                    : config.weather === 'evening'
-                    ? '🔌'
-                    : activeStop.emoji}
-                </span>
-              </div>
-
-              {/* Clean Pole / Stand anchored to road edge */}
-              <div
-                className={`w-2.5 h-12 sm:h-16 rounded-t-xs border-x ${
-                  isCurrentServed ? 'bg-amber-100 border-amber-400' : 'bg-slate-400 border-slate-600'
-                }`}
-              />
+              {config.weather === 'evening' ? (
+                <>
+                  {/* Real Streetlamp Head on Lamp Pole */}
+                  <div
+                    className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 flex items-center justify-center text-2xl sm:text-3xl shadow-xl transition-all ${
+                      isCurrentServed
+                        ? 'bg-amber-300 border-yellow-100 text-slate-950 shadow-[0_0_32px_rgba(253,224,71,0.95)] scale-105'
+                        : isCurrentMissed
+                        ? 'bg-rose-900 border-rose-400 text-white opacity-75'
+                        : inStopZone
+                        ? 'bg-amber-400 border-white text-slate-950 ring-4 ring-amber-200/80'
+                        : 'bg-slate-900/95 border-amber-300/70 text-white'
+                    }`}
+                  >
+                    <span>{isCurrentServed ? '💡' : '🔌'}</span>
+                  </div>
+                  <div
+                    className={`w-2.5 h-12 sm:h-16 rounded-t-xs border-x ${
+                      isCurrentServed ? 'bg-amber-100 border-amber-400' : 'bg-slate-400 border-slate-600'
+                    }`}
+                  />
+                </>
+              ) : (
+                /* GROUND-ANCHORED ARCHITECTURAL BUILDING (Mosque / Hospital / Home sitting FIRMLY on the ground!) */
+                <div
+                  className={`relative transition-transform ${
+                    inStopZone && !isCurrentServed ? 'scale-105' : 'scale-100'
+                  }`}
+                >
+                  <svg
+                    viewBox="0 0 116 92"
+                    className="w-24 h-20 sm:w-28 sm:h-24 drop-shadow-lg block"
+                    aria-hidden="true"
+                  >
+                    {/* Ground Foundation Step */}
+                    <rect x="4" y="84" width="108" height="8" rx="3" fill="#475569" />
+                    {activeStop.emoji === '🕌' ? (
+                      <>
+                        {/* Mosque Building on Ground */}
+                        <rect x="16" y="42" width="84" height="42" rx="3" fill="#FEFCE8" stroke="#065F46" strokeWidth="2.5" />
+                        <path d="M32 42 Q58 10 84 42 Z" fill={isCurrentServed ? '#10B981' : '#059669'} stroke="#064E3B" strokeWidth="2.5" />
+                        <line x1="58" y1="12" x2="58" y2="3" stroke="#F59E0B" strokeWidth="2.5" />
+                        <circle cx="58" cy="3" r="3" fill="#FACC15" />
+                        {/* Left & Right Minarets */}
+                        <rect x="8" y="24" width="10" height="60" fill="#ECFDF5" stroke="#065F46" strokeWidth="2" />
+                        <path d="M7 24 Q13 14 19 24 Z" fill="#047857" />
+                        <rect x="98" y="24" width="10" height="60" fill="#ECFDF5" stroke="#065F46" strokeWidth="2" />
+                        <path d="M97 24 Q103 14 109 24 Z" fill="#047857" />
+                        {/* Arched Mosque Door */}
+                        <path d="M46 84 L46 60 Q58 48 70 60 L70 84 Z" fill="#065F46" />
+                      </>
+                    ) : activeStop.emoji === '🏥' ? (
+                      <>
+                        {/* Ground-Level Hospital Building */}
+                        <rect x="12" y="26" width="92" height="58" rx="4" fill="#FFFFFF" stroke="#0284C7" strokeWidth="2.5" />
+                        <rect x="12" y="20" width="92" height="10" rx="2" fill="#0284C7" />
+                        {/* Red Cross Emblem */}
+                        <rect x="52" y="34" width="12" height="24" rx="2" fill="#EF4444" />
+                        <rect x="46" y="40" width="24" height="12" rx="2" fill="#EF4444" />
+                        {/* Windows & Entrance */}
+                        <rect x="20" y="38" width="16" height="14" rx="2" fill="#BAE6FD" />
+                        <rect x="80" y="38" width="16" height="14" rx="2" fill="#BAE6FD" />
+                        <rect x="46" y="64" width="24" height="20" rx="2" fill="#0369A1" />
+                      </>
+                    ) : (
+                      <>
+                        {/* Ground-Level Kerala Family Home */}
+                        <rect x="16" y="44" width="84" height="40" rx="3" fill="#FFFBEB" stroke="#B45309" strokeWidth="2.5" />
+                        {/* Terracotta Sloped Roof */}
+                        <polygon points="8,46 58,14 108,46" fill="#C2410C" stroke="#7C2D12" strokeWidth="2.5" />
+                        {/* Windows & Front Door */}
+                        <rect x="25" y="54" width="16" height="14" rx="2" fill="#38BDF8" stroke="#0369A1" strokeWidth="1.5" />
+                        <rect x="75" y="54" width="16" height="14" rx="2" fill="#38BDF8" stroke="#0369A1" strokeWidth="1.5" />
+                        <rect x="48" y="56" width="20" height="28" rx="2" fill="#92400E" />
+                        <circle cx="63" cy="70" r="2" fill="#FACC15" />
+                      </>
+                    )}
+                    {isCurrentServed && (
+                      <circle cx="96" cy="22" r="13" fill="#16A34A" stroke="#FFFFFF" strokeWidth="2.5" />
+                    )}
+                    {isCurrentServed && (
+                      <text x="96" y="27" textAnchor="middle" fill="#FFFFFF" fontSize="13" fontWeight="900">
+                        ✓
+                      </text>
+                    )}
+                  </svg>
+                </div>
+              )}
             </div>
           )}
 
@@ -2646,29 +2666,44 @@ const TrainStationVoyageGame: React.FC<{
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-200 select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🚂 {attachedList.length}/{config.stations.length} · ⭐ {score}
-          </span>
-          <span className="px-2.5 py-1 rounded-xl bg-white/95 text-emerald-950 text-xs font-extrabold">
-            {canAttach ? '🔔' : inZone && driving && !isAttached ? '🛑' : driving ? '🚂' : '🅿️'}
-          </span>
+        {/* Crisp Readable HTML Station Banner & Shatterable Shields */}
+        <div className="bg-slate-950/92 px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-emerald-500/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+              🚂 {attachedList.length}/{config.stations.length} · ⭐ {score}
+            </span>
+            {activeSt && (
+              <span className="text-xs font-extrabold text-emerald-100 truncate">
+                🚉 {activeSt.year} — {activeSt.label}
+              </span>
+            )}
+          </div>
+          <GameShatterLives lives={Math.max(0, 3 - missedList.length)} maxLives={3} compact />
         </div>
 
         <svg
           viewBox="0 0 600 220"
-          className={`w-full block ${isFullscreen ? 'max-h-[66dvh] h-auto mx-auto' : 'h-auto'}`}
+          className={`w-full block ${isFullscreen ? 'max-h-[62dvh] h-auto mx-auto' : 'h-auto'}`}
           role="img"
           aria-label={config.title}
         >
+          {/* Clear Sky & Distant Lush Hills */}
           <rect width="600" height="220" fill="#BAE6FD" />
-          <circle cx="525" cy="40" r="20" fill="#FACC15" />
-          <path d="M0 155 Q150 115 300 148 T600 135 L600 220 L0 220 Z" fill="#22C55E" />
-          <rect x="0" y="184" width="600" height="36" fill="#0284C7" />
-          <rect x="0" y="168" width="600" height="12" fill="#78350F" />
-          <line x1="0" y1="168" x2="600" y2="168" stroke="#E2E8F0" strokeWidth="3" />
+          <circle cx="525" cy="36" r="19" fill="#FACC15" />
+          <path d="M0 150 Q150 108 300 140 T600 128 L600 168 L0 168 Z" fill="#22C55E" />
+          <path d="M0 156 Q200 132 420 152 T600 144 L600 172 L0 172 Z" fill="#16A34A" />
 
-          {/* Glowing Station Stop Zone */}
+          {/* REALISTIC SOLID GROUND EMBANKMENT + STONE BALLAST + WOODEN SLEEPERS + DOUBLE STEEL RAILS */}
+          <rect x="0" y="182" width="600" height="38" fill="#57534E" />
+          <rect x="0" y="172" width="600" height="14" fill="#78716C" />
+          <rect x="0" y="196" width="600" height="24" fill="#15803D" />
+          {Array.from({ length: 28 }).map((_, i) => (
+            <rect key={i} x={i * 22} y="167" width="11" height="13" rx="1.5" fill="#78350F" />
+          ))}
+          <line x1="0" y1="168" x2="600" y2="168" stroke="#E2E8F0" strokeWidth="3.5" />
+          <line x1="0" y1="176" x2="600" y2="176" stroke="#CBD5E1" strokeWidth="2.5" />
+
+          {/* Glowing Station Stop Zone on Tracks */}
           {stationX !== null && !isAttached && !isMissed && (
             <rect
               x="175"
@@ -2677,44 +2712,41 @@ const TrainStationVoyageGame: React.FC<{
               height="6"
               rx="3"
               fill={inZone ? '#FACC15' : '#A7F3D0'}
-              opacity={inZone ? 0.95 : 0.45}
+              opacity={inZone ? 0.95 : 0.55}
             />
           )}
 
-          {/* SINGLE APPROACHING HISTORICAL STATION BOARD */}
+          {/* GROUND-MOUNTED RAILWAY STATION PLATFORM & SIGNAL POST */}
           {stationX !== null && activeSt && (
             <g transform={`translate(${stationX}, 68)`}>
+              {/* Platform Canopy & Pillar anchored to Ground */}
+              <rect x="-46" y="72" width="92" height="28" rx="3" fill="#F8FAFC" stroke="#475569" strokeWidth="2" />
+              <polygon points="-54,72 0,56 54,72" fill={activeSt.coachColor} />
+              {/* Station Signal Post */}
+              <rect x="44" y="28" width="5" height="72" fill="#334155" />
+              <circle cx="46.5" cy="34" r="6" fill={isAttached ? '#22C55E' : inZone ? '#FACC15' : '#EF4444'} stroke="#FFFFFF" strokeWidth="1.5" />
+              {/* Crisp Year Badge (Never overflows!) */}
               <rect
-                x="-52"
-                y="0"
-                width="104"
-                height="40"
-                rx="9"
+                x="-38"
+                y="12"
+                width="76"
+                height="32"
+                rx="8"
                 fill={isAttached ? '#065F46' : isMissed ? '#881337' : inZone ? '#FACC15' : '#FFFFFF'}
                 stroke={activeSt.coachColor}
                 strokeWidth="3"
               />
               <text
                 x="0"
-                y="17"
+                y="33"
                 textAnchor="middle"
                 fill={isAttached ? '#FDE047' : isMissed ? '#FFFFFF' : '#0F172A'}
-                fontSize="12"
+                fontSize="13"
                 fontWeight="900"
               >
                 {activeSt.year} {isAttached ? '✅' : isMissed ? '❌' : ''}
               </text>
-              <text
-                x="0"
-                y="32"
-                textAnchor="middle"
-                fill={isAttached || isMissed ? '#FFFFFF' : '#334155'}
-                fontSize="8.5"
-                fontWeight="800"
-              >
-                {activeSt.label.split(' ')[0]}
-              </text>
-              <line x1="0" y1="40" x2="0" y2="100" stroke="#475569" strokeWidth="3.5" />
+              <line x1="0" y1="44" x2="0" y2="60" stroke="#475569" strokeWidth="3" />
             </g>
           )}
 
@@ -2904,18 +2936,22 @@ const CraneBuilderGame: React.FC<{
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-100 select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🏗️ {placedCount}/{config.blocks.length}
-          </span>
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-white text-xs font-extrabold">
-            {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '🖤')).join('')}
-          </span>
+        {/* Crisp Readable HTML Top HUD + Active Step Banner (ZERO overflowing SVG text!) */}
+        <div className="bg-slate-950/92 px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-emerald-500/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+              🏗️ {placedCount}/{config.blocks.length}
+            </span>
+            <span className="text-xs font-extrabold text-white truncate">
+              {allDone ? '🎉 നിർമ്മാണം പൂർത്തിയായി!' : currentBlock ? currentBlock.label : ''}
+            </span>
+          </div>
+          <GameShatterLives lives={hearts} maxLives={3} compact />
         </div>
 
         <svg
           viewBox="0 0 600 255"
-          className={`w-full block ${isFullscreen ? 'max-h-[66dvh] h-auto mx-auto' : 'h-auto'}`}
+          className={`w-full block ${isFullscreen ? 'max-h-[62dvh] h-auto mx-auto' : 'h-auto'}`}
           role="img"
           aria-label={config.title}
         >
@@ -2928,6 +2964,7 @@ const CraneBuilderGame: React.FC<{
             </g>
           ))}
 
+          {/* Overhead Crane Rail & Ground Alignment Guide */}
           <rect x="80" y="14" width="440" height="10" rx="4" fill="#F59E0B" stroke="#78350F" strokeWidth="1.5" />
           <rect
             x="212"
@@ -2938,6 +2975,7 @@ const CraneBuilderGame: React.FC<{
             fill={isAligned && !allDone ? '#22C55E' : '#CBD5E1'}
           />
 
+          {/* Swinging Architectural Piece with Clean Numeric Badge (Zero Overflow!) */}
           {!allDone && currentBlock && (
             <g>
               <line x1={craneX} y1="24" x2={craneX} y2="54" stroke="#334155" strokeWidth="3" />
@@ -2951,12 +2989,23 @@ const CraneBuilderGame: React.FC<{
                 stroke={isAligned ? '#FACC15' : '#FFFFFF'}
                 strokeWidth="2.5"
               />
-              <text x={craneX} y={54 + blockH * 0.65} textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="800">
-                {currentBlock.label}
+              {/* Architectural Windows / Arch Details */}
+              {[-52, -24, 24, 52].map((ox) => (
+                <path
+                  key={ox}
+                  d={`M${craneX + ox - 7} ${54 + blockH - 4} L${craneX + ox - 7} ${64} Q${craneX + ox} ${58} ${craneX + ox + 7} ${64} L${craneX + ox + 7} ${54 + blockH - 4} Z`}
+                  fill={currentBlock.accent}
+                  opacity="0.35"
+                />
+              ))}
+              <circle cx={craneX} cy={54 + blockH * 0.5} r="11" fill="#0F172A" stroke="#FACC15" strokeWidth="1.8" />
+              <text x={craneX} y={54 + blockH * 0.64} textAnchor="middle" fill="#FDE047" fontSize="11" fontWeight="900">
+                {placedCount + 1}
               </text>
             </g>
           )}
 
+          {/* Stacked Mosque / Tower Architectural Tiers */}
           {config.blocks.slice(0, placedCount).map((blk, i) => {
             const y = 216 - (i + 1) * blockH;
             return (
@@ -2976,8 +3025,17 @@ const CraneBuilderGame: React.FC<{
                   stroke={blk.accent}
                   strokeWidth="2"
                 />
-                <text x="300" y={y + blockH * 0.62} textAnchor="middle" fill="#FFFFFF" fontSize="10" fontWeight="800">
-                  ✅ {blk.label}
+                {[-54, -26, 26, 54].map((ox) => (
+                  <path
+                    key={ox}
+                    d={`M${300 + ox - 7} ${y + blockH - 4} L${300 + ox - 7} ${y + 10} Q${300 + ox} ${y + 4} ${300 + ox + 7} ${y + 10} L${300 + ox + 7} ${y + blockH - 4} Z`}
+                    fill={blk.accent}
+                    opacity="0.4"
+                  />
+                ))}
+                <circle cx="300" cy={y + blockH * 0.48} r="10.5" fill="#064E3B" stroke="#FACC15" strokeWidth="1.5" />
+                <text x="300" y={y + blockH * 0.62} textAnchor="middle" fill="#FFFFFF" fontSize="10.5" fontWeight="900">
+                  ✓{i + 1}
                 </text>
               </motion.g>
             );
@@ -3058,34 +3116,48 @@ const FlagRopeHoistGame: React.FC<{
   const isFullscreen = useGameFullscreen();
   const [pct, setPct] = useState(0);
   const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(18);
-  const [failed, setFailed] = useState(false);
-  const [msg, setMsg] = useState('“🪢 കയർ വലിക്കൂ!” ബട്ടൺ തുടർച്ചയായി അമർത്തി 18 സെക്കൻഡിനുള്ളിൽ SKSSF പതാക ഉയർത്തൂ!');
+  const [timeLeft, setTimeLeft] = useState(22);
+  const [windGust, setWindGust] = useState(false);
+  const [shields, setShields] = useState(3);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [msg, setMsg] = useState('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന 💨 കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
 
   const resetLocal = () => {
     setPct(0);
     setStarted(false);
-    setTimeLeft(18);
-    setFailed(false);
-    setMsg('“🪢 കയർ വലിക്കൂ!” ബട്ടൺ തുടർച്ചയായി അമർത്തി 18 സെക്കൻഡിനുള്ളിൽ SKSSF പതാക ഉയർത്തൂ!');
+    setTimeLeft(22);
+    setWindGust(false);
+    setShields(3);
+    setFailReason(null);
+    setMsg('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന 💨 കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
   };
 
   useEffect(() => {
     resetLocal();
   }, [resetSignal]);
 
+  const failed = Boolean(failReason);
+
   useEffect(() => {
     if (!started || pct >= 100 || failed) return;
+    let secCount = 0;
     const id = window.setInterval(() => {
+      secCount += 1;
+      // Periodic 2-second wind gusts every 5 seconds
+      const gustNow = secCount % 5 === 3 || secCount % 5 === 4;
+      setWindGust(gustNow);
+      if (gustNow) {
+        setMsg('💨 സൂക്ഷിക്കൂ! ശക്തമായ കാറ്റ് — ഇപ്പോൾ വലിക്കരുത്, 1 സെക്കൻഡ് കാക്കൂ!');
+      }
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
-          setFailed(true);
+          setFailReason('⏱️ സമയം കഴിഞ്ഞു! 22 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്തണം.');
           return 0;
         }
         return t - 1;
       });
-      setPct((p) => (p > 0 && p < 100 ? Math.max(0, p - 2) : p));
+      setPct((p) => (p > 0 && p < 100 ? Math.max(0, p - 3) : p));
     }, 1000);
     return () => window.clearInterval(id);
   }, [started, pct, failed]);
@@ -3094,6 +3166,20 @@ const FlagRopeHoistGame: React.FC<{
     sound.unlockAudio();
     if (pct >= 100 || failed) return;
     if (!started) setStarted(true);
+
+    if (windGust) {
+      sound.playError();
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      setPct((p) => Math.max(0, p - 8));
+      if (rem <= 0) {
+        setFailReason('💨 കൊടുങ്കാറ്റിൽ കയർ വലിച്ച് 3 ഷീൽഡും പൊട്ടി! കാറ്റ് അടങ്ങുമ്പോൾ മാത്രം വലിക്കൂ.');
+      } else {
+        setMsg(`💨 കാറ്റിൽ കയർ കുരുങ്ങി! 1 ഷീൽഡ് പൊട്ടി (ബാക്കി: ${rem}) — കാറ്റ് മാറട്ടെ!`);
+      }
+      return;
+    }
+
     const next = Math.min(100, pct + 14);
     setPct(next);
     sound.playPop();
@@ -3105,6 +3191,7 @@ const FlagRopeHoistGame: React.FC<{
       narrator.speak(reached.note, reached.label);
     }
     if (next >= 100) {
+      setWindGust(false);
       onWin();
     }
   };
@@ -3114,30 +3201,52 @@ const FlagRopeHoistGame: React.FC<{
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-100 select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            🚩 {pct}%
-          </span>
-          <span className={`px-2.5 py-1 rounded-xl text-xs font-extrabold tabular-nums ${timeLeft <= 6 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-950/80 text-white'}`}>
-            ⏱️ {timeLeft}s
-          </span>
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-emerald-500/30">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+              🚩 {pct}%
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 6 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
         </div>
 
         <svg
           viewBox="0 0 600 245"
-          className={`w-full block ${isFullscreen ? 'max-h-[66dvh] h-auto mx-auto' : 'h-auto'}`}
+          className={`w-full block ${isFullscreen ? 'max-h-[62dvh] h-auto mx-auto' : 'h-auto'}`}
           role="img"
           aria-label={config.title}
         >
-          <rect width="600" height="245" fill="#E0F2FE" />
+          <rect width="600" height="245" fill={windGust ? '#FECDD3' : '#E0F2FE'} />
           <circle cx="520" cy="45" r="22" fill="#FACC15" />
           <path d="M0 205 Q180 185 360 205 T600 198 L600 245 L0 245 Z" fill="#16A34A" />
-          {[75, 140, 480, 540].map((tx) => (
-            <g key={tx} transform={`translate(${tx}, 152)`}>
-              <rect x="8" y="28" width="6" height="26" fill="#78350F" />
-              <circle cx="11" cy="22" r="17" fill="#15803D" />
+
+          {/* Red Wind Gust Warning Streaks */}
+          {windGust && (
+            <g>
+              {[55, 105, 155].map((wy) => (
+                <motion.line
+                  key={wy}
+                  x1="20"
+                  y1={wy}
+                  x2="220"
+                  y2={wy}
+                  stroke="#E11D48"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeDasharray="18 14"
+                  animate={{ x: [0, 340], opacity: [0.2, 0.9, 0.2] }}
+                  transition={{ duration: 0.6, repeat: Infinity }}
+                />
+              ))}
+              <rect x="30" y="16" width="175" height="28" rx="8" fill="#BE123C" />
+              <text x="117" y="34" textAnchor="middle" fill="#FFFFFF" fontSize="11.5" fontWeight="900">
+                💨 കൊടുങ്കാറ്റ് — നിൽക്കൂ!
+              </text>
             </g>
-          ))}
+          )}
 
           <rect x="215" y="205" width="90" height="18" rx="4" fill="#CBD5E1" stroke="#475569" strokeWidth="2" />
           <rect x="256" y="24" width="8" height="182" rx="4" fill="#E2E8F0" stroke="#475569" strokeWidth="1.5" />
@@ -3152,16 +3261,16 @@ const FlagRopeHoistGame: React.FC<{
                 <rect
                   x="348"
                   y={ly}
-                  width="175"
+                  width="195"
                   height="24"
                   rx="7"
                   fill={reached ? '#065F46' : '#FFFFFF'}
                   stroke={reached ? '#FACC15' : '#CBD5E1'}
                   strokeWidth="1.5"
                 />
-                <text x="360" y={ly + 16} fill={reached ? '#FFFFFF' : '#334155'} fontSize="10.5" fontWeight="800">
+                <text x="358" y={ly + 16} fill={reached ? '#FFFFFF' : '#334155'} fontSize="10" fontWeight="800">
                   {reached ? '✅ ' : `${lv.emoji} `}
-                  {lv.label}
+                  {lv.label.slice(0, 20)}
                 </text>
               </g>
             );
@@ -3175,47 +3284,36 @@ const FlagRopeHoistGame: React.FC<{
               height={42}
               variant="skssf"
               flyDirection="right"
-              windSpeed={pct >= 100 ? 'fast' : 'idle'}
+              windSpeed={pct >= 100 || windGust ? 'fast' : 'idle'}
             />
           </motion.g>
-
-          {pct >= 100 &&
-            [275, 295, 315, 335].map((px, i) => (
-              <motion.circle
-                key={px}
-                cx={px}
-                cy={48}
-                r="4.5"
-                fill={i % 2 === 0 ? '#FACC15' : '#FB7185'}
-                initial={{ y: 0, opacity: 1 }}
-                animate={{ y: [0, 85], opacity: [1, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-              />
-            ))}
         </svg>
 
-        {/* IN-SCREEN ROPE PULL CONTROLS (ICON-ONLY) */}
+        <div className="bg-slate-900/95 px-3 py-1.5 border-t border-emerald-500/30 text-[11px] font-bold text-amber-100 text-center">
+          {msg}
+        </div>
+
         <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2 flex items-center justify-center">
           <button
             type="button"
             disabled={pct >= 100 || failed}
             onClick={handlePull}
-            aria-label="കയർ വലിക്കൂ"
-            title={msg}
-            className={`h-13 px-10 rounded-2xl border-2 border-b-4 text-2xl font-extrabold transition-all ${
+            className={`h-13 px-8 rounded-2xl border-2 border-b-4 text-sm sm:text-base font-black transition-all cursor-pointer ${
               pct >= 100
                 ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-800 opacity-85'
+                : windGust
+                ? 'bg-rose-700 text-white border-rose-300 border-b-rose-950 animate-pulse'
                 : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200 border-b-amber-600 shadow-md active:translate-y-0.5'
             }`}
           >
-            {pct >= 100 ? '🎉🚩' : '🪢⬆️'}
+            {pct >= 100 ? '🎉🚩 പതാക ഉയർന്നു!' : windGust ? '💨 കാറ്റ്! കാത്തിരിക്കൂ' : '🪢⬆️ കയർ വലിക്കൂ!'}
           </button>
         </div>
 
         {failed && (
           <InStageFailOverlay
-            title="⏱️ സമയം കഴിഞ്ഞു!"
-            reason="18 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്തണം!"
+            title="🚩 പതാക ഉയർത്തൽ തടസ്സപ്പെട്ടു!"
+            reason={failReason || 'കൊടുങ്കാറ്റ് ഒഴിവാക്കി സമയത്തിനുള്ളിൽ പതാക ഉയർത്തൂ!'}
             scoreText={`🚩 ${pct}%`}
             onRetry={resetLocal}
           />
@@ -3238,52 +3336,107 @@ const ShipHarborSailGame: React.FC<{
   const [lane, setLane] = useState<0 | 1 | 2>(1);
   const [idx, setIdx] = useState(0);
   const [islandX, setIslandX] = useState<number | null>(null);
-  const [openSeaTicks, setOpenSeaTicks] = useState(22);
+  const [rockX, setRockX] = useState(480);
+  const [rockLane, setRockLane] = useState<0 | 1 | 2>(2);
+  const [shields, setShields] = useState(3);
+  const [openSeaTicks, setOpenSeaTicks] = useState(20);
   const [visited, setVisited] = useState<number[]>([]);
   const [missed, setMissed] = useState<number[]>([]);
   const [score, setScore] = useState(0);
   const [ended, setEnded] = useState(false);
-  const [msg, setMsg] = useState('“⛵ യാത്ര തുടങ്ങൂ!” അമർത്തൂ — ഓരോ ദീപസ്തംഭവും വരുമ്പോൾ കപ്പൽ ആ പാതയിലേക്ക് തിരിക്കൂ!');
+  const [failMsg, setFailMsg] = useState<string | null>(null);
+  const [msg, setMsg] = useState('“⛵ യാത്ര തുടങ്ങൂ!” അമർത്തൂ — 🌀 ചുഴി ഒഴിവാക്കി ഓരോ ദീപസ്തംഭത്തിലും എത്തൂ!');
 
   const ref = useRef({
     sailing: false,
     lane: 1 as 0 | 1 | 2,
     idx: 0,
     islandX: null as number | null,
-    openSeaTicks: 22,
+    rockX: 480,
+    rockLane: 2 as 0 | 1 | 2,
+    rockHit: false,
+    shields: 3,
+    openSeaTicks: 20,
     visited: [] as number[],
     missed: [] as number[],
     ended: false,
   });
-  ref.current = { sailing, lane, idx, islandX, openSeaTicks, visited, missed, ended };
+  ref.current.sailing = sailing;
+  ref.current.lane = lane;
+  ref.current.idx = idx;
+  ref.current.islandX = islandX;
+  ref.current.shields = shields;
+  ref.current.openSeaTicks = openSeaTicks;
+  ref.current.visited = visited;
+  ref.current.missed = missed;
+  ref.current.ended = ended;
 
   const resetLocal = () => {
     setSailing(false);
     setLane(1);
     setIdx(0);
     setIslandX(null);
-    setOpenSeaTicks(22);
+    const initRockLane: 0 | 1 | 2 = config.islands[0]?.lane === 2 ? 0 : 2;
+    setRockX(480);
+    setRockLane(initRockLane);
+    ref.current.rockX = 480;
+    ref.current.rockLane = initRockLane;
+    ref.current.rockHit = false;
+    setShields(3);
+    setOpenSeaTicks(20);
     setVisited([]);
     setMissed([]);
     setScore(0);
     setEnded(false);
-    setMsg('“⛵ യാത്ര തുടങ്ങൂ!” അമർത്തൂ — ഓരോ ദീപസ്തംഭവും വരുമ്പോൾ കപ്പൽ ആ പാതയിലേക്ക് തിരിക്കൂ!');
+    setFailMsg(null);
+    setMsg('“⛵ യാത്ര തുടങ്ങൂ!” അമർത്തൂ — 🌀 ചുഴി ഒഴിവാക്കി ഓരോ ദീപസ്തംഭത്തിലും എത്തൂ!');
   };
 
   useEffect(() => {
     resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetSignal]);
 
   const activeIsland = idx < config.islands.length ? config.islands[idx] : null;
   const laneYs = [58, 122, 184];
-  const won = ended && visited.length === config.islands.length && missed.length === 0;
-  const failed = ended && !won;
+  const won = ended && visited.length === config.islands.length && missed.length === 0 && shields > 0;
+  const failed = Boolean(failMsg) || (ended && !won);
 
   useEffect(() => {
-    if (!sailing || ended) return;
+    if (!sailing || ended || failMsg) return;
     const id = window.setInterval(() => {
       const s = ref.current;
       if (!s.sailing || s.ended) return;
+
+      // Move whirlpool hazard
+      let nextRock = s.rockX - 6.6;
+      if (!s.rockHit && nextRock <= 155 && nextRock >= 95 && s.lane === s.rockLane) {
+        s.rockHit = true;
+        sound.playError();
+        const rem = Math.max(0, s.shields - 1);
+        s.shields = rem;
+        setShields(rem);
+        setScore((sc) => Math.max(0, sc - 40));
+        if (rem <= 0) {
+          setSailing(false);
+          setEnded(true);
+          setFailMsg('🌀 കടൽ ചുഴിയിൽ തട്ടി 3 ഷീൽഡും പൊട്ടി! പാത മാറ്റി ഒഴിവാക്കൂ.');
+          return;
+        }
+        setMsg(`🌀 ചുഴിയിൽ തട്ടി! 1 ഷീൽഡ് പൊട്ടി — ഇനി ${rem} ഷീൽഡ് ബാക്കി!`);
+      }
+      if (nextRock < -40) {
+        nextRock = 635;
+        const curIsl = config.islands[s.idx];
+        const choices = ([0, 1, 2] as (0 | 1 | 2)[]).filter((l) => !curIsl || l !== curIsl.lane);
+        const nl = choices[Math.floor(Math.random() * choices.length)] ?? 0;
+        s.rockLane = nl;
+        s.rockHit = false;
+        setRockLane(nl);
+      }
+      s.rockX = nextRock;
+      setRockX(nextRock);
+
       if (s.islandX === null) {
         if (s.openSeaTicks > 1) {
           setOpenSeaTicks((t) => t - 1);
@@ -3292,16 +3445,15 @@ const ShipHarborSailGame: React.FC<{
           setIslandX(640);
           const nextIsl = config.islands[s.idx];
           if (nextIsl) {
-            setMsg(`🔭 മുന്നിൽ ${nextIsl.emoji} ${nextIsl.label} കാണുന്നു! കപ്പൽ ആ പാതയിലേക്ക് തിരിക്കൂ!`);
+            setMsg(`🔭 മുന്നിൽ ${nextIsl.emoji} ${nextIsl.label} കാണുന്നു! 🌀 ചുഴി ഒഴിവാക്കി ആ പാതയിലേക്ക് തിരിക്കൂ!`);
           }
         }
         return;
       }
 
-      const nextX = s.islandX - 5.8;
+      const nextX = s.islandX - 5.6;
       const isl = config.islands[s.idx];
 
-      // Check collision/arrival beside ship at x ~ 125
       if (
         isl &&
         nextX <= 155 &&
@@ -3321,8 +3473,17 @@ const ShipHarborSailGame: React.FC<{
       if (isl && nextX < 80 && !s.visited.includes(s.idx) && !s.missed.includes(s.idx)) {
         sound.playError();
         setMissed((p) => [...p, s.idx]);
+        const rem = Math.max(0, s.shields - 1);
+        s.shields = rem;
+        setShields(rem);
         setScore((sc) => Math.max(0, sc - 50));
-        setMsg(`🌊 അയ്യോ! ${isl.label} കടന്നുപോയി (-50 മാർക്ക്)! അടുത്ത ദീപസ്തംഭം ശ്രദ്ധിക്കൂ!`);
+        if (rem <= 0) {
+          setSailing(false);
+          setEnded(true);
+          setFailMsg(`🌊 ${isl.label} കടന്നുപോയി — എല്ലാ ഷീൽഡുകളും തകർന്നു!`);
+          return;
+        }
+        setMsg(`🌊 അയ്യോ! ${isl.label} കടന്നുപോയി (-50 മാർക്ക്)!`);
       }
 
       if (nextX <= -50) {
@@ -3339,33 +3500,36 @@ const ShipHarborSailGame: React.FC<{
         } else {
           setIslandX(null);
           setIdx(nextIdx);
-          setOpenSeaTicks(24);
-          setMsg('⛵ കപ്പൽ തിരമാലകളിലൂടെ മുന്നോട്ട് നീങ്ങുന്നു... അടുത്ത ദീപസ്തംഭം ഉടൻ വരും!');
+          setOpenSeaTicks(22);
+          setMsg('⛵ കപ്പൽ തിരമാലകളിലൂടെ മുന്നോട്ട് നീങ്ങുന്നു... അടുത്ത ലക്ഷ്യം ഉടൻ വരും!');
         }
       } else {
         setIslandX(nextX);
       }
     }, 35);
     return () => window.clearInterval(id);
-  }, [sailing, ended, config.islands, onWin]);
+  }, [sailing, ended, failMsg, config.islands, onWin]);
 
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-sky-300 shadow-inner bg-sky-700 select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
-            ⛵ {visited.length}/{config.islands.length} · ⭐ {score}
-          </span>
-          {missed.length > 0 && (
-            <span className="px-2.5 py-1 rounded-xl bg-rose-900/90 text-rose-100 text-xs font-extrabold tabular-nums">
-              ❌ {missed.length}
+        <div className="bg-slate-950/92 px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-sky-500/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+              ⛵ {visited.length}/{config.islands.length} · ⭐ {score}
             </span>
-          )}
+            {activeIsland && (
+              <span className="text-xs font-extrabold text-sky-100 truncate">
+                {activeIsland.emoji} {activeIsland.label}
+              </span>
+            )}
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
         </div>
 
         <svg
           viewBox="0 0 600 235"
-          className={`w-full block ${isFullscreen ? 'max-h-[66dvh] h-auto mx-auto' : 'h-auto'}`}
+          className={`w-full block ${isFullscreen ? 'max-h-[62dvh] h-auto mx-auto' : 'h-auto'}`}
           role="img"
           aria-label={config.title}
         >
@@ -3391,6 +3555,16 @@ const ShipHarborSailGame: React.FC<{
               <line x1="0" y1={ly + 28} x2="600" y2={ly + 28} stroke="#BAE6FD" strokeOpacity="0.35" strokeDasharray="10 10" />
             </g>
           ))}
+
+          {/* Animated Sea Rock / Whirlpool Hazard */}
+          {sailing && (
+            <g transform={`translate(${rockX}, ${laneYs[rockLane]})`}>
+              <circle cx="0" cy="0" r="19" fill="#1E293B" stroke="#FB7185" strokeWidth="2.5" strokeDasharray="5 3" />
+              <text x="0" y="6" textAnchor="middle" fontSize="18">
+                🌀
+              </text>
+            </g>
+          )}
 
           {/* SINGLE APPROACHING LIGHTHOUSE ISLAND */}
           {islandX !== null && activeIsland && (
@@ -3573,13 +3747,11 @@ const BalloonClimbGame: React.FC<{
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-300 shadow-inner bg-indigo-950 select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-amber-300 text-xs font-extrabold tabular-nums">
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-indigo-400/30">
+          <span className="px-2.5 py-0.5 rounded-lg bg-indigo-900 text-amber-300 text-xs font-extrabold tabular-nums">
             🎈 {step}/{config.gates.length}
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 text-white text-xs font-extrabold">
-            {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '🖤')).join('')}
-          </span>
+          <GameShatterLives lives={hearts} maxLives={3} compact />
         </div>
 
         <svg
@@ -3763,13 +3935,11 @@ const CyberShieldArcadeGame: React.FC<{
   return (
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-sky-400 bg-slate-950 shadow-inner select-none">
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-900/90 text-sky-300 text-xs font-extrabold tabular-nums">
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-sky-500/30">
+          <span className="px-2.5 py-0.5 rounded-lg bg-slate-900 text-sky-300 text-xs font-extrabold tabular-nums">
             📩 {cleared}/{config.waves.length}
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-slate-900/90 text-white text-xs font-extrabold">
-            {Array.from({ length: 3 }).map((_, i) => (i < hp ? '🛡️' : '💔')).join('')}
-          </span>
+          <GameShatterLives lives={hp} maxLives={3} compact />
         </div>
 
         <svg
@@ -4013,6 +4183,15 @@ const SceneGameRunner: React.FC<{
           {config.engine === 'cyber_shield_arcade' && (
             <CyberShieldArcadeGame config={config} onWin={handleWin} resetSignal={resetSignal} />
           )}
+          {config.engine === 'airplane_sic_flight' && (
+            <AirplaneSicFlightGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'helicopter_rescue_drop' && (
+            <HelicopterRescueDropGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'balloon_pop_arcade' && (
+            <BalloonPopArcadeGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
 
           {completed && (
             <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 text-white border border-amber-300 flex flex-wrap items-center justify-between gap-2 shadow-sm">
@@ -4231,22 +4410,7 @@ export const OptionalLessonMiniGame: React.FC<OptionalLessonMiniGameProps> = ({
       </GameFullscreenShell>
     );
   }
-  if (lessonKey === 'l2_dawa_age') {
-    const title = '🎊 SKSBV (ജ്ഞാനതീരം) · SKSSF · SYS · അൽബിർ മദ്രസാ തോരണ അലങ്കാരം!';
-    return (
-      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
-        <PosterWallStickGame
-          xpKey="l2_madrasa_decor"
-          variant="madrasa"
-          title={title}
-          subtitle="അൽബിർ–SKSBV–SKSSF–SYS ആഘോഷത്തിനായി മദ്രസാ കമാനത്തിൽ തോരണങ്ങളും പോസ്റ്ററുകളും കൊടികളും ഒട്ടിക്കൂ!"
-          onAwardXp={onAwardXp}
-          onComplete={onComplete}
-          isCompleted={externalCompleted}
-        />
-      </GameFullscreenShell>
-    );
-  }
+  // l2_dawa_age now routes cleanly to SCENE_GAME_CONFIGS.l2_dawa_age (BalloonPopArcadeGame!) so it is no longer a PosterWallStickGame clone.
   if (lessonKey === 'l2_dawa_lanterns') {
     const title = '🏠 SKSSF യൂണിറ്റ് ഓഫീസ്, സഹചാരി & സത്യധാര ലൈബ്രറി റൂം ഒരുക്കാം!';
     return (

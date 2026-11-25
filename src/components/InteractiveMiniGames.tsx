@@ -4,6 +4,7 @@ import { Award, CheckCircle2, RotateCcw, Sparkles, Volume2 } from 'lucide-react'
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 
 /* ============================================================================
  * 1. OPENING INTERACTIVE ACTIVITY: SKSSF ANNOUNCEMENT VEHICLE (പ്രചാരണ വാഹനം)
@@ -281,11 +282,12 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
           </div>
 
           {!allPlaced && (
-            <span className="text-xs font-extrabold text-rose-900 tabular-nums">
-              {Array.from({ length: maxMistakes })
-                .map((_, i) => (i < maxMistakes - mistakes ? '❤️' : '🖤'))
-                .join('')}
-            </span>
+            <GameShatterLives
+              lives={Math.max(0, maxMistakes - mistakes)}
+              maxLives={maxMistakes}
+              dark={false}
+              compact
+            />
           )}
         </div>
 
@@ -779,16 +781,13 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
 
         {/* Failure Overlay or Icon-First Parts Tray */}
         {failed ? (
-          <div className="mt-3 p-3 rounded-2xl bg-rose-950 text-white border-2 border-rose-400 flex items-center justify-between gap-3 shadow-md">
-            <span className="text-lg font-extrabold text-amber-300">❌ 💔</span>
-            <button
-              type="button"
-              onClick={handleReset}
-              aria-label="വീണ്ടും ശ്രമിക്കാം"
-              className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold shadow-md active:scale-95"
-            >
-              <RotateCcw className="w-4 h-4" /> 🔄
-            </button>
+          <div className="mt-3">
+            <GameDefeatBurstOverlay
+              title="പ്രചാരണ വാഹനം ഒരുക്കൽ പരാജയപ്പെട്ടു!"
+              reason="3 തവണ തെറ്റായ സ്ഥലത്ത് വെച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — ശരിയായ സ്ഥാനം നോക്കി വീണ്ടും ശ്രമിക്കാം!"
+              onRetry={handleReset}
+              overlay={false}
+            />
           </div>
         ) : !allPlaced ? (
           <div className="mt-3 space-y-1.5">
@@ -1004,9 +1003,7 @@ export const MadrasaBoardActivity: React.FC<{
           🏫 {count}/4
         </span>
         <div className="flex items-center gap-1.5">
-          <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold">
-            {Array.from({ length: 3 }).map((_, i) => (i < hearts ? '❤️' : '💔')).join('')}
-          </span>
+          <GameShatterLives lives={hearts} maxLives={3} dark={false} compact />
           <button
             type="button"
             onClick={() => {
@@ -1149,17 +1146,12 @@ export const MadrasaBoardActivity: React.FC<{
       </div>
 
       {failed ? (
-        <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-900">💔</span>
-          <button
-            type="button"
-            onClick={resetBoard}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-base font-extrabold shadow"
-          >
-            <RotateCcw className="w-4 h-4" /> 🔄
-          </button>
-        </div>
+        <GameDefeatBurstOverlay
+          title="മദ്രസ ബോർഡ് ഒരുക്കൽ പരാജയപ്പെട്ടു!"
+          reason="3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — വീണ്ടും ശ്രമിക്കാം!"
+          onRetry={resetBoard}
+          overlay={false}
+        />
       ) : !allDone ? (
         <div className="space-y-1.5">
           <div className="grid grid-cols-4 gap-2">
@@ -1403,10 +1395,10 @@ export const ViqayaRescueVehicleActivity: React.FC<{
               if (nextLives <= 0) {
                 setFailed(true);
                 setPlaying(false);
-                setStatusMsg('💔 വാഹനത്തിന് 3 തവണ തടസ്സമേറ്റു! വീണ്ടും ശ്രദ്ധയോടെ ഓടിക്കാം.');
+                setStatusMsg('💥 വാഹനത്തിന് 3 തവണ തടസ്സമേറ്റു! വീണ്ടും ശ്രദ്ധയോടെ ഓടിക്കാം.');
                 return [];
               } else {
-                setStatusMsg(`⚠️ ${mDef.hazardLabel} തട്ടി! ശ്രദ്ധിച്ച് ലെയിൻ മാറ്റൂ! (ബാക്കി ❤️ ${nextLives})`);
+                setStatusMsg(`⚠️ ${mDef.hazardLabel} തട്ടി! ശ്രദ്ധിച്ച് ലെയിൻ മാറ്റൂ! (ബാക്കി കവചം: 🛡️ ${nextLives})`);
               }
             }
             continue;
@@ -1472,11 +1464,7 @@ export const ViqayaRescueVehicleActivity: React.FC<{
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/50 text-xs font-extrabold">
-              {Array.from({ length: 3 })
-                .map((_, i) => (i < lives ? '❤️' : '💔'))
-                .join('')}
-            </span>
+            <GameShatterLives lives={lives} maxLives={3} dark compact />
             {won && onOpenBadgeStudio && (
               <button
                 type="button"
@@ -1605,22 +1593,11 @@ export const ViqayaRescueVehicleActivity: React.FC<{
           )}
 
           {failed && (
-            <div className="absolute inset-0 z-30 bg-rose-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3 text-white">
-              <div className="text-4xl">💔</div>
-              <h4 className="text-base sm:text-lg font-extrabold text-rose-200">
-                ദൗത്യം പരാജയപ്പെട്ടു!
-              </h4>
-              <p className="text-xs font-semibold text-rose-100 max-w-sm">
-                തടസ്സങ്ങൾ ഒഴിവാക്കി സഹായ കിറ്റുകൾ സുരക്ഷിതമായി എത്തിക്കാൻ ഒരിക്കൽ കൂടി ശ്രമിക്കൂ.
-              </p>
-              <button
-                type="button"
-                onClick={startOrReset}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4" /> വീണ്ടും ശ്രമിക്കാം
-              </button>
-            </div>
+            <GameDefeatBurstOverlay
+              title="വിഖായ രക്ഷാദൗത്യം പരാജയപ്പെട്ടു!"
+              reason="തടസ്സങ്ങൾ ഒഴിവാക്കി സഹായ കിറ്റുകൾ സുരക്ഷിതമായി എത്തിക്കാൻ ഒരിക്കൽ കൂടി ശ്രമിക്കൂ."
+              onRetry={startOrReset}
+            />
           )}
 
           {won && (

@@ -32,6 +32,7 @@ import {
 } from './GameEffects';
 import { EraInteractiveStage } from './EraInteractiveActivities';
 import { GameFullscreenShell } from './GameFullscreenShell';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
@@ -756,10 +757,12 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
           </h4>
           <div className="flex items-center gap-2">
             {!isBuilt && (
-              <span className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                {'❤️'.repeat(Math.max(0, 3 - flagMistakes))}
-                {'💔'.repeat(Math.min(3, flagMistakes))}
-              </span>
+              <GameShatterLives
+                lives={Math.max(0, 3 - flagMistakes)}
+                maxLives={3}
+                dark={false}
+                compact
+              />
             )}
             {isBuilt && (
               <span className="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
@@ -770,33 +773,22 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
         </div>
 
         {flagFailed && (
-          <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <p className="text-sm font-extrabold text-rose-900">
-                💥 പതാക നിർമ്മാണം പരാജയപ്പെട്ടു!
-              </p>
-              <p className="text-xs font-semibold text-rose-800">
-                3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചതിനാൽ പതാക ക്രമം തെറ്റി. ശ്രദ്ധയോടെ വീണ്ടും കൂട്ടിച്ചേർക്കാം!
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                sound.playClick();
-                setFlagMistakes(0);
-                setFlagAlert(null);
-                setSelectedPiece(null);
-                if (variant === 'skju') {
-                  setSkjuSlots({ canton: false, mosque: false, green: false });
-                } else {
-                  setSkssfSlots({ canton: false, mosque: false, green: false });
-                }
-              }}
-              className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700 whitespace-nowrap"
-            >
-              🔄 വീണ്ടും ശ്രമിക്കാം
-            </button>
-          </div>
+          <GameDefeatBurstOverlay
+            title="പതാക നിർമ്മാണം പരാജയപ്പെട്ടു!"
+            reason="3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചതിനാൽ കവചങ്ങൾ തകർന്നു. ശ്രദ്ധയോടെ വീണ്ടും കൂട്ടിച്ചേർക്കാം!"
+            onRetry={() => {
+              sound.playClick();
+              setFlagMistakes(0);
+              setFlagAlert(null);
+              setSelectedPiece(null);
+              if (variant === 'skju') {
+                setSkjuSlots({ canton: false, mosque: false, green: false });
+              } else {
+                setSkssfSlots({ canton: false, mosque: false, green: false });
+              }
+            }}
+            overlay={false}
+          />
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">

@@ -12,6 +12,7 @@ import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
 import { OfficialSkssfFlagImg } from './SvgArtwork';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 
 export interface PracticalGameProps {
   xpKey: string;
@@ -26,12 +27,13 @@ const CompactGameBar: React.FC<{
   title: string;
   subtitle: string;
   done: boolean;
+  shields?: number;
   onReset: () => void;
-}> = ({ icon, progress, title, subtitle, done, onReset }) => {
+}> = ({ icon, progress, title, subtitle, done, shields, onReset }) => {
   const [infoOpen, setInfoOpen] = useState(false);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-950 text-white">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-950 text-white">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -66,14 +68,19 @@ const CompactGameBar: React.FC<{
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onReset}
-          aria-label="വീണ്ടും"
-          className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {typeof shields === 'number' && (
+            <GameShatterLives lives={shields} maxLives={3} compact />
+          )}
+          <button
+            type="button"
+            onClick={onReset}
+            aria-label="വീണ്ടും"
+            className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
       {infoOpen && (
         <div className="px-3 py-2 rounded-xl bg-emerald-900 text-emerald-50 text-xs space-y-0.5">
@@ -145,9 +152,12 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
   const [zoom, setZoom] = useState<number>(1);
   const [fillPct, setFillPct] = useState(isCompleted ? 100 : 0);
   const [outsideWarn, setOutsideWarn] = useState(false);
+  const [shields, setShields] = useState(3);
   const [won, setWon] = useState(isCompleted);
+  const lastSpillTsRef = useRef(0);
   const totalMaskPixelsRef = useRef(1);
   const paintedSetRef = useRef<Set<number>>(new Set());
+  const failed = shields <= 0 && !won;
 
   const W = 640;
   const H = 300;
@@ -224,12 +234,19 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     const mctx = maskCanvas.getContext('2d');
     if (!ctx || !mctx) return;
 
+    if (failed || won) return;
     // Check if cursor is inside stencil letter
     const px = Math.max(0, Math.min(W - 1, Math.round(x)));
     const py = Math.max(0, Math.min(H - 1, Math.round(y)));
     const alpha = mctx.getImageData(px, py, 1, 1).data[3];
     if (alpha < 40) {
       setOutsideWarn(true);
+      const now = Date.now();
+      if (now - lastSpillTsRef.current > 950) {
+        lastSpillTsRef.current = now;
+        sound.playError();
+        setShields((s) => Math.max(0, s - 1));
+      }
       return;
     }
     setOutsideWarn(false);
@@ -276,18 +293,21 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     sound.playClick();
     setWon(false);
     setFillPct(0);
+    setShields(3);
     setOutsideWarn(false);
+    lastSpillTsRef.current = 0;
     initCanvases();
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="🖌️"
         progress={`${fillPct}%`}
         title="🖌️ സമ്മേളന ചുമരിലെഴുത്ത്"
-        subtitle="അക്ഷരങ്ങൾക്ക് പുറത്തുപോകാതെ വിരൽ കൊണ്ട് പെയിന്റ് അടിക്കൂ. സൂം ബട്ടൺ ഉപയോഗിച്ച് അടുത്തുനിന്നും എഴുതാം!"
+        subtitle="അക്ഷരങ്ങൾക്ക് പുറത്തുപോകാതെ വിരൽ കൊണ്ട് പെയിന്റ് അടിക്കൂ — 3 തവണ ചുമരിൽ പുറത്തായാൽ ഷീൽഡുകൾ പൊട്ടും!"
         done={won}
+        shields={shields}
         onReset={reset}
       />
 
@@ -401,16 +421,20 @@ export const StageBuildSequenceGame: React.FC<PracticalGameProps> = ({
   const [placed, setPlaced] = useState<StageStepId[]>(
     isCompleted ? STAGE_STEPS.map((s) => s.id) : []
   );
+  const [shields, setShields] = useState(3);
   const [touchedTip, setTouchedTip] = useState<string | null>(null);
   const [won, setWon] = useState(isCompleted);
+  const failed = shields <= 0 && !won;
 
   const handleStep = (step: (typeof STAGE_STEPS)[number], idx: number) => {
     sound.unlockAudio();
-    if (placed.includes(step.id)) return;
+    if (failed || won || placed.includes(step.id)) return;
     if (idx !== placed.length) {
       sound.playError();
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
       const needed = STAGE_STEPS[placed.length];
-      setTouchedTip(`⚠️ ആദ്യം ${needed.emoji} ${needed.label}`);
+      setTouchedTip(`⚠️ ക്രമം തെറ്റി! ആദ്യം ${needed.emoji} ${needed.label} (ബാക്കി ഷീൽഡ്: ${rem})`);
       return;
     }
     sound.playPop();
@@ -430,6 +454,7 @@ export const StageBuildSequenceGame: React.FC<PracticalGameProps> = ({
   const reset = () => {
     sound.playClick();
     setPlaced([]);
+    setShields(3);
     setWon(false);
     setTouchedTip(null);
   };
@@ -437,13 +462,14 @@ export const StageBuildSequenceGame: React.FC<PracticalGameProps> = ({
   const has = (id: StageStepId) => placed.includes(id);
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="🏗️"
         progress={`${placed.length}/${STAGE_STEPS.length}`}
         title="🏗️ പരിപാടി സ്റ്റേജ് നിർമ്മാണം"
-        subtitle="തറ → തുണി → മേൽക്കൂര → ഫ്ലെക്സ് → പൂക്കൾ → കസേരകൾ → പ്രസംഗപീഠം എന്ന ക്രമത്തിൽ സ്റ്റേജ് ഒരുക്കൂ!"
+        subtitle="തറ → തുണി → മേൽക്കൂര → ഫ്ലെക്സ് → പൂക്കൾ → കസേരകൾ → പ്രസംഗപീഠം എന്ന ക്രമത്തിൽ സ്റ്റേജ് ഒരുക്കൂ! 3 തവണ തെറ്റിയാൽ തകരും."
         done={won}
+        shields={shields}
         onReset={reset}
       />
 
@@ -543,10 +569,19 @@ export const StageBuildSequenceGame: React.FC<PracticalGameProps> = ({
         })}
       </div>
 
-      {touchedTip && (
+      {touchedTip && !failed && (
         <p className="text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5">
           {touchedTip}
         </p>
+      )}
+
+      {failed && (
+        <GameDefeatBurstOverlay
+          title="🏗️ സ്റ്റേജ് നിർമ്മാണം തകർന്നു!"
+          reason="1 മുതൽ 7 വരെയുള്ള കൃത്യമായ ക്രമത്തിൽ സ്റ്റേജ് ഭാഗങ്ങൾ ചേർക്കണം!"
+          scoreText={`🏗️ ${placed.length}/${STAGE_STEPS.length}`}
+          onRetry={reset}
+        />
       )}
 
       {won && <GameDoneNextBar onReplay={reset} />}
@@ -566,6 +601,11 @@ const STADIUM_WASTE = [
   { id: 'w6', emoji: '📄', label: 'കടലാസ് കഷ്ണം', left: '66%', top: '28%' },
 ];
 
+const STADIUM_GOOD_GEAR = [
+  { id: 'g1', emoji: '🎙️', label: 'സ്റ്റേജ് മൈക്ക് (കളയരുത്!)', left: '44%', top: '44%' },
+  { id: 'g2', emoji: '🚩', label: 'SKSSF കൊടി (കളയരുത്!)', left: '84%', top: '42%' },
+];
+
 export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
   xpKey,
   onAwardXp,
@@ -577,18 +617,49 @@ export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
   );
   const [disposed, setDisposed] = useState(isCompleted);
   const [truckDrive, setTruckDrive] = useState(isCompleted);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(25);
+  const [started, setStarted] = useState(false);
+  const [warn, setWarn] = useState<string | null>(null);
 
   const allLoaded = collected.length === STADIUM_WASTE.length;
+  const failed = (shields <= 0 || timeLeft <= 0) && !disposed;
+
+  useEffect(() => {
+    if (!started || disposed || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, disposed, failed]);
 
   const pickWaste = (id: string) => {
     sound.unlockAudio();
-    if (collected.includes(id)) return;
+    if (failed || disposed || collected.includes(id)) return;
+    if (!started) setStarted(true);
     sound.playPop();
+    setWarn(null);
     setCollected((prev) => [...prev, id]);
   };
 
+  const hitGoodGear = (label: string) => {
+    sound.unlockAudio();
+    if (failed || disposed) return;
+    if (!started) setStarted(true);
+    sound.playError();
+    const rem = Math.max(0, shields - 1);
+    setShields(rem);
+    setWarn(`⚠️ അത് മാലിന്യമല്ല! ${label} — 1 ഷീൽഡ് പൊട്ടി!`);
+  };
+
   const handleDispose = () => {
-    if (!allLoaded || disposed) return;
+    if (!allLoaded || disposed || failed) return;
     sound.unlockAudio();
     sound.playHoist();
     setTruckDrive(true);
@@ -606,25 +677,46 @@ export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
     setCollected([]);
     setDisposed(false);
     setTruckDrive(false);
+    setShields(3);
+    setTimeLeft(25);
+    setStarted(false);
+    setWarn(null);
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="🏟️"
-        progress={`${collected.length}/${STADIUM_WASTE.length}`}
+        progress={`${collected.length}/${STADIUM_WASTE.length} · ⏱️${timeLeft}s`}
         title="🏟️ പരിപാടി ഗ്രൗണ്ട് / സ്റ്റേഡിയം ശുചീകരണം"
-        subtitle="പരിപാടിക്ക് ശേഷം ഗ്രൗണ്ടിൽ കിടക്കുന്ന കുപ്പികളും കടലാസുകളും വിഖായ വാഹനത്തിലേക്ക് ശേഖരിച്ച് ♻️ ഡിസ്പോസ് ചെയ്യൂ!"
+        subtitle="25 സെക്കൻഡിനുള്ളിൽ മാലിന്യങ്ങൾ മാത്രം വിഖായ വാഹനത്തിലേക്ക് ശേഖരിച്ച് ഡിസ്പോസ് ചെയ്യൂ! 🎙️ മൈക്കും 🚩 കൊടിയും കളയരുത്!"
         done={disposed}
+        shields={shields}
         onReset={reset}
       />
 
       <div className="relative h-56 rounded-2xl border-2 border-emerald-400 bg-gradient-to-b from-sky-200 via-emerald-200 to-emerald-500 overflow-hidden">
         {/* Stadium Stands Backdrop */}
-        <div className="absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-slate-800 to-slate-700/80 flex items-center justify-between px-4 text-xs font-extrabold text-amber-300">
-          <span>🏟️ {disposed ? '✨ വൃത്തിയായി!' : `${collected.length}/${STADIUM_WASTE.length}`}</span>
-          <span>♻️</span>
+        <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-slate-800 to-slate-700/85 flex items-center justify-between px-4 text-xs font-extrabold text-amber-300">
+          <span>🏟️ {disposed ? '✨ വൃത്തിയായി!' : `മാലിന്യം: ${collected.length}/${STADIUM_WASTE.length}`}</span>
+          <span className={timeLeft <= 6 ? 'text-rose-300 animate-pulse' : 'text-emerald-200'}>⏱️ {timeLeft}s</span>
         </div>
+
+        {/* Good Equipment Decoys (DO NOT THROW!) */}
+        {STADIUM_GOOD_GEAR.map((g) => (
+          <motion.button
+            key={g.id}
+            type="button"
+            whileTap={{ scale: 0.9 }}
+            onClick={() => hitGoodGear(g.label)}
+            style={{ left: g.left, top: g.top }}
+            title={g.label}
+            aria-label={g.label}
+            className="absolute -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-2xl bg-emerald-950/90 border-2 border-emerald-300 shadow-md flex items-center justify-center text-xl cursor-pointer"
+          >
+            {g.emoji}
+          </motion.button>
+        ))}
 
         {/* Scattered Waste Items */}
         {STADIUM_WASTE.map((item) => {
@@ -663,14 +755,29 @@ export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
         </div>
       </div>
 
-      {allLoaded && !disposed && (
+      {warn && !failed && (
+        <p className="text-xs font-extrabold text-rose-800 bg-rose-50 border border-rose-300 rounded-xl px-3 py-1.5">
+          {warn}
+        </p>
+      )}
+
+      {allLoaded && !disposed && !failed && (
         <button
           type="button"
           onClick={handleDispose}
-          className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 shadow-sm"
+          className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 shadow-sm cursor-pointer"
         >
           🚛 ♻️ ഡിസ്പോസ് ചെയ്യാം!
         </button>
+      )}
+
+      {failed && (
+        <GameDefeatBurstOverlay
+          title={timeLeft <= 0 ? '⏱️ ശുചീകരണ സമയം കഴിഞ്ഞു!' : '⚠️ നല്ല സാധനങ്ങൾ മാലിന്യത്തിൽ ഇട്ടു!'}
+          reason="🎙️ മൈക്കും 🚩 കൊടിയും തൊടാതെ മാലിന്യങ്ങൾ മാത്രം വേഗത്തിൽ ശേഖരിച്ച് ഡിസ്പോസ് ചെയ്യൂ!"
+          scoreText={`🗑️ ${collected.length}/${STADIUM_WASTE.length}`}
+          onRetry={reset}
+        />
       )}
 
       {disposed && <GameDoneNextBar onReplay={reset} />}
@@ -814,8 +921,8 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
       setLives((l) => Math.max(0, l - 1));
       setFeedback(
         shelfId === 'quran'
-          ? '❌ തെറ്റി! ഏറ്റവും മുകളിലെ തട്ട് വിശുദ്ധ ഖുർആനിന് (മുസ്ഹഫ്) മാത്രമുള്ളതാണ്! (1 ഹൃദയം നഷ്ടമായി)'
-          : `❌ തെറ്റി! ${chosen?.label} — അദബ് ക്രമപ്രകാരം ശരിയായ തട്ടിൽ വെക്കൂ! (1 ഹൃദയം നഷ്ടമായി)`
+          ? '❌ തെറ്റി! ഏറ്റവും മുകളിലെ തട്ട് വിശുദ്ധ ഖുർആനിന് (മുസ്ഹഫ്) മാത്രമുള്ളതാണ്! (1 ഷീൽഡ് പൊട്ടി)'
+          : `❌ തെറ്റി! ${chosen?.label} — അദബ് ക്രമപ്രകാരം ശരിയായ തട്ടിൽ വെക്കൂ! (1 ഷീൽഡ് പൊട്ടി)`
       );
       return;
     }
@@ -845,13 +952,14 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 sm:p-4 space-y-3 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 sm:p-4 space-y-3 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="📚"
-        progress={`❤️ ${lives}/3 · ${placed.length}/${LIBRARY_SHELVES.length}`}
+        progress={`${placed.length}/${LIBRARY_SHELVES.length}`}
         title="📚 മദ്രസാ കിതാബ് അലമാര — അദബ് ക്രമം"
         subtitle="ഖുർആൻ ഏറ്റവും മുകളിൽ, തുടർന്ന് തഫ്സീർ, ഹദീസ്, ഫിഖ്ഹ്, ചരിത്രം, സത്യധാര എന്ന ക്രമത്തിൽ തടി അലമാരയുടെ തട്ടുകളിൽ അടുക്കിവെക്കൂ!"
         done={won}
+        shields={lives}
         onReset={reset}
       />
 
@@ -925,23 +1033,14 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
         </div>
       </div>
 
-      {/* Fail State */}
+      {/* Animated Shatter Defeat Overlay */}
       {failed && (
-        <div className="p-3.5 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-extrabold text-rose-900">💔 3 തെറ്റുകൾ സംഭവിച്ചു!</p>
-            <p className="text-xs font-bold text-rose-700">
-              ഖുർആൻ → തഫ്സീർ → ഹദീസ് → ഫിഖ്ഹ് → ചരിത്രം → പൊതുപുസ്തകങ്ങൾ എന്ന ക്രമത്തിൽ വീണ്ടും അടുക്കിവെക്കൂ.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={reset}
-            className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-600 cursor-pointer"
-          >
-            🔄 വീണ്ടും ശ്രമിക്കാം
-          </button>
-        </div>
+        <GameDefeatBurstOverlay
+          title="📚 കിതാബ് അദബ് ക്രമം തെറ്റി!"
+          reason="ഖുർആൻ → തഫ്സീർ → ഹദീസ് → ഫിഖ്ഹ് → ചരിത്രം → പൊതുപുസ്തകങ്ങൾ എന്ന ക്രമത്തിൽ വീണ്ടും അടുക്കിവെക്കൂ."
+          scoreText={`📚 ${placed.length}/${LIBRARY_SHELVES.length}`}
+          onRetry={reset}
+        />
       )}
 
       {/* Wooden Study Desk Tray Holding Books to Pick */}
@@ -1041,21 +1140,25 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
   const [stamps, setStamps] = useState<string[]>(
     isCompleted ? NOTICE_STAMPS.map((n) => n.id) : []
   );
+  const [shields, setShields] = useState(3);
   const [msg, setMsg] = useState<string | null>(null);
   const [won, setWon] = useState(isCompleted);
+  const failed = shields <= 0 && !won;
 
   const agendaDone = Object.keys(assigned).length === AGENDA_SLOTS.length;
 
   const assignSlot = (slot: (typeof AGENDA_SLOTS)[number]) => {
     sound.unlockAudio();
-    if (assigned[slot.id]) return;
+    if (failed || won || assigned[slot.id]) return;
     if (!selectedPerson) {
       setMsg('👆 ആദ്യം താഴെ നിന്ന് ഒരു വ്യക്തിയെ തിരഞ്ഞെടുക്കൂ!');
       return;
     }
     if (selectedPerson !== slot.expectedPerson) {
       sound.playError();
-      setMsg(`⚠️ ${slot.role} — അനുയോജ്യമായ സ്ഥാനമുള്ളയാളെ തിരഞ്ഞെടുക്കൂ!`);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      setMsg(`⚠️ ${slot.role} — അനുയോജ്യമായ സ്ഥാനമുള്ളയാളെ തിരഞ്ഞെടുക്കൂ! (ബാക്കി ഷീൽഡ്: ${rem})`);
       return;
     }
     sound.playPop();
@@ -1067,7 +1170,7 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
 
   const toggleNoticeStamp = (id: string) => {
     sound.unlockAudio();
-    if (stamps.includes(id)) return;
+    if (failed || stamps.includes(id)) return;
     sound.playPop();
     const next = [...stamps, id];
     setStamps(next);
@@ -1086,18 +1189,20 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
     setAssigned({});
     setStamps([]);
     setSelectedPerson(null);
+    setShields(3);
     setMsg(null);
     setWon(false);
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="📜"
         progress={agendaDone ? `നോട്ടീസ് ${stamps.length}/3` : `അജണ്ട ${Object.keys(assigned).length}/7`}
         title="📜 മജ്‌ലിസുന്നൂർ അജണ്ട & നോട്ടീസ്"
-        subtitle="ഘട്ടം 1: ഓരോ പരിപാടിക്കും അനുയോജ്യരായവരെ ചുമതലപ്പെടുത്തൂ. ഘട്ടം 2: SKSSF കൊടിയും മജ്‌ലിസുന്നൂർ ലോഗോയും ചേർത്ത് നോട്ടീസ് തയ്യാറാക്കൂ!"
+        subtitle="ഘട്ടം 1: ഓരോ പരിപാടിക്കും അനുയോജ്യരായവരെ ചുമതലപ്പെടുത്തൂ (3 തവണ തെറ്റിയാൽ ഷീൽഡുകൾ പൊട്ടും). ഘട്ടം 2: നോട്ടീസ് തയ്യാറാക്കൂ!"
         done={won}
+        shields={shields}
         onReset={reset}
       />
 
@@ -1230,10 +1335,19 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
         </div>
       )}
 
-      {msg && !won && (
+      {msg && !won && !failed && (
         <p className="text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5">
           {msg}
         </p>
+      )}
+
+      {failed && (
+        <GameDefeatBurstOverlay
+          title="📜 അജണ്ട ചുമതലകൾ തെറ്റി!"
+          reason="ഖിറാഅത്ത് (ഹാഫിള്), പ്രാർത്ഥന (ഖത്തീബ്), സ്വാഗതം (സെക്രട്ടറി), അധ്യക്ഷൻ (പ്രസിഡന്റ്) എന്നിങ്ങനെ കൃത്യമായി തിരഞ്ഞെടുക്കൂ!"
+          scoreText={`📜 ${Object.keys(assigned).length}/7`}
+          onRetry={reset}
+        />
       )}
 
       {won && <GameDoneNextBar onReplay={reset} />}
@@ -1264,155 +1378,325 @@ export const ProgramBudgetCheeraniGame: React.FC<PracticalGameProps> = ({
   onComplete,
   isCompleted = false,
 }) => {
-  const [checkedInc, setCheckedInc] = useState<string[]>(
-    isCompleted ? INCOME_ITEMS.map((i) => i.id) : []
+  const [incInput, setIncInput] = useState(isCompleted ? '10000' : '');
+  const [expInput, setExpInput] = useState(isCompleted ? '8000' : '');
+  const [balInput, setBalInput] = useState(isCompleted ? '2000' : '');
+  const [activeField, setActiveField] = useState<'inc' | 'exp' | 'bal'>('inc');
+  const [calcExpr, setCalcExpr] = useState('0');
+  const [shields, setShields] = useState(3);
+  const [feedback, setFeedback] = useState<string | null>(
+    isCompleted
+      ? null
+      : '🧮 വരവും ചെലവും ടൈപ്പ് ചെയ്തോ അടുത്തുള്ള കാൽക്കുലേറ്റർ ഉപയോഗിച്ചോ കൂട്ടി “ആകെ വരവ്”, “ആകെ ചെലവ്”, “നീക്കിയിരിപ്പ്” എന്നിവ നൽകൂ!'
   );
-  const [checkedExp, setCheckedExp] = useState<string[]>(
-    isCompleted ? EXPENSE_ITEMS.map((e) => e.id) : []
-  );
-  const [balanceErr, setBalanceErr] = useState(false);
   const [won, setWon] = useState(isCompleted);
 
-  const totalIncome = INCOME_ITEMS.filter((i) => checkedInc.includes(i.id)).reduce(
-    (sum, i) => sum + i.amount,
-    0
-  );
-  const totalExpense = EXPENSE_ITEMS.filter((e) => checkedExp.includes(e.id)).reduce(
-    (sum, e) => sum + e.amount,
-    0
-  );
-  const readyForBalance =
-    checkedInc.length === INCOME_ITEMS.length && checkedExp.length === EXPENSE_ITEMS.length;
+  const failed = shields <= 0 && !won;
+  const expectedInc = INCOME_ITEMS.reduce((s, i) => s + i.amount, 0); // 10000
+  const expectedExp = EXPENSE_ITEMS.reduce((s, e) => s + e.amount, 0); // 8000
+  const expectedBal = expectedInc - expectedExp; // 2000
 
-  const pickBalance = (val: number) => {
-    sound.unlockAudio();
-    if (val === 2000) {
-      setBalanceErr(false);
-      if (!won) {
-        setWon(true);
-        sound.playHoist();
-        onAwardXp(30, `budget_cheerani_${xpKey}`);
-        onComplete?.();
-        narrator.speak('കൃത്യമായ കണക്ക്! വരവ് പതിനായിരം, ചെലവ് എട്ടായിരം, നീക്കിയിരിപ്പ് രണ്ടായിരം രൂപ!');
-        window.setTimeout(() => scrollToActiveQuiz(), 900);
+  const evalCalcSafe = (expr: string): number | null => {
+    const cleaned = expr.replace(/[^0-9+\-*/.]/g, '');
+    if (!cleaned) return null;
+    try {
+      // Safe arithmetic tokenizer (+, -, *, /) without eval
+      const tokens = cleaned.match(/(\d+(\.\d+)?|[+\-*/])/g);
+      if (!tokens || tokens.length === 0) return null;
+      let acc = Number(tokens[0]);
+      if (Number.isNaN(acc)) return null;
+      for (let i = 1; i < tokens.length; i += 2) {
+        const op = tokens[i];
+        const nextNum = Number(tokens[i + 1]);
+        if (Number.isNaN(nextNum)) break;
+        if (op === '+') acc += nextNum;
+        else if (op === '-') acc -= nextNum;
+        else if (op === '*') acc *= nextNum;
+        else if (op === '/') acc = nextNum === 0 ? 0 : acc / nextNum;
       }
-    } else {
-      sound.playError();
-      setBalanceErr(true);
+      return Math.round(acc);
+    } catch {
+      return null;
     }
+  };
+
+  const handleCalcPress = (key: string) => {
+    sound.playClick();
+    if (key === 'C') {
+      setCalcExpr('0');
+      return;
+    }
+    if (key === '⌫') {
+      setCalcExpr((prev) => (prev.length <= 1 ? '0' : prev.slice(0, -1)));
+      return;
+    }
+    if (key === '=') {
+      const res = evalCalcSafe(calcExpr);
+      if (res !== null) setCalcExpr(String(res));
+      return;
+    }
+    setCalcExpr((prev) => {
+      if (prev === '0' && /^[0-9]$/.test(key)) return key;
+      if (/[+\-*/]$/.test(prev) && /[+\-*/]/.test(key)) {
+        return prev.slice(0, -1) + key;
+      }
+      return prev + key;
+    });
+  };
+
+  const copyCalcToActiveField = () => {
+    sound.playPop();
+    const res = evalCalcSafe(calcExpr);
+    const valStr = res !== null ? String(res) : calcExpr.replace(/[^0-9]/g, '');
+    if (activeField === 'inc') setIncInput(valStr);
+    else if (activeField === 'exp') setExpInput(valStr);
+    else setBalInput(valStr);
+    setCalcExpr(valStr || '0');
+  };
+
+  const handleVerifyLedger = () => {
+    sound.unlockAudio();
+    if (failed || won) return;
+    const vInc = Number(incInput.replace(/[^0-9-]/g, ''));
+    const vExp = Number(expInput.replace(/[^0-9-]/g, ''));
+    const vBal = Number(balInput.replace(/[^0-9-]/g, ''));
+
+    if (vInc === expectedInc && vExp === expectedExp && vBal === expectedBal) {
+      setWon(true);
+      setFeedback('🎉 കൃത്യമായ കണക്ക്! വരവ് ₹10,000 − ചെലവ് ₹8,000 = നീക്കിയിരിപ്പ് ₹2,000!');
+      sound.playHoist();
+      onAwardXp(30, `budget_cheerani_${xpKey}`);
+      onComplete?.();
+      narrator.speak('കൃത്യമായ കണക്ക്! വരവ് പതിനായിരം, ചെലവ് എട്ടായിരം, നീക്കിയിരിപ്പ് രണ്ടായിരം രൂപ!');
+      window.setTimeout(() => scrollToActiveQuiz(), 900);
+      return;
+    }
+
+    sound.playError();
+    const rem = Math.max(0, shields - 1);
+    setShields(rem);
+    const wrongParts: string[] = [];
+    if (vInc !== expectedInc) wrongParts.push('ആകെ വരവ്');
+    if (vExp !== expectedExp) wrongParts.push('ആകെ ചെലവ്');
+    if (vBal !== expectedBal) wrongParts.push('നീക്കിയിരിപ്പ്');
+    setFeedback(
+      `❌ കണക്ക് തെറ്റി! (${wrongParts.join(', ')}) വീണ്ടും കാൽക്കുലേറ്റർ ഉപയോഗിച്ച് പരിശോധിക്കൂ — ബാക്കി ഷീൽഡ്: ${rem}`
+    );
   };
 
   const reset = () => {
     sound.playClick();
-    setCheckedInc([]);
-    setCheckedExp([]);
-    setBalanceErr(false);
+    setIncInput('');
+    setExpInput('');
+    setBalInput('');
+    setActiveField('inc');
+    setCalcExpr('0');
+    setShields(3);
     setWon(false);
+    setFeedback(
+      '🧮 വരവും ചെലവും ടൈപ്പ് ചെയ്തോ അടുത്തുള്ള കാൽക്കുലേറ്റർ ഉപയോഗിച്ചോ കൂട്ടി “ആകെ വരവ്”, “ആകെ ചെലവ്”, “നീക്കിയിരിപ്പ്” എന്നിവ നൽകൂ!'
+    );
   };
 
+  const calcButtons = ['7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', '*', 'C', '0', '⌫', '='];
+
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-3 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="💰"
-        progress={won ? '₹2,000 ✅' : `${checkedInc.length + checkedExp.length}/8`}
-        title="💰 വരവ് – ചെലവ് – നീക്കിയിരിപ്പ് & ചീരണി"
-        subtitle="സംഭാവനകളും (വരവ്) സ്റ്റേജ്-മൈക്ക്-ഭക്ഷണ-ചീരണി ചെലവുകളും രേഖപ്പെടുത്തി ശരിയായ നീക്കിയിരിപ്പ് കണ്ടെത്തൂ!"
+        progress={won ? '₹2,000 ✅' : 'കണക്ക് പരിശോധിക്കൂ'}
+        title="💰 വരവ് – ചെലവ് – നീക്കിയിരിപ്പ് & കാൽക്കുലേറ്റർ"
+        subtitle="വരവ് തുകകളും ചെലവ് തുകകളും കൂട്ടി താഴത്തെ ടോട്ടൽ കോളങ്ങളിൽ ടൈപ്പ് ചെയ്യുകയോ കാൽക്കുലേറ്റർ ഉപയോഗിച്ച് നൽകുകയോ ചെയ്യൂ. തെറ്റിയാൽ ഷീൽഡ് പൊട്ടും!"
         done={won}
+        shields={shields}
         onReset={reset}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-        {/* Income Column */}
-        <div className="rounded-2xl bg-emerald-50/80 border border-emerald-200 p-2.5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs font-extrabold text-emerald-950">
-            <span>📥 വരവ്</span>
-            <span className="tabular-nums text-emerald-700">₹{totalIncome.toLocaleString()}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        {/* LEFT: Clear Income & Expense Ledger + Total Inputs */}
+        <div className="lg:col-span-7 space-y-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* Income Table */}
+            <div className="rounded-2xl bg-emerald-50/85 border border-emerald-200 p-2.5 space-y-1.5">
+              <p className="text-xs font-extrabold text-emerald-950 border-b border-emerald-200 pb-1">
+                📥 വരവ് (Income)
+              </p>
+              {INCOME_ITEMS.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 text-xs font-bold text-slate-800 bg-white rounded-lg px-2 py-1 border border-emerald-100"
+                >
+                  <span>{item.emoji} {item.label}</span>
+                  <span className="tabular-nums font-extrabold text-emerald-800">₹{item.amount}</span>
+                </div>
+              ))}
+              <div className="pt-1">
+                <label className="block text-[11px] font-extrabold text-emerald-950 mb-1">
+                  ആകെ വരവ് (Total Income):
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  disabled={won || failed}
+                  value={incInput}
+                  onFocus={() => setActiveField('inc')}
+                  onChange={(e) => setIncInput(e.target.value)}
+                  placeholder="തുക ടൈപ്പ് ചെയ്യൂ..."
+                  className={`w-full px-2.5 py-1.5 rounded-xl border-2 text-sm font-black tabular-nums bg-white ${
+                    activeField === 'inc'
+                      ? 'border-emerald-600 ring-2 ring-emerald-200'
+                      : 'border-emerald-300'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Expense Table */}
+            <div className="rounded-2xl bg-amber-50/85 border border-amber-200 p-2.5 space-y-1.5">
+              <p className="text-xs font-extrabold text-amber-950 border-b border-amber-200 pb-1">
+                📤 ചെലവ് (Expense)
+              </p>
+              {EXPENSE_ITEMS.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between gap-2 text-[11px] font-bold text-slate-800 bg-white rounded-lg px-2 py-1 border border-amber-100"
+                >
+                  <span className="leading-tight">{item.emoji} {item.label}</span>
+                  <span className="tabular-nums font-extrabold text-rose-700 shrink-0">₹{item.amount}</span>
+                </div>
+              ))}
+              <div className="pt-1">
+                <label className="block text-[11px] font-extrabold text-amber-950 mb-1">
+                  ആകെ ചെലവ് (Total Expense):
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  disabled={won || failed}
+                  value={expInput}
+                  onFocus={() => setActiveField('exp')}
+                  onChange={(e) => setExpInput(e.target.value)}
+                  placeholder="തുക ടൈപ്പ് ചെയ്യൂ..."
+                  className={`w-full px-2.5 py-1.5 rounded-xl border-2 text-sm font-black tabular-nums bg-white ${
+                    activeField === 'exp'
+                      ? 'border-amber-600 ring-2 ring-amber-200'
+                      : 'border-amber-300'
+                  }`}
+                />
+              </div>
+            </div>
           </div>
-          {INCOME_ITEMS.map((item) => {
-            const done = checkedInc.includes(item.id);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                disabled={done}
-                onClick={() => {
-                  sound.playPop();
-                  setCheckedInc((p) => [...p, item.id]);
-                }}
-                className={`w-full px-2.5 py-2 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-2 ${
-                  done
-                    ? 'bg-white border-emerald-400 text-emerald-900'
-                    : 'bg-white/90 border-dashed border-emerald-400 text-slate-800 hover:bg-emerald-100'
+
+          {/* Final Balance Input + Verify Button */}
+          <div className="rounded-2xl bg-slate-900 text-white p-3 space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <label className="text-xs font-extrabold text-amber-300 shrink-0">
+                ⚖️ നീക്കിയിരിപ്പ് (വരവ് − ചെലവ്):
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                disabled={won || failed}
+                value={balInput}
+                onFocus={() => setActiveField('bal')}
+                onChange={(e) => setBalInput(e.target.value)}
+                placeholder="ബാക്കി തുക (₹)..."
+                className={`flex-1 px-3 py-1.5 rounded-xl border-2 text-sm font-black tabular-nums text-slate-950 bg-white ${
+                  activeField === 'bal'
+                    ? 'border-amber-400 ring-2 ring-amber-300'
+                    : 'border-slate-600'
                 }`}
+              />
+            </div>
+
+            {!won && !failed && (
+              <button
+                type="button"
+                onClick={handleVerifyLedger}
+                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-black border-b-4 border-emerald-800 shadow-sm cursor-pointer"
               >
-                <span>
-                  {item.emoji} {item.label}
-                </span>
-                <span className="tabular-nums">
-                  {done ? `✅ ₹${item.amount}` : `+ ₹${item.amount}`}
-                </span>
+                ✅ കണക്ക് പരിശോധിക്കാം (Verify Total)
               </button>
-            );
-          })}
+            )}
+          </div>
         </div>
 
-        {/* Expense Column */}
-        <div className="rounded-2xl bg-amber-50/80 border border-amber-200 p-2.5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs font-extrabold text-amber-950">
-            <span>📤 ചെലവ്</span>
-            <span className="tabular-nums text-rose-700">₹{totalExpense.toLocaleString()}</span>
+        {/* RIGHT: Built-In Interactive Calculator right beside the Ledger! */}
+        <div className="lg:col-span-5 rounded-2xl bg-slate-950 border-2 border-slate-700 p-3 text-white space-y-2 shadow-md">
+          <div className="flex items-center justify-between text-[11px] font-extrabold text-amber-300">
+            <span>🧮 കാൽക്കുലേറ്റർ</span>
+            <span className="text-emerald-300">
+              ലക്ഷ്യം:{' '}
+              {activeField === 'inc'
+                ? 'ആകെ വരവ്'
+                : activeField === 'exp'
+                ? 'ആകെ ചെലവ്'
+                : 'നീക്കിയിരിപ്പ്'}
+            </span>
           </div>
-          {EXPENSE_ITEMS.map((item) => {
-            const done = checkedExp.includes(item.id);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                disabled={done}
-                onClick={() => {
-                  sound.playPop();
-                  setCheckedExp((p) => [...p, item.id]);
-                }}
-                className={`w-full px-2.5 py-1.5 rounded-xl border text-xs font-extrabold flex items-center justify-between gap-2 ${
-                  done
-                    ? 'bg-white border-amber-400 text-amber-950'
-                    : 'bg-white/90 border-dashed border-amber-400 text-slate-800 hover:bg-amber-100'
-                }`}
-              >
-                <span className="text-left leading-tight">
-                  {item.emoji} {item.label}
-                </span>
-                <span className="tabular-nums shrink-0">
-                  {done ? `✅ ₹${item.amount}` : `− ₹${item.amount}`}
-                </span>
-              </button>
-            );
-          })}
+          <div className="rounded-xl bg-emerald-950/90 border border-emerald-600/60 px-3 py-2 text-right font-mono text-lg font-black text-emerald-100 tabular-nums overflow-x-auto">
+            {calcExpr}
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {calcButtons.map((btn) => {
+              const isOp = ['+', '-', '*', '='].includes(btn);
+              const isClear = btn === 'C' || btn === '⌫';
+              return (
+                <button
+                  key={btn}
+                  type="button"
+                  disabled={won || failed}
+                  onClick={() => handleCalcPress(btn)}
+                  className={`h-10 rounded-xl font-black text-sm border-b-2 transition-transform active:scale-95 cursor-pointer ${
+                    btn === '='
+                      ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-800'
+                      : isOp
+                      ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-700'
+                      : isClear
+                      ? 'bg-rose-700 hover:bg-rose-600 text-white border-rose-950'
+                      : 'bg-slate-800 hover:bg-slate-700 text-white border-slate-950'
+                  }`}
+                >
+                  {btn === '*' ? '×' : btn === '-' ? '−' : btn}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            disabled={won || failed}
+            onClick={copyCalcToActiveField}
+            className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-black border-b-3 border-sky-800 cursor-pointer"
+          >
+            ⬇️ ഈ സംഖ്യ “
+            {activeField === 'inc'
+              ? 'ആകെ വരവ്'
+              : activeField === 'exp'
+              ? 'ആകെ ചെലവ്'
+              : 'നീക്കിയിരിപ്പ്'}
+            ” കോളത്തിലേക്ക് ഇടൂ
+          </button>
         </div>
       </div>
 
-      {/* Balance Check */}
-      {readyForBalance && !won && (
-        <div className="rounded-2xl bg-slate-900 text-white p-3 space-y-2">
-          <p className="text-xs font-extrabold text-amber-300 tabular-nums">
-            🧮 നീക്കിയിരിപ്പ്: ₹10,000 − ₹8,000 = ?
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {[1500, 2000, 3000].map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => pickBalance(opt)}
-                className="py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold tabular-nums"
-              >
-                ₹{opt.toLocaleString()}
-              </button>
-            ))}
-          </div>
-          {balanceErr && (
-            <p className="text-[11px] font-bold text-rose-300">❌ ഒരിക്കൽ കൂടി കണക്കുകൂട്ടൂ!</p>
-          )}
-        </div>
+      {feedback && !failed && (
+        <p
+          className={`text-xs font-extrabold rounded-xl px-3 py-2 border ${
+            won
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+              : 'bg-amber-50 border-amber-300 text-amber-950'
+          }`}
+        >
+          {feedback}
+        </p>
+      )}
+
+      {failed && (
+        <GameDefeatBurstOverlay
+          title="🧮 കണക്ക് 3 തവണ തെറ്റി!"
+          reason="കാൽക്കുലേറ്റർ ഉപയോഗിച്ച് വരവ് (2500+3000+4500), ചെലവ് (2000+800+1200+1500+2500), നീക്കിയിരിപ്പ് (വരവ്−ചെലവ്) എന്നിവ കൃത്യമായി കണക്കുകൂട്ടൂ!"
+          onRetry={reset}
+        />
       )}
 
       {won && <GameDoneNextBar onReplay={reset} />}
@@ -1423,11 +1707,13 @@ export const ProgramBudgetCheeraniGame: React.FC<PracticalGameProps> = ({
 /* ============================================================================
  * 7. POST-EVENT REVIEW REPORT GAME (പരിപാടി അവലോകന റിപ്പോർട്ട്)
  * ========================================================================== */
-const REVIEW_SECTIONS = [
-  { id: 'attendance', emoji: '👥', label: '1. പങ്കാളിത്തവും സംഘാടന വിലയിരുത്തലും' },
-  { id: 'accounts', emoji: '💰', label: '2. വരവ്–ചെലവ്–നീക്കിയിരിപ്പ് അവതരണം' },
-  { id: 'cleanup', emoji: '🏟️', label: '3. ചീരണി & വിഖായ ശുചീകരണ അവലോകനം' },
-  { id: 'minutes', emoji: '📝', label: '4. മിനിറ്റ്സ് ഒപ്പും മേൽഘടക റിപ്പോർട്ടും' },
+const REVIEW_OPTIONS = [
+  { id: 'attendance', emoji: '👥', label: 'പങ്കാളിത്തവും സംഘാടന വിലയിരുത്തലും', valid: true },
+  { id: 'bad_hide', emoji: '🙈', label: 'കണക്കുകൾ രഹസ്യമായി ഒളിപ്പിച്ചുവെക്കൽ', valid: false },
+  { id: 'accounts', emoji: '💰', label: 'വരവ്–ചെലവ്–നീക്കിയിരിപ്പ് സുതാര്യ അവതരണം', valid: true },
+  { id: 'cleanup', emoji: '🏟️', label: 'ചീരണി & വിഖായ ശുചീകരണ അവലോകനം', valid: true },
+  { id: 'bad_litter', emoji: '🗑️', label: 'മാലിന്യം ഗ്രൗണ്ടിൽ ഉപേക്ഷിച്ച് മടങ്ങൽ', valid: false },
+  { id: 'minutes', emoji: '📝', label: 'മിനിറ്റ്സ് ഒപ്പും മേൽഘടക റിപ്പോർട്ടും', valid: true },
 ];
 
 export const ProgramReviewReportGame: React.FC<PracticalGameProps> = ({
@@ -1436,18 +1722,30 @@ export const ProgramReviewReportGame: React.FC<PracticalGameProps> = ({
   onComplete,
   isCompleted = false,
 }) => {
+  const validTotal = REVIEW_OPTIONS.filter((s) => s.valid).length;
   const [doneIds, setDoneIds] = useState<string[]>(
-    isCompleted ? REVIEW_SECTIONS.map((s) => s.id) : []
+    isCompleted ? REVIEW_OPTIONS.filter((s) => s.valid).map((s) => s.id) : []
   );
+  const [shields, setShields] = useState(3);
+  const [warn, setWarn] = useState<string | null>(null);
   const [won, setWon] = useState(isCompleted);
+  const failed = shields <= 0 && !won;
 
-  const toggleSection = (id: string) => {
+  const toggleSection = (sec: (typeof REVIEW_OPTIONS)[number]) => {
     sound.unlockAudio();
-    if (doneIds.includes(id)) return;
+    if (failed || won || doneIds.includes(sec.id)) return;
+    if (!sec.valid) {
+      sound.playError();
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      setWarn(`❌ “${sec.label}” നല്ല സംഘടനാ രീതിയല്ല! 1 ഷീൽഡ് പൊട്ടി (ബാക്കി: ${rem})`);
+      return;
+    }
     sound.playPop();
-    const next = [...doneIds, id];
+    setWarn(null);
+    const next = [...doneIds, sec.id];
     setDoneIds(next);
-    if (next.length === REVIEW_SECTIONS.length && !won) {
+    if (next.length === validTotal && !won) {
       setWon(true);
       sound.playHoist();
       onAwardXp(30, `review_report_${xpKey}`);
@@ -1460,30 +1758,33 @@ export const ProgramReviewReportGame: React.FC<PracticalGameProps> = ({
   const reset = () => {
     sound.playClick();
     setDoneIds([]);
+    setShields(3);
+    setWarn(null);
     setWon(false);
   };
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm">
+    <div className="relative bg-white rounded-2xl border-2 border-emerald-200 p-3 space-y-2.5 shadow-sm overflow-hidden">
       <CompactGameBar
         icon="📋"
-        progress={`${doneIds.length}/${REVIEW_SECTIONS.length}`}
+        progress={`${doneIds.length}/${validTotal}`}
         title="📋 പരിപാടി അവലോകന റിപ്പോർട്ട്"
-        subtitle="പരിപാടി കഴിഞ്ഞാൽ 4 പ്രധാന ഭാഗങ്ങളും ചേർത്ത് ഔദ്യോഗിക അവലോകന റിപ്പോർട്ട് പൂർത്തിയാക്കൂ!"
+        subtitle="അവലോകന റിപ്പോർട്ടിൽ ഉൾപ്പെടുത്തേണ്ട 4 ശരിയായ ഭാഗങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കൂ — തെറ്റായവ തിരഞ്ഞെടുത്താൽ ഷീൽഡ് പൊട്ടും!"
         done={won}
+        shields={shields}
         onReset={reset}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {REVIEW_SECTIONS.map((sec) => {
+        {REVIEW_OPTIONS.map((sec) => {
           const done = doneIds.includes(sec.id);
           return (
             <button
               key={sec.id}
               type="button"
-              disabled={done}
-              onClick={() => toggleSection(sec.id)}
-              className={`p-3 rounded-2xl border-2 text-left flex items-center justify-between gap-2 transition-all ${
+              disabled={done || failed}
+              onClick={() => toggleSection(sec)}
+              className={`p-3 rounded-2xl border-2 text-left flex items-center justify-between gap-2 transition-all cursor-pointer ${
                 done
                   ? 'bg-emerald-50 border-emerald-500 text-emerald-950'
                   : 'bg-amber-50/70 border-dashed border-amber-400 text-slate-900 hover:bg-amber-100'
@@ -1497,6 +1798,21 @@ export const ProgramReviewReportGame: React.FC<PracticalGameProps> = ({
           );
         })}
       </div>
+
+      {warn && !failed && (
+        <p className="text-xs font-extrabold text-rose-800 bg-rose-50 border border-rose-300 rounded-xl px-3 py-1.5">
+          {warn}
+        </p>
+      )}
+
+      {failed && (
+        <GameDefeatBurstOverlay
+          title="📋 അവലോകന റിപ്പോർട്ട് നിരസിച്ചു!"
+          reason="സുതാര്യമായ കണക്ക്, പങ്കാളിത്തം, ശുചീകരണം, മിനിറ്റ്സ് എന്നീ 4 ശരിയായ കാര്യങ്ങൾ മാത്രം തിരഞ്ഞെടുക്കൂ!"
+          scoreText={`📋 ${doneIds.length}/${validTotal}`}
+          onRetry={reset}
+        />
+      )}
 
       {won && <GameDoneNextBar onReplay={reset} />}
     </div>

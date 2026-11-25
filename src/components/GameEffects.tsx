@@ -39,6 +39,8 @@ import { RunHistoryEntry } from '../utils/gameStorage';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
 import { useLessonFlow } from '../utils/lessonFlowContext';
 import { scrollDirectToQuiz } from './LessonCheckQuiz';
+import { LessonAnimatedBanner } from './LessonAnimatedBanner';
+import { GuideGameBrandLogo } from './GameLivesHud';
 
 interface GlitterBurstProps {
   triggerKey: number;
@@ -935,13 +937,21 @@ export const SettingsModal: React.FC<{
         )}
 
         {/* About This App */}
-        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-950">
-            <Info className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>ആപ്പിനെക്കുറിച്ച് (About)</span>
+        <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+          <div className="flex items-center gap-3">
+            <GuideGameBrandLogo size="sm" />
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-950">
+                <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                <span>ആപ്പിനെക്കുറിച്ച് (About)</span>
+              </div>
+              <p className="text-sm font-black text-emerald-950">
+                ഗൈഡ് ഗെയിം · Guide Game
+              </p>
+            </div>
           </div>
           <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed">
-            കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും ഉദാഹരണങ്ങളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>SKSSF ഗൈഡ് ഗെയിം</strong>.
+            കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും കളികളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>ഗൈഡ് ഗെയിം (Guide Game)</strong>.
           </p>
         </div>
 
@@ -1016,6 +1026,7 @@ export const CollapsibleLessonDrawer: React.FC<{
   } = useLessonFlow();
   const [open, setOpen] = useState(defaultOpen);
   const [showInfo, setShowInfo] = useState(false);
+  const [showFullNotes, setShowFullNotes] = useState(false);
 
   // Register presence of this lesson drawer on the page so LessonCheckQuiz enforces confirmation
   useEffect(() => {
@@ -1027,6 +1038,7 @@ export const CollapsibleLessonDrawer: React.FC<{
   useEffect(() => {
     setOpen(defaultOpen);
     setShowInfo(false);
+    setShowFullNotes(false);
   }, [activeLessonId, defaultOpen]);
 
   // Allow other cards (e.g., locked Quiz or Skip Game) to automatically open this Lesson drawer
@@ -1174,7 +1186,50 @@ export const CollapsibleLessonDrawer: React.FC<{
             className="overflow-hidden border-t border-emerald-100 bg-white"
           >
             <div className="p-3.5 sm:p-5 space-y-4">
-              {children}
+              {/* Relevant Animated Visual Banner + Concise Quiz-Ready Summary for EVERY Lesson */}
+              <LessonAnimatedBanner
+                lessonId={activeLessonId}
+                title={title}
+                emoji={emoji}
+              />
+
+              {/* Toggleable Detailed Lesson Notes so Learners Never Face Walls of Text */}
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setShowFullNotes((v) => !v);
+                  }}
+                  aria-expanded={showFullNotes}
+                  className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-xs font-extrabold text-emerald-950 transition-colors cursor-pointer"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                    {showFullNotes
+                      ? 'വിശദമായ കുറിപ്പുകൾ ചുരുക്കാം'
+                      : 'കൂടുതൽ വിശദമായി വായിക്കാം (വിശദ കുറിപ്പുകൾ)'}
+                  </span>
+                  {showFullNotes ? (
+                    <ChevronUp className="w-4 h-4 text-emerald-700 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-emerald-700 shrink-0" />
+                  )}
+                </button>
+                <AnimatePresence initial={false}>
+                  {showFullNotes && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-1 space-y-3">{children}</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Mandatory Lesson Confirmation CTA to Unlock Quiz */}
               <div className="pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-2.5">

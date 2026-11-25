@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CheckCircle2, RotateCcw, Volume2, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 
 export interface EraArtifactItem {
   id: string;
@@ -190,13 +191,13 @@ const RealisticChestUnlockGame: React.FC<{
               if (nextLives <= 0) {
                 setFailed(true);
                 setPlaying(false);
-                setStatusMsg('💔 കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും ഉരു തട്ടി! വീണ്ടും ശ്രമിക്കാം.');
+                setStatusMsg('💥 കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും ഉരു തട്ടി! വീണ്ടും ശ്രമിക്കാം.');
                 return [];
               } else {
                 setStatusMsg(
                   obj.kind === 'storm'
-                    ? `⛈️ കൊടുങ്കാറ്റ് അടിച്ചു! ശ്രദ്ധിച്ച് തുഴയൂ (❤️ ${nextLives})`
-                    : `🪨 പാറക്കെട്ടിൽ തട്ടി! ലെയിൻ മാറ്റൂ (❤️ ${nextLives})`
+                    ? `⛈️ കൊടുങ്കാറ്റ് അടിച്ചു! ശ്രദ്ധിച്ച് തുഴയൂ (🛡️ ${nextLives})`
+                    : `🪨 പാറക്കെട്ടിൽ തട്ടി! ലെയിൻ മാറ്റൂ (🛡️ ${nextLives})`
                 );
               }
             }
@@ -248,11 +249,7 @@ const RealisticChestUnlockGame: React.FC<{
         <span className="text-xs font-extrabold text-amber-300 tabular-nums">
           ⛵ 1921–1926 ചരിത്ര കടൽയാത്ര · 📜 {collectedCount}/{artifacts.length}
         </span>
-        <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-lg bg-rose-500/20 border border-rose-400/50">
-          {Array.from({ length: 3 })
-            .map((_, i) => (i < lives ? '❤️' : '💔'))
-            .join('')}
-        </span>
+        <GameShatterLives lives={lives} maxLives={3} dark compact />
       </div>
 
       {/* Animated Malabar Sea Stage */}
@@ -371,20 +368,11 @@ const RealisticChestUnlockGame: React.FC<{
 
         {/* Fail Overlay */}
         {failed && !allCollected && (
-          <div className="absolute inset-0 z-30 bg-rose-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3">
-            <div className="text-4xl">💔</div>
-            <h4 className="text-base font-extrabold text-rose-200">ഉരുവിന് 3 തവണ ആഘാതമേറ്റു!</h4>
-            <p className="text-xs font-semibold text-rose-100 max-w-xs">
-              കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കി ചരിത്ര ചുരുളുകൾ ശേഖരിക്കാൻ വീണ്ടും ശ്രമിക്കാം.
-            </p>
-            <button
-              type="button"
-              onClick={startVoyage}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" /> വീണ്ടും തുഴയാം
-            </button>
-          </div>
+          <GameDefeatBurstOverlay
+            title="ഉരുവിന് 3 തവണ ആഘാതമേറ്റു!"
+            reason="കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കി ചരിത്ര ചുരുളുകൾ ശേഖരിക്കാൻ വീണ്ടും ശ്രമിക്കാം."
+            onRetry={startVoyage}
+          />
         )}
       </div>
 
@@ -1006,7 +994,7 @@ const VintageLandlineBroadcastGame: React.FC<{
       } else {
         setStatusBanner({
           tone: 'err',
-          text: `❌ “${digit}” തെറ്റാണ്! ഇനി ഡയൽ ചെയ്യേണ്ട അക്കം “${nextExpected}” ആണ് (ബാക്കി ❤️ ${nextHearts})`,
+          text: `❌ “${digit}” തെറ്റാണ്! ഇനി ഡയൽ ചെയ്യേണ്ട അക്കം “${nextExpected}” ആണ് (ബാക്കി കവചം: 🛡️ ${nextHearts})`,
         });
       }
     }
@@ -1195,10 +1183,7 @@ const VintageLandlineBroadcastGame: React.FC<{
           <span className="text-xs sm:text-sm font-extrabold text-amber-300 tabular-nums">
             ☎️ കോളുകൾ: {collectedCount}/{artifacts.length}
           </span>
-          <span className="px-2 py-0.5 rounded-lg bg-rose-950/80 border border-rose-400/40 text-xs font-extrabold">
-            {'❤️'.repeat(hearts)}
-            {'🖤'.repeat(Math.max(0, 3 - hearts))}
-          </span>
+          <GameShatterLives lives={hearts} maxLives={3} dark compact />
         </div>
         <div className="flex items-center gap-2">
           <span
@@ -1583,23 +1568,15 @@ const VintageLandlineBroadcastGame: React.FC<{
 
         {/* GAME OVER OVERLAY */}
         {failedReason && !allHeard && (
-          <div className="absolute inset-0 z-30 bg-slate-950/92 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center space-y-3">
-            <span className="text-5xl">📵</span>
-            <h4 className="text-lg sm:text-xl font-black text-rose-300">
-              {failedReason === 'time' ? 'സമയം തീർന്നു — കോൾ കട്ടായി!' : '3 തവണ തെറ്റായ നമ്പർ — ഗെയിം ഔട്ട്!'}
-            </h4>
-            <p className="text-xs sm:text-sm font-semibold text-slate-300 max-w-sm">
-              പഴയ റോട്ടറി ഫോണിൽ നമ്പർ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് 🛑 സ്റ്റോപ്പ് വരെ കറക്കി വിട്ടാലാണ് അക്കം ഡയൽ ആവുക. വീണ്ടും ശ്രമിക്കൂ!
-            </p>
-            <button
-              type="button"
-              onClick={handleRetryGame}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
-            >
-              <RotateCcw className="w-4 h-4" />
-              🔄 വീണ്ടും ഡയൽ ചെയ്യാം
-            </button>
-          </div>
+          <GameDefeatBurstOverlay
+            title={
+              failedReason === 'time'
+                ? 'സമയം തീർന്നു — കോൾ കട്ടായി!'
+                : '3 തവണ തെറ്റായ നമ്പർ — ഗെയിം ഔട്ട്!'
+            }
+            reason="പഴയ റോട്ടറി ഫോണിൽ നമ്പർ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് 🛑 സ്റ്റോപ്പ് വരെ കറക്കി വിട്ടാലാണ് അക്കം ഡയൽ ആവുക. വീണ്ടും ശ്രമിക്കൂ!"
+            onRetry={handleRetryGame}
+          />
         )}
 
         {/* ALL 3 CALLS COMPLETED VICTORY BANNER */}

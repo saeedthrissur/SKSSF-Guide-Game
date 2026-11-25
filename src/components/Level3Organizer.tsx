@@ -27,6 +27,7 @@ import {
 } from './GameEffects';
 import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameFullscreenShell } from './GameFullscreenShell';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
@@ -669,10 +670,12 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
                 <span className="px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-900">
                   🎈 {caughtBubbles.length}/{SKY_BUBBLES.length}
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                  {'❤️'.repeat(Math.max(0, 3 - skyMistakes))}
-                  {'💔'.repeat(Math.min(3, skyMistakes))}
-                </span>
+                <GameShatterLives
+                  lives={Math.max(0, 3 - skyMistakes)}
+                  maxLives={3}
+                  dark={false}
+                  compact
+                />
                 {sortCombo > 1 && (
                   <span className="inline-flex items-center gap-0.5 text-xs font-extrabold text-red-700">
                     <Flame className="w-3.5 h-3.5 text-orange-500" /> x{sortCombo}
@@ -682,23 +685,18 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
             </div>
 
             {skyFailed && (
-              <div className="p-3 rounded-xl bg-rose-50 border-2 border-rose-400 flex items-center justify-between gap-3">
-                <span className="text-sm font-extrabold text-rose-900">💔 0/3</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setSkyMistakes(0);
-                    setSortCombo(0);
-                    setCaughtBubbles([]);
-                    setSkyMsg(null);
-                  }}
-                  aria-label="വീണ്ടും ശ്രമിക്കാം"
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700"
-                >
-                  🔄
-                </button>
-              </div>
+              <GameDefeatBurstOverlay
+                title="നന്മ വേട്ട പരാജയപ്പെട്ടു!"
+                reason="3 തെറ്റുകൾ സംഭവിച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — നല്ല ഗുണങ്ങൾ പിടിച്ചും തിന്മകൾ ഒഴിവാക്കിയും വീണ്ടും കളിക്കാം!"
+                onRetry={() => {
+                  sound.playClick();
+                  setSkyMistakes(0);
+                  setSortCombo(0);
+                  setCaughtBubbles([]);
+                  setSkyMsg(null);
+                }}
+                overlay={false}
+              />
             )}
 
             <AnimatePresence mode="wait">
@@ -1049,10 +1047,12 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                {'❤️'.repeat(Math.max(0, 3 - deskMistakes))}
-                {'💔'.repeat(Math.min(3, deskMistakes))}
-              </span>
+              <GameShatterLives
+                lives={Math.max(0, 3 - deskMistakes)}
+                maxLives={3}
+                dark={false}
+                compact
+              />
               <div className="flex gap-1">
               {DESK_TASKS.map((t, i) => (
                 <button
@@ -1079,27 +1079,18 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           </div>
 
           {deskFailed && (
-            <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-extrabold text-rose-900">💥 ഓഫീസ് ഫയൽ ടാസ്ക് പരാജയപ്പെട്ടു!</p>
-                <p className="text-xs font-semibold text-rose-800">
-                  3 ഫയലുകൾ തെറ്റായ ഡെസ്കിൽ വെച്ചു. പ്രസിഡന്റ്, സെക്രട്ടറി, ട്രഷറർ ചുമതലകൾ കൃത്യമായി നൽകാൻ വീണ്ടും ശ്രമിക്കാം!
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClick();
-                  setDeskMistakes(0);
-                  setPlacedTasks([]);
-                  setTaskIdx(0);
-                  setDeskMsg(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
-              >
-                🔄 വീണ്ടും ശ്രമിക്കാം
-              </button>
-            </div>
+            <GameDefeatBurstOverlay
+              title="ഓഫീസ് ഫയൽ ടാസ്ക് പരാജയപ്പെട്ടു!"
+              reason="3 ഫയലുകൾ തെറ്റായ ഡെസ്കിൽ വെച്ചു. പ്രസിഡന്റ്, സെക്രട്ടറി, ട്രഷറർ ചുമതലകൾ കൃത്യമായി നൽകാൻ വീണ്ടും ശ്രമിക്കാം!"
+              onRetry={() => {
+                sound.playClick();
+                setDeskMistakes(0);
+                setPlacedTasks([]);
+                setTaskIdx(0);
+                setDeskMsg(null);
+              }}
+              overlay={false}
+            />
           )}
 
           <AnimatePresence mode="wait">

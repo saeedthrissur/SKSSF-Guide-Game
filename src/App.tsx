@@ -61,6 +61,7 @@ import {
   FloatingPageNavigator,
   LessonFlowProvider,
 } from './utils/lessonFlowContext';
+import { GuideGameAboutModal, GuideGameBrandLogo } from './components/GameLivesHud';
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -139,6 +140,7 @@ export default function App() {
     () => sound.getSnapshot().ambiencePlaying
   );
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [aboutModalOpen, setAboutModalOpen] = useState<boolean>(false);
   const [scoreModalOpen, setScoreModalOpen] = useState<boolean>(false);
   const [badgeStudioOpen, setBadgeStudioOpen] = useState<boolean>(false);
   const [badgeStudioPreset, setBadgeStudioPreset] = useState<string>('starter_member');
@@ -616,14 +618,13 @@ export default function App() {
             onClick={() => {
               sound.unlockAudio();
               sound.playClick();
-              setLessonsMapOpen(false);
-              setStage('prologue');
+              setAboutModalOpen(true);
             }}
-            className="text-left shrink-0"
+            aria-label="ഗൈഡ് ഗെയിം — ഹോം & വിവരണം"
+            title="ഗൈഡ് ഗെയിം (Guide Game)"
+            className="inline-flex items-center gap-2 text-left shrink-0 rounded-xl hover:opacity-90 active:scale-95 transition-transform cursor-pointer"
           >
-            <h1 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-tight whitespace-nowrap">
-              ✨ SKSSF
-            </h1>
+            <GuideGameBrandLogo size="sm" />
           </button>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -1129,9 +1130,28 @@ export default function App() {
         onRestartFromStart={handleResetCurrentGame}
       />
 
+      <GuideGameAboutModal
+        open={aboutModalOpen}
+        onClose={() => setAboutModalOpen(false)}
+        onGoHome={() => {
+          setLessonsMapOpen(false);
+          setPrologueInitialLessonId('prologue_curiosity');
+          setStage('prologue');
+          setActiveLessonId('prologue_curiosity');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenAllLessons={() => {
+          setLessonsMapOpen(true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        completedCount={completedLessonIds.length}
+        totalLessons={ALL_LESSONS.length}
+        xp={xp}
+      />
+
       <footer className="border-t border-slate-200 bg-white py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
         <p>
-          SKSSF ഗൈഡ് ഗെയിം · നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? · “വിജ്ഞാനം, വിനയം, സേവനം”
+          ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”
         </p>
       </footer>
       <FloatingPageNavigator visible={!lessonsMapOpen} />

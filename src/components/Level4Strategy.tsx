@@ -31,6 +31,7 @@ import {
 } from './GameEffects';
 import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameFullscreenShell } from './GameFullscreenShell';
+import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { ViqayaRescueVehicleActivity } from './InteractiveMiniGames';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
@@ -206,12 +207,16 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   const [crisisIdx, setCrisisIdx] = useState(0);
   const [solvedCrisis, setSolvedCrisis] = useState<string[]>([]);
   const [crisisFb, setCrisisFb] = useState<{ ok: boolean; text: string } | null>(null);
+  const [crisisMistakes, setCrisisMistakes] = useState(0);
+  const crisisFailed = crisisMistakes >= 3 && solvedCrisis.length < STRATEGY_SCENARIOS.length;
 
   // Cyber Shield Single-Phone Feed Simulator
   const [activeSocialIdx, setActiveSocialIdx] = useState(0);
   const [solvedSocial, setSolvedSocial] = useState<string[]>([]);
   const [socialFb, setSocialFb] = useState<Record<string, { ok: boolean; text: string }>>({});
   const [cyberToast, setCyberToast] = useState<{ ok: boolean; text: string } | null>(null);
+  const [cyberMistakes, setCyberMistakes] = useState(0);
+  const cyberFailed = cyberMistakes >= 3 && solvedSocial.length < SOCIAL_ETHICS_CASES.length;
   const [completedSceneGames, setCompletedSceneGames] = useState<string[]>([]);
 
   const selectedTierIndex = Math.max(
@@ -534,10 +539,12 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 </h3>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-extrabold text-rose-900">
-                  {'❤️'.repeat(Math.max(0, 2 - bagMistakes))}
-                  {'💔'.repeat(Math.min(2, bagMistakes))}
-                </span>
+                <GameShatterLives
+                  lives={Math.max(0, 2 - bagMistakes)}
+                  maxLives={2}
+                  dark={false}
+                  compact
+                />
                 <span className="text-xs font-bold text-emerald-800 tabular-nums">
                   {packedGear.length}/4
                 </span>
@@ -545,26 +552,17 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             </div>
 
             {bagFailed && (
-              <div className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-extrabold text-rose-900">💥 സമ്മേളന ബാഗ് പാക്ക് പരാജയപ്പെട്ടു!</p>
-                  <p className="text-xs font-semibold text-rose-800">
-                    2 തെറ്റായ കാര്യങ്ങൾ ബാഗിലിട്ടു. ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ മാത്രം തിരഞ്ഞെടുത്ത് വീണ്ടും ശ്രമിക്കാം!
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.playClick();
-                    setBagMistakes(0);
-                    setPackedGear([]);
-                    setGearMsg(null);
-                  }}
-                  className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700"
-                >
-                  🔄 വീണ്ടും ശ്രമിക്കാം
-                </button>
-              </div>
+              <GameDefeatBurstOverlay
+                title="സമ്മേളന ബാഗ് പാക്ക് പരാജയപ്പെട്ടു!"
+                reason="2 തെറ്റായ കാര്യങ്ങൾ ബാഗിലിട്ടു. ശരിയായ 4 സമ്മേളന സാമഗ്രികൾ മാത്രം തിരഞ്ഞെടുത്ത് വീണ്ടും ശ്രമിക്കാം!"
+                onRetry={() => {
+                  sound.playClick();
+                  setBagMistakes(0);
+                  setPackedGear([]);
+                  setGearMsg(null);
+                }}
+                overlay={false}
+              />
             )}
 
             <AnimatePresence mode="wait">
@@ -712,16 +710,11 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
         </CollapsibleLessonDrawer>
       )}
 
-      {/* 3. COLLAPSIBLE LESSON: SPIRAL TOWER CLIMB */}
+      {/* 3. INTERACTIVE EXPLORER + LESSON: SPIRAL TOWER CLIMB */}
       {activeTab === 'climb' && (
-        <CollapsibleLessonDrawer
-          key="l4-drawer-climb"
-          emoji="🗼"
-          title="ആഗോള ഘടന · 7 പടികൾ · പാഠം"
-          badgeText={`${exploredTiers.length}/7`}
-        >
+        <div className="space-y-4">
         <GameFullscreenShell
-          title="🗼 ആഗോള ഘടനാ ഗോപുരം"
+          title="🗼 ആഗോള ഘടനാ ഗോപുരം (7 പടികൾ)"
           subtitle="യൂണിറ്റ് മുതൽ ഗ്ലോബൽ / SIC വരെ"
         >
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
@@ -909,7 +902,30 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           </motion.div>
         </div>
         </GameFullscreenShell>
+        <CollapsibleLessonDrawer
+          key="l4-drawer-climb"
+          emoji="🗼"
+          title="ആഗോള ഘടന · 7 പടികൾ · പാഠം"
+          badgeText={`${exploredTiers.length}/7`}
+          onSpeak={() =>
+            narrator.speak(
+              'SKSSF സംഘടന യൂണിറ്റ്, ക്ലസ്റ്റർ, മേഖല, ജില്ല, സംസ്ഥാനം, ദേശീയം, പ്രവാസി എസ് ഐ സി എന്നിങ്ങനെ ഏഴ് പടികളിലൂടെ ലോകമെമ്പാടും വ്യാപിച്ചു കിടക്കുന്നു.',
+              '🗼 ആഗോള ഘടന'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {HIERARCHY_NODES.map((node, idx) => (
+              <div key={node.id} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+                <p className="text-xs font-extrabold text-emerald-950">
+                  {TIER_EMOJIS[idx]} {node.tier}. {node.malayalam}
+                </p>
+                <p className="text-[11px] text-slate-700 leading-relaxed">{node.keyRole}</p>
+              </div>
+            ))}
+          </div>
         </CollapsibleLessonDrawer>
+        </div>
       )}
 
       {/* 3. COLLAPSIBLE LESSON: LEADERSHIP COMPASS */}
@@ -998,19 +1014,13 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
         </CollapsibleLessonDrawer>
       )}
 
-      {/* 3. COLLAPSIBLE LESSON: CRISIS SIMULATOR */}
-
-      {/* 2. COLLAPSIBLE LESSON: CRISIS SIMULATOR */}
+      {/* 3. INTERACTIVE SIMULATOR + LESSON: CRISIS SIMULATOR */}
       {activeTab === 'crisis' && (
-        <CollapsibleLessonDrawer
-          key="l4-drawer-crisis"
-          emoji="🎭"
-          title="പ്രതിസന്ധി പരിഹാരം · പാഠം"
-          badgeText={`${solvedCrisis.length}/3`}
-        >
+        <div className="space-y-4">
         <GameFullscreenShell
-          title="🎭 പ്രതിസന്ധി പരിഹാരം"
-          subtitle="ശരിയായ തീരുമാനം തിരഞ്ഞെടുക്കൂ"
+          title="🎭 പ്രതിസന്ധി പരിഹാരം സിമുലേറ്റർ"
+          subtitle="ശരിയായ നേതൃത്വ തീരുമാനം തിരഞ്ഞെടുക്കൂ (3 കവചങ്ങൾ)"
+          isGameDone={solvedCrisis.length === STRATEGY_SCENARIOS.length}
         >
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
@@ -1022,33 +1032,56 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                   🎭 സാഹസിക നേതൃത്വ വെല്ലുവിളി ({solvedCrisis.length}/3)
                 </h3>
               </div>
-              <div className="flex gap-1.5">
-                {STRATEGY_SCENARIOS.map((sc, i) => (
-                  <button
-                    key={sc.id}
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setCrisisIdx(i);
-                      setCrisisFb(null);
-                      narrator.speak(sc.speech, sc.title);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold border ${
-                      i === crisisIdx
-                        ? 'bg-red-900 text-white border-red-900'
-                        : solvedCrisis.includes(sc.id)
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-slate-50 text-slate-600 border-slate-200'
-                    }`}
-                  >
-                    സാഹസികത {i + 1}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <GameShatterLives
+                  lives={Math.max(0, 3 - crisisMistakes)}
+                  maxLives={3}
+                  dark={false}
+                  compact
+                />
+                <div className="flex gap-1.5">
+                  {STRATEGY_SCENARIOS.map((sc, i) => (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        setCrisisIdx(i);
+                        setCrisisFb(null);
+                        narrator.speak(sc.speech, sc.title);
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border ${
+                        i === crisisIdx
+                          ? 'bg-red-900 text-white border-red-900'
+                          : solvedCrisis.includes(sc.id)
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          : 'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      സാഹസികത {i + 1}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
+            {crisisFailed && (
+              <GameDefeatBurstOverlay
+                title="പ്രതിസന്ധി പരിഹാരം പരാജയപ്പെട്ടു!"
+                reason="3 തെറ്റായ തീരുമാനങ്ങൾ എടുത്തതിനാൽ കവചങ്ങൾ തകർന്നു — LPC (നേതാവ്–പദ്ധതി–ആശയവിനിമയം) പാലിച്ച് വീണ്ടും ശ്രമിക്കാം!"
+                onRetry={() => {
+                  sound.playClick();
+                  setCrisisMistakes(0);
+                  setSolvedCrisis([]);
+                  setCrisisIdx(0);
+                  setCrisisFb(null);
+                }}
+                overlay={false}
+              />
+            )}
+
             <AnimatePresence mode="wait">
-              {crisisFb && (
+              {crisisFb && !crisisFailed && (
                 <motion.div
                   key={crisisFb.text}
                   initial={{ opacity: 0, y: -6 }}
@@ -1083,68 +1116,95 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
               )}
             </AnimatePresence>
 
-            <motion.div
-              key={activeCrisis.id}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-bold text-red-900">{activeCrisis.category}</p>
-                <button
-                  type="button"
-                  onClick={() => narrator.speak(activeCrisis.speech, activeCrisis.title)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-[11px] font-bold"
-                >
-                  <Volume2 className="w-3 h-3" /> കേൾക്കാം
-                </button>
-              </div>
-              <p className="text-sm font-bold text-slate-900 leading-relaxed">
-                {activeCrisis.scenario}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {activeCrisis.options.map((opt) => (
+            {!crisisFailed && (
+              <motion.div
+                key={activeCrisis.id}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-red-900">{activeCrisis.category}</p>
                   <button
-                    key={opt.label}
                     type="button"
-                    onClick={() => {
-                      if (opt.isCorrect) {
-                        sound.playSuccess();
-                        if (!solvedCrisis.includes(activeCrisis.id)) {
-                          setSolvedCrisis((prev) => [...prev, activeCrisis.id]);
-                          onAwardXp(35, `l4_crisis_${activeCrisis.id}`);
-                        }
-                        triggerGlitter('🎉 കൃത്യമായ തീരുമാനം! +35 XP');
-                      } else {
-                        sound.playError();
-                      }
-                      narrator.speak(opt.feedbackSpeech, activeCrisis.title);
-                      setCrisisFb({ ok: opt.isCorrect, text: opt.feedback });
-                    }}
-                    className="text-left p-3.5 rounded-xl bg-white border border-b-2 border-slate-200 hover:border-emerald-600 text-xs sm:text-sm font-semibold text-slate-800 card-3d-tilt"
+                    onClick={() => narrator.speak(activeCrisis.speech, activeCrisis.title)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 text-amber-950 text-[11px] font-bold"
                   >
-                    {opt.label}
+                    <Volume2 className="w-3 h-3" /> കേൾക്കാം
                   </button>
-                ))}
-              </div>
-            </motion.div>
+                </div>
+                <p className="text-sm font-bold text-slate-900 leading-relaxed">
+                  {activeCrisis.scenario}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {activeCrisis.options.map((opt) => (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => {
+                        if (opt.isCorrect) {
+                          sound.playSuccess();
+                          if (!solvedCrisis.includes(activeCrisis.id)) {
+                            setSolvedCrisis((prev) => [...prev, activeCrisis.id]);
+                            onAwardXp(35, `l4_crisis_${activeCrisis.id}`);
+                          }
+                          triggerGlitter('🎉 കൃത്യമായ തീരുമാനം! +35 XP');
+                        } else {
+                          sound.playError();
+                          setCrisisMistakes((m) => Math.min(3, m + 1));
+                        }
+                        narrator.speak(opt.feedbackSpeech, activeCrisis.title);
+                        setCrisisFb({ ok: opt.isCorrect, text: opt.feedback });
+                      }}
+                      className="text-left p-3.5 rounded-xl bg-white border border-b-2 border-slate-200 hover:border-emerald-600 text-xs sm:text-sm font-semibold text-slate-800 card-3d-tilt"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
         </GameFullscreenShell>
+
+        <CollapsibleLessonDrawer
+          key="l4-drawer-crisis"
+          emoji="🎭"
+          title="പ്രതിസന്ധി പരിഹാരം (LPC) · പാഠം"
+          badgeText={`${solvedCrisis.length}/3`}
+          onSpeak={() =>
+            narrator.speak(
+              'പ്രതിസന്ധി ഘട്ടങ്ങളിൽ ഫോൺ സ്വിച്ച് ഓഫ് ചെയ്യാതെ, നേതാവ്, പദ്ധതി, ആശയവിനിമയം (LPC) എന്നീ മൂന്ന് തൂണുകളിലൂടെ ശാന്തമായി പ്രശ്നം പരിഹരിക്കണം.',
+              '🎭 പ്രതിസന്ധി പരിഹാരം'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+              <p className="text-xs font-extrabold text-emerald-950">🧭 Leader (നേതാവ്)</p>
+              <p className="text-[11px] text-slate-700">പതറാതെ ഉത്തരവാദിത്തം ഏറ്റെടുത്ത് ടീമിനെ നയിക്കുക.</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1">
+              <p className="text-xs font-extrabold text-amber-950">📋 Plan (പദ്ധതി)</p>
+              <p className="text-[11px] text-slate-700">വസ്തുതകൾ പരിശോധിച്ചു ഉടൻ പ്രായോഗിക പരിഹാരം തയ്യാറാക്കുക.</p>
+            </div>
+            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+              <p className="text-xs font-extrabold text-sky-950">🤝 Communicate (ആശയവിനിമയം)</p>
+              <p className="text-[11px] text-slate-700">കുറ്റപ്പെടുത്താതെ കൃത്യമായ വിവരം ടീമുമായി പങ്കുവെക്കുക.</p>
+            </div>
+          </div>
         </CollapsibleLessonDrawer>
+        </div>
       )}
 
-      {/* 2. COLLAPSIBLE LESSON: CYBER SHIELD */}
+      {/* 2. INTERACTIVE SIMULATOR + LESSON: CYBER SHIELD */}
       {activeTab === 'cyber_shield' && (
-        <CollapsibleLessonDrawer
-          key="l4-drawer-cyber"
-          emoji="📱"
-          title="സൈബർ ഷീൽഡ് · പാഠം"
-          badgeText={`${solvedSocial.length}/${SOCIAL_ETHICS_CASES.length}`}
-        >
+        <div className="space-y-4">
         <GameFullscreenShell
-          title="📱 സൈബർ ഷീൽഡ്"
-          subtitle="തർക്കുൽ മാലായഅ്നി"
+          title="📱 സൈബർ ഷീൽഡ് സിമുലേറ്റർ"
+          subtitle="തർക്കുൽ മാലായഅ്നി (3 കവചങ്ങൾ)"
+          isGameDone={solvedSocial.length === SOCIAL_ETHICS_CASES.length}
         >
         <div className="relative bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 space-y-5 overflow-hidden">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
@@ -1155,34 +1215,58 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 📱 സൈബർ ഷീൽഡ് സിമുലേറ്റർ — “തർക്കുൽ മാലായഅ്നി”
               </h3>
             </div>
-            <div className="flex items-center gap-1.5">
-              {SOCIAL_ETHICS_CASES.map((sc, idx) => {
-                const isDone = solvedSocial.includes(sc.id);
-                const isActive = idx === activeSocialIdx;
-                return (
-                  <button
-                    key={sc.id}
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setActiveSocialIdx(idx);
-                      setCyberToast(null);
-                      narrator.speak(sc.speech, sc.title);
-                    }}
-                    className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition-all ${
-                      isActive
-                        ? 'bg-emerald-800 text-white border-emerald-950'
-                        : isDone
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-emerald-400'
-                    }`}
-                  >
-                    കേസ് {idx + 1} {isDone ? '✓' : ''}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-center gap-2">
+              <GameShatterLives
+                lives={Math.max(0, 3 - cyberMistakes)}
+                maxLives={3}
+                dark={false}
+                compact
+              />
+              <div className="flex items-center gap-1.5">
+                {SOCIAL_ETHICS_CASES.map((sc, idx) => {
+                  const isDone = solvedSocial.includes(sc.id);
+                  const isActive = idx === activeSocialIdx;
+                  return (
+                    <button
+                      key={sc.id}
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        setActiveSocialIdx(idx);
+                        setCyberToast(null);
+                        narrator.speak(sc.speech, sc.title);
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition-all ${
+                        isActive
+                          ? 'bg-emerald-800 text-white border-emerald-950'
+                          : isDone
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-emerald-400'
+                      }`}
+                    >
+                      കേസ് {idx + 1} {isDone ? '✓' : ''}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
+
+          {cyberFailed && (
+            <GameDefeatBurstOverlay
+              title="സൈബർ ഷീൽഡ് തകർന്നു!"
+              reason="3 തെറ്റായ സൈബർ പ്രതികരണങ്ങൾ എടുത്തു — തർക്കുൽ മാലായഅ്നി പാലിച്ച് വീണ്ടും ശ്രമിക്കാം!"
+              onRetry={() => {
+                sound.playClick();
+                setCyberMistakes(0);
+                setSolvedSocial([]);
+                setSocialFb({});
+                setActiveSocialIdx(0);
+                setCyberToast(null);
+              }}
+              overlay={false}
+            />
+          )}
 
           {/* Compact 4-Rule Shield Strip */}
           <div className="rounded-xl bg-emerald-50/80 border border-emerald-200 px-3.5 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] sm:text-xs font-bold text-emerald-950">
@@ -1192,7 +1276,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           </div>
 
           {/* Single Smartphone Viewport + Defense Controls */}
-          {(() => {
+          {!cyberFailed && (() => {
             const sc = activeSocial;
             const fb = socialFb[sc.id];
             const solved = solvedSocial.includes(sc.id);
@@ -1284,6 +1368,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                               triggerGlitter('🛡️ സൈബർ ഷീൽഡ് വിജയം! +40 XP');
                             } else {
                               sound.playError();
+                              setCyberMistakes((m) => Math.min(3, m + 1));
                             }
                             narrator.speak(opt.feedbackSpeech, sc.title);
                             setSocialFb((prev) => ({
@@ -1344,7 +1429,28 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           })()}
         </div>
         </GameFullscreenShell>
+
+        <CollapsibleLessonDrawer
+          key="l4-drawer-cyber"
+          emoji="📱"
+          title="സൈബർ ഷീൽഡും ഡിജിറ്റൽ മര്യാദയും · പാഠം"
+          badgeText={`${solvedSocial.length}/${SOCIAL_ETHICS_CASES.length}`}
+          onSpeak={() =>
+            narrator.speak(
+              'സോഷ്യൽ മീഡിയയിൽ വ്യാജ വാർത്തകളും അനാവശ്യ തർക്കങ്ങളും ഒഴിവാക്കുന്ന തർക്കുൽ മാലായഅ്നി ആണ് യഥാർത്ഥ സൈബർ ഷീൽഡ്.',
+              '📱 സൈബർ ഷീൽഡ്'
+            )
+          }
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {CYBER_RULES.map((rule) => (
+              <div key={rule} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950">
+                {rule}
+              </div>
+            ))}
+          </div>
         </CollapsibleLessonDrawer>
+        </div>
       )}
 
       {/* LESSON 47: SAHACHARI RELIEF CELL */}

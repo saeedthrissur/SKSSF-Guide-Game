@@ -21,6 +21,7 @@ import {
   LessonStepperNav,
 } from './GameEffects';
 import { LessonCheckQuiz } from './LessonCheckQuiz';
+import { GameDefeatBurstOverlay } from './GameLivesHud';
 import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
@@ -744,23 +745,12 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
       >
         <div className="space-y-4">
           {povFailed && (
-            <div className="p-4 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-extrabold text-rose-200">
-                  💔 3 തെറ്റായ തീരുമാനങ്ങൾ!
-                </p>
-                <p className="text-xs font-semibold text-rose-100 mt-0.5">
-                  യൂണിറ്റ് പ്രവർത്തകൻ എപ്പോഴും ശൂറയും അച്ചടക്കവും വിനയവും പാലിക്കണം — വീണ്ടും ശ്രമിക്കാം!
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={resetPovMission}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold border-b-4 border-amber-700 whitespace-nowrap"
-              >
-                🔄 വീണ്ടും ശ്രമിക്കാം
-              </button>
-            </div>
+            <GameDefeatBurstOverlay
+              title="3 തെറ്റായ തീരുമാനങ്ങൾ — കവചങ്ങൾ തകർന്നു!"
+              reason="യൂണിറ്റ് പ്രവർത്തകൻ എപ്പോഴും ശൂറയും അച്ചടക്കവും വിനയവും പാലിക്കണം — വീണ്ടും ശ്രമിക്കാം!"
+              onRetry={resetPovMission}
+              overlay={false}
+            />
           )}
 
           <motion.div
