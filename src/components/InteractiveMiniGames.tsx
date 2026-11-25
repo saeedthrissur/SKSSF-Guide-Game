@@ -934,6 +934,21 @@ const MADRASA_PARTS: {
   },
 ];
 
+const MADRASA_DECOYS: { id: string; emoji: string; title: string; reason: string }[] = [
+  {
+    id: 'decoy_torn',
+    emoji: '🗑️',
+    title: 'കീറിയ പോസ്റ്റർ',
+    reason: 'കീറിയ പോസ്റ്റർ മദ്രസ കവാടത്തിൽ വെക്കാൻ പാടില്ല!',
+  },
+  {
+    id: 'decoy_broken',
+    emoji: '🚫',
+    title: 'പൊട്ടിയ ബോർഡ്',
+    reason: 'പൊട്ടിയ പഴയ ബോർഡ് ഒഴിവാക്കി നല്ല SKIMVB ഭാഗങ്ങൾ തിരഞ്ഞെടുക്കൂ!',
+  },
+];
+
 export const MadrasaBoardActivity: React.FC<{
   onAwardXp: (amount: number, actionId: string) => void;
   onUnlockBadge?: (badge: string) => void;
@@ -946,51 +961,110 @@ export const MadrasaBoardActivity: React.FC<{
     motto_plaque: false,
     notice_board: false,
   });
-  const [selected, setSelected] = useState<MadrasaPartId | null>('arch_flag');
+  const [selected, setSelected] = useState<MadrasaPartId | null>(null);
   const [hearts, setHearts] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(28);
+  const [started, setStarted] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string>(
+    'താഴെ നിന്ന് ശരിയായ ഭാഗം തിരഞ്ഞെടുത്ത് മുകളിലെ ശരിയായ സ്ഥാനത്ത് വെക്കൂ — തെറ്റായ വസ്തുക്കൾ (🗑️ 🚫) തൊടരുത്!'
+  );
+  const [feedbackError, setFeedbackError] = useState(false);
   const [doneNotified, setDoneNotified] = useState(false);
 
   const count = Object.values(placed).filter(Boolean).length;
   const allDone = count === 4;
-  const failed = hearts <= 0 && !allDone;
-  const suggested = MADRASA_PARTS.find((p) => !placed[p.id])?.id ?? null;
+  const failed = (hearts <= 0 || Boolean(failReason)) && !allDone;
 
   const resetBoard = () => {
     sound.playClick();
     setPlaced({ arch_flag: false, main_board: false, motto_plaque: false, notice_board: false });
-    setSelected('arch_flag');
+    setSelected(null);
     setHearts(3);
+    setTimeLeft(28);
+    setStarted(false);
+    setFailReason(null);
+    setFeedback('താഴെ നിന്ന് ശരിയായ ഭാഗം തിരഞ്ഞെടുത്ത് മുകളിലെ ശരിയായ സ്ഥാനത്ത് വെക്കൂ — തെറ്റായ വസ്തുക്കൾ (🗑️ 🚫) തൊടരുത്!');
+    setFeedbackError(false);
     setDoneNotified(false);
+  };
+
+  useEffect(() => {
+    if (!started || allDone || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ മദ്രസ ബെൽ അടിച്ചു! 28 സെക്കൻഡിനുള്ളിൽ 4 ഭാഗങ്ങളും ഒരുക്കണം — വീണ്ടും ശ്രമിക്കാം!');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, allDone, failed]);
+
+  const loseShield = (reasonMsg: string) => {
+    sound.playError();
+    setFeedback(reasonMsg);
+    setFeedbackError(true);
+    setHearts((prev) => {
+      const next = Math.max(0, prev - 1);
+      if (next <= 0) {
+        setFailReason('💥 3 തവണ തെറ്റിച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — വീണ്ടും ശ്രമിക്കാം!');
+      }
+      return next;
+    });
+  };
+
+  const handleDecoyTap = (decoy: (typeof MADRASA_DECOYS)[number]) => {
+    sound.unlockAudio();
+    if (failed || allDone) return;
+    if (!started) setStarted(true);
+    loseShield(`💥 അയ്യോ! ${decoy.reason}`);
   };
 
   const snap = (slotId: MadrasaPartId, droppedId?: MadrasaPartId) => {
     sound.unlockAudio();
     if (placed[slotId] || failed || allDone) return;
+    if (!started) setStarted(true);
     const activeId = droppedId || selected;
-    if (activeId && activeId !== slotId) {
-      sound.playError();
-      setHearts((h) => Math.max(0, h - 1));
+    if (!activeId) {
+      sound.playClick();
+      setFeedback('👇 ആദ്യം താഴെയുള്ള ട്രേയിൽ നിന്ന് ശരിയായ ഭാഗം തിരഞ്ഞെടുക്കൂ, ശേഷം ഇവിടെ തൊടൂ!');
+      setFeedbackError(false);
+      return;
+    }
+    if (activeId !== slotId) {
+      const pickedItem = MADRASA_PARTS.find((p) => p.id === activeId);
+      loseShield(
+        `💥 തെറ്റായ സ്ഥാനം! “${pickedItem?.title || ''}” അവിടെയല്ല വെക്കേണ്ടത് (${pickedItem?.hint || ''}).`
+      );
       return;
     }
     const next = { ...placed, [slotId]: true };
     setPlaced(next);
-    const nextUnplaced = MADRASA_PARTS.find((p) => !next[p.id])?.id ?? null;
-    setSelected(nextUnplaced);
+    setSelected(null);
+    setFeedbackError(false);
     const total = Object.values(next).filter(Boolean).length;
     sound.playSuccess(total);
     onAwardXp(10, `madrasa_board_${slotId}`);
     const item = MADRASA_PARTS.find((p) => p.id === slotId);
-    if (total === 4 && !doneNotified) {
-      setDoneNotified(true);
-      sound.playHoist();
-      onAwardXp(30, 'madrasa_board_complete');
-      onUnlockBadge?.('🏫 മദ്രസ കൂട്ടുകാരൻ');
-      onComplete?.();
-      narrator.speak(
-        'അടിപൊളി! നമ്മുടെ സമസ്ത മദ്രസ ബോർഡ് മനോഹരമായി ഒരുങ്ങി! 11,000-ലധികം മദ്രസകളുടെ വെളിച്ചം പകരുന്ന ഈ പൈതൃകമാണ് നമ്മുടെ കരുത്ത്.',
-        '🏫 മദ്രസ ബോർഡ് തയ്യാർ!'
-      );
+    if (total === 4) {
+      setFeedback('🎉 മാഷാ അല്ലാഹ്! സമസ്ത മദ്രസ ബോർഡ് (SKIMVB) മനോഹരമായി ഒരുങ്ങി!');
+      if (!doneNotified) {
+        setDoneNotified(true);
+        sound.playHoist();
+        onAwardXp(30, 'madrasa_board_complete');
+        onUnlockBadge?.('🏫 മദ്രസ കൂട്ടുകാരൻ');
+        onComplete?.();
+        narrator.speak(
+          'അടിപൊളി! നമ്മുടെ സമസ്ത മദ്രസ ബോർഡ് മനോഹരമായി ഒരുങ്ങി! 11,000-ലധികം മദ്രസകളുടെ വെളിച്ചം പകരുന്ന ഈ പൈതൃകമാണ് നമ്മുടെ കരുത്ത്.',
+          '🏫 മദ്രസ ബോർഡ് തയ്യാർ!'
+        );
+      }
     } else if (item) {
+      setFeedback(`✅ ${item.speech}`);
       narrator.speak(item.speech, `${item.emoji} ${item.title}`);
     }
   };
@@ -998,18 +1072,40 @@ export const MadrasaBoardActivity: React.FC<{
   return (
     <GameFullscreenShell title="🏫 സമസ്ത മദ്രസ ബോർഡ് (SKIMVB)" isGameDone={allDone}>
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
-      <div className="flex items-center justify-between gap-2">
-        <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-950 text-xs font-extrabold tabular-nums">
-          🏫 {count}/4
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-950 text-xs font-extrabold tabular-nums">
+            🏫 {count}/4
+          </span>
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-extrabold tabular-nums ${
+              timeLeft <= 7 && started && !allDone
+                ? 'bg-rose-600 text-white animate-pulse'
+                : 'bg-slate-100 text-slate-800'
+            }`}
+          >
+            ⏱️ {timeLeft}s
+          </span>
+        </div>
         <div className="flex items-center gap-1.5">
           <GameShatterLives lives={hearts} maxLives={3} dark={false} compact />
+          {(started || count > 0 || allDone || failed) && (
+            <button
+              type="button"
+              onClick={resetBoard}
+              aria-label="വീണ്ടും കളിക്കാം"
+              title="വീണ്ടും കളിക്കാം"
+              className="w-8 h-8 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-950 flex items-center justify-center"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
               sound.unlockAudio();
               narrator.speak(
-                'നമ്മുടെ സമസ്ത മദ്രസയുടെ ബോർഡ് ഒരുക്കാം! താഴെ നിന്ന് ഒരു ഭാഗം തിരഞ്ഞെടുത്ത് ശരിയായ സ്ഥലത്ത് വെക്കൂ.',
+                'നമ്മുടെ സമസ്ത മദ്രസയുടെ ബോർഡ് ഒരുക്കാം! താഴെ നിന്ന് ശരിയായ ഭാഗം തിരഞ്ഞെടുത്ത് ശരിയായ സ്ഥലത്ത് വെക്കൂ. കീറിയ പോസ്റ്ററോ പൊട്ടിയ ബോർഡോ തൊടരുത്!',
                 '🏫 മദ്രസ ബോർഡ് ഒരുക്കാം'
               );
             }}
@@ -1036,9 +1132,9 @@ export const MadrasaBoardActivity: React.FC<{
             className={`relative px-5 py-2 rounded-xl border-2 transition-all flex items-center gap-2 ${
               placed.arch_flag
                 ? 'bg-emerald-900 text-amber-200 border-amber-400 shadow'
-                : suggested === 'arch_flag' || selected === 'arch_flag'
+                : selected === 'arch_flag'
                 ? 'border-dashed border-amber-500 bg-amber-100 text-amber-950 ring-4 ring-amber-200'
-                : 'border-dashed border-emerald-400 bg-white/80 text-slate-700'
+                : 'border-dashed border-emerald-400 bg-white/85 hover:bg-amber-50 text-slate-700'
             }`}
           >
             {placed.arch_flag ? (
@@ -1058,16 +1154,7 @@ export const MadrasaBoardActivity: React.FC<{
                 />
               </>
             ) : (
-              <span className="text-2xl">🚩</span>
-            )}
-            {!placed.arch_flag && (suggested === 'arch_flag' || selected === 'arch_flag') && (
-              <motion.span
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute -top-5 right-1 text-xl"
-              >
-                👇
-              </motion.span>
+              <span className="text-xs font-extrabold text-slate-600">⬆️ കവാടത്തിന് മുകളിൽ</span>
             )}
           </button>
         </div>
@@ -1075,31 +1162,27 @@ export const MadrasaBoardActivity: React.FC<{
         {/* Main Header Signboard Slot */}
         <button
           type="button"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            snap('main_board');
+          }}
           onClick={() => snap('main_board')}
           aria-label="മദ്രസ ബോർഡ്"
           className={`relative w-full py-3.5 px-4 rounded-2xl border-2 transition-all text-center ${
             placed.main_board
               ? 'bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white border-amber-300 shadow-md'
-              : suggested === 'main_board' || selected === 'main_board'
+              : selected === 'main_board'
               ? 'border-dashed border-amber-500 bg-amber-100/90 text-amber-950 ring-4 ring-amber-200'
-              : 'border-dashed border-emerald-400 bg-white/80 text-slate-700'
+              : 'border-dashed border-emerald-400 bg-white/85 hover:bg-amber-50 text-slate-700'
           }`}
         >
           {placed.main_board ? (
             <p className="text-sm font-extrabold text-amber-200">
-              🏫 SKIMVB · 1951 (11,000+)
+              🏫 SKIMVB · 1951 (11,000+ മദ്രസകൾ)
             </p>
           ) : (
-            <span className="text-2xl">🏫</span>
-          )}
-          {!placed.main_board && (suggested === 'main_board' || selected === 'main_board') && (
-            <motion.span
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 0.8, repeat: Infinity }}
-              className="absolute -top-5 right-4 text-xl"
-            >
-              👇
-            </motion.span>
+            <span className="text-xs font-extrabold text-slate-600">📌 വലിയ നടുവിലെ ബോർഡ് സ്ഥാനം</span>
           )}
         </button>
 
@@ -1107,55 +1190,102 @@ export const MadrasaBoardActivity: React.FC<{
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              snap('motto_plaque');
+            }}
             onClick={() => snap('motto_plaque')}
             aria-label="ആദർശ ഫലകം"
             className={`relative p-3 rounded-xl border-2 transition-all text-center ${
               placed.motto_plaque
                 ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-xs'
-                : suggested === 'motto_plaque' || selected === 'motto_plaque'
+                : selected === 'motto_plaque'
                 ? 'border-dashed border-amber-500 bg-amber-100 text-amber-950 ring-4 ring-amber-200'
-                : 'border-dashed border-emerald-400 bg-white/80 text-slate-700'
+                : 'border-dashed border-emerald-400 bg-white/85 hover:bg-amber-50 text-slate-700'
             }`}
           >
             {placed.motto_plaque ? (
-              <p className="text-xs font-extrabold">📖 ✅</p>
+              <p className="text-xs font-extrabold">📖 വിജ്ഞാനം · വിനയം ✅</p>
             ) : (
-              <span className="text-2xl">📖</span>
+              <span className="text-[11px] font-extrabold text-slate-600">⬅️ ഇടതുവശത്തെ ഫലകം</span>
             )}
           </button>
 
           <button
             type="button"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              snap('notice_board');
+            }}
             onClick={() => snap('notice_board')}
             aria-label="അറിയിപ്പ് ബോർഡ്"
             className={`relative p-3 rounded-xl border-2 transition-all text-center ${
               placed.notice_board
                 ? 'bg-sky-50 border-sky-400 text-sky-950 shadow-xs'
-                : suggested === 'notice_board' || selected === 'notice_board'
+                : selected === 'notice_board'
                 ? 'border-dashed border-amber-500 bg-amber-100 text-amber-950 ring-4 ring-amber-200'
-                : 'border-dashed border-emerald-400 bg-white/80 text-slate-700'
+                : 'border-dashed border-emerald-400 bg-white/85 hover:bg-amber-50 text-slate-700'
             }`}
           >
             {placed.notice_board ? (
-              <p className="text-xs font-extrabold">🗓️ ✅</p>
+              <p className="text-xs font-extrabold">🗓️ ക്ലാസ്സ് അറിയിപ്പ് ✅</p>
             ) : (
-              <span className="text-2xl">🗓️</span>
+              <span className="text-[11px] font-extrabold text-slate-600">➡️ വലതുവശത്തെ ബോർഡ്</span>
             )}
           </button>
         </div>
       </div>
 
+      {/* Live Feedback Strip */}
+      <div
+        className={`px-3 py-2 rounded-xl text-xs font-bold text-center border ${
+          feedbackError
+            ? 'bg-rose-50 border-rose-300 text-rose-800'
+            : allDone
+            ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+            : 'bg-slate-50 border-slate-200 text-slate-800'
+        }`}
+      >
+        {feedback}
+      </div>
+
       {failed ? (
         <GameDefeatBurstOverlay
           title="മദ്രസ ബോർഡ് ഒരുക്കൽ പരാജയപ്പെട്ടു!"
-          reason="3 തവണ തെറ്റായ സ്ഥാനത്ത് വെച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — വീണ്ടും ശ്രമിക്കാം!"
+          reason={failReason || '3 തവണ തെറ്റിച്ചതിനാൽ കവചങ്ങൾ തകർന്നു — വീണ്ടും ശ്രമിക്കാം!'}
+          scoreText={`🏫 ${count}/4`}
           onRetry={resetBoard}
           overlay={false}
         />
       ) : !allDone ? (
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-4 gap-2">
-            {MADRASA_PARTS.map((item) => {
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { kind: 'real' as const, item: MADRASA_PARTS[1] },
+              { kind: 'decoy' as const, decoy: MADRASA_DECOYS[0] },
+              { kind: 'real' as const, item: MADRASA_PARTS[0] },
+              { kind: 'real' as const, item: MADRASA_PARTS[3] },
+              { kind: 'decoy' as const, decoy: MADRASA_DECOYS[1] },
+              { kind: 'real' as const, item: MADRASA_PARTS[2] },
+            ].map((entry) => {
+              if (entry.kind === 'decoy') {
+                return (
+                  <button
+                    key={entry.decoy.id}
+                    type="button"
+                    onClick={() => handleDecoyTap(entry.decoy)}
+                    className="py-2 px-1.5 rounded-xl border-2 border-slate-200 bg-slate-50 hover:border-rose-400 hover:bg-rose-50 flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
+                  >
+                    <span className="text-xl">{entry.decoy.emoji}</span>
+                    <span className="text-[10px] font-extrabold text-slate-700 leading-tight text-center">
+                      {entry.decoy.title}
+                    </span>
+                  </button>
+                );
+              }
+              const item = entry.item;
               const done = placed[item.id];
               const isPicked = selected === item.id;
               return (
@@ -1166,15 +1296,18 @@ export const MadrasaBoardActivity: React.FC<{
                   draggable={!done}
                   onDragStart={() => {
                     sound.unlockAudio();
+                    if (!started) setStarted(true);
                     setSelected(item.id);
                   }}
                   onClick={() => {
                     sound.playClick();
+                    if (!started) setStarted(true);
                     setSelected(item.id);
+                    setFeedback(`🎯 തിരഞ്ഞെടുത്തത്: ${item.emoji} ${item.title} — ശരിയായ സ്ഥാനത്ത് തൊടൂ!`);
+                    setFeedbackError(false);
                   }}
                   aria-label={item.title}
-                  title={item.title}
-                  className={`py-2.5 rounded-xl border-2 flex items-center justify-center transition-all ${
+                  className={`py-2 px-1.5 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all ${
                     done
                       ? 'bg-emerald-50 border-emerald-300 opacity-55'
                       : isPicked
@@ -1182,31 +1315,38 @@ export const MadrasaBoardActivity: React.FC<{
                       : 'bg-slate-50 border-slate-200 hover:border-emerald-400 cursor-grab'
                   }`}
                 >
-                  <span className="text-2xl">{done ? '✅' : item.emoji}</span>
+                  <span className="text-xl">{done ? '✅' : item.emoji}</span>
+                  <span className="text-[10px] font-extrabold text-slate-800 leading-tight text-center">
+                    {item.title}
+                  </span>
                 </button>
               );
             })}
           </div>
-          {selected && (
-            <p className="text-[11px] font-bold text-emerald-900 text-center">
-              {MADRASA_PARTS.find((p) => p.id === selected)?.emoji}{' '}
-              {MADRASA_PARTS.find((p) => p.id === selected)?.title}
-            </p>
-          )}
         </div>
       ) : (
-        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center justify-between gap-2.5">
-          <span className="text-sm font-extrabold text-emerald-950">🎉 +70 XP</span>
-          {onOpenBadgeStudio && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 flex flex-wrap items-center justify-between gap-2.5">
+          <span className="text-sm font-extrabold text-emerald-950">🎉 +70 XP · മദ്രസ ബോർഡ് തയ്യാർ!</span>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => onOpenBadgeStudio('madrasa_guardian')}
-              aria-label="ഫോട്ടോ ബാഡ്ജ്"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold"
+              onClick={resetBoard}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
             >
-              <Award className="w-4 h-4" /> 📷
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>വീണ്ടും കളിക്കാം</span>
             </button>
-          )}
+            {onOpenBadgeStudio && (
+              <button
+                type="button"
+                onClick={() => onOpenBadgeStudio('madrasa_guardian')}
+                aria-label="ഫോട്ടോ ബാഡ്ജ്"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold cursor-pointer"
+              >
+                <Award className="w-4 h-4" /> 📷 ബാഡ്ജ്
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

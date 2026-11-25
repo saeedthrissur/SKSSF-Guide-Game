@@ -11,8 +11,18 @@ import {
   AirplaneSicFlightGame,
   BalloonPopArcadeConfig,
   BalloonPopArcadeGame,
+  GreenCampusSortConfig,
+  GreenCampusSortGame,
   HelicopterRescueDropConfig,
   HelicopterRescueDropGame,
+  OrganetChainConfig,
+  OrganetChainGame,
+  SargalayamSpotlightConfig,
+  SargalayamSpotlightGame,
+  TagoreHallPassGateConfig,
+  TagoreHallPassGateGame,
+  TrendCareerCompassConfig,
+  TrendCareerCompassGame,
 } from './NewVehicleArcadeGames';
 
 import {
@@ -157,7 +167,12 @@ type SceneGameConfig =
   | CyberArcadeConfig
   | AirplaneSicFlightConfig
   | HelicopterRescueDropConfig
-  | BalloonPopArcadeConfig;
+  | BalloonPopArcadeConfig
+  | TagoreHallPassGateConfig
+  | TrendCareerCompassConfig
+  | GreenCampusSortConfig
+  | OrganetChainConfig
+  | SargalayamSpotlightConfig;
 
 const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = {
   p0_creator: {
@@ -337,38 +352,52 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '🕌 അടിപൊളി! പണ്ഡിത പരമ്പരയും വഖഫ് പള്ളി പൈതൃകവും ഭംഗിയായി സംരക്ഷിച്ചു! (+25 XP)',
   },
   sb_ch2: {
-    engine: 'airplane_sic_flight',
-    title: '✈️ സമസ്ത സമ്മേളന & 1995 സമാധാന സദസ്സ് എയർപോർട്ട് വിമാന യാത്ര!',
-    subtitle: 'കോഴിക്കോട് എയർപോർട്ട് റൺവേയിൽ നിന്ന് വിമാനം പറത്തി കൊടുങ്കാറ്റ് ഒഴിവാക്കി 1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സിലും TREND വിദ്യാഭ്യാസ ഹബിലും എത്തി സുരക്ഷിതമായി ലാൻഡ് ചെയ്യൂ!',
-    departureAirport: 'കോഴിക്കോട് എയർപോർട്ട്',
-    arrivalAirport: 'സമസ്ത സമ്മേളന നഗരി എയർപോർട്ട്',
-    hubs: [
+    engine: 'tagore_hall_pass_gate',
+    title: '🏛️ 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ — സമാധാന സദസ്സ് പ്രവേശന കവാടം!',
+    subtitle: '1995 കോഴിക്കോട് ടാഗോർ ഹാളിലെ സമാധാന സദസ്സിലേക്ക് എത്തുന്ന അതിഥികളെ പരിശോധിക്കൂ — സൗഹാർദ്ദ സന്ദേശകരെ ✅ സ്വാഗതം ചെയ്യൂ, വിദ്വേഷ കെണികളെ 🛑 തടയൂ!',
+    guests: [
       {
-        id: 'tagore',
-        lane: 0,
+        id: 'tg_shamsul',
         emoji: '🕊️',
-        shortLabel: '1995 സമാധാന സദസ്സ്',
-        label: '1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സ്',
-        note: 'ശംസുൽ ഉലമ കാണിച്ചുതന്ന സമാധാനത്തിന്റെയും മതസൗഹാർദ്ദത്തിന്റെയും സന്ദേശം നേടി!',
+        name: 'സമാധാന സദസ്സ് പ്രതിനിധി',
+        message: 'ശംസുൽ ഉലമയുടെ ആഹ്വാനപ്രകാരം മതസൗഹാർദ്ദവും സാഹോദര്യവും പകരാൻ വന്നതാണ്.',
+        allow: true,
+        feedback: 'സമാധാന സദസ്സിലേക്ക് സ്വാഗതം! സൗഹാർദ്ദമാണ് സമസ്തയുടെ മുഖമുദ്ര.',
       },
       {
-        id: 'taste',
-        lane: 2,
+        id: 'tg_rumor',
+        emoji: '🔥',
+        name: 'വ്യാജ പ്രചാരകൻ',
+        message: 'നാട്ടിൽ ഭിന്നതയുണ്ടാക്കുന്ന പ്രകോപന ലഘുലേഖകൾ ഹാളിൽ വിതരണം ചെയ്യണം!',
+        allow: false,
+        feedback: 'മിടുക്കൻ! ഭിന്നത പരത്തുന്ന വിദ്വേഷ കെണിയെ ടാഗോർ ഹാൾ കവാടത്തിൽ തന്നെ തടഞ്ഞു!',
+      },
+      {
+        id: 'tg_taste',
         emoji: '🎤',
-        shortLabel: 'TREND TASTE',
-        label: 'SKSSF TREND — TASTE പരിശീലനം',
-        note: 'വിദ്യാർത്ഥികൾക്കുള്ള TASTE വ്യക്തിത്വ വികസനവും സോഫ്റ്റ് സ്കിൽ ക്ലാസ്സും പൂർത്തിയാക്കി!',
+        name: 'TREND TASTE പരിശീലകൻ',
+        message: 'വിദ്യാർത്ഥികൾക്ക് വ്യക്തിത്വ വികസനവും നല്ല സംസാര പരിശീലനവും നൽകാൻ വന്നതാണ്.',
+        allow: true,
+        feedback: 'സ്വാഗതം! TREND TASTE വിദ്യാർത്ഥികളെ ആത്മവിശ്വാസമുള്ള നേതാക്കളാക്കുന്നു.',
       },
       {
-        id: 'eduhub',
-        lane: 1,
+        id: 'tg_hate',
+        emoji: '🤬',
+        name: 'കലഹ പ്രചാരകൻ',
+        message: 'സൗഹാർദ്ദ വേദിയിൽ ബഹളമുണ്ടാക്കി സമാധാന സന്ദേശം തടസ്സപ്പെടുത്തണം!',
+        allow: false,
+        feedback: 'കൃത്യം! സമാധാനം തകർക്കാൻ വന്നവരെ കവാടത്തിൽ തന്നെ തടഞ്ഞുനിർത്തി!',
+      },
+      {
+        id: 'tg_educare',
         emoji: '🎓',
-        shortLabel: 'TREND EduHub',
-        label: 'TREND EduHub & SKSSF Educare',
-        note: 'സിവിൽ സർവീസ് (Future India), CA & ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടി നേടി!',
+        name: 'TREND Educare സ്കോളർഷിപ്പ് ടീം',
+        message: 'നിർദ്ധന വിദ്യാർത്ഥികൾക്ക് ഉന്നത വിദ്യാഭ്യാസ വഴികാട്ടിയും സ്കോളർഷിപ്പും നൽകാൻ എത്തിയതാണ്.',
+        allow: true,
+        feedback: 'അടിപൊളി! വിദ്യാഭ്യാസ പുരോഗതിക്കായുള്ള TREND Educare ടീമിനെ സ്വാഗതം ചെയ്തു!',
       },
     ],
-    doneMessage: '✈️ ഗംഭീരം! സമസ്ത സമ്മേളന നഗരി റൺവേയിൽ വിമാനം സുരക്ഷിതമായി ലാൻഡ് ചെയ്തു! (+25 XP)',
+    doneMessage: '🏛️🕊️ വിസ്മയം! 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ സമാധാന സദസ്സ് വിജയകരമായി സംരക്ഷിച്ചു! (+25 XP)',
   },
   sb_ch3: {
     engine: 'road_vehicle_drive',
@@ -462,19 +491,21 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '⛵ ഗംഭീരം! സമസ്തയുടെ മൂന്ന് ചരിത്ര ദീപസ്തംഭങ്ങളിലും പായ്ക്കപ്പൽ എത്തിച്ച് വിജയിച്ചു! (+25 XP)',
   },
   l2_tiers: {
-    engine: 'mosque_crane_builder',
-    title: '🏗️ SKSSF ഓർഗാനെറ്റ് (Organet) 5 നില സംഘടനാ ഗോപുരം പണിയാം!',
-    subtitle: 'ആടുന്ന ക്രെയിൻ നടുവിൽ എത്തുമ്പോൾ “⬇️ ഇറക്കൂ!” അമർത്തി 15 → 19 → 21 → 25 → 31 അഞ്ച് ഘടക നിലകളും കെട്ടിപ്പൊക്കൂ!',
-    theme: 'tower',
-    flagVariant: 'skssf',
-    blocks: [
-      { id: 't15', label: 'നില 1 · യൂണിറ്റ് (15 അംഗങ്ങൾ)', color: '#065F46', accent: '#A7F3D0', note: '15 അംഗ യൂണിറ്റ് അടിത്തറ ഓർഗാനെറ്റിൽ രജിസ്റ്റർ ചെയ്തു!' },
-      { id: 't19', label: 'നില 2 · ക്ലസ്റ്റർ (19 അംഗങ്ങൾ)', color: '#047857', accent: '#BAE6FD', note: '19 അംഗ ക്ലസ്റ്റർ നില ചേർത്തു!' },
-      { id: 't21', label: 'നില 3 · മേഖല (21 അംഗങ്ങൾ)', color: '#0369A1', accent: '#FDE68A', note: '21 അംഗ മേഖലാ നില പണിതു!' },
-      { id: 't25', label: 'നില 4 · ജില്ല (25 അംഗങ്ങൾ)', color: '#1D4ED8', accent: '#FDE047', note: '25 അംഗ ജില്ലാ നില ഉയർന്നു!' },
-      { id: 't31', label: 'നില 5 · സ്റ്റേറ്റ് (31 അംഗങ്ങൾ)', color: '#0F766E', accent: '#FACC15', note: '31 അംഗ സംസ്ഥാന ഗോപുരത്തിന് മുകളിൽ SKSSF പതാക ഉയർന്നു!' },
+    engine: 'organet_chain_connect',
+    title: '🔗 SKSSF ഓർഗാനെറ്റ് (Organet) — 15 → 19 → 21 → 25 → 31 ശൃംഖല!',
+    subtitle: 'യൂണിറ്റ് (15) മുതൽ സ്റ്റേറ്റ് (31) വരെ കൃത്യമായ ക്രമത്തിൽ ഓർഗാനെറ്റ് കണ്ണികൾ ബന്ധിപ്പിക്കൂ — തെറ്റായ എണ്ണങ്ങൾ (10, 40) തൊടരുത്!',
+    nodes: [
+      { id: 't15', count: 15, label: 'യൂണിറ്റ്', emoji: '🏠', note: '15 അംഗ യൂണിറ്റ് ഘടകം ഓർഗാനെറ്റിൽ ആദ്യ കണ്ണിയായി ചേർത്തു!' },
+      { id: 't19', count: 19, label: 'ക്ലസ്റ്റർ', emoji: '🏘️', note: '19 അംഗ ക്ലസ്റ്റർ ഘടകം കൃത്യമായി ബന്ധിപ്പിച്ചു!' },
+      { id: 't21', count: 21, label: 'മേഖല', emoji: '🏙️', note: '21 അംഗ മേഖലാ ഘടകം ശൃംഖലയിൽ ഉറപ്പിച്ചു!' },
+      { id: 't25', count: 25, label: 'ജില്ല', emoji: '🗺️', note: '25 അംഗ ജില്ലാ കമ്മിറ്റി ഓർഗാനെറ്റിൽ ചേർത്തു!' },
+      { id: 't31', count: 31, label: 'സ്റ്റേറ്റ്', emoji: '🚩', note: '31 അംഗ സ്റ്റേറ്റ് കമ്മിറ്റിയോടെ 5-തല ഓർഗാനെറ്റ് ശൃംഖല പൂർത്തിയായി!' },
     ],
-    doneMessage: '🏗️ വിസ്മയം! SKSSF ഓർഗാനെറ്റ് 15–19–21–25–31 അഞ്ച് നില ഗോപുരവും കൃത്യമായി നിർമ്മിച്ചു! (+25 XP)',
+    decoys: [
+      { id: 'd10', count: 10, label: 'തെറ്റായ എണ്ണം' },
+      { id: 'd40', count: 40, label: 'തെറ്റായ എണ്ണം' },
+    ],
+    doneMessage: '🔗 വിസ്മയം! SKSSF ഓർഗാനെറ്റ് 15–19–21–25–31 അഞ്ച് തല ശൃംഖലയും കൃത്യമായി ബന്ധിപ്പിച്ചു! (+25 XP)',
   },
   l2_election_roles: {
     engine: 'road_vehicle_drive',
@@ -753,16 +784,16 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
   },
   l4_climb: {
     engine: 'airplane_sic_flight',
-    title: '✈️ ശാഖ മുതൽ ഗ്ലോബൽ SIC വരെ — അന്താരാഷ്ട്ര വിമാന യാത്ര!',
-    subtitle: 'കരിപ്പൂർ എയർപോർട്ട് റൺവേയിൽ നിന്ന് പറന്നുയർന്ന് കൊടുങ്കാറ്റ് ഒഴിവാക്കി ദുബായ് SIC, റിയാദ് SIC, സമസ്ത സമ്മേളന നഗരിയിലേക്ക് പ്രവർത്തകരെ എത്തിക്കൂ!',
-    departureAirport: 'കരിപ്പൂർ (കോഴിക്കോട്) എയർപോർട്ട്',
-    arrivalAirport: 'സമസ്ത ആഗോള സമ്മേളന എയർപോർട്ട്',
+    title: '✈️ കരിപ്പൂർ മുതൽ ഗ്ലോബൽ SIC വരെ — അന്താരാഷ്ട്ര വിമാന യാത്ര!',
+    subtitle: 'കരിപ്പൂർ അന്താരാഷ്ട്ര എയർപോർട്ട് (CCJ) റൺവേയിൽ നിന്ന് പറന്നുയർന്ന് കൊടുങ്കാറ്റ് ഒഴിവാക്കി ദുബായ് SIC, ദോഹ SIC, റിയാദ് SIC കേന്ദ്രങ്ങളിലൂടെ ജിദ്ദ/മക്ക എയർപോർട്ടിൽ ലാൻഡ് ചെയ്യൂ!',
+    departureAirport: 'കരിപ്പൂർ അന്താരാഷ്ട്ര എയർപോർട്ട് (CCJ)',
+    arrivalAirport: 'ജിദ്ദ / മക്ക അന്താരാഷ്ട്ര എയർപോർട്ട്',
     hubs: [
-      { id: 'sic_dxb', lane: 0, emoji: '🇦🇪', shortLabel: 'ദുബായ് SIC', label: 'യു.എ.ഇ — ദുബായ് SIC സെന്റർ', note: 'ദുബായ് സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC) പ്രവർത്തകരെ വിമാനത്തിൽ ചേർത്തു!' },
-      { id: 'sic_ruh', lane: 2, emoji: '🇸🇦', shortLabel: 'റിയാദ് SIC & ഹജ്ജ്', label: 'സൗദി — റിയാദ് SIC & മക്ക ഹജ്ജ് വിഖായ', note: 'റിയാദ് SIC കേന്ദ്രവും മക്ക-മദീന ഹജ്ജ് വിഖായ സേവനവും സന്ദർശിച്ചു!' },
-      { id: 'sic_conf', lane: 1, emoji: '🌍', shortLabel: 'സമസ്ത സമ്മേളനം', label: 'സമസ്ത അന്താരാഷ്ട്ര സമ്മേളന നഗരി', note: 'പ്രവാസ ലോകത്തെ എല്ലാ SIC പ്രതിനിധികളുമായി സമസ്ത സമ്മേളന നഗരിയിലേക്ക് എത്തി!' },
+      { id: 'sic_dxb', lane: 0, emoji: '🇦🇪', shortLabel: 'ദുബായ് SIC', label: 'യു.എ.ഇ — ദുബായ് SIC സെന്റർ', note: 'ദുബായ് സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC) പ്രവർത്തകരെ അന്താരാഷ്ട്ര യാത്രയിൽ ചേർത്തു!' },
+      { id: 'sic_doh', lane: 2, emoji: '🇶🇦', shortLabel: 'ദോഹ SIC', label: 'ഖത്തർ — ദോഹ SIC പ്രവാസി കേന്ദ്രം', note: 'ദോഹ SIC പ്രവാസി വിദ്യാഭ്യാസ-സേവന കേന്ദ്രം സന്ദർശിച്ച് പ്രതിനിധികളെ കൂട്ടി!' },
+      { id: 'sic_ruh', lane: 1, emoji: '🇸🇦', shortLabel: 'റിയാദ് SIC & ഹജ്ജ്', label: 'സൗദി — റിയാദ് SIC & മക്ക ഹജ്ജ് വിഖായ', note: 'റിയാദ് SIC കേന്ദ്രവും മക്ക-മദീന ഹജ്ജ് വിഖായ സേവനവും സന്ദർശിച്ചു!' },
     ],
-    doneMessage: '✈️🌍 വിസ്മയം! ഗ്ലോബൽ SIC കേന്ദ്രങ്ങളിലൂടെ സമസ്ത സമ്മേളന റൺവേയിൽ സുരക്ഷിതമായി ലാൻഡ് ചെയ്തു! (+25 XP)',
+    doneMessage: '✈️🌍 വിസ്മയം! കരിപ്പൂരിൽ നിന്ന് ഗൾഫ് SIC കേന്ദ്രങ്ങളിലൂടെ ജിദ്ദ/മക്ക റൺവേയിൽ സുരക്ഷിതമായി ലാൻഡ് ചെയ്തു! (+25 XP)',
   },
   l4_sahachari: {
     engine: 'ship_harbor_sail',
@@ -794,83 +825,157 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     doneMessage: '⛵ അൽഹംദുലില്ലാഹ്! സഹചാരി കായൽ ആംബുലൻസ് ബോട്ട് കാരുണ്യ ദൗത്യം വിജയകരമായി പൂർത്തിയാക്കി! (+25 XP)',
   },
   l4_trend_career: {
-    engine: 'balloon_altitude_climb',
-    title: '🎓 ട്രെൻഡ് (TREND) — വിദ്യാഭ്യാസ & കരിയർ ഉയരങ്ങളിലേക്ക്!',
-    subtitle: '“🔥 ജ്വാല ഉയർത്തൂ!” അമർത്തി സ്കൂൾ തലം മുതൽ സിവിൽ സർവീസ് വരെയുള്ള 4 വിദ്യാഭ്യാസ പടവുകൾ കീഴടക്കൂ!',
-    gates: [
-      { id: 'tr1', emoji: '📖', label: '1. കൃത്യമായ ലക്ഷ്യബോധവും വായനയും', note: 'പഠനത്തിന് കൃത്യമായ ടൈംടേബിളും ലക്ഷ്യവും നിശ്ചയിച്ചു!' },
-      { id: 'tr2', emoji: '🧭', label: '2. TREND കരിയർ ഗൈഡൻസ് ക്യാമ്പ്', note: 'തന്റെ അഭിരുചിക്ക് അനുയോജ്യമായ മികച്ച കോഴ്സ് കണ്ടെത്തി!' },
-      { id: 'tr3', emoji: '🏫', label: '3. ഉന്നത സർവകലാശാല & സ്കോളർഷിപ്പ്', note: 'മികച്ച കോളേജിൽ പ്രവേശനവും സ്കോളർഷിപ്പും നേടി!' },
-      { id: 'tr4', emoji: '🏆', label: '4. സിവിൽ സർവീസ് & സമൂഹസേവനം', note: 'അറിവും വിനയവും ചേർന്ന ഉത്തരവാദിത്തമുള്ള ഉദ്യോഗസ്ഥനായി ഉയർന്നു!' },
+    engine: 'trend_career_compass',
+    title: '🎓 TREND കരിയർ ഗൈഡൻസ് ഹെൽപ്പ്‌ഡെസ്ക് എക്സ്പ്രസ്!',
+    subtitle: 'കേരളത്തിലെ 5 വിദ്യാർത്ഥികൾ തങ്ങളുടെ സ്വപ്നങ്ങളുമായി TREND ഡെസ്കിൽ എത്തിയിരിക്കുന്നു — ഓരോരുത്തർക്കും കൃത്യമായ TREND വഴി തിരഞ്ഞെടുത്ത് നൽകൂ!',
+    tracks: [
+      { id: 'ias', emoji: '⚖️', label: 'Future India (IAS/IPS)', color: '#4F46E5' },
+      { id: 'neet', emoji: '🩺', label: 'മെഡിക്കൽ / NEET', color: '#059669' },
+      { id: 'ca', emoji: '📊', label: 'CA & ഫിനാൻസ്', color: '#0284C7' },
+      { id: 'taste', emoji: '🎤', label: 'TASTE വ്യക്തിത്വം', color: '#D97706' },
+      { id: 'educare', emoji: '🌍', label: 'Educare സ്കോളർഷിപ്പ്', color: '#7C3AED' },
     ],
-    doneMessage: '🎓 ഗംഭീരം! TREND വഴികാട്ടിയുമായി വിദ്യാഭ്യാസത്തിന്റെ ഉയരങ്ങളിൽ എത്തിച്ചേർന്നു! (+25 XP)',
+    students: [
+      {
+        id: 'st1',
+        avatar: '🧑‍⚕️',
+        name: 'ആയിഷ (പ്ലസ് ടു സയൻസ്)',
+        dream: 'എനിക്ക് ഡോക്ടറായി പാവപ്പെട്ട രോഗികളെ ചികിത്സിക്കാൻ ആഗ്രഹമുണ്ട്!',
+        correctTrackId: 'neet',
+        tip: 'സൂപ്പർ! ആയിഷയ്ക്ക് TREND മെഡിക്കൽ / NEET മാർഗ്ഗനിർദ്ദേശം കൃത്യമായി നൽകി!',
+      },
+      {
+        id: 'st2',
+        avatar: '👨‍⚖️',
+        name: 'അബ്ദുല്ല (ബിരുദ വിദ്യാർത്ഥി)',
+        dream: 'എനിക്ക് ജില്ലാ കളക്ടറായി (IAS) നാടിനെ സത്യസന്ധമായി സേവിക്കണം!',
+        correctTrackId: 'ias',
+        tip: 'മിടുക്കൻ! സിവിൽ സർവീസ് സ്വപ്നത്തിന് TREND Future India വിഭാഗം തിരഞ്ഞെടുത്തു!',
+      },
+      {
+        id: 'st3',
+        avatar: '🧑‍💼',
+        name: 'ഫാത്തിമ (കൊമേഴ്‌സ്)',
+        dream: 'കണക്കുകളും ഓഡിറ്റിംഗും എനിക്ക് വലിയ ഇഷ്ടമാണ് — ചാർട്ടേഡ് അക്കൗണ്ടന്റ് ആകണം!',
+        correctTrackId: 'ca',
+        tip: 'കൃത്യം! ഫാത്തിമയ്ക്ക് TREND CA & ഫിനാൻസ് കോച്ചിംഗ് വഴി കാണിച്ചു!',
+      },
+      {
+        id: 'st4',
+        avatar: '🗣️',
+        name: 'മുഹമ്മദ് (ഹൈസ്കൂൾ)',
+        dream: 'വേദിയിൽ കയറി പേടിയില്ലാതെ പ്രസംഗിക്കാനും നേതൃപാടവം വളർത്താനും പഠിക്കണം!',
+        correctTrackId: 'taste',
+        tip: 'അടിപൊളി! ആത്മവിശ്വാസത്തിനും പ്രസംഗത്തിനും TREND TASTE ക്യാമ്പ് മികച്ചതാണ്!',
+      },
+      {
+        id: 'st5',
+        avatar: '🎒',
+        name: 'സൽമാൻ (മികച്ച പഠിതാവ്)',
+        dream: 'ഉന്നത സർവകലാശാലയിൽ പഠിക്കാൻ ആഗ്രഹമുണ്ട്, പക്ഷേ ഫീസ് കണ്ടെത്താൻ സ്കോളർഷിപ്പ് വേണം!',
+        correctTrackId: 'educare',
+        tip: 'ഗംഭീരം! സൽമാന് TREND Educare സ്കോളർഷിപ്പ് & ഫെലോഷിപ്പ് സഹായം ഉറപ്പാക്കി!',
+      },
+    ],
+    doneMessage: '🎓🏆 ഗംഭീരം! TREND കരിയർ ഗൈഡൻസ് ഡെസ്കിലെ എല്ലാ വിദ്യാർത്ഥികൾക്കും ശരിയായ വഴി കാണിച്ചുകൊടുത്തു! (+25 XP)',
   },
   l4_sargalayam: {
-    engine: 'mosque_crane_builder',
-    title: '🎨 SKSSF സർഗ്ഗലയം — കലാ-സാഹിത്യ വേദി നിർമ്മാണം!',
-    subtitle: 'ആടുന്ന ക്രെയിൻ കൃത്യമായി നടുവിൽ എത്തുമ്പോൾ “⬇️ ഇറക്കൂ!” അമർത്തി സർഗ്ഗലയ വേദിയുടെ 4 ഘടകങ്ങൾ ഒരുക്കൂ!',
-    theme: 'tower',
-    flagVariant: 'skssf',
-    blocks: [
+    engine: 'sargalayam_spotlight',
+    title: '🎨 SKSSF സർഗ്ഗലയം — കലോത്സവ വേദി ഡയറക്ടർ!',
+    subtitle: 'കലോത്സവത്തിന് എത്തുന്ന ഓരോ മത്സരവും ശരിയായ സർഗ്ഗലയം വേദിയിലേക്ക് അയക്കൂ — ധാർമ്മിക മൂല്യങ്ങൾക്ക് വിരുദ്ധമായ പരിപാടി 🚫 വിലക്കൂ!',
+    acts: [
       {
-        id: 'sg1',
-        label: '1. ധാർമ്മിക മൂല്യങ്ങളുടെ അടിത്തറ',
-        color: '#065F46',
-        accent: '#A7F3D0',
-        note: 'മൂല്യബോധമുള്ള കലാ-സാഹിത്യ വേദിയുടെ ഉറച്ച അടിത്തറ പാകി!',
+        id: 'sg_a1',
+        emoji: '📖',
+        title: 'ഖുർആൻ പാരായണം & ഉറുദു/മലയാളം പ്രസംഗം',
+        detail: 'മനോഹരമായ തജ്‌വീദോടെയുള്ള ഖിറാഅത്തും ആശയസമ്പുഷ്ടമായ പ്രഭാഷണവും.',
+        stage: 'speech',
+        note: 'കൃത്യം! പ്രസംഗം & ഖിറാഅത്ത് മുഖ്യ വേദിയിലേക്ക് അയച്ചു!',
       },
       {
-        id: 'sg2',
-        label: '2. പ്രസംഗം, ഖിറാഅത്ത് & എഴുത്ത് വേദി',
-        color: '#047857',
-        accent: '#FDE68A',
-        note: 'വിദ്യാർത്ഥികളുടെ പ്രഭാഷണവും സാഹിത്യ കഴിവുകളും വളർത്തുന്ന വേദി ഒരുക്കി!',
+        id: 'sg_a2',
+        emoji: '🎶',
+        title: 'ഇശൽ മാപ്പിളപ്പാട്ട് & ബുർദ ആലാപനം',
+        detail: 'പൈതൃക ഇസ്‌ലാമിക കാവ്യങ്ങളുടെയും പ്രവാചക പ്രകീർത്തനങ്ങളുടെയും അവതരണം.',
+        stage: 'song',
+        note: 'സൂപ്പർ! മാപ്പിളപ്പാട്ട് & ബുർദ വേദിയിലേക്ക് കൃത്യമായി അയച്ചു!',
       },
       {
-        id: 'sg3',
-        label: '3. മാപ്പിളപ്പാട്ട്, ബുർദ & കലിഗ്രഫി പവലിയൻ',
-        color: '#7A1838',
-        accent: '#FDE047',
-        note: 'പൈതൃക ഇസ്‌ലാമിക കലകളുടെ മനോഹരമായ പ്രദർശന പവലിയൻ സ്ഥാപിച്ചു!',
+        id: 'sg_a3',
+        emoji: '🚫',
+        title: 'അനുചിത ബഹളവും അനാദരവ് പ്രദർശനവും',
+        detail: 'ധാർമ്മിക മൂല്യങ്ങൾക്കും സർഗ്ഗലയം അച്ചടക്കത്തിനും വിരുദ്ധമായ പരിപാടി.',
+        stage: 'reject',
+        note: 'മിടുക്കൻ! മൂല്യബോധമുള്ള സർഗ്ഗലയം വേദിയിൽ അനുചിത പരിപാടിക്ക് വിലക്കേർപ്പെടുത്തി!',
       },
       {
-        id: 'sg4',
-        label: '4. സർഗ്ഗലയം മുഖ്യ കമാനവും പതാകയും',
-        color: '#0F766E',
-        accent: '#FACC15',
-        note: 'സർഗ്ഗലയം കലോത്സവത്തിന്റെ മുഖ്യ കമാനവും SKSSF പതാകയും ഉയർന്നു!',
+        id: 'sg_a4',
+        emoji: '✒️',
+        title: 'അറബി കലിഗ്രഫി & കഥാരചന',
+        detail: 'മനോഹരമായ അറബി കൈയെഴുത്തും സാഹിത്യ സൃഷ്ടികളുടെ പ്രദർശനവും.',
+        stage: 'art',
+        note: 'അടിപൊളി! കലിഗ്രഫി & സാഹിത്യ പവലിയനിലേക്ക് വിജയകരമായി അയച്ചു!',
+      },
+      {
+        id: 'sg_a5',
+        emoji: '🎙️',
+        title: 'സമകാലിക വിഷയ സംവാദം (Debate)',
+        detail: 'വിദ്യാർത്ഥികളുടെ യുക്തിയും വിനയവും തെളിയിക്കുന്ന സംവാദ മത്സരം.',
+        stage: 'speech',
+        note: 'ഗംഭീരം! പ്രസംഗം & സംവാദ വേദിയിൽ അവസാന എൻട്രിയും തിളങ്ങി!',
       },
     ],
-    doneMessage: '🎨 അടിപൊളി! മൂല്യബോധമുള്ള സർഗ്ഗലയം കലാവേദി ഭംഗിയായി നിർമ്മിച്ചു! (+25 XP)',
+    doneMessage: '🎨🏆 അടിപൊളി! മൂല്യബോധമുള്ള SKSSF സർഗ്ഗലയം കലോത്സവ വേദികൾ ഗംഭീരമായി നിയന്ത്രിച്ചു! (+25 XP)',
   },
   l4_green_earth: {
-    engine: 'tree_rain_garden',
-    title: '🌿 ഹരിത ക്യാമ്പസ് — തൈകൾ നനച്ച് പരിസ്ഥിതി സംരക്ഷിക്കാം!',
-    subtitle: 'നീങ്ങുന്ന വെള്ളം നനയ്ക്കുന്ന ജഗ്ഗ് (🫖) ചെടിക്ക് നേരെ മുകളിൽ എത്തുമ്പോൾ മാത്രം 💧 അമർത്തൂ — ഒരു തുള്ളിയും പാഴാക്കരുത്!',
-    toolEmoji: '🫖',
-    actionLabel: '💧',
-    skyTheme: 'garden',
-    spots: [
+    engine: 'green_campus_sort',
+    title: '♻️ ഹരിത ക്യാമ്പസ് — ഗ്രീൻ പ്രോട്ടോക്കോൾ വേർതിരിക്കൽ കൺവെയർ!',
+    subtitle: 'ക്യാമ്പസിൽ നിന്ന് വരുന്ന ഓരോ വസ്തുവും 🌿 ജൈവവള ബിൻ, ♻️ റീസൈക്കിൾ ബിൻ, 🌱 ഗ്രീൻ മാതൃക എന്നിങ്ങനെ കൃത്യമായി വേർതിരിക്കൂ!',
+    items: [
       {
-        id: 'ge1',
-        label: '1. ക്യാമ്പസ് തണൽമരം',
-        bloomEmoji: '🌳',
-        message: 'വെള്ളം പാഴാക്കാതെ നനച്ചപ്പോൾ വിദ്യാർത്ഥികൾക്ക് തണലേകുന്ന മരം വളർന്നു!',
+        id: 'gc1',
+        emoji: '🍂',
+        label: 'ഉണങ്ങിയ മരയിലകൾ',
+        bin: 'compost',
+        note: 'ഉണങ്ങിയ ഇലകൾ ജൈവവളമാക്കി ക്യാമ്പസ് ചെടികൾക്ക് വളമാക്കി!',
       },
       {
-        id: 'ge2',
-        label: '2. ഔഷധ & പൂന്തോട്ടം',
-        bloomEmoji: '🌻',
-        message: 'പ്ലാസ്റ്റിക് മുക്ത ഹരിത ക്യാമ്പസിൽ പൂന്തോട്ടം വിരിഞ്ഞു!',
+        id: 'gc2',
+        emoji: '📰',
+        label: 'പഴയ പത്രങ്ങളും നോട്ട്ബുക്ക് പേപ്പറും',
+        bin: 'recycle',
+        note: 'പേപ്പറുകൾ റീസൈക്കിൾ ബിന്നിൽ ഇട്ട് മരങ്ങളെ സംരക്ഷിച്ചു!',
       },
       {
-        id: 'ge3',
-        label: '3. നാടിന്റെ ഹരിത ഫലവൃക്ഷം',
-        bloomEmoji: '🥭',
-        message: '“തൈ നടുന്നത് സ്വദഖയാണ്” എന്ന പ്രവാചക വചനം ജീവിതത്തിൽ പകർത്തി!',
+        id: 'gc3',
+        emoji: '🛍️',
+        label: 'തുണി സഞ്ചിയും സ്റ്റീൽ ഗ്ലാസും',
+        bin: 'green_alt',
+        note: 'പ്ലാസ്റ്റിക് ഒഴിവാക്കുന്ന തുണി സഞ്ചിയും സ്റ്റീൽ ഗ്ലാസും മികച്ച ഗ്രീൻ മാതൃക!',
+      },
+      {
+        id: 'gc4',
+        emoji: '🍌',
+        label: 'പഴത്തൊലിയും ഭക്ഷ്യാവശിഷ്ടവും',
+        bin: 'compost',
+        note: 'ജൈവ മാലിന്യം കമ്പോസ്റ്റ് പിറ്റിൽ ഇട്ട് മണ്ണിനെ സമ്പുഷ്ടമാക്കി!',
+      },
+      {
+        id: 'gc5',
+        emoji: '🧴',
+        label: 'വൃത്തിയാക്കിയ പ്ലാസ്റ്റിക് കുപ്പി',
+        bin: 'recycle',
+        note: 'പ്ലാസ്റ്റിക് കുപ്പികൾ വലിച്ചെറിയാതെ റീസൈക്കിൾ ശേഖരണത്തിൽ നൽകി!',
+      },
+      {
+        id: 'gc6',
+        emoji: '🌱',
+        label: 'പൊതുസ്ഥലത്ത് നടാനുള്ള തൈ',
+        bin: 'green_alt',
+        note: '“തൈ നടുന്നത് സ്വദഖയാണ്” — ഗ്രീൻ ക്യാമ്പസ് മാതൃക പൂർത്തിയായി!',
       },
     ],
-    doneMessage: '🌿 മാഷാ അല്ലാഹ്! 50-ാം പാഠത്തിലെ ഹരിത ക്യാമ്പസ് ദൗത്യം വിജയകരമായി പൂർത്തിയാക്കി! (+25 XP)',
+    doneMessage: '♻️🌿 മാഷാ അല്ലാഹ്! 50-ാം പാഠത്തിലെ ഹരിത ക്യാമ്പസ് ഗ്രീൻ പ്രോട്ടോക്കോൾ വിജയകരമായി പൂർത്തിയാക്കി! (+25 XP)',
   },
 };
 
@@ -3116,55 +3221,73 @@ const FlagRopeHoistGame: React.FC<{
   const isFullscreen = useGameFullscreen();
   const [pct, setPct] = useState(0);
   const [started, setStarted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(22);
-  const [windGust, setWindGust] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(28);
+  const [windPhase, setWindPhase] = useState<'calm' | 'warning' | 'gust'>('calm');
   const [shields, setShields] = useState(3);
   const [failReason, setFailReason] = useState<string | null>(null);
-  const [msg, setMsg] = useState('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന 💨 കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
+  const [msg, setMsg] = useState('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന ⛈️ കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
 
   const resetLocal = () => {
     setPct(0);
     setStarted(false);
-    setTimeLeft(22);
-    setWindGust(false);
+    setTimeLeft(28);
+    setWindPhase('calm');
     setShields(3);
     setFailReason(null);
-    setMsg('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന 💨 കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
+    setMsg('“🪢 കയർ വലിക്കൂ!” അമർത്തി പതാക ഉയർത്തൂ — ചുവന്ന ⛈️ കൊടുങ്കാറ്റ് വരുമ്പോൾ വലിക്കരുത്!');
   };
 
   useEffect(() => {
     resetLocal();
   }, [resetSignal]);
 
+  const won = pct >= 100;
   const failed = Boolean(failReason);
+  const windGust = windPhase === 'gust';
+  const windWarning = windPhase === 'warning';
 
+  // Fixed: depend ONLY on [started, won, failed] so tapping "Pull" never resets the storm clock!
   useEffect(() => {
-    if (!started || pct >= 100 || failed) return;
-    let secCount = 0;
+    if (!started || won || failed) return;
+    let halfSec = 0;
     const id = window.setInterval(() => {
-      secCount += 1;
-      // Periodic 2-second wind gusts every 5 seconds
-      const gustNow = secCount % 5 === 3 || secCount % 5 === 4;
-      setWindGust(gustNow);
-      if (gustNow) {
-        setMsg('💨 സൂക്ഷിക്കൂ! ശക്തമായ കാറ്റ് — ഇപ്പോൾ വലിക്കരുത്, 1 സെക്കൻഡ് കാക്കൂ!');
-      }
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          sound.playError();
-          setFailReason('⏱️ സമയം കഴിഞ്ഞു! 22 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്തണം.');
-          return 0;
+      halfSec += 1;
+      const cyclePos = halfSec % 9; // 4.5s repeating weather cycle
+
+      if (cyclePos === 3) {
+        setWindPhase('warning');
+        setMsg('⚠️ സൂക്ഷിക്കൂ! ചുവന്ന കൊടുങ്കാറ്റ് വരുന്നു — കൈ എടുക്കാൻ തയ്യാറാകൂ!');
+      } else if (cyclePos >= 4 && cyclePos <= 7) {
+        setWindPhase('gust');
+        if (cyclePos === 4) {
+          setMsg('⛈️ ചുവന്ന കൊടുങ്കാറ്റ്! ഇപ്പോൾ കയർ വലിക്കരുത് — കാറ്റ് അടങ്ങാൻ 2 സെക്കൻഡ് കാക്കൂ!');
         }
-        return t - 1;
-      });
-      setPct((p) => (p > 0 && p < 100 ? Math.max(0, p - 3) : p));
-    }, 1000);
+      } else {
+        setWindPhase('calm');
+        if (cyclePos === 8) {
+          setMsg('🌤️ കാറ്റ് അടങ്ങി! ഇപ്പോൾ വേഗം “🪢⬆️ കയർ വലിക്കൂ!”');
+        }
+      }
+
+      // Every full second: tick countdown & slight gravity slip
+      if (halfSec % 2 === 0) {
+        setTimeLeft((t) => {
+          if (t <= 1) {
+            sound.playError();
+            setFailReason('⏱️ സമയം കഴിഞ്ഞു! 28 സെക്കൻഡിനുള്ളിൽ പതാക 100% ഉയർത്തണം.');
+            return 0;
+          }
+          return t - 1;
+        });
+        setPct((p) => (p > 0 && p < 100 ? Math.max(0, p - 2) : p));
+      }
+    }, 500);
     return () => window.clearInterval(id);
-  }, [started, pct, failed]);
+  }, [started, won, failed]);
 
   const handlePull = () => {
     sound.unlockAudio();
-    if (pct >= 100 || failed) return;
+    if (won || failed) return;
     if (!started) setStarted(true);
 
     if (windGust) {
@@ -3173,14 +3296,14 @@ const FlagRopeHoistGame: React.FC<{
       setShields(rem);
       setPct((p) => Math.max(0, p - 8));
       if (rem <= 0) {
-        setFailReason('💨 കൊടുങ്കാറ്റിൽ കയർ വലിച്ച് 3 ഷീൽഡും പൊട്ടി! കാറ്റ് അടങ്ങുമ്പോൾ മാത്രം വലിക്കൂ.');
+        setFailReason('⛈️ ചുവന്ന കൊടുങ്കാറ്റിൽ കയർ വലിച്ച് 3 ഷീൽഡും പൊട്ടി! കാറ്റ് അടങ്ങുമ്പോൾ മാത്രം വലിക്കൂ.');
       } else {
-        setMsg(`💨 കാറ്റിൽ കയർ കുരുങ്ങി! 1 ഷീൽഡ് പൊട്ടി (ബാക്കി: ${rem}) — കാറ്റ് മാറട്ടെ!`);
+        setMsg(`⛈️ കൊടുങ്കാറ്റിൽ കയർ കുരുങ്ങി! 1 ഷീൽഡ് പൊട്ടി (ബാക്കി: ${rem}) — ചുവപ്പ് മാറാൻ കാക്കൂ!`);
       }
       return;
     }
 
-    const next = Math.min(100, pct + 14);
+    const next = Math.min(100, pct + 10);
     setPct(next);
     sound.playPop();
 
@@ -3191,7 +3314,7 @@ const FlagRopeHoistGame: React.FC<{
       narrator.speak(reached.note, reached.label);
     }
     if (next >= 100) {
-      setWindGust(false);
+      setWindPhase('calm');
       onWin();
     }
   };
@@ -3200,7 +3323,15 @@ const FlagRopeHoistGame: React.FC<{
 
   return (
     <div className="space-y-2.5">
-      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 shadow-inner bg-sky-100 select-none">
+      <div
+        className={`relative rounded-2xl overflow-hidden border-2 shadow-inner select-none transition-colors duration-200 ${
+          windGust
+            ? 'border-rose-600 bg-rose-200 ring-4 ring-rose-400/60'
+            : windWarning
+            ? 'border-amber-500 bg-amber-100'
+            : 'border-emerald-300 bg-sky-100'
+        }`}
+      >
         <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-emerald-500/30">
           <div className="flex items-center gap-1.5">
             <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
@@ -3209,6 +3340,16 @@ const FlagRopeHoistGame: React.FC<{
             <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 6 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
               ⏱️ {timeLeft}s
             </span>
+            {windGust && (
+              <span className="px-2 py-0.5 rounded-lg bg-rose-600 text-white text-[11px] font-black animate-pulse">
+                ⛈️ കൊടുങ്കാറ്റ്!
+              </span>
+            )}
+            {windWarning && (
+              <span className="px-2 py-0.5 rounded-lg bg-amber-500 text-slate-950 text-[11px] font-black animate-pulse">
+                ⚠️ കാറ്റ് വരുന്നു
+              </span>
+            )}
           </div>
           <GameShatterLives lives={shields} maxLives={3} compact />
         </div>
@@ -3219,31 +3360,66 @@ const FlagRopeHoistGame: React.FC<{
           role="img"
           aria-label={config.title}
         >
-          <rect width="600" height="245" fill={windGust ? '#FECDD3' : '#E0F2FE'} />
-          <circle cx="520" cy="45" r="22" fill="#FACC15" />
-          <path d="M0 205 Q180 185 360 205 T600 198 L600 245 L0 245 Z" fill="#16A34A" />
+          <rect
+            width="600"
+            height="245"
+            fill={windGust ? '#FDA4AF' : windWarning ? '#FEF3C7' : '#E0F2FE'}
+          />
+          {!windGust && <circle cx="520" cy="45" r="22" fill="#FACC15" />}
+          <path d="M0 205 Q180 185 360 205 T600 198 L600 245 L0 245 Z" fill={windGust ? '#15803D' : '#16A34A'} />
 
-          {/* Red Wind Gust Warning Streaks */}
+          {/* Storm Warning Cloud */}
+          {windWarning && (
+            <g>
+              <rect x="18" y="14" width="205" height="30" rx="9" fill="#D97706" />
+              <text x="120" y="33" textAnchor="middle" fill="#FFFFFF" fontSize="12" fontWeight="900">
+                ⚠️ കാറ്റ് വരുന്നു — സൂക്ഷിക്കൂ!
+              </text>
+              <text x="58" y="88" fontSize="34">🌩️</text>
+            </g>
+          )}
+
+          {/* Unmistakable Red Storm Gust Streaks, Cloud & Leaves */}
           {windGust && (
             <g>
-              {[55, 105, 155].map((wy) => (
+              {/* Dark crimson storm cloud */}
+              <ellipse cx="90" cy="58" rx="68" ry="26" fill="#881337" opacity="0.9" />
+              <ellipse cx="140" cy="64" rx="52" ry="22" fill="#9F1239" opacity="0.92" />
+              <text x="92" y="72" textAnchor="middle" fontSize="34">⛈️</text>
+
+              {[48, 86, 124, 160, 190].map((wy, i) => (
                 <motion.line
                   key={wy}
-                  x1="20"
+                  x1="-40"
                   y1={wy}
-                  x2="220"
-                  y2={wy}
-                  stroke="#E11D48"
-                  strokeWidth="4"
+                  x2="230"
+                  y2={wy - 8}
+                  stroke="#BE123C"
+                  strokeWidth="5"
                   strokeLinecap="round"
-                  strokeDasharray="18 14"
-                  animate={{ x: [0, 340], opacity: [0.2, 0.9, 0.2] }}
-                  transition={{ duration: 0.6, repeat: Infinity }}
+                  strokeDasharray="24 14"
+                  animate={{ x: [0, 420], opacity: [0.3, 1, 0.2] }}
+                  transition={{ duration: 0.45 + i * 0.05, repeat: Infinity, ease: 'linear' }}
                 />
               ))}
-              <rect x="30" y="16" width="175" height="28" rx="8" fill="#BE123C" />
-              <text x="117" y="34" textAnchor="middle" fill="#FFFFFF" fontSize="11.5" fontWeight="900">
-                💨 കൊടുങ്കാറ്റ് — നിൽക്കൂ!
+
+              {/* Flying leaves */}
+              {[72, 138].map((ly, i) => (
+                <motion.text
+                  key={ly}
+                  x="20"
+                  y={ly}
+                  fontSize="18"
+                  animate={{ x: [0, 520], y: [0, i === 0 ? -18 : 16] }}
+                  transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+                >
+                  🍃
+                </motion.text>
+              ))}
+
+              <rect x="16" y="12" width="225" height="32" rx="9" fill="#BE123C" stroke="#FFF1F2" strokeWidth="2" />
+              <text x="128" y="32" textAnchor="middle" fill="#FFFFFF" fontSize="12.5" fontWeight="900">
+                ⛈️ ചുവന്ന കൊടുങ്കാറ്റ്! നിൽക്കൂ!
               </text>
             </g>
           )}
@@ -3276,7 +3452,10 @@ const FlagRopeHoistGame: React.FC<{
             );
           })}
 
-          <motion.g animate={{ y: flagY }} transition={{ type: 'spring', stiffness: 160, damping: 16 }}>
+          <motion.g
+            animate={{ y: flagY, rotate: windGust ? [0, -4, 4, 0] : 0 }}
+            transition={{ y: { type: 'spring', stiffness: 160, damping: 16 }, rotate: { duration: 0.25, repeat: windGust ? Infinity : 0 } }}
+          >
             <MiniOfficialFlagSvg
               x={264}
               y={0}
@@ -3284,36 +3463,52 @@ const FlagRopeHoistGame: React.FC<{
               height={42}
               variant="skssf"
               flyDirection="right"
-              windSpeed={pct >= 100 || windGust ? 'fast' : 'idle'}
+              windSpeed={won || windGust ? 'fast' : 'idle'}
             />
           </motion.g>
         </svg>
 
-        <div className="bg-slate-900/95 px-3 py-1.5 border-t border-emerald-500/30 text-[11px] font-bold text-amber-100 text-center">
+        <div
+          className={`px-3 py-1.5 border-t text-[11px] font-extrabold text-center ${
+            windGust
+              ? 'bg-rose-800 border-rose-400 text-white'
+              : windWarning
+              ? 'bg-amber-600 border-amber-300 text-white'
+              : 'bg-slate-900/95 border-emerald-500/30 text-amber-100'
+          }`}
+        >
           {msg}
         </div>
 
         <div className="bg-slate-950/92 border-t border-emerald-500/40 px-3 py-2 flex items-center justify-center">
           <button
             type="button"
-            disabled={pct >= 100 || failed}
+            disabled={won || failed}
             onClick={handlePull}
             className={`h-13 px-8 rounded-2xl border-2 border-b-4 text-sm sm:text-base font-black transition-all cursor-pointer ${
-              pct >= 100
+              won
                 ? 'bg-emerald-600 text-white border-emerald-400 border-b-emerald-800 opacity-85'
                 : windGust
-                ? 'bg-rose-700 text-white border-rose-300 border-b-rose-950 animate-pulse'
+                ? 'bg-rose-700 text-white border-rose-300 border-b-rose-950 animate-pulse ring-4 ring-rose-400/70'
+                : windWarning
+                ? 'bg-amber-500 text-slate-950 border-amber-200 border-b-amber-800'
                 : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200 border-b-amber-600 shadow-md active:translate-y-0.5'
             }`}
           >
-            {pct >= 100 ? '🎉🚩 പതാക ഉയർന്നു!' : windGust ? '💨 കാറ്റ്! കാത്തിരിക്കൂ' : '🪢⬆️ കയർ വലിക്കൂ!'}
+            {won
+              ? '🎉🚩 പതാക ഉയർന്നു!'
+              : windGust
+              ? '⛈️ കൊടുങ്കാറ്റ്! വലിക്കരുത്!'
+              : windWarning
+              ? '⚠️ കാറ്റ് വരുന്നു — കയർ വലിക്കാം'
+              : '🪢⬆️ കയർ വലിക്കൂ!'}
           </button>
         </div>
 
         {failed && (
           <InStageFailOverlay
             title="🚩 പതാക ഉയർത്തൽ തടസ്സപ്പെട്ടു!"
-            reason={failReason || 'കൊടുങ്കാറ്റ് ഒഴിവാക്കി സമയത്തിനുള്ളിൽ പതാക ഉയർത്തൂ!'}
+            reason={failReason || 'ചുവന്ന കൊടുങ്കാറ്റ് ഒഴിവാക്കി സമയത്തിനുള്ളിൽ പതാക ഉയർത്തൂ!'}
             scoreText={`🚩 ${pct}%`}
             onRetry={resetLocal}
           />
@@ -4191,6 +4386,21 @@ const SceneGameRunner: React.FC<{
           )}
           {config.engine === 'balloon_pop_arcade' && (
             <BalloonPopArcadeGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'tagore_hall_pass_gate' && (
+            <TagoreHallPassGateGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'trend_career_compass' && (
+            <TrendCareerCompassGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'green_campus_sort' && (
+            <GreenCampusSortGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'organet_chain_connect' && (
+            <OrganetChainGame config={config} onWin={handleWin} resetSignal={resetSignal} />
+          )}
+          {config.engine === 'sargalayam_spotlight' && (
+            <SargalayamSpotlightGame config={config} onWin={handleWin} resetSignal={resetSignal} />
           )}
 
           {completed && (

@@ -1205,3 +1205,1020 @@ export const BalloonPopArcadeGame: React.FC<{
     </div>
   );
 };
+
+/* ============================================================================
+ * ENGINE D: 1995 KOZHIKODE TAGORE HALL PEACE MEET RECEPTION GATE GAME (sb_ch2)
+ *   Replaces the geographically incorrect airplane flight for Tagore Hall!
+ * ========================================================================== */
+export interface TagoreHallPassGateConfig {
+  engine: 'tagore_hall_pass_gate';
+  title: string;
+  subtitle: string;
+  guests: {
+    id: string;
+    emoji: string;
+    name: string;
+    message: string;
+    allow: boolean;
+    feedback: string;
+  }[];
+  doneMessage: string;
+}
+
+export const TagoreHallPassGateGame: React.FC<{
+  config: TagoreHallPassGateConfig;
+  onWin: () => void;
+  resetSignal: number;
+}> = ({ config, onWin, resetSignal }) => {
+  const [idx, setIdx] = useState(0);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [started, setStarted] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [msg, setMsg] = useState('🏛️ 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ കവാടം! സമാധാന അതിഥികളെ ✅ സ്വാഗതം ചെയ്യൂ, വിദ്വേഷ പ്രചാരകരെ 🛑 തടയൂ!');
+  const [lastGood, setLastGood] = useState<boolean | null>(null);
+
+  const resetLocal = () => {
+    setIdx(0);
+    setShields(3);
+    setTimeLeft(30);
+    setStarted(false);
+    setDone(false);
+    setFailReason(null);
+    setLastGood(null);
+    setMsg('🏛️ 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ കവാടം! സമാധാന അതിഥികളെ ✅ സ്വാഗതം ചെയ്യൂ, വിദ്വേഷ പ്രചാരകരെ 🛑 തടയൂ!');
+  };
+
+  useEffect(() => {
+    resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal, config.title]);
+
+  const failed = Boolean(failReason);
+
+  useEffect(() => {
+    if (!started || done || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ സമ്മേളന സമയം കഴിഞ്ഞു! 30 സെക്കൻഡിനുള്ളിൽ എല്ലാവരെയും പരിശോധിക്കണം.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, done, failed]);
+
+  const current = config.guests[idx];
+
+  const handleDecision = (admit: boolean) => {
+    sound.unlockAudio();
+    if (done || failed || !current) return;
+    if (!started) setStarted(true);
+
+    if (admit === current.allow) {
+      sound.playSuccess(idx + 1);
+      setLastGood(true);
+      setMsg(`✅ ${current.feedback}`);
+      narrator.speak(current.feedback, current.name);
+      if (idx + 1 >= config.guests.length) {
+        setDone(true);
+        onWin();
+      } else {
+        setIdx((i) => i + 1);
+      }
+    } else {
+      sound.playError();
+      setLastGood(false);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      if (rem <= 0) {
+        setFailReason('💥 3 തവണ തെറ്റായ തീരുമാനമെടുത്തു — ടാഗോർ ഹാൾ കവാട കവചം തകർന്നു!');
+      } else {
+        setMsg(
+          admit
+            ? `⚠️ അയ്യോ! “${current.name}” സമാധാന സദസ്സിന് ചേരാത്ത കെണിയാണ് — 🛑 തടയുക അമർത്തൂ! (ബാക്കി: ${rem})`
+            : `⚠️ അയ്യോ! “${current.name}” യഥാർത്ഥ അതിഥിയാണ് — ✅ സ്വാഗതം അമർത്തൂ! (ബാക്കി: ${rem})`
+        );
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-gradient-to-b from-amber-50 via-white to-emerald-50 shadow-inner select-none">
+        {/* Top HUD */}
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-emerald-500/30">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+              🏛️ {Math.min(idx + (done ? 1 : 0), config.guests.length)}/{config.guests.length}
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 8 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
+        </div>
+
+        {/* Tagore Hall Illustrated Banner */}
+        <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-emerald-900 px-3 py-2.5 text-center border-b-2 border-amber-400">
+          <p className="text-[11px] font-black tracking-wide text-amber-300">
+            🕊️ 1995 കോഴിക്കോട് ടാഗോർ സെന്റിനറി ഹാൾ · സമാധാന സദസ്സ്
+          </p>
+          <p className="text-[10px] font-bold text-emerald-100">
+            ശംസുൽ ഉലമയുടെ സൗഹാർദ്ദ വേദി — പ്രവേശന പാസ് പരിശോധന
+          </p>
+        </div>
+
+        {/* Guest Card */}
+        <div className="p-3.5 sm:p-4 space-y-3">
+          {!done && current ? (
+            <motion.div
+              key={current.id}
+              initial={{ opacity: 0, y: 12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className="rounded-2xl border-2 border-emerald-200 bg-white p-3.5 shadow-sm space-y-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-amber-100 to-emerald-100 border-2 border-amber-300 flex items-center justify-center text-3xl shrink-0">
+                  {current.emoji}
+                </div>
+                <div className="min-w-0">
+                  <span className="inline-block px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 text-[10px] font-black mb-0.5">
+                    കവാടത്തിൽ എത്തിയ അതിഥി #{idx + 1}
+                  </span>
+                  <h4 className="text-sm font-black text-slate-900 leading-snug">{current.name}</h4>
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
+                “{current.message}”
+              </div>
+            </motion.div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-emerald-100 border-2 border-emerald-400 text-center space-y-1">
+              <p className="text-2xl">🕊️🏛️✨</p>
+              <p className="text-sm font-black text-emerald-950">
+                1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സ് മനോഹരമായി വിജയിച്ചു!
+              </p>
+            </div>
+          )}
+
+          {/* Decision Buttons */}
+          {!done && (
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleDecision(false)}
+                className="h-12 rounded-xl border-2 border-b-4 bg-rose-600 hover:bg-rose-500 border-rose-300 border-b-rose-900 text-white text-sm font-black shadow active:translate-y-0.5 cursor-pointer"
+              >
+                🛑 തടയുക
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleDecision(true)}
+                className="h-12 rounded-xl border-2 border-b-4 bg-emerald-600 hover:bg-emerald-500 border-emerald-300 border-b-emerald-900 text-white text-sm font-black shadow active:translate-y-0.5 cursor-pointer"
+              >
+                ✅ സ്വാഗതം
+              </button>
+            </div>
+          )}
+
+          <p
+            className={`text-[11px] font-bold text-center px-2.5 py-1.5 rounded-xl border ${
+              lastGood === false
+                ? 'bg-rose-50 border-rose-300 text-rose-800'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-950'
+            }`}
+          >
+            {msg}
+          </p>
+        </div>
+
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="🏛️ പ്രവേശന പരിശോധന പരാജയപ്പെട്ടു!"
+            reason={failReason || 'സമാധാന അതിഥികളെ സ്വാഗതം ചെയ്ത് വിദ്വേഷ കെണികളെ തടയൂ!'}
+            scoreText={`🏛️ ${idx}/${config.guests.length}`}
+            onRetry={resetLocal}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * ENGINE E: TREND CAREER GUIDANCE HELPDESK EXPRESS (l4_trend_career)
+ *   Replaces the dull balloon_altitude_climb with a lively career-matching desk!
+ * ========================================================================== */
+export interface TrendCareerCompassConfig {
+  engine: 'trend_career_compass';
+  title: string;
+  subtitle: string;
+  tracks: { id: string; emoji: string; label: string; color: string }[];
+  students: {
+    id: string;
+    avatar: string;
+    name: string;
+    dream: string;
+    correctTrackId: string;
+    tip: string;
+  }[];
+  doneMessage: string;
+}
+
+export const TrendCareerCompassGame: React.FC<{
+  config: TrendCareerCompassConfig;
+  onWin: () => void;
+  resetSignal: number;
+}> = ({ config, onWin, resetSignal }) => {
+  const [idx, setIdx] = useState(0);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(35);
+  const [started, setStarted] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [lastError, setLastError] = useState(false);
+  const [msg, setMsg] = useState('🎓 TREND കരിയർ ഗൈഡൻസ് ഡെസ്ക്! വിദ്യാർത്ഥിയുടെ സ്വപ്നം വായിച്ച് ശരിയായ TREND വിഭാഗം തിരഞ്ഞെടുക്കൂ!');
+
+  const resetLocal = () => {
+    setIdx(0);
+    setShields(3);
+    setTimeLeft(35);
+    setStarted(false);
+    setDone(false);
+    setFailReason(null);
+    setLastError(false);
+    setMsg('🎓 TREND കരിയർ ഗൈഡൻസ് ഡെസ്ക്! വിദ്യാർത്ഥിയുടെ സ്വപ്നം വായിച്ച് ശരിയായ TREND വിഭാഗം തിരഞ്ഞെടുക്കൂ!');
+  };
+
+  useEffect(() => {
+    resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal, config.title]);
+
+  const failed = Boolean(failReason);
+
+  useEffect(() => {
+    if (!started || done || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ കരിയർ ക്യാമ്പ് ബെൽ അടിച്ചു! 35 സെക്കൻഡിനുള്ളിൽ എല്ലാ വിദ്യാർത്ഥികൾക്കും വഴികാട്ടണം.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, done, failed]);
+
+  const student = config.students[idx];
+
+  const handlePickTrack = (trackId: string) => {
+    sound.unlockAudio();
+    if (done || failed || !student) return;
+    if (!started) setStarted(true);
+
+    if (trackId === student.correctTrackId) {
+      sound.playSuccess(idx + 1);
+      setLastError(false);
+      setMsg(`🌟 ${student.tip}`);
+      narrator.speak(student.tip, student.name);
+      if (idx + 1 >= config.students.length) {
+        setDone(true);
+        onWin();
+      } else {
+        setIdx((i) => i + 1);
+      }
+    } else {
+      sound.playError();
+      setLastError(true);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      if (rem <= 0) {
+        setFailReason('💥 3 തവണ തെറ്റായ കരിയർ വഴി നിർദ്ദേശിച്ചു — TREND കവചങ്ങൾ തകർന്നു!');
+      } else {
+        setMsg(`⚠️ ${student.name}-ന്റെ സ്വപ്നം വീണ്ടും ശ്രദ്ധിക്കൂ! വേറെ TREND വിഭാഗമാണ് അനുയോജ്യം (ബാക്കി: ${rem})`);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-400 bg-gradient-to-b from-indigo-50 via-white to-amber-50 shadow-inner select-none">
+        {/* Top HUD */}
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-indigo-500/40">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-indigo-500/25 text-indigo-200 text-xs font-extrabold tabular-nums">
+              🎓 {Math.min(idx + (done ? 1 : 0), config.students.length)}/{config.students.length}
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 8 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
+        </div>
+
+        {/* Desk Stage */}
+        <div className="p-3.5 sm:p-4 space-y-3">
+          {!done && student ? (
+            <motion.div
+              key={student.id}
+              initial={{ opacity: 0, x: 18 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="rounded-2xl border-2 border-indigo-200 bg-white p-3.5 shadow-sm space-y-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-100 border-2 border-indigo-300 flex items-center justify-center text-2xl shrink-0">
+                  {student.avatar}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-indigo-700 uppercase">
+                    TREND കൗൺസിലിംഗ് ഡെസ്ക് · വിദ്യാർത്ഥി {idx + 1}
+                  </p>
+                  <h4 className="text-sm font-black text-slate-900">{student.name}</h4>
+                </div>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-extrabold text-slate-800 leading-relaxed">
+                💭 “{student.dream}”
+              </div>
+            </motion.div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-emerald-100 border-2 border-emerald-400 text-center space-y-1">
+              <p className="text-2xl">🎓🏆✨</p>
+              <p className="text-sm font-black text-emerald-950">
+                എല്ലാ വിദ്യാർത്ഥികൾക്കും കൃത്യമായ TREND കരിയർ വഴി കാണിച്ചുകൊടുത്തു!
+              </p>
+            </div>
+          )}
+
+          {/* Track Choices */}
+          {!done && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {config.tracks.map((tr) => (
+                <button
+                  key={tr.id}
+                  type="button"
+                  disabled={failed}
+                  onClick={() => handlePickTrack(tr.id)}
+                  className="p-2.5 rounded-xl border-2 border-b-4 bg-white hover:bg-indigo-50 border-indigo-200 border-b-indigo-500 text-slate-900 flex flex-col items-center justify-center gap-1 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                >
+                  <span className="text-2xl">{tr.emoji}</span>
+                  <span className="text-[11px] font-black text-center leading-tight">{tr.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p
+            className={`text-[11px] font-bold text-center px-2.5 py-1.5 rounded-xl border ${
+              lastError
+                ? 'bg-rose-50 border-rose-300 text-rose-800'
+                : 'bg-indigo-50 border-indigo-200 text-indigo-950'
+            }`}
+          >
+            {msg}
+          </p>
+        </div>
+
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="🎓 TREND കരിയർ ക്യാമ്പ് പരാജയപ്പെട്ടു!"
+            reason={failReason || 'വിദ്യാർത്ഥികളുടെ അഭിരുചിക്ക് ചേരുന്ന TREND വിഭാഗം തിരഞ്ഞെടുക്കൂ!'}
+            scoreText={`🎓 ${idx}/${config.students.length}`}
+            onRetry={resetLocal}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * ENGINE F: GREEN CAMPUS ECO-PROTOCOL CONVEYOR SORT GAME (l4_green_earth)
+ *   Eliminates the duplicate plant-watering game!
+ * ========================================================================== */
+export interface GreenCampusSortConfig {
+  engine: 'green_campus_sort';
+  title: string;
+  subtitle: string;
+  items: {
+    id: string;
+    emoji: string;
+    label: string;
+    bin: 'compost' | 'recycle' | 'green_alt';
+    note: string;
+  }[];
+  doneMessage: string;
+}
+
+export const GreenCampusSortGame: React.FC<{
+  config: GreenCampusSortConfig;
+  onWin: () => void;
+  resetSignal: number;
+}> = ({ config, onWin, resetSignal }) => {
+  const [idx, setIdx] = useState(0);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(28);
+  const [started, setStarted] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [isErr, setIsErr] = useState(false);
+  const [msg, setMsg] = useState('♻️ കൺവെയറിൽ വരുന്ന ഓരോ വസ്തുവും ശരിയായ ഹരിത ബിന്നിലേക്ക് വേർതിരിക്കൂ!');
+
+  const resetLocal = () => {
+    setIdx(0);
+    setShields(3);
+    setTimeLeft(28);
+    setStarted(false);
+    setDone(false);
+    setFailReason(null);
+    setIsErr(false);
+    setMsg('♻️ കൺവെയറിൽ വരുന്ന ഓരോ വസ്തുവും ശരിയായ ഹരിത ബിന്നിലേക്ക് വേർതിരിക്കൂ!');
+  };
+
+  useEffect(() => {
+    resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal, config.title]);
+
+  const failed = Boolean(failReason);
+
+  useEffect(() => {
+    if (!started || done || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ സമയം കഴിഞ്ഞു! ക്യാമ്പസ് ഗ്രീൻ പ്രോട്ടോക്കോൾ വേഗത്തിൽ പൂർത്തിയാക്കണം.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, done, failed]);
+
+  const current = config.items[idx];
+
+  const handleSort = (bin: 'compost' | 'recycle' | 'green_alt') => {
+    sound.unlockAudio();
+    if (done || failed || !current) return;
+    if (!started) setStarted(true);
+
+    if (bin === current.bin) {
+      sound.playSuccess(idx + 1);
+      setIsErr(false);
+      setMsg(`🌿 ${current.note}`);
+      narrator.speak(current.note, current.label);
+      if (idx + 1 >= config.items.length) {
+        setDone(true);
+        onWin();
+      } else {
+        setIdx((i) => i + 1);
+      }
+    } else {
+      sound.playError();
+      setIsErr(true);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      if (rem <= 0) {
+        setFailReason('💥 3 തവണ തെറ്റായ ബിന്നിൽ ഇട്ടു — ഹരിത കവചങ്ങൾ തകർന്നു!');
+      } else {
+        setMsg(`⚠️ “${current.label}” ഈ ബിന്നിലല്ല! ശരിയായ ഗ്രീൻ ബിൻ തിരഞ്ഞെടുക്കൂ (ബാക്കി: ${rem})`);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-gradient-to-b from-emerald-50 via-white to-lime-50 shadow-inner select-none">
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-emerald-500/40">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/25 text-emerald-200 text-xs font-extrabold tabular-nums">
+              ♻️ {Math.min(idx + (done ? 1 : 0), config.items.length)}/{config.items.length}
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 7 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
+        </div>
+
+        {/* Conveyor Belt Arena */}
+        <div className="p-3.5 sm:p-4 space-y-3">
+          <div className="relative rounded-2xl bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 border-2 border-slate-600 p-4 overflow-hidden">
+            <div className="flex items-center justify-center min-h-[76px]">
+              {!done && current ? (
+                <motion.div
+                  key={current.id}
+                  initial={{ x: -110, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 180, damping: 18 }}
+                  className="px-5 py-2.5 rounded-2xl bg-white border-2 border-emerald-300 shadow-lg flex items-center gap-3"
+                >
+                  <span className="text-3xl">{current.emoji}</span>
+                  <div>
+                    <p className="text-[10px] font-extrabold text-emerald-700">ക്യാമ്പസ് വസ്തു #{idx + 1}</p>
+                    <p className="text-sm font-black text-slate-900">{current.label}</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <p className="text-sm font-black text-emerald-300">🌿✨ പ്ലാസ്റ്റിക് മുക്ത ഹരിത ക്യാമ്പസ് പൂർത്തിയായി!</p>
+              )}
+            </div>
+            {/* Moving Belt Stripes */}
+            <div className="mt-3 h-2.5 rounded-full bg-slate-700 overflow-hidden flex items-center justify-around">
+              {[0, 1, 2, 3, 4, 5, 6].map((r) => (
+                <span key={r} className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+              ))}
+            </div>
+          </div>
+
+          {!done && (
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleSort('compost')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-emerald-700 hover:bg-emerald-600 border-emerald-300 border-b-emerald-950 text-white flex flex-col items-center gap-1 shadow active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-2xl">🌿</span>
+                <span className="text-[11px] font-black text-center leading-tight">ജൈവവള ബിൻ</span>
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleSort('recycle')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-sky-700 hover:bg-sky-600 border-sky-300 border-b-sky-950 text-white flex flex-col items-center gap-1 shadow active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-2xl">♻️</span>
+                <span className="text-[11px] font-black text-center leading-tight">റീസൈക്കിൾ ബിൻ</span>
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleSort('green_alt')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-amber-500 hover:bg-amber-400 border-amber-200 border-b-amber-800 text-slate-950 flex flex-col items-center gap-1 shadow active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-2xl">🌱</span>
+                <span className="text-[11px] font-black text-center leading-tight">ഗ്രീൻ മാതൃക</span>
+              </button>
+            </div>
+          )}
+
+          <p
+            className={`text-[11px] font-bold text-center px-2.5 py-1.5 rounded-xl border ${
+              isErr
+                ? 'bg-rose-50 border-rose-300 text-rose-800'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-950'
+            }`}
+          >
+            {msg}
+          </p>
+        </div>
+
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="♻️ ഹരിത വേർതിരിക്കൽ പരാജയപ്പെട്ടു!"
+            reason={failReason || 'ജൈവവളം, റീസൈക്കിൾ, ഗ്രീൻ മാതൃക എന്നിവ കൃത്യമായി വേർതിരിക്കൂ!'}
+            scoreText={`♻️ ${idx}/${config.items.length}`}
+            onRetry={resetLocal}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * ENGINE G: ORGANET 15→19→21→25→31 DIGITAL CHAIN BUILDER (l2_tiers)
+ *   Eliminates the duplicate mosque_crane_builder game!
+ * ========================================================================== */
+export interface OrganetChainConfig {
+  engine: 'organet_chain_connect';
+  title: string;
+  subtitle: string;
+  nodes: { id: string; count: number; label: string; emoji: string; note: string }[];
+  decoys: { id: string; count: number; label: string }[];
+  doneMessage: string;
+}
+
+export const OrganetChainGame: React.FC<{
+  config: OrganetChainConfig;
+  onWin: () => void;
+  resetSignal: number;
+}> = ({ config, onWin, resetSignal }) => {
+  const [step, setStep] = useState(0);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(26);
+  const [started, setStarted] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [isErr, setIsErr] = useState(false);
+  const [msg, setMsg] = useState('🔗 താഴെ നിന്ന് 15 (യൂണിറ്റ്) മുതൽ 31 (സ്റ്റേറ്റ്) വരെ കൃത്യമായ ക്രമത്തിൽ ഓർഗാനെറ്റ് കണ്ണികൾ ബന്ധിപ്പിക്കൂ!');
+
+  const resetLocal = () => {
+    setStep(0);
+    setShields(3);
+    setTimeLeft(26);
+    setStarted(false);
+    setDone(false);
+    setFailReason(null);
+    setIsErr(false);
+    setMsg('🔗 താഴെ നിന്ന് 15 (യൂണിറ്റ്) മുതൽ 31 (സ്റ്റേറ്റ്) വരെ കൃത്യമായ ക്രമത്തിൽ ഓർഗാനെറ്റ് കണ്ണികൾ ബന്ധിപ്പിക്കൂ!');
+  };
+
+  useEffect(() => {
+    resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal, config.title]);
+
+  const failed = Boolean(failReason);
+
+  useEffect(() => {
+    if (!started || done || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ സമയം കഴിഞ്ഞു! 15 → 19 → 21 → 25 → 31 ക്രമത്തിൽ വേഗം ബന്ധിപ്പിക്കണം.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, done, failed]);
+
+  // Deterministic shuffled display of real nodes + decoys
+  const options = [
+    { kind: 'real' as const, node: config.nodes[2] },
+    { kind: 'decoy' as const, decoy: config.decoys[0] },
+    { kind: 'real' as const, node: config.nodes[0] },
+    { kind: 'real' as const, node: config.nodes[4] },
+    { kind: 'real' as const, node: config.nodes[1] },
+    { kind: 'decoy' as const, decoy: config.decoys[1] },
+    { kind: 'real' as const, node: config.nodes[3] },
+  ].filter((o) => (o.kind === 'real' ? Boolean(o.node) : Boolean(o.decoy)));
+
+  const handleTap = (countVal: number, label: string, isReal: boolean) => {
+    sound.unlockAudio();
+    if (done || failed) return;
+    if (!started) setStarted(true);
+
+    const expected = config.nodes[step];
+    if (isReal && expected && countVal === expected.count) {
+      sound.playSuccess(step + 1);
+      setIsErr(false);
+      setMsg(`✅ ${expected.note}`);
+      narrator.speak(expected.note, `${expected.count} ${expected.label}`);
+      if (step + 1 >= config.nodes.length) {
+        setDone(true);
+        onWin();
+      } else {
+        setStep((s) => s + 1);
+      }
+    } else {
+      sound.playError();
+      setIsErr(true);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      if (rem <= 0) {
+        setFailReason('💥 തെറ്റായ ഘടകം 3 തവണ തൊട്ടു — ഓർഗാനെറ്റ് ശൃംഖല മുറിഞ്ഞു!');
+      } else {
+        setMsg(
+          `⚠️ തെറ്റ്! “${countVal} (${label})” അല്ല — ഇപ്പോൾ അടുത്ത ഘടകം (${expected?.label}) തിരഞ്ഞെടുക്കൂ! (ബാക്കി: ${rem})`
+        );
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400 bg-gradient-to-b from-slate-900 via-slate-950 to-teal-950 text-white shadow-inner select-none">
+        <div className="bg-slate-950 px-3 py-2 flex items-center justify-between gap-2 border-b border-cyan-500/30">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-200 text-xs font-extrabold tabular-nums">
+              🔗 {step}/{config.nodes.length}
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 7 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
+        </div>
+
+        <div className="p-3.5 sm:p-4 space-y-3.5">
+          {/* 5-Node Connected Circuit Bar */}
+          <div className="flex items-center justify-between gap-1 px-1">
+            {config.nodes.map((n, i) => {
+              const linked = i < step;
+              const isNext = i === step && !done;
+              return (
+                <React.Fragment key={n.id}>
+                  <div
+                    className={`flex-1 py-2 px-1 rounded-xl border-2 text-center transition-all ${
+                      linked
+                        ? 'bg-emerald-600 border-amber-300 text-white shadow'
+                        : isNext
+                        ? 'bg-cyan-950 border-cyan-400 text-cyan-200 ring-2 ring-cyan-300/60 animate-pulse'
+                        : 'bg-slate-800/80 border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <p className="text-sm font-black tabular-nums">{linked ? n.count : '?'}</p>
+                    <p className="text-[9px] font-bold truncate">{n.label}</p>
+                  </div>
+                  {i < config.nodes.length - 1 && (
+                    <span className={`text-xs font-black ${linked ? 'text-amber-300' : 'text-slate-600'}`}>→</span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Shuffled Choice Buttons */}
+          {!done ? (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {options.map((opt) => {
+                if (opt.kind === 'decoy') {
+                  return (
+                    <button
+                      key={opt.decoy.id}
+                      type="button"
+                      disabled={failed}
+                      onClick={() => handleTap(opt.decoy.count, opt.decoy.label, false)}
+                      className="py-2.5 px-2 rounded-xl border-2 border-b-4 bg-slate-800 hover:bg-slate-700 border-slate-600 border-b-slate-950 text-white flex flex-col items-center cursor-pointer active:translate-y-0.5"
+                    >
+                      <span className="text-lg font-black tabular-nums text-amber-300">{opt.decoy.count}</span>
+                      <span className="text-[10px] font-bold text-slate-200">{opt.decoy.label}</span>
+                    </button>
+                  );
+                }
+                const alreadyLinked = config.nodes.findIndex((x) => x.id === opt.node.id) < step;
+                return (
+                  <button
+                    key={opt.node.id}
+                    type="button"
+                    disabled={alreadyLinked || failed}
+                    onClick={() => handleTap(opt.node.count, opt.node.label, true)}
+                    className={`py-2.5 px-2 rounded-xl border-2 border-b-4 flex flex-col items-center transition-all ${
+                      alreadyLinked
+                        ? 'bg-emerald-900/50 border-emerald-600 text-emerald-300 opacity-50'
+                        : 'bg-slate-800 hover:bg-cyan-900 border-cyan-500/60 border-b-slate-950 text-white cursor-pointer active:translate-y-0.5'
+                    }`}
+                  >
+                    <span className="text-lg font-black tabular-nums text-amber-300">
+                      {alreadyLinked ? '✅' : opt.node.count}
+                    </span>
+                    <span className="text-[10px] font-bold text-cyan-100">{opt.node.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-emerald-800/80 border border-amber-300 text-center text-xs font-black text-amber-200">
+              🔗🎉 15 → 19 → 21 → 25 → 31 ഓർഗാനെറ്റ് ശൃംഖല പൂർണ്ണമായി ബന്ധിപ്പിച്ചു!
+            </div>
+          )}
+
+          <p
+            className={`text-[11px] font-bold text-center px-2.5 py-1.5 rounded-xl border ${
+              isErr
+                ? 'bg-rose-950/90 border-rose-400 text-rose-200'
+                : 'bg-slate-900/90 border-cyan-700 text-cyan-100'
+            }`}
+          >
+            {msg}
+          </p>
+        </div>
+
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="🔗 ഓർഗാനെറ്റ് ശൃംഖല മുറിഞ്ഞു!"
+            reason={failReason || '15 → 19 → 21 → 25 → 31 ക്രമത്തിൽ ശരിയായി ബന്ധിപ്പിക്കൂ!'}
+            scoreText={`🔗 ${step}/${config.nodes.length}`}
+            onRetry={resetLocal}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ============================================================================
+ * ENGINE H: SARGALAYAM KALOLSAVAM STAGE DIRECTOR GAME (l4_sargalayam)
+ *   Eliminates the 3rd duplicate mosque_crane_builder game!
+ * ========================================================================== */
+export interface SargalayamSpotlightConfig {
+  engine: 'sargalayam_spotlight';
+  title: string;
+  subtitle: string;
+  acts: {
+    id: string;
+    emoji: string;
+    title: string;
+    detail: string;
+    stage: 'speech' | 'song' | 'art' | 'reject';
+    note: string;
+  }[];
+  doneMessage: string;
+}
+
+export const SargalayamSpotlightGame: React.FC<{
+  config: SargalayamSpotlightConfig;
+  onWin: () => void;
+  resetSignal: number;
+}> = ({ config, onWin, resetSignal }) => {
+  const [idx, setIdx] = useState(0);
+  const [shields, setShields] = useState(3);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [started, setStarted] = useState(false);
+  const [done, setDone] = useState(false);
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [isErr, setIsErr] = useState(false);
+  const [msg, setMsg] = useState('🎨 സർഗ്ഗലയം കലോത്സവ വേദി ഡയറക്ടർ! ഓരോ മത്സരവും ശരിയായ വേദിയിലേക്ക് അയക്കൂ — അനുചിത പരിപാടി 🚫 വിലക്കൂ!');
+
+  const resetLocal = () => {
+    setIdx(0);
+    setShields(3);
+    setTimeLeft(30);
+    setStarted(false);
+    setDone(false);
+    setFailReason(null);
+    setIsErr(false);
+    setMsg('🎨 സർഗ്ഗലയം കലോത്സവ വേദി ഡയറക്ടർ! ഓരോ മത്സരവും ശരിയായ വേദിയിലേക്ക് അയക്കൂ — അനുചിത പരിപാടി 🚫 വിലക്കൂ!');
+  };
+
+  useEffect(() => {
+    resetLocal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetSignal, config.title]);
+
+  const failed = Boolean(failReason);
+
+  useEffect(() => {
+    if (!started || done || failed) return;
+    const id = window.setInterval(() => {
+      setTimeLeft((t) => {
+        if (t <= 1) {
+          sound.playError();
+          setFailReason('⏱️ കലോത്സവ സമയം കഴിഞ്ഞു! വേദികൾ വേഗത്തിൽ ക്രമീകരിക്കണം.');
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [started, done, failed]);
+
+  const act = config.acts[idx];
+
+  const handleAssign = (stage: 'speech' | 'song' | 'art' | 'reject') => {
+    sound.unlockAudio();
+    if (done || failed || !act) return;
+    if (!started) setStarted(true);
+
+    if (stage === act.stage) {
+      sound.playSuccess(idx + 1);
+      setIsErr(false);
+      setMsg(`✨ ${act.note}`);
+      narrator.speak(act.note, act.title);
+      if (idx + 1 >= config.acts.length) {
+        setDone(true);
+        onWin();
+      } else {
+        setIdx((i) => i + 1);
+      }
+    } else {
+      sound.playError();
+      setIsErr(true);
+      const rem = Math.max(0, shields - 1);
+      setShields(rem);
+      if (rem <= 0) {
+        setFailReason('💥 3 തവണ തെറ്റായ വേദി തിരഞ്ഞെടുത്തു — സർഗ്ഗലയം കവചങ്ങൾ തകർന്നു!');
+      } else {
+        setMsg(`⚠️ “${act.title}” ആ വേദിയിലല്ല! കൃത്യമായ സർഗ്ഗലയം വേദി തിരഞ്ഞെടുക്കൂ (ബാക്കി: ${rem})`);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-fuchsia-400 bg-gradient-to-b from-purple-950 via-fuchsia-950 to-slate-950 text-white shadow-inner select-none">
+        <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-fuchsia-500/30">
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded-lg bg-fuchsia-500/25 text-fuchsia-200 text-xs font-extrabold tabular-nums">
+              🎨 {Math.min(idx + (done ? 1 : 0), config.acts.length)}/{config.acts.length}
+            </span>
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${timeLeft <= 7 ? 'bg-rose-700 text-white animate-pulse' : 'bg-slate-800 text-white'}`}>
+              ⏱️ {timeLeft}s
+            </span>
+          </div>
+          <GameShatterLives lives={shields} maxLives={3} compact />
+        </div>
+
+        <div className="p-3.5 sm:p-4 space-y-3">
+          {!done && act ? (
+            <motion.div
+              key={act.id}
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="rounded-2xl bg-gradient-to-br from-amber-50 to-white text-slate-900 border-2 border-amber-300 p-3.5 shadow-lg space-y-1.5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-fuchsia-100 border-2 border-fuchsia-300 flex items-center justify-center text-2xl shrink-0">
+                  {act.emoji}
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-fuchsia-700">
+                    സർഗ്ഗലയം എൻട്രി #{idx + 1}
+                  </span>
+                  <h4 className="text-sm font-black text-slate-900">{act.title}</h4>
+                </div>
+              </div>
+              <p className="text-xs font-bold text-slate-700 bg-amber-100/70 rounded-xl px-2.5 py-1.5">
+                {act.detail}
+              </p>
+            </motion.div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-emerald-800/80 border-2 border-amber-300 text-center space-y-1">
+              <p className="text-2xl">🎨🏆✨</p>
+              <p className="text-sm font-black text-amber-200">
+                SKSSF സർഗ്ഗലയം കലോത്സവ വേദികൾ ഗംഭീരമായി ക്രമീകരിച്ചു!
+              </p>
+            </div>
+          )}
+
+          {!done && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleAssign('speech')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-emerald-700 hover:bg-emerald-600 border-emerald-300 border-b-emerald-950 text-white flex items-center justify-center gap-1.5 text-xs font-black active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-lg">🎙️</span>
+                <span>പ്രസംഗം & ഖിറാഅത്ത്</span>
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleAssign('song')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-sky-700 hover:bg-sky-600 border-sky-300 border-b-sky-950 text-white flex items-center justify-center gap-1.5 text-xs font-black active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-lg">🎶</span>
+                <span>മാപ്പിളപ്പാട്ട് & ബുർദ</span>
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleAssign('art')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-amber-500 hover:bg-amber-400 border-amber-200 border-b-amber-800 text-slate-950 flex items-center justify-center gap-1.5 text-xs font-black active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-lg">✒️</span>
+                <span>കലിഗ്രഫി & സാഹിത്യം</span>
+              </button>
+              <button
+                type="button"
+                disabled={failed}
+                onClick={() => handleAssign('reject')}
+                className="p-2.5 rounded-xl border-2 border-b-4 bg-rose-700 hover:bg-rose-600 border-rose-300 border-b-rose-950 text-white flex items-center justify-center gap-1.5 text-xs font-black active:translate-y-0.5 cursor-pointer"
+              >
+                <span className="text-lg">🚫</span>
+                <span>അനുചിതം · വിലക്കൂ</span>
+              </button>
+            </div>
+          )}
+
+          <p
+            className={`text-[11px] font-bold text-center px-2.5 py-1.5 rounded-xl border ${
+              isErr
+                ? 'bg-rose-950/90 border-rose-400 text-rose-200'
+                : 'bg-fuchsia-950/80 border-fuchsia-500/40 text-amber-100'
+            }`}
+          >
+            {msg}
+          </p>
+        </div>
+
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="🎨 സർഗ്ഗലയം വേദി ക്രമീകരണം പരാജയപ്പെട്ടു!"
+            reason={failReason || 'ഓരോ കലാപരിപാടിയും ശരിയായ വേദിയിലേക്ക് അയച്ച് അനുചിത എൻട്രികൾ വിലക്കൂ!'}
+            scoreText={`🎨 ${idx}/${config.acts.length}`}
+            onRetry={resetLocal}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
