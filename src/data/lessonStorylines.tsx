@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ChevronDown, ChevronUp, Info, Sparkles } from 'lucide-react';
+import { ChevronUp, Info, Play, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 
 export interface LessonStorylineItem {
@@ -477,46 +477,29 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
   return (
     <section
       data-lesson-storyline="true"
-      className="mt-3 rounded-2xl border-2 border-purple-200/90 bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/70 shadow-xs overflow-hidden scroll-mt-20"
+      className="rounded-2xl border-2 border-purple-200/90 bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/60 shadow-sm overflow-hidden scroll-mt-20"
     >
-      <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            sound.unlockAudio();
-            sound.playClick();
-            setOpen((v) => !v);
-          }}
-          aria-expanded={open}
-          className="flex-1 flex items-center gap-2 text-left min-w-0 cursor-pointer"
-        >
-          <span className="w-8 h-8 rounded-xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
-            <Sparkles className="w-4 h-4" />
+      <div className="p-3.5 sm:p-4 space-y-3">
+        {/* Row 1: Full-width Icon + Section Tag + Complete Readable Title */}
+        <div className="flex items-start gap-3 w-full">
+          <span className="w-10 h-10 rounded-xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="w-5 h-5" />
           </span>
-          <div className="min-w-0">
-            <p className="text-xs sm:text-sm font-extrabold text-purple-950 leading-snug">
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <span className="text-[10px] font-black tracking-wider uppercase text-purple-700 block">
+              STORYLINE
+            </span>
+            <h3 className="text-sm sm:text-base font-extrabold text-purple-950 leading-snug">
               ✨ സ്റ്റോറി ലൈൻ മനസ്സിലാക്കാം
-            </p>
-            <p className="text-[11px] font-semibold text-purple-700 truncate">
-              {open ? 'സങ്കൽപ്പിച്ച് കാണാം · അടുത്ത പാഠത്തിലേക്കുള്ള ബന്ധം' : 'തുറന്നു വായിക്കാൻ ഇവിടെ തൊടുക'}
+            </h3>
+            <p className="text-xs font-semibold text-purple-700 leading-snug">
+              {story.heading}
             </p>
           </div>
-        </button>
+        </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              sound.playClick();
-              setShowInfo((v) => !v);
-            }}
-            aria-label="സ്റ്റോറി ലൈൻ വിവരണം"
-            title="എന്താണ് സ്റ്റോറി ലൈൻ?"
-            className="w-7 h-7 rounded-lg bg-purple-100 hover:bg-purple-200 text-purple-800 flex items-center justify-center cursor-pointer transition-colors"
-          >
-            <Info className="w-3.5 h-3.5" />
-          </button>
+        {/* Row 2: Uniform Action Bar Below Title */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-purple-200/70">
           <button
             type="button"
             onClick={() => {
@@ -524,11 +507,31 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
               sound.playClick();
               setOpen((v) => !v);
             }}
-            aria-label={open ? 'സ്റ്റോറി ലൈൻ അടയ്ക്കുക' : 'സ്റ്റോറി ലൈൻ തുറക്കുക'}
-            className="w-7 h-7 rounded-lg bg-purple-700 hover:bg-purple-800 text-white flex items-center justify-center cursor-pointer transition-colors"
+            aria-expanded={open}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+              open
+                ? 'bg-white hover:bg-purple-50 text-purple-900 border-purple-300 border'
+                : 'bg-purple-700 hover:bg-purple-800 text-white border-purple-950'
+            }`}
           >
-            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {open ? <ChevronUp className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+            <span>{open ? 'Close Storyline' : 'Open Storyline'}</span>
           </button>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setShowInfo((v) => !v);
+              }}
+              aria-label="സ്റ്റോറി ലൈൻ വിവരണം"
+              title="എന്താണ് സ്റ്റോറി ലൈൻ?"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 cursor-pointer transition-colors"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

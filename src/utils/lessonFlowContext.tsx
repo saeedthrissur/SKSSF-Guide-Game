@@ -191,23 +191,26 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
 
   // Determine the single clearest NEXT action for the user
   let nextTarget: 'game' | 'lesson' | 'quiz' | 'next' = 'lesson';
-  let nextLabel = 'അടുത്തത്: 📖 പാഠം തുറന്ന് ഉറപ്പിക്കാം';
+  let nextLabel = 'അടുത്തത്: 📖 Open Lesson തുറന്ന് ഉറപ്പിക്കാം';
   if (quizDone) {
     nextTarget = 'next';
     nextLabel = 'പൂർത്തിയായി! 🚀 അടുത്ത പാഠത്തിലേക്ക് പോകാം';
   } else if (lessonDone) {
     nextTarget = 'quiz';
-    nextLabel = 'അടുത്തത്: ❓ ക്വിസിന് ഉത്തരം നൽകാം';
+    nextLabel = 'അടുത്തത്: ❓ Open Quiz തുറന്ന് ഉത്തരം നൽകാം';
   } else if (gameDone) {
     nextTarget = 'lesson';
-    nextLabel = 'ഗെയിം കഴിഞ്ഞു! 📖 ഇനി പാഠം ഉറപ്പിക്കാം';
+    nextLabel = 'ഗെയിം കഴിഞ്ഞു! 📖 ഇനി Open Lesson ഉറപ്പിക്കാം';
   } else {
     nextTarget = 'lesson';
-    nextLabel = 'ആദ്യം 🎮 ഗെയിം കളിക്കാം അല്ലെങ്കിൽ 📖 പാഠം വായിക്കാം';
+    nextLabel = 'ആദ്യം 🎮 Open Game അല്ലെങ്കിൽ 📖 Open Lesson തുറക്കാം';
   }
 
-  const jumpTo = (selector: string) => {
+  const jumpTo = (selector: string, openEvent?: string) => {
     setOpen(false);
+    if (openEvent) {
+      window.dispatchEvent(new CustomEvent(openEvent));
+    }
     setTimeout(() => {
       const found = smoothScrollToSelector(selector);
       if (!found) {
@@ -217,7 +220,7 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
           window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
       }
-    }, 60);
+    }, 80);
   };
 
   return (
@@ -290,18 +293,18 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
               >
                 <span className="flex items-center gap-2">
                   <Gamepad2 className="w-4 h-4 text-emerald-600" />
-                  ഗെയിം കളിക്കാം
+                  Open Game
                 </span>
                 {gameDone ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 ) : (
-                  <span className="text-[10px] text-slate-500">തുറക്കാം</span>
+                  <span className="text-[10px] text-slate-500">ഗെയിം</span>
                 )}
               </button>
 
               <button
                 type="button"
-                onClick={() => jumpTo('[data-lesson-drawer="true"]')}
+                onClick={() => jumpTo('[data-lesson-drawer="true"]', 'skssf:open-lesson')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                   nextTarget === 'lesson'
                     ? 'bg-amber-100 text-amber-950 border-2 border-amber-400 shadow-sm'
@@ -309,8 +312,8 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
                 }`}
               >
                 <span className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-600" />
-                  പാഠം വായിക്കാം
+                  <BookOpen className="w-4 h-4 text-teal-600" />
+                  Open Lesson
                 </span>
                 {lessonDone ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -332,14 +335,14 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
               >
                 <span className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-purple-600" />
-                  സ്റ്റോറി ലൈൻ മനസ്സിലാക്കാം
+                  Open Storyline
                 </span>
                 <span className="text-[10px] text-purple-600">കഥ</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => jumpTo('[data-lesson-quiz="true"]')}
+                onClick={() => jumpTo('[data-lesson-quiz="true"]', 'skssf:open-quiz')}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                   nextTarget === 'quiz'
                     ? 'bg-amber-100 text-amber-950 border-2 border-amber-400 shadow-sm'
@@ -348,7 +351,7 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
               >
                 <span className="flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-amber-600" />
-                  ക്വിസ് പ്രോഗ്രാം
+                  Open Quiz
                 </span>
                 {quizDone ? (
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />

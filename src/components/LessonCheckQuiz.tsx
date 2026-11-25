@@ -4,11 +4,11 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  ChevronDown,
   ChevronUp,
   HelpCircle,
   Info,
   Lock,
+  Play,
   XCircle,
 } from 'lucide-react';
 import { LESSON_QUIZZES } from '../data/lessonQuizzes';
@@ -78,13 +78,22 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   const { lives, maxLives } = useGameLives();
   const { isLessonConfirmed, hasLessonDrawerOnPage } = useLessonFlow();
   const [shakeTick, setShakeTick] = useState(0);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
-    setIsOpen(true);
+    setIsOpen(false);
     setShowInfo(false);
   }, [lessonId]);
+
+  // Automatically open the quiz when the user confirms the lesson drawer
+  useEffect(() => {
+    const onAutoOpenQuiz = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener('skssf:open-quiz', onAutoOpenQuiz);
+    return () => window.removeEventListener('skssf:open-quiz', onAutoOpenQuiz);
+  }, []);
 
   if (!quiz) return null;
 
@@ -147,93 +156,106 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
             : 'bg-gradient-to-br from-emerald-50/90 via-white to-amber-50/60 border-emerald-300'
         }`}
       >
-        {/* Quiz Header Bar */}
-        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              setIsOpen((v) => !v);
-            }}
-            aria-expanded={isOpen}
-            aria-label={title}
-            className="flex-1 flex items-center gap-2 min-w-0 text-left cursor-pointer"
-          >
+        {/* Unified 2-Row Quiz Header */}
+        <div className="p-3.5 sm:p-4 space-y-3">
+          {/* Row 1: Full-width Icon + Section Tag + Status + Complete Readable Title */}
+          <div className="flex items-start gap-3 w-full">
             <span
-              className={`w-8 h-8 rounded-xl text-white flex items-center justify-center shrink-0 shadow-2xs ${
+              className={`w-10 h-10 rounded-xl text-white flex items-center justify-center shrink-0 shadow-xs ${
                 lessonUnlocked ? 'bg-emerald-700' : 'bg-amber-600'
               }`}
             >
-              {lessonUnlocked ? <HelpCircle className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              {lessonUnlocked ? <HelpCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </span>
-            <span className="text-base leading-none" aria-hidden="true">
-              {lessonUnlocked ? '❓' : '🔒'}
-            </span>
-            <div className="min-w-0">
-              <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words block">
-                {title}
-              </span>
-              {!lessonUnlocked && (
-                <span className="text-[11px] font-bold text-amber-800 block">
-                  പാഠം വായിച്ച് ഉറപ്പിച്ച ശേഷം ക്വിസ് തുറക്കും
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-black tracking-wider uppercase text-emerald-700">
+                  QUIZ
                 </span>
+                {isPassed ? (
+                  <motion.span
+                    initial={{ scale: 0.7 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 260 }}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-700 text-white"
+                  >
+                    <CheckCircle2 className="w-3 h-3" /> +15 XP
+                  </motion.span>
+                ) : isWrongAnswered ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white">
+                    പൂർത്തിയായി 💔
+                  </span>
+                ) : !lessonUnlocked ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                    🔒 പാഠം ആദ്യം
+                  </span>
+                ) : null}
+              </div>
+              <h3 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-snug">
+                {title}
+              </h3>
+              {!lessonUnlocked && (
+                <p className="text-xs font-bold text-amber-800 leading-snug">
+                  പാഠം തുറന്ന് ഉറപ്പിച്ച ശേഷം ക്വിസ് തുറക്കും
+                </p>
               )}
             </div>
-          </button>
+          </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Row 2: Uniform Action Bar Below Title */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-emerald-200/70">
             <button
               type="button"
               onClick={() => {
-                sound.playClick();
-                setShowInfo((v) => !v);
-              }}
-              aria-label="ക്വിസ് വിവരണം"
-              title="ക്വിസ് വിവരണം"
-              className="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 flex items-center justify-center cursor-pointer"
-            >
-              <Info className="w-3.5 h-3.5" />
-            </button>
-
-            <span
-              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-xs font-extrabold border ${
-                lives <= 1
-                  ? 'bg-rose-100 text-rose-900 border-rose-300'
-                  : 'bg-white text-rose-800 border-rose-200'
-              }`}
-            >
-              {Array.from({ length: maxLives })
-                .map((_, i) => (i < lives ? '❤️' : '💔'))
-                .join('')}
-            </span>
-
-            {isPassed ? (
-              <motion.span
-                initial={{ scale: 0.7 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 260 }}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-emerald-700 text-white"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" /> +15
-              </motion.span>
-            ) : isWrongAnswered ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-rose-600 text-white">
-                💔
-              </span>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={() => {
+                sound.unlockAudio();
                 sound.playClick();
                 setIsOpen((v) => !v);
               }}
-              aria-label={isOpen ? 'ക്വിസ് ചുരുക്കാം' : 'ക്വിസ് തുറക്കാം'}
-              className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center cursor-pointer"
+              aria-expanded={isOpen}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+                isOpen
+                  ? 'bg-white hover:bg-slate-50 text-emerald-950 border-emerald-300 border'
+                  : lessonUnlocked
+                  ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-950'
+                  : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-700'
+              }`}
             >
-              {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {isOpen ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : lessonUnlocked ? (
+                <Play className="w-3.5 h-3.5 fill-current" />
+              ) : (
+                <Lock className="w-3.5 h-3.5" />
+              )}
+              <span>{isOpen ? 'Close Quiz' : 'Open Quiz'}</span>
             </button>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span
+                className={`inline-flex items-center gap-0.5 px-2.5 h-9 rounded-xl text-xs font-extrabold border ${
+                  lives <= 1
+                    ? 'bg-rose-100 text-rose-900 border-rose-300'
+                    : 'bg-white text-rose-800 border-rose-200'
+                }`}
+              >
+                {Array.from({ length: maxLives })
+                  .map((_, i) => (i < lives ? '❤️' : '💔'))
+                  .join('')}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playClick();
+                  setShowInfo((v) => !v);
+                }}
+                aria-label="ക്വിസ് വിവരണം"
+                title="ക്വിസ് വിവരണം"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer transition-colors"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -271,7 +293,8 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                     type="button"
                     onClick={() => {
                       sound.playClick();
-                      scrollToLessonDrawer();
+                      window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
+                      window.setTimeout(() => scrollToLessonDrawer(), 80);
                     }}
                     className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-extrabold border-b-4 border-amber-700 shadow-sm cursor-pointer transition-transform active:scale-95"
                   >
@@ -283,7 +306,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                       👆
                     </motion.span>
                     <BookOpen className="w-4 h-4" />
-                    <span>പാഠത്തിലേക്ക് പോകാം</span>
+                    <span>Open Lesson</span>
                   </button>
                 </div>
               ) : (

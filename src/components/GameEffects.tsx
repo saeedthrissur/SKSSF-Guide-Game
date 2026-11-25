@@ -15,6 +15,7 @@ import {
   Info,
   Lock,
   Music,
+  Play,
   RotateCcw,
   Settings,
   Share2,
@@ -991,7 +992,7 @@ export const AudioLoadingFloatBadge: React.FC = () => {
   );
 };
 
-/* Reusable Default-OPEN Lesson Drawer with Mandatory Confirm CTA to Unlock Quiz */
+/* Reusable Default-CLOSED Lesson Drawer with Mandatory Confirm CTA to Unlock Quiz */
 export const CollapsibleLessonDrawer: React.FC<{
   title?: string;
   emoji?: string;
@@ -1003,7 +1004,7 @@ export const CollapsibleLessonDrawer: React.FC<{
   title = 'പാഠം വായിക്കാം',
   emoji = '📖',
   badgeText,
-  defaultOpen = true,
+  defaultOpen = false,
   onSpeak,
   children,
 }) => {
@@ -1022,11 +1023,20 @@ export const CollapsibleLessonDrawer: React.FC<{
     return () => registerLessonDrawer(false);
   }, [registerLessonDrawer]);
 
-  // Keep drawer open when navigating to a new lesson
+  // Reset closed whenever navigating to a new lesson
   useEffect(() => {
     setOpen(defaultOpen);
     setShowInfo(false);
   }, [activeLessonId, defaultOpen]);
+
+  // Allow other cards (e.g., locked Quiz or Skip Game) to automatically open this Lesson drawer
+  useEffect(() => {
+    const handleOpenLesson = () => {
+      setOpen(true);
+    };
+    window.addEventListener('skssf:open-lesson', handleOpenLesson);
+    return () => window.removeEventListener('skssf:open-lesson', handleOpenLesson);
+  }, []);
 
   const confirmed = isLessonConfirmed(activeLessonId);
 
@@ -1034,93 +1044,67 @@ export const CollapsibleLessonDrawer: React.FC<{
     sound.unlockAudio();
     sound.playSuccess();
     confirmLesson(activeLessonId);
+    window.dispatchEvent(new CustomEvent('skssf:open-quiz'));
     window.setTimeout(() => {
       scrollDirectToQuiz();
-    }, 140);
+    }, 160);
   };
 
   return (
     <div
       data-lesson-drawer="true"
       data-lesson-drawer-confirmed={confirmed ? 'true' : 'false'}
-      className={`rounded-2xl border-2 bg-white shadow-sm overflow-hidden scroll-mt-20 transition-colors ${
+      className={`rounded-2xl border-2 bg-gradient-to-br from-emerald-50/90 via-white to-amber-50/60 shadow-sm overflow-hidden scroll-mt-20 transition-colors ${
         confirmed ? 'border-emerald-300' : 'border-amber-400 ring-2 ring-amber-100'
       }`}
     >
-      <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 bg-gradient-to-r from-emerald-50 via-white to-amber-50/70">
-        <button
-          type="button"
-          onClick={() => {
-            sound.unlockAudio();
-            sound.playClick();
-            setOpen((v) => !v);
-          }}
-          aria-expanded={open}
-          aria-label={title}
-          className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
-        >
-          {!confirmed && (
-            <motion.span
-              animate={{ x: [0, 4, 0] }}
-              transition={{ repeat: Infinity, duration: 1.0 }}
-              className="text-base shrink-0"
-              aria-hidden="true"
-            >
-              👉
-            </motion.span>
-          )}
-          <span className="text-lg shrink-0" aria-hidden="true">
-            {emoji}
+      {/* Unified 2-Row Lesson Header */}
+      <div className="p-3.5 sm:p-4 space-y-3">
+        {/* Row 1: Full-width Icon + Section Tag + Status + Complete Readable Title */}
+        <div className="flex items-start gap-3 w-full">
+          <span className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <BookOpen className="w-5 h-5" />
           </span>
-          <div className="min-w-0">
-            <span className="text-xs sm:text-sm font-extrabold text-emerald-950 leading-snug break-words block">
-              {title}
-            </span>
-            {!confirmed && (
-              <span className="text-[11px] font-bold text-amber-800 block">
-                പാഠം വായിച്ച് താഴെ ഉറപ്പിച്ചാൽ ക്വിസ് തുറക്കും
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-black tracking-wider uppercase text-teal-700">
+                LESSON
               </span>
+              {badgeText && (
+                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full tabular-nums">
+                  {badgeText}
+                </span>
+              )}
+              {confirmed ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="w-3 h-3" /> വായിച്ചു
+                </span>
+              ) : (
+                <motion.span
+                  animate={{ x: [0, 3, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.0 }}
+                  className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full"
+                >
+                  👉 വായിക്കാം
+                </motion.span>
+              )}
+            </div>
+            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
+              <span className="mr-1.5" aria-hidden="true">
+                {emoji}
+              </span>
+              {title}
+            </h3>
+            {!confirmed && (
+              <p className="text-xs font-bold text-amber-800 leading-snug">
+                പാഠം തുറന്ന് താഴെ ഉറപ്പിച്ചാൽ ക്വിസ് തുറക്കും
+              </p>
             )}
           </div>
-          {badgeText && (
-            <span className="text-[11px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 tabular-nums">
-              {badgeText}
-            </span>
-          )}
-          {confirmed && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full shrink-0">
-              <CheckCircle2 className="w-3 h-3" /> വായിച്ചു
-            </span>
-          )}
-        </button>
+        </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setShowInfo((v) => !v);
-            }}
-            aria-label="പാഠം വിവരണം"
-            title="പാഠം വിവരണം"
-            className="w-8 h-8 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 flex items-center justify-center cursor-pointer"
-          >
-            <Info className="w-4 h-4" />
-          </button>
-          {onSpeak && (
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                onSpeak();
-              }}
-              aria-label="പാഠം കേൾക്കാം"
-              title="പാഠം കേൾക്കാം"
-              className="w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center shadow-2xs transition-transform active:scale-95 cursor-pointer"
-            >
-              <Volume2 className="w-4 h-4" />
-            </button>
-          )}
+        {/* Row 2: Uniform Action Bar Below Title */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-emerald-200/70">
           <button
             type="button"
             onClick={() => {
@@ -1129,17 +1113,54 @@ export const CollapsibleLessonDrawer: React.FC<{
               setOpen((v) => !v);
             }}
             aria-expanded={open}
-            aria-label={open ? 'പാഠം ചുരുക്കാം' : 'പാഠം തുറക്കാം'}
-            className="w-8 h-8 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white flex items-center justify-center cursor-pointer"
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+              open
+                ? 'bg-white hover:bg-slate-50 text-teal-950 border-teal-300 border'
+                : 'bg-teal-700 hover:bg-teal-800 text-white border-teal-950'
+            }`}
           >
-            {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            {open ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current" />
+            )}
+            <span>{open ? 'Close Lesson' : 'Open Lesson'}</span>
           </button>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onSpeak && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  onSpeak();
+                }}
+                aria-label="പാഠം കേൾക്കാം"
+                title="പാഠം കേൾക്കാം"
+                className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-2xs transition-transform active:scale-95 cursor-pointer"
+              >
+                <Volume2 className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setShowInfo((v) => !v);
+              }}
+              aria-label="പാഠം വിവരണം"
+              title="വിവരണം"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 transition-colors cursor-pointer"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {showInfo && (
         <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള <strong>“✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> അമർത്തിയാൽ മാത്രമേ ക്വിസ് തുറക്കൂ!
+          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ <strong>“Open Lesson”</strong> അമർത്തി ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള <strong>“✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> അമർത്തിയാൽ ക്വിസ് തുറക്കും!
         </div>
       )}
 
@@ -1150,7 +1171,7 @@ export const CollapsibleLessonDrawer: React.FC<{
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-emerald-100"
+            className="overflow-hidden border-t border-emerald-100 bg-white"
           >
             <div className="p-3.5 sm:p-5 space-y-4">
               {children}
@@ -1167,11 +1188,12 @@ export const CollapsibleLessonDrawer: React.FC<{
                       type="button"
                       onClick={() => {
                         sound.playClick();
-                        scrollDirectToQuiz();
+                        window.dispatchEvent(new CustomEvent('skssf:open-quiz'));
+                        window.setTimeout(() => scrollDirectToQuiz(), 120);
                       }}
                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
                     >
-                      <span>❓ ക്വിസിലേക്ക്</span>
+                      <span>Open Quiz</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>

@@ -846,27 +846,104 @@ const MadrasaLanternSweepGame: React.FC<{
 };
 
 /* ============================================================================
- * ERA 4 (1989–1995): VINTAGE LANDLINE DIAL & TAGORE HALL MICROPHONE CONSOLE
+ * ERA 4 (1989–1995): AUTHENTIC VINTAGE ROTARY DIAL LANDLINE TELEPHONE GAME
+ *    - Hold any digit hole on the classic rotary wheel & spin clockwise until
+ *      it hits the chrome finger stop (🛑), then release so it springs back!
+ *    - Dial authentic historical years: 1989, 1992, 1995
+ *    - 3 Hearts + Timer + Wrong-number feedback + Game Over & Replay!
  * ========================================================================== */
+const ROTARY_STOP_ANGLE_DEG = 38; // Chrome finger stop at ~4:15 o'clock
+const ROTARY_DIGITS: { digit: string; baseAngle: number; maxTravel: number }[] = [
+  { digit: '1', baseAngle: -32, maxTravel: 70 },
+  { digit: '2', baseAngle: -60, maxTravel: 98 },
+  { digit: '3', baseAngle: -88, maxTravel: 126 },
+  { digit: '4', baseAngle: -116, maxTravel: 154 },
+  { digit: '5', baseAngle: -144, maxTravel: 182 },
+  { digit: '6', baseAngle: -172, maxTravel: 210 },
+  { digit: '7', baseAngle: -200, maxTravel: 238 },
+  { digit: '8', baseAngle: -228, maxTravel: 266 },
+  { digit: '9', baseAngle: -256, maxTravel: 294 },
+  { digit: '0', baseAngle: -284, maxTravel: 322 },
+];
+
+const ERA4_CALL_MISSIONS = [
+  {
+    code: '1989',
+    badge: 'കോൾ 1 · 1989',
+    prompt: 'SKSSF പിറന്നതും ലാൻഡ്‌ഫോൺ ക്യാമ്പുകൾ തുടങ്ങിയതുമായ വർഷം ഡയൽ ചെയ്യൂ!',
+    stationName: '📞 1989 · ലാൻഡ്‌ഫോൺ ക്യാമ്പ് ലൈൻ',
+  },
+  {
+    code: '1992',
+    badge: 'കോൾ 2 · 1992',
+    prompt: 'സമാധാനത്തിന്റെയും ജനാധിപത്യത്തിന്റെയും ഉറച്ച നിലപാടെടുത്ത വർഷം ഡയൽ ചെയ്യൂ!',
+    stationName: '🛡️ 1992 · സമാധാന സന്ദേശ ലൈൻ',
+  },
+  {
+    code: '1995',
+    badge: 'കോൾ 3 · 1995',
+    prompt: 'കോഴിക്കോട് ടാഗോർ ഹാൾ ചരിത്ര പ്രഖ്യാപനം നടന്ന വർഷം ഡയൽ ചെയ്യൂ!',
+    stationName: '🎤 1995 · ടാഗോർ ഹാൾ ലൈൻ',
+  },
+];
+
 const VintageLandlineBroadcastGame: React.FC<{
   artifacts: EraArtifactItem[];
   collectedIds: string[];
   onCollect: (art: EraArtifactItem) => void;
 }> = ({ artifacts, collectedIds, onCollect }) => {
-  const [dialAngle, setDialAngle] = useState(0);
-  const [activeIdx, setActiveIdx] = useState<number | null>(null);
-  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(20);
-  const [started, setStarted] = useState<boolean>(false);
-  const [failed, setFailed] = useState<boolean>(false);
-  const allHeard = artifacts.every((a) => collectedIds.includes(a.id));
+  const dialSvgRef = useRef<SVGSVGElement | null>(null);
 
+  // Pick first uncollected mission initially
+  const firstPendingIdx = Math.max(
+    0,
+    artifacts.findIndex((a) => !collectedIds.includes(a.id))
+  );
+  const [missionIdx, setMissionIdx] = useState<number>(firstPendingIdx);
+  const [enteredDigits, setEnteredDigits] = useState<string>('');
+  const [dialRotation, setDialRotation] = useState<number>(0);
+  const [draggingDigit, setDraggingDigit] = useState<string | null>(null);
+  const [isReturning, setIsReturning] = useState<boolean>(false);
+  const [hitStop, setHitStop] = useState<boolean>(false);
+
+  const [hearts, setHearts] = useState<number>(3);
+  const [timeLeft, setTimeLeft] = useState<number>(45);
+  const [started, setStarted] = useState<boolean>(false);
+  const [failedReason, setFailedReason] = useState<'hearts' | 'time' | null>(null);
+  const [statusBanner, setStatusBanner] = useState<{
+    tone: 'info' | 'ok' | 'err' | 'ring';
+    text: string;
+  }>({
+    tone: 'info',
+    text: '👆 നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
+  });
+  const [connectedIdx, setConnectedIdx] = useState<number | null>(null);
+  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
+
+  // Mutable drag refs so pointermove stays rock-solid with zero stale closures
+  const dragStateRef = useRef<{
+    active: boolean;
+    digit: string;
+    maxTravel: number;
+    lastAngle: number;
+    accumulated: number;
+    lastTickStep: number;
+    reachedStop: boolean;
+  } | null>(null);
+
+  const collectedCount = artifacts.filter((a) => collectedIds.includes(a.id)).length;
+  const allHeard = collectedCount >= artifacts.length && artifacts.length > 0;
+  const activeMission = ERA4_CALL_MISSIONS[missionIdx] || ERA4_CALL_MISSIONS[0];
+  const targetCode = activeMission.code;
+  const expectedNextDigit = targetCode[enteredDigits.length] || '';
+
+  // Countdown timer per active mission
   useEffect(() => {
-    if (!started || allHeard || failed) return;
+    if (!started || allHeard || failedReason || connectedIdx !== null) return;
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          setFailed(true);
+          setFailedReason('time');
           sound.playError();
           return 0;
         }
@@ -874,134 +951,674 @@ const VintageLandlineBroadcastGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, allHeard, failed]);
+  }, [started, allHeard, failedReason, connectedIdx]);
 
-  const dialCodes = ['1989', '1992', '1995'];
-
-  const handleDialStation = (idx: number) => {
-    if (failed) return;
-    const art = artifacts[idx];
-    if (!art) return;
-    setStarted(true);
-    sound.playPop();
-    setDialAngle((prev) => prev + 120);
-    setActiveIdx(idx);
-    window.setTimeout(() => {
-      setActiveArt(art);
-      onCollect(art);
-    }, 260);
+  const getPointerAngleDeg = (clientX: number, clientY: number): number => {
+    const svg = dialSvgRef.current;
+    if (!svg) return 0;
+    const rect = svg.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    return (Math.atan2(clientY - cy, clientX - cx) * 180) / Math.PI;
   };
 
+  const handleDigitRegistered = (digit: string) => {
+    if (failedReason || connectedIdx !== null) return;
+    const nextExpected = targetCode[enteredDigits.length];
+
+    if (digit === nextExpected) {
+      const nextEntered = enteredDigits + digit;
+      setEnteredDigits(nextEntered);
+      sound.playPop();
+
+      if (nextEntered === targetCode) {
+        // Call Connected!
+        setConnectedIdx(missionIdx);
+        sound.playSuccess(missionIdx + 1);
+        setStatusBanner({
+          tone: 'ring',
+          text: `📞 റിംഗ്... റിംഗ്...! ${activeMission.stationName} കണക്റ്റ് ആയി!`,
+        });
+        const art = artifacts[missionIdx];
+        if (art) {
+          window.setTimeout(() => {
+            setActiveArt(art);
+            onCollect(art);
+          }, 520);
+        }
+      } else {
+        setStatusBanner({
+          tone: 'ok',
+          text: `✅ “${digit}” ഡയൽ ചെയ്തു! ഇനി അടുത്ത അക്കം (${targetCode[nextEntered.length]}) കറക്കൂ!`,
+        });
+      }
+    } else {
+      // Wrong digit -> lose a heart!
+      sound.playError();
+      const nextHearts = Math.max(0, hearts - 1);
+      setHearts(nextHearts);
+      if (nextHearts <= 0) {
+        setFailedReason('hearts');
+        setStatusBanner({
+          tone: 'err',
+          text: `📵 “${digit}” തെറ്റായ നമ്പർ! 3 തവണ തെറ്റിയതിനാൽ കോൾ കട്ടായി — ഗെയിം ഔട്ട്!`,
+        });
+      } else {
+        setStatusBanner({
+          tone: 'err',
+          text: `❌ “${digit}” തെറ്റാണ്! ഇനി ഡയൽ ചെയ്യേണ്ട അക്കം “${nextExpected}” ആണ് (ബാക്കി ❤️ ${nextHearts})`,
+        });
+      }
+    }
+  };
+
+  const animateSpringReturn = (fromDeg: number, committedDigit: string | null) => {
+    setIsReturning(true);
+    setDraggingDigit(null);
+    setHitStop(false);
+    setDialRotation(0);
+
+    // Subtle mechanical spring-return ticks
+    const tickCount = Math.max(2, Math.min(6, Math.round(fromDeg / 55)));
+    for (let i = 1; i <= tickCount; i++) {
+      window.setTimeout(() => {
+        sound.playClick();
+      }, i * 58);
+    }
+
+    window.setTimeout(() => {
+      setIsReturning(false);
+      if (committedDigit !== null) {
+        handleDigitRegistered(committedDigit);
+      }
+    }, Math.max(220, tickCount * 62));
+  };
+
+  const handleHolePointerDown = (
+    e: React.PointerEvent<SVGGElement>,
+    item: { digit: string; baseAngle: number; maxTravel: number }
+  ) => {
+    if (failedReason || isReturning || connectedIdx !== null || allHeard) return;
+    e.stopPropagation();
+    e.preventDefault();
+    sound.unlockAudio();
+    sound.playClick();
+    if (!started) setStarted(true);
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Ignore capture errors on synthetic events
+    }
+
+    const startAngle = getPointerAngleDeg(e.clientX, e.clientY);
+    dragStateRef.current = {
+      active: true,
+      digit: item.digit,
+      maxTravel: item.maxTravel,
+      lastAngle: startAngle,
+      accumulated: 0,
+      lastTickStep: 0,
+      reachedStop: false,
+    };
+    setDraggingDigit(item.digit);
+    setHitStop(false);
+    setDialRotation(0);
+  };
+
+  const handleHolePointerMove = (e: React.PointerEvent<SVGGElement>) => {
+    const st = dragStateRef.current;
+    if (!st || !st.active) return;
+    e.preventDefault();
+
+    const curAngle = getPointerAngleDeg(e.clientX, e.clientY);
+    let delta = curAngle - st.lastAngle;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    st.lastAngle = curAngle;
+
+    const nextAcc = Math.max(0, Math.min(st.maxTravel, st.accumulated + delta));
+    st.accumulated = nextAcc;
+    setDialRotation(nextAcc);
+
+    const tickStep = Math.floor(nextAcc / 28);
+    if (tickStep > st.lastTickStep) {
+      st.lastTickStep = tickStep;
+      sound.playClick();
+    }
+
+    if (nextAcc >= st.maxTravel - 12 && !st.reachedStop) {
+      st.reachedStop = true;
+      setHitStop(true);
+      sound.playPop();
+    }
+  };
+
+  const handleHolePointerUp = (e: React.PointerEvent<SVGGElement>) => {
+    const st = dragStateRef.current;
+    if (!st || !st.active) return;
+    e.preventDefault();
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // Ignore release errors
+    }
+
+    const { digit, accumulated, maxTravel, reachedStop } = st;
+    dragStateRef.current = null;
+
+    if (reachedStop || accumulated >= maxTravel * 0.72) {
+      animateSpringReturn(accumulated, digit);
+    } else {
+      setStatusBanner({
+        tone: 'info',
+        text: `👆 “${digit}” അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കിയ ശേഷമേ വിരൽ വിടാവൂ!`,
+      });
+      animateSpringReturn(Math.max(20, accumulated), null);
+    }
+  };
+
+  const handleSelectMission = (idx: number) => {
+    if (isReturning) return;
+    sound.playClick();
+    const art = artifacts[idx];
+    if (art && collectedIds.includes(art.id)) {
+      // Allow re-listening to completed historical call directly
+      setActiveArt(art);
+      return;
+    }
+    setMissionIdx(idx);
+    setEnteredDigits('');
+    setConnectedIdx(null);
+    setTimeLeft(45);
+    setStatusBanner({
+      tone: 'info',
+      text: `☎️ ${ERA4_CALL_MISSIONS[idx]?.code} ഡയൽ ചെയ്യാൻ ഓരോ അക്കവും സ്റ്റോപ്പ് (🛑) വരെ കറക്കൂ!`,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setActiveArt(null);
+    if (connectedIdx !== null) {
+      const nextUnheard = artifacts.findIndex(
+        (a, i) => i !== connectedIdx && !collectedIds.includes(a.id)
+      );
+      setConnectedIdx(null);
+      setEnteredDigits('');
+      if (nextUnheard !== -1) {
+        setMissionIdx(nextUnheard);
+        setTimeLeft(45);
+        setStatusBanner({
+          tone: 'info',
+          text: `അടുത്ത കോൾ: ${ERA4_CALL_MISSIONS[nextUnheard]?.code} ഡയൽ ചെയ്യാൻ നമ്പർ കറക്കൂ!`,
+        });
+      }
+    }
+  };
+
+  const handleRetryGame = () => {
+    sound.unlockAudio();
+    sound.playPop();
+    setHearts(3);
+    setTimeLeft(45);
+    setFailedReason(null);
+    setEnteredDigits('');
+    setConnectedIdx(null);
+    setStarted(false);
+    setDialRotation(0);
+    setDraggingDigit(null);
+    setHitStop(false);
+    setStatusBanner({
+      tone: 'info',
+      text: '👆 നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
+    });
+  };
+
+  // Helper to get (x, y) in SVG 280x280 coords for a given angle in degrees
+  const polarToXY = (angleDeg: number, radius: number) => {
+    const rad = (angleDeg * Math.PI) / 180;
+    return {
+      x: 140 + Math.cos(rad) * radius,
+      y: 140 + Math.sin(rad) * radius,
+    };
+  };
+
+  const stopPoint = polarToXY(ROTARY_STOP_ANGLE_DEG, 94);
+
   return (
-    <div className="p-4 sm:p-5 bg-gradient-to-br from-slate-900 via-cyan-950 to-emerald-950 text-white space-y-4">
-      <div className="flex items-center justify-between gap-2 bg-black/35 border border-cyan-400/35 rounded-xl px-3.5 py-2">
-        <span className="text-xs font-extrabold text-cyan-200 tabular-nums">
-          ☎️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
-        </span>
-        <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-cyan-400/20 text-cyan-200'}`}>
-          ⏱️ {timeLeft}s
-        </span>
-      </div>
-      {failed && !allHeard && (
-        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-200">📵 ⏰</span>
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setTimeLeft(20);
-              setFailed(false);
-              setStarted(false);
-            }}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
-          >
-            🔄
-          </button>
+    <div className="p-3.5 sm:p-5 bg-gradient-to-br from-stone-950 via-slate-900 to-emerald-950 text-white space-y-3.5">
+      {/* Top Vintage Exchange HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/45 border border-amber-400/35 rounded-2xl px-3.5 py-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs sm:text-sm font-extrabold text-amber-300 tabular-nums">
+            ☎️ കോളുകൾ: {collectedCount}/{artifacts.length}
+          </span>
+          <span className="px-2 py-0.5 rounded-lg bg-rose-950/80 border border-rose-400/40 text-xs font-extrabold">
+            {'❤️'.repeat(hearts)}
+            {'🖤'.repeat(Math.max(0, 3 - hearts))}
+          </span>
         </div>
-      )}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-        <div className="md:col-span-5 rounded-2xl bg-slate-950/80 border-2 border-cyan-500/40 p-4 flex flex-col items-center space-y-3">
-          <motion.div
-            animate={{ rotate: dialAngle }}
-            transition={{ type: 'spring', stiffness: 130, damping: 14 }}
-            className="w-28 h-28 rounded-full border-4 border-amber-400 bg-gradient-to-br from-slate-800 to-slate-950 relative flex items-center justify-center shadow-lg"
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs font-extrabold tabular-nums px-2.5 py-0.5 rounded-lg ${
+              timeLeft <= 10 && !allHeard
+                ? 'bg-rose-600 text-white animate-pulse'
+                : 'bg-amber-400/20 text-amber-200 border border-amber-400/35'
+            }`}
           >
-            {[0, 1, 2, 3, 4, 5].map((n) => {
-              const ang = (n * 60 * Math.PI) / 180;
-              const x = 44 + Math.cos(ang) * 34;
-              const y = 44 + Math.sin(ang) * 34;
+            ⏱️ {allHeard ? '✅' : `${timeLeft}s`}
+          </span>
+        </div>
+      </div>
+
+      {/* Mission Year Selector Strip */}
+      <div className="grid grid-cols-3 gap-2">
+        {artifacts.map((art, idx) => {
+          const done = collectedIds.includes(art.id);
+          const isCurrent = idx === missionIdx && !allHeard;
+          const m = ERA4_CALL_MISSIONS[idx];
+          return (
+            <button
+              key={art.id}
+              type="button"
+              onClick={() => handleSelectMission(idx)}
+              className={`px-2.5 py-2 rounded-xl border-2 text-center transition-all cursor-pointer ${
+                done
+                  ? 'bg-emerald-900/75 border-emerald-400 text-emerald-100'
+                  : isCurrent
+                  ? 'bg-amber-400 text-slate-950 border-white shadow-md'
+                  : 'bg-white/10 hover:bg-white/15 border-white/20 text-slate-200'
+              }`}
+            >
+              <p className="text-xs sm:text-sm font-black font-mono tracking-wider">
+                {done ? '✅' : art.emoji} {m?.code}
+              </p>
+              <p className="text-[10px] font-bold truncate opacity-90">
+                {done ? 'കേട്ടു (വീണ്ടും കേൾക്കാം)' : isCurrent ? 'ഇപ്പോൾ വിളിക്കാം' : `കോൾ ${idx + 1}`}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active Mission Target Prompt & LED Dial Display */}
+      {!allHeard && !failedReason && (
+        <div className="rounded-2xl bg-slate-950/85 border border-amber-400/40 p-3.5 space-y-2.5 text-center">
+          <p className="text-xs sm:text-sm font-extrabold text-amber-200 leading-snug">
+            {activeMission.prompt}
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="text-[11px] font-bold text-slate-300">ഡയൽ ചെയ്യേണ്ട വർഷം:</span>
+            <span className="px-2.5 py-0.5 rounded-lg bg-amber-400 text-slate-950 font-mono text-sm sm:text-base font-black tracking-widest">
+              {targetCode}
+            </span>
+          </div>
+
+          {/* 4-Slot Retro Nixie/LED Digit Readout */}
+          <div className="flex items-center justify-center gap-2 pt-0.5">
+            {targetCode.split('').map((targetChar, i) => {
+              const dialedChar = enteredDigits[i];
+              const isNext = i === enteredDigits.length;
               return (
-                <span
-                  key={n}
-                  style={{ left: `${x}px`, top: `${y}px` }}
-                  className="absolute w-4 h-4 rounded-full bg-amber-100 text-slate-950 text-[9px] font-extrabold flex items-center justify-center"
+                <div
+                  key={`${missionIdx}-${i}`}
+                  className={`w-11 h-12 sm:w-12 sm:h-13 rounded-xl border-2 font-mono text-xl sm:text-2xl font-black flex items-center justify-center transition-all ${
+                    dialedChar
+                      ? 'bg-emerald-950 border-emerald-400 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.45)]'
+                      : isNext
+                      ? 'bg-amber-950/70 border-amber-400 text-amber-300 animate-pulse'
+                      : 'bg-slate-900 border-slate-700 text-slate-600'
+                  }`}
                 >
-                  {n + 1}
-                </span>
+                  {dialedChar || (isNext ? targetChar : '•')}
+                </div>
               );
             })}
-            <span className="w-9 h-9 rounded-full bg-amber-400 text-slate-950 text-sm font-extrabold flex items-center justify-center">
-              📞
-            </span>
-          </motion.div>
+          </div>
+        </div>
+      )}
 
-          <div className="flex items-end justify-center gap-1.5 h-8 w-full px-4">
+      {/* Status Guidance Strip */}
+      {!allHeard && !failedReason && (
+        <div
+          className={`rounded-xl px-3.5 py-2 text-xs sm:text-sm font-extrabold text-center border ${
+            statusBanner.tone === 'err'
+              ? 'bg-rose-950/90 border-rose-400 text-rose-200'
+              : statusBanner.tone === 'ok' || statusBanner.tone === 'ring'
+              ? 'bg-emerald-950/90 border-emerald-400 text-emerald-200'
+              : 'bg-amber-950/60 border-amber-400/40 text-amber-100'
+          }`}
+        >
+          {statusBanner.text}
+        </div>
+      )}
+
+      {/* Main Vintage Bakelite Rotary Telephone Console */}
+      <div className="relative rounded-3xl bg-gradient-to-b from-stone-900 via-neutral-900 to-stone-950 border-2 border-amber-500/45 p-4 sm:p-5 shadow-2xl overflow-hidden">
+        {/* Vintage Bakelite Handset Cradle at Top */}
+        <motion.div
+          animate={
+            connectedIdx !== null
+              ? { y: -10, rotate: [-3, 3, -3, 3, 0] }
+              : { y: 0, rotate: 0 }
+          }
+          transition={{ duration: 0.55 }}
+          className="mx-auto max-w-[260px] mb-2"
+        >
+          <svg viewBox="0 0 260 66" className="w-full h-auto drop-shadow-lg" aria-hidden="true">
+            {/* Brass Cradle Posts */}
+            <rect x="78" y="34" width="10" height="24" rx="4" fill="#D97706" />
+            <rect x="172" y="34" width="10" height="24" rx="4" fill="#D97706" />
+            {/* Classic Black Bakelite Handset */}
+            <path
+              d="M 24 44 C 24 14, 72 8, 130 8 C 188 8, 236 14, 236 44 C 236 56, 212 60, 198 54 C 188 49, 184 36, 172 32 C 156 27, 104 27, 88 32 C 76 36, 72 49, 62 54 C 48 60, 24 56, 24 44 Z"
+              fill="url(#bakeliteGrad)"
+              stroke="#57534E"
+              strokeWidth="2.5"
+            />
+            {/* Handset Gloss Highlight */}
+            <path
+              d="M 55 18 Q 130 10 205 18"
+              fill="none"
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            {/* Speaker & Mic Caps */}
+            <ellipse cx="44" cy="46" rx="14" ry="7" fill="#0C0A09" stroke="#A8A29E" strokeWidth="1.2" />
+            <ellipse cx="216" cy="46" rx="14" ry="7" fill="#0C0A09" stroke="#A8A29E" strokeWidth="1.2" />
+            <defs>
+              <linearGradient id="bakeliteGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#44403C" />
+                <stop offset="50%" stopColor="#1C1917" />
+                <stop offset="100%" stopColor="#0C0A09" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </motion.div>
+
+        {/* Interactive Rotary Wheel */}
+        <div className="flex flex-col items-center justify-center">
+          <div className="relative w-64 h-64 sm:w-72 sm:h-72 select-none touch-none">
+            <svg
+              ref={dialSvgRef}
+              viewBox="0 0 280 280"
+              className="w-full h-full drop-shadow-[0_14px_24px_rgba(0,0,0,0.65)] touch-none"
+              role="application"
+              aria-label="പഴയകാല റോട്ടറി ഫോൺ ഡയൽ"
+            >
+              <defs>
+                <radialGradient id="dialBezel" cx="35%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="#F59E0B" />
+                  <stop offset="65%" stopColor="#B45309" />
+                  <stop offset="100%" stopColor="#78350F" />
+                </radialGradient>
+                <radialGradient id="creamPlate" cx="50%" cy="45%" r="55%">
+                  <stop offset="0%" stopColor="#FFFBEB" />
+                  <stop offset="100%" stopColor="#FDE68A" />
+                </radialGradient>
+                <radialGradient id="wheelMetal" cx="35%" cy="30%" r="75%">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.28)" />
+                  <stop offset="55%" stopColor="rgba(148,163,184,0.22)" />
+                  <stop offset="100%" stopColor="rgba(15,23,42,0.58)" />
+                </radialGradient>
+              </defs>
+
+              {/* Outer Brass Rim */}
+              <circle cx="140" cy="140" r="134" fill="url(#dialBezel)" stroke="#FEF3C7" strokeWidth="2" />
+              {/* Inner Dark Housing */}
+              <circle cx="140" cy="140" r="124" fill="#1C1917" />
+              {/* Static Vintage Cream Number Backing Plate */}
+              <circle cx="140" cy="140" r="118" fill="url(#creamPlate)" stroke="#92400E" strokeWidth="2.5" />
+
+              {/* Clockwise Spin Hint Arc (shows direction to spin!) */}
+              {!allHeard && !failedReason && (
+                <path
+                  d="M 78 52 A 108 108 0 0 1 236 168"
+                  fill="none"
+                  stroke={draggingDigit ? '#059669' : '#D97706'}
+                  strokeWidth="3"
+                  strokeDasharray="6 6"
+                  opacity="0.55"
+                />
+              )}
+
+              {/* FIXED DIGITS ON THE BACKING PLATE (Stay still while clear wheel rotates!) */}
+              {ROTARY_DIGITS.map((item) => {
+                const pos = polarToXY(item.baseAngle, 91);
+                const isNextHint = !allHeard && !failedReason && item.digit === expectedNextDigit;
+                return (
+                  <g key={`plate-${item.digit}`} className="pointer-events-none">
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r={isNextHint ? 19 : 17}
+                      fill={isNextHint ? '#FEF08A' : '#FFFFFF'}
+                      stroke={isNextHint ? '#D97706' : '#78350F'}
+                      strokeWidth={isNextHint ? 2.5 : 1.5}
+                    />
+                    <text
+                      x={pos.x}
+                      y={pos.y + 6}
+                      textAnchor="middle"
+                      fontSize="19"
+                      fontWeight="900"
+                      fill="#1C1917"
+                    >
+                      {item.digit}
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* ROTATING CLEAR/METALLIC FINGER WHEEL (Turns smoothly clockwise with pointer!) */}
+              <g
+                style={{
+                  transform: `rotate(${dialRotation}deg)`,
+                  transformOrigin: '140px 140px',
+                  transition: isReturning
+                    ? 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1)'
+                    : 'none',
+                }}
+              >
+                {/* Translucent Wheel Ring */}
+                <circle
+                  cx="140"
+                  cy="140"
+                  r="117"
+                  fill="url(#wheelMetal)"
+                  stroke="#E2E8F0"
+                  strokeWidth="2.5"
+                />
+
+                {/* 10 Draggable Finger Holes */}
+                {ROTARY_DIGITS.map((item) => {
+                  const pos = polarToXY(item.baseAngle, 91);
+                  const isBeingDragged = draggingDigit === item.digit;
+                  const isNextTarget = !allHeard && !failedReason && item.digit === expectedNextDigit;
+                  return (
+                    <g
+                      key={`hole-${item.digit}`}
+                      onPointerDown={(e) => handleHolePointerDown(e, item)}
+                      onPointerMove={handleHolePointerMove}
+                      onPointerUp={handleHolePointerUp}
+                      onPointerCancel={handleHolePointerUp}
+                      className="cursor-grab active:cursor-grabbing"
+                      style={{ touchAction: 'none' }}
+                    >
+                      {/* Generous invisible hit area for effortless touch dragging */}
+                      <circle cx={pos.x} cy={pos.y} r="24" fill="transparent" />
+                      {/* Visible metallic finger hole rim */}
+                      <circle
+                        cx={pos.x}
+                        cy={pos.y}
+                        r="19"
+                        fill={
+                          isBeingDragged
+                            ? 'rgba(16, 185, 129, 0.28)'
+                            : isNextTarget
+                            ? 'rgba(250, 204, 21, 0.16)'
+                            : 'rgba(255, 255, 255, 0.08)'
+                        }
+                        stroke={
+                          isBeingDragged
+                            ? '#34D399'
+                            : isNextTarget
+                            ? '#F59E0B'
+                            : '#F8FAFC'
+                        }
+                        strokeWidth={isBeingDragged ? 4 : isNextTarget ? 3 : 2.2}
+                      />
+                    </g>
+                  );
+                })}
+              </g>
+
+              {/* STATIC CENTER MEDALLION CARD */}
+              <circle cx="140" cy="140" r="56" fill="#0F172A" stroke="#F59E0B" strokeWidth="3.5" />
+              <circle cx="140" cy="140" r="49" fill="#FFFBEB" stroke="#B45309" strokeWidth="1.5" />
+              <text
+                x="140"
+                y="128"
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="800"
+                fill="#065F46"
+              >
+                SKSSF · 1989
+              </text>
+              <text
+                x="140"
+                y="148"
+                textAnchor="middle"
+                fontSize="18"
+                fontWeight="900"
+                fill="#7C2D12"
+              >
+                {draggingDigit
+                  ? hitStop
+                    ? '🛑 വിടൂ!'
+                    : `↻ ${draggingDigit}`
+                  : allHeard
+                  ? '✅ വിജയം'
+                  : targetCode}
+              </text>
+              <text
+                x="140"
+                y="165"
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="700"
+                fill="#475569"
+              >
+                {draggingDigit ? 'സ്റ്റോപ്പ് വരെ കറക്കൂ' : 'കറക്കി വിളിക്കൂ ☎️'}
+              </text>
+
+              {/* ICONIC CHROME FINGER STOP (Mounted Over the Wheel at 4:15 o'clock!) */}
+              <g className="pointer-events-none">
+                <line
+                  x1={stopPoint.x - 16}
+                  y1={stopPoint.y - 11}
+                  x2={stopPoint.x + 28}
+                  y2={stopPoint.y + 18}
+                  stroke={hitStop ? '#10B981' : '#E2E8F0'}
+                  strokeWidth="9"
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={stopPoint.x - 14}
+                  y1={stopPoint.y - 10}
+                  x2={stopPoint.x + 24}
+                  y2={stopPoint.y + 16}
+                  stroke={hitStop ? '#6EE7B7' : '#94A3B8'}
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                />
+                <circle
+                  cx={stopPoint.x + 20}
+                  cy={stopPoint.y + 13}
+                  r="11"
+                  fill={hitStop ? '#10B981' : '#DC2626'}
+                  stroke="#FFFFFF"
+                  strokeWidth="2"
+                />
+                <text
+                  x={stopPoint.x + 20}
+                  y={stopPoint.y + 17}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="900"
+                  fill="#FFFFFF"
+                >
+                  🛑
+                </text>
+              </g>
+            </svg>
+          </div>
+
+          {/* Live Audio Wave Strip */}
+          <div className="mt-2 flex items-end justify-center gap-1.5 h-6 w-40">
             {[0.4, 0.9, 0.65, 1, 0.75, 0.5, 0.85, 0.6].map((h, idx) => (
               <motion.span
                 key={idx}
                 animate={
-                  activeIdx !== null
+                  connectedIdx !== null || draggingDigit !== null
                     ? { scaleY: [0.3, h, 0.45, h * 0.9] }
-                    : { scaleY: 0.25 }
+                    : { scaleY: 0.22 }
                 }
                 transition={{
                   repeat: Infinity,
-                  duration: 0.65 + idx * 0.08,
+                  duration: 0.55 + idx * 0.07,
                   ease: 'easeInOut',
                 }}
-                className="w-2.5 h-full rounded-full bg-emerald-400 origin-bottom"
+                className={`w-2 h-full rounded-full origin-bottom ${
+                  connectedIdx !== null ? 'bg-emerald-400' : 'bg-amber-400/75'
+                }`}
               />
             ))}
           </div>
         </div>
 
-        <div className="md:col-span-7 grid grid-cols-3 md:grid-cols-1 gap-2">
-          {artifacts.map((art, idx) => {
-            const heard = collectedIds.includes(art.id);
-            const active = activeIdx === idx;
-            return (
-              <button
-                key={art.id}
-                type="button"
-                onClick={() => handleDialStation(idx)}
-                aria-label={art.label}
-                title={art.label}
-                className={`w-full p-3 rounded-xl border-2 flex items-center justify-between gap-2 transition-all ${
-                  active
-                    ? 'bg-amber-400 text-slate-950 border-white shadow-md'
-                    : heard
-                    ? 'bg-emerald-900/75 text-white border-emerald-400'
-                    : 'bg-white/10 hover:bg-white/15 text-white border-cyan-400/40'
-                }`}
-              >
-                <span className="px-2 py-0.5 rounded-lg bg-slate-950/80 text-amber-300 font-mono text-xs font-extrabold">
-                  #{dialCodes[idx] || idx + 1}
-                </span>
-                <span className="text-2xl">{art.emoji}</span>
-                <span className="text-lg shrink-0">
-                  {heard ? '✅' : '📞'}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* GAME OVER OVERLAY */}
+        {failedReason && !allHeard && (
+          <div className="absolute inset-0 z-30 bg-slate-950/92 backdrop-blur-xs flex flex-col items-center justify-center p-5 text-center space-y-3">
+            <span className="text-5xl">📵</span>
+            <h4 className="text-lg sm:text-xl font-black text-rose-300">
+              {failedReason === 'time' ? 'സമയം തീർന്നു — കോൾ കട്ടായി!' : '3 തവണ തെറ്റായ നമ്പർ — ഗെയിം ഔട്ട്!'}
+            </h4>
+            <p className="text-xs sm:text-sm font-semibold text-slate-300 max-w-sm">
+              പഴയ റോട്ടറി ഫോണിൽ നമ്പർ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് 🛑 സ്റ്റോപ്പ് വരെ കറക്കി വിട്ടാലാണ് അക്കം ഡയൽ ആവുക. വീണ്ടും ശ്രമിക്കൂ!
+            </p>
+            <button
+              type="button"
+              onClick={handleRetryGame}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              🔄 വീണ്ടും ഡയൽ ചെയ്യാം
+            </button>
+          </div>
+        )}
+
+        {/* ALL 3 CALLS COMPLETED VICTORY BANNER */}
+        {allHeard && (
+          <div className="mt-3 rounded-2xl bg-emerald-950/90 border-2 border-emerald-400 p-4 text-center space-y-2.5">
+            <p className="text-sm sm:text-base font-black text-emerald-300">
+              🎉 അടിപൊളി! 1989, 1992, 1995 ചരിത്ര കോളുകളെല്ലാം റോട്ടറി ഫോണിൽ കറക്കി വിളിച്ചു!
+            </p>
+            <p className="text-xs text-emerald-100">
+              മുകളിലെ ഏത് വർഷത്തിൽ തൊട്ടും ആ ചരിത്ര സന്ദേശം വീണ്ടും കേൾക്കാം. ഇനി താഴെയുള്ള പാഠം വായിച്ച് ക്വിസ് തുറക്കൂ!
+            </p>
+          </div>
+        )}
       </div>
 
       <InStageStoryModal
         artifact={activeArt}
         badgeText="🎙️ 1989–1995 ചരിത്ര ശബ്ദരേഖ (+15 XP)"
-        onClose={() => setActiveArt(null)}
+        onClose={handleCloseModal}
       />
     </div>
   );
