@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle2, Lock, Play, Unlock } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Lock, Play, Search, Unlock, X } from 'lucide-react';
 import { ALL_LESSONS, LessonDescriptor } from '../utils/lessonTracker';
 import { sound } from '../utils/sound';
 
@@ -28,6 +28,8 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   const [codePromptOpen, setCodePromptOpen] = useState(false);
   const [codeValue, setCodeValue] = useState('');
   const [codeError, setCodeError] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'done' | 'remaining'>('all');
   const keyBufferRef = useRef('');
 
   const totalCount = ALL_LESSONS.length;
@@ -43,11 +45,24 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
     0,
     ALL_LESSONS.findIndex((l) => l.id === activeLessonId)
   );
+  const activeLesson = ALL_LESSONS[activeIdx];
 
-  // Group lessons by groupLabel preserving curriculum order
+  // Group lessons by groupLabel preserving curriculum order + applying search & filter
   const groups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     const map = new Map<string, { label: string; items: { lesson: LessonDescriptor; globalIdx: number }[] }>();
     ALL_LESSONS.forEach((lesson, idx) => {
+      const isDone = completedSet.has(lesson.id);
+      if (statusFilter === 'done' && !isDone) return;
+      if (statusFilter === 'remaining' && isDone) return;
+      if (
+        q &&
+        !lesson.title.toLowerCase().includes(q) &&
+        !lesson.groupLabel.toLowerCase().includes(q) &&
+        !String(idx + 1).includes(q)
+      ) {
+        return;
+      }
       const existing = map.get(lesson.groupLabel);
       if (existing) {
         existing.items.push({ lesson, globalIdx: idx });
@@ -59,7 +74,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
       }
     });
     return Array.from(map.values());
-  }, []);
+  }, [searchQuery, statusFilter, completedSet]);
 
   // Silent keyboard cheat code listener ("dev1989") — zero visible hint in UI
   useEffect(() => {
@@ -209,14 +224,103 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
           <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
             <div
               style={{ width: `${progressPct}%` }}
-              className="h-full bg-gradient-to-r from-emerald-600 via-teal-500 to-amber-400 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-emerald-600 to-amber-400 transition-all duration-300"
             />
+          </div>
+        </div>
+
+        {/* Quick Resume Active Lesson + Search & Status Filter Controls */}
+        <div className="pt-2 border-t border-slate-100 space-y-2.5">
+          {activeLesson && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                onSelectLesson(activeLesson.id);
+              }}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer"
+            >
+              <span className="text-xs font-extrabold text-emerald-950 truncate">
+                നിലവിലെ പാഠം തുടരാം: {activeIdx + 1}. {activeLesson.title}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 shrink-0 whitespace-nowrap">
+                <Play className="w-3.5 h-3.5 fill-current" /> തുടരാം
+              </span>
+            </button>
+          )}
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="പാഠം തിരയുക (ഉദാ: വിഖായ, പതാക, ട്രെൻഡ്)..."
+                aria-label="പാഠം തിരയുക"
+                className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 text-xs sm:text-sm font-semibold text-slate-900 outline-none transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="തിരയൽ മായ്ക്കുക"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 shrink-0">
+              {(
+                [
+                  { id: 'all', label: `എല്ലാം (${totalCount})` },
+                  { id: 'done', label: `പൂർത്തിയായവ (${completedCount})` },
+                  { id: 'remaining', label: `ബാക്കി (${remainingCount})` },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setStatusFilter(tab.id);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer tabular-nums ${
+                    statusFilter === tab.id
+                      ? 'bg-white text-emerald-950 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Grouped Complete List of All Lessons */}
       <div className="space-y-4">
+        {groups.length === 0 && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center space-y-2">
+            <p className="text-sm font-extrabold text-slate-800">
+              ഈ തിരയലിൽ പാഠങ്ങളൊന്നും കണ്ടെത്തിയില്ല.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+            >
+              എല്ലാ പാഠങ്ങളും കാണിക്കാം
+            </button>
+          </div>
+        )}
         {groups.map((grp) => {
           const grpDone = grp.items.filter((x) => completedSet.has(x.lesson.id)).length;
           return (
@@ -311,8 +415,8 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
         <h3 className="text-sm sm:text-base font-extrabold text-emerald-950">
           കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
         </h3>
-        <p className="text-xs font-semibold text-slate-600">
-          More Lessons &amp; Interactive Missions Coming Soon! · ഇപ്പോൾ {totalCount} പാഠങ്ങൾ ലഭ്യമാണ്.
+        <p className="text-xs font-semibold text-slate-600 tabular-nums">
+          നിലവിൽ {totalCount} സംവേദനാത്മക പാഠങ്ങളും ചെറു ഗെയിമുകളും ലഭ്യമാണ്.
         </p>
       </div>
 

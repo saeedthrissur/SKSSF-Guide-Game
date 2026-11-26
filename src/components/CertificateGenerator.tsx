@@ -649,7 +649,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <button
           type="button"
           onClick={handleCopyAppLink}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-sky-300 bg-sky-50 text-sky-950 text-xs sm:text-sm font-extrabold hover:bg-sky-100 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 text-xs sm:text-sm font-extrabold hover:bg-emerald-100 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Copy className="w-4 h-4" />
           🔗 ലിങ്ക് കോപ്പി
@@ -657,7 +657,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <button
           type="button"
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Printer className="w-4 h-4" />
           പ്രിന്റ് / PDF
@@ -666,7 +666,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           type="button"
           disabled={downloading}
           onClick={handleShareSocial}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Share2 className="w-4 h-4" />
           ഷെയർ ചെയ്യാം
@@ -675,7 +675,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           type="button"
           disabled={downloading}
           onClick={handleDownloadPng}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-900 text-white text-xs sm:text-sm font-extrabold hover:bg-red-950 disabled:opacity-50 whitespace-nowrap shrink-0"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 border-b-4 border-amber-600 text-xs sm:text-sm font-black hover:bg-amber-300 disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Download className="w-4 h-4" />
           {downloading ? 'തയ്യാറാക്കുന്നു...' : 'ചിത്രമായി ഡൗൺലോഡ്'}

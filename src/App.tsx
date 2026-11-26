@@ -11,8 +11,10 @@ import {
   Link2,
   Settings,
   Share2,
+  Trophy,
   Volume2,
   VolumeX,
+  X,
 } from 'lucide-react';
 import { L1Tab, Level1Story } from './components/Level1Story';
 import { L2GameTab, Level2Ecosystem } from './components/Level2Ecosystem';
@@ -301,16 +303,97 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
 };
 
 interface LessonWorkspaceFrameProps {
+  completedCount: number;
+  totalLessons: number;
   children: React.ReactNode;
 }
 
-const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({ children }) => {
-  const { activeLessonId, lessonViewStep, goToStudyStep, hasGameOnPage, isGameDone } =
-    useLessonFlow();
+const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
+  completedCount,
+  totalLessons,
+  children,
+}) => {
+  const {
+    activeLessonId,
+    lessonViewStep,
+    goToPlayStep,
+    goToStudyStep,
+    hasGameOnPage,
+    isGameDone,
+  } = useLessonFlow();
   const currentGameDone = isGameDone(activeLessonId);
+  const lessonIdx = ALL_LESSONS.findIndex((l) => l.id === activeLessonId);
+  const activeLesson = lessonIdx >= 0 ? ALL_LESSONS[lessonIdx] : null;
+  const progressPct = Math.round((completedCount / Math.max(1, totalLessons)) * 100);
 
   return (
     <div className="space-y-4">
+      {/* Compact Lesson Progress & 2-Step Indicator Strip */}
+      {activeLesson && hasGameOnPage && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-2xs space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 tabular-nums">
+                <span className="font-extrabold text-emerald-700">
+                  പാഠം {lessonIdx + 1}/{totalLessons}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span className="truncate">{activeLesson.title}</span>
+              </div>
+            </div>
+
+            {/* Interactive 2-Step Segmented Switcher */}
+            <div
+              className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 border border-slate-200 shrink-0"
+              role="tablist"
+              aria-label="പാഠത്തിന്റെ ഘട്ടങ്ങൾ"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={lessonViewStep === 'play'}
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  goToPlayStep();
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  lessonViewStep === 'play'
+                    ? 'bg-emerald-700 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                1. ഗെയിം
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={lessonViewStep === 'study'}
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  goToStudyStep();
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  lessonViewStep === 'study'
+                    ? 'bg-amber-400 text-slate-950 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                2. പാഠം + ക്വിസ്
+              </button>
+            </div>
+          </div>
+
+          <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              style={{ width: `${Math.max(progressPct, Math.round(((lessonIdx + 1) / Math.max(1, totalLessons)) * 100) * 0.25)}%` }}
+              className="h-full bg-gradient-to-r from-emerald-600 to-amber-400 transition-all duration-300"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Screen 1 ('play'): Item 1 — Compact Storyline Card at the top */}
       {lessonViewStep === 'play' && hasGameOnPage && (
         <LessonStorylineCard lessonId={activeLessonId} />
@@ -509,6 +592,28 @@ export default function App() {
     () => ALL_LESSONS.find((l) => l.id === activeLessonId)?.title,
     [activeLessonId]
   );
+
+  // Milestone celebrations at 10, 25, 40, and 52 completed lessons
+  const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
+  const [milestoneShareCopied, setMilestoneShareCopied] = useState(false);
+
+  useEffect(() => {
+    const milestones = [10, 25, 40, ALL_LESSONS.length];
+    const reached = milestones.filter((m) => canonicalCompletedCount >= m).pop();
+    if (!reached) return;
+    try {
+      const raw = localStorage.getItem('skssf_milestones_seen_v1');
+      const seen: number[] = raw ? JSON.parse(raw) : [];
+      if (!seen.includes(reached)) {
+        const next = [...seen, reached];
+        localStorage.setItem('skssf_milestones_seen_v1', JSON.stringify(next));
+        setActiveMilestone(reached);
+        sound.playSuccess(3);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [canonicalCompletedCount]);
 
   const quizStats = useMemo(() => {
     const entries = Object.values(quizAnswers);
@@ -713,6 +818,12 @@ export default function App() {
     setL4InitialTab(undefined);
     setLessonsMapOpen(false);
     setShowResumeToast(false);
+    setActiveMilestone(null);
+    try {
+      localStorage.removeItem('skssf_milestones_seen_v1');
+    } catch {
+      // Ignore
+    }
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -744,6 +855,12 @@ export default function App() {
     setL4InitialTab(undefined);
     setLessonsMapOpen(false);
     setShowResumeToast(false);
+    setActiveMilestone(null);
+    try {
+      localStorage.removeItem('skssf_milestones_seen_v1');
+    } catch {
+      // Ignore
+    }
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -1052,12 +1169,69 @@ export default function App() {
           />
         ) : (
           <>
+            {activeMilestone && (
+              <div className="mb-3 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                    <Trophy className="w-5 h-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-amber-300 tabular-nums">
+                      അഭിനന്ദനങ്ങൾ! {activeMilestone} പാഠങ്ങൾ പൂർത്തിയാക്കി!
+                    </p>
+                    <p className="text-xs text-emerald-50 font-medium leading-snug mt-0.5">
+                      നിങ്ങളുടെ പുരോഗതി ({xp} XP · {currentRank}) ഫോട്ടോ ബാഡ്ജായി സുഹൃത്തുക്കളുമായി പങ്കുവെക്കാം.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playPop();
+                      setBadgeStudioPreset(activeMilestone >= ALL_LESSONS.length ? 'master_guide' : 'starter_member');
+                      setBadgeStudioOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black cursor-pointer whitespace-nowrap"
+                  >
+                    ഫോട്ടോ ബാഡ്ജ്
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      sound.playClick();
+                      const ok = await copyAppShareLink();
+                      if (ok) {
+                        setMilestoneShareCopied(true);
+                        window.setTimeout(() => setMilestoneShareCopied(false), 2200);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold cursor-pointer whitespace-nowrap"
+                  >
+                    {milestoneShareCopied ? 'കോപ്പി ചെയ്തു!' : 'ഷെയർ ലിങ്ക്'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveMilestone(null)}
+                    aria-label="അടയ്ക്കുക"
+                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <UnseenLessonBanner
               unseenLessons={skippedUnseenBefore}
               onJumpToLesson={handleJumpToLesson}
             />
 
-            <LessonWorkspaceFrame>
+            <LessonWorkspaceFrame
+              completedCount={canonicalCompletedCount}
+              totalLessons={ALL_LESSONS.length}
+            >
             {stage === 'prologue' && (
               <StoryPrologueTheater
                 key={`prologue_${attemptKey}`}

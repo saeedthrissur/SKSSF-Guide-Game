@@ -23,12 +23,12 @@ import {
 import { sound } from '../utils/sound';
 
 const KIND_BADGE: Record<OfficialLinkItem['kind'], { label: string; cls: string }> = {
-  website: { label: 'വെബ്സൈറ്റ്', cls: 'bg-emerald-100 text-emerald-900 border-emerald-200' },
-  portal: { label: 'പോർട്ടൽ', cls: 'bg-sky-100 text-sky-900 border-sky-200' },
-  youtube: { label: 'YouTube', cls: 'bg-rose-100 text-rose-900 border-rose-200' },
-  epaper: { label: 'ഇ-പേപ്പർ', cls: 'bg-amber-100 text-amber-950 border-amber-200' },
-  magazine: { label: 'മാസിക', cls: 'bg-purple-100 text-purple-900 border-purple-200' },
-  pdf: { label: 'PDF', cls: 'bg-teal-100 text-teal-900 border-teal-200' },
+  website: { label: 'വെബ്സൈറ്റ്', cls: 'bg-emerald-50 text-emerald-900 border-emerald-200' },
+  portal: { label: 'പോർട്ടൽ', cls: 'bg-slate-100 text-slate-800 border-slate-200' },
+  youtube: { label: 'YouTube', cls: 'bg-rose-50 text-rose-900 border-rose-200' },
+  epaper: { label: 'ഇ-പേപ്പർ', cls: 'bg-amber-50 text-amber-950 border-amber-200' },
+  magazine: { label: 'മാസിക', cls: 'bg-amber-50 text-amber-900 border-amber-200' },
+  pdf: { label: 'PDF', cls: 'bg-emerald-50 text-emerald-950 border-emerald-300' },
 };
 
 /* ============================================================================
@@ -55,12 +55,12 @@ export const InlineOfficialLinksStrip: React.FC<{
 
   return (
     <div
-      className={`rounded-xl border border-sky-200 bg-sky-50/75 ${
+      className={`rounded-xl border border-emerald-200 bg-emerald-50/60 ${
         compact ? 'p-2.5 space-y-2' : 'p-3 space-y-2'
       }`}
     >
-      <p className="text-[11px] font-extrabold text-sky-950 flex items-center gap-1.5">
-        <Globe className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+      <p className="text-[11px] font-extrabold text-emerald-950 flex items-center gap-1.5">
+        <Globe className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
         <span>{heading}</span>
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -70,7 +70,7 @@ export const InlineOfficialLinksStrip: React.FC<{
           return (
             <div
               key={item.id}
-              className="inline-flex items-center rounded-xl bg-white border border-slate-200 hover:border-sky-400 shadow-2xs overflow-hidden max-w-full"
+              className="inline-flex items-center rounded-xl bg-white border border-slate-200 hover:border-emerald-400 shadow-2xs overflow-hidden max-w-full"
             >
               <a
                 href={item.url}
@@ -81,7 +81,7 @@ export const InlineOfficialLinksStrip: React.FC<{
                   onLinkExplore?.();
                 }}
                 title={`${item.title} — ${item.url}`}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-900 hover:text-sky-800 hover:bg-sky-50/70 transition-colors min-w-0"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-extrabold text-slate-900 hover:text-emerald-800 hover:bg-emerald-50/70 transition-colors min-w-0"
               >
                 {isYt ? (
                   <Youtube className="w-3.5 h-3.5 text-rose-600 shrink-0" />
