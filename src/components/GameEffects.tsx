@@ -13,7 +13,9 @@ import {
   Copy,
   Gift,
   Info,
+  Languages,
   Lock,
+  Moon,
   MousePointerClick,
   Music,
   Play,
@@ -22,8 +24,10 @@ import {
   Share2,
   SlidersHorizontal,
   Sparkles,
+  Sun,
   Trash2,
   Trophy,
+  Type,
   Unlock,
   Volume2,
   VolumeX,
@@ -37,6 +41,12 @@ import {
   SoundPreset,
   SoundStateSnapshot,
 } from '../utils/sound';
+import {
+  displayPrefs,
+  DisplayPrefsSnapshot,
+  FONT_LEVEL_META,
+  TRANSLATE_LANGUAGES,
+} from '../utils/displayPrefs';
 import { RunHistoryEntry } from '../utils/gameStorage';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
 import { useLessonFlow } from '../utils/lessonFlowContext';
@@ -98,7 +108,7 @@ export const GlitterBurstOverlay: React.FC<GlitterBurstProps> = ({
               initial={{ scale: 0.75, y: 12 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              className="absolute top-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-xl border-2 border-amber-200 bg-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg whitespace-nowrap"
+              className="absolute top-3 left-1/2 -translate-x-1/2 max-w-[92%] px-3.5 py-1.5 rounded-xl border-2 border-amber-200 bg-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg text-center break-words"
             >
               {label}
             </motion.div>
@@ -221,11 +231,11 @@ export const FlutteringFlagPole: React.FC<{
       <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-700 shadow" />
       <div className="w-1.5 h-16 sm:h-20 bg-gradient-to-b from-amber-500 to-amber-800 rounded-b" />
     </div>
-    <div className="self-start mt-1 -ml-0.5 flag-wave shadow-md rounded overflow-hidden border border-white/40 bg-white">
+    <div className="self-start mt-1 -ml-0.5 flag-wave shadow-md rounded-lg overflow-hidden border border-emerald-200 bg-white p-0.5">
       {variant === 'skju' ? (
-        <OfficialSamasthaFlagImg className="w-12 h-8 sm:w-16 sm:h-11 object-cover" />
+        <OfficialSamasthaFlagImg className="w-14 h-10 sm:w-16 sm:h-12 object-contain" />
       ) : (
-        <OfficialSkssfFlagImg className="w-12 h-8 sm:w-16 sm:h-11 object-cover" />
+        <OfficialSkssfFlagImg className="w-14 h-10 sm:w-16 sm:h-12 object-contain" />
       )}
     </div>
   </div>
@@ -331,6 +341,7 @@ export const SettingsModal: React.FC<{
 }> = ({ isOpen, onClose, onResetProgress, onClearAllData }) => {
   const [snd, setSnd] = useState<SoundStateSnapshot>(sound.getSnapshot());
   const [nav, setNav] = useState<NarratorState>(narrator.getState());
+  const [disp, setDisp] = useState<DisplayPrefsSnapshot>(displayPrefs.getSnapshot());
   const [copiedMode, setCopiedMode] = useState<'link' | 'embed' | null>(null);
   const [confirmAction, setConfirmAction] = useState<'reset' | 'clear_all' | null>(null);
   const [actionDoneMsg, setActionDoneMsg] = useState<string | null>(null);
@@ -338,9 +349,11 @@ export const SettingsModal: React.FC<{
   useEffect(() => {
     const u1 = sound.subscribe(setSnd);
     const u2 = narrator.subscribe(setNav);
+    const u3 = displayPrefs.subscribe(setDisp);
     return () => {
       u1();
       u2();
+      u3();
     };
   }, []);
 
@@ -385,26 +398,28 @@ export const SettingsModal: React.FC<{
     sound.setBalance({ [key]: next });
   };
 
+  const fontMeta = FONT_LEVEL_META[disp.fontLevel];
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+      className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 space-y-5"
+        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
               <Settings className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                ⚙️ ശബ്ദ &amp; ഷെയർ സെറ്റിംഗ്സ്
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight break-words">
+                ⚙️ സെറ്റിംഗ്സ് · ഡിസ്പ്ലേ, ഭാഷ &amp; ശബ്ദം
               </h2>
-              <p className="text-xs text-slate-600">
-                ഓരോ ശബ്ദത്തിന്റെയും വോളിയം 0% (നിശബ്ദം) മുതൽ 100% വരെ തത്സമയം ക്രമീകരിക്കാം
+              <p className="text-xs text-slate-600 leading-snug">
+                ഡാർക്ക് മോഡ്, അക്ഷരവലുപ്പം (5 ലെവൽ), ഭാഷ, ശബ്ദം എന്നിവ ഇവിടെ ക്രമീകരിക്കാം
               </p>
             </div>
           </div>
@@ -412,10 +427,147 @@ export const SettingsModal: React.FC<{
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Display, 5-Level Font Size (+ / -) & Language (Google Translate) */}
+        <div className="space-y-3 rounded-2xl bg-slate-50 border border-slate-200 p-3.5 sm:p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Dark Mode Toggle */}
+            <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2.5">
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                  {disp.darkMode ? (
+                    <Moon className="w-4 h-4 text-amber-500 shrink-0" />
+                  ) : (
+                    <Sun className="w-4 h-4 text-amber-600 shrink-0" />
+                  )}
+                  <span className="truncate">ഡാർക്ക് മോഡ്</span>
+                </p>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  {disp.darkMode ? 'രാത്രി വായനയ്ക്ക് സുഖകരം' : 'ലൈറ്റ് തീം സജീവമാണ്'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  displayPrefs.toggleDarkMode();
+                }}
+                aria-pressed={disp.darkMode}
+                className={`px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer transition-colors ${
+                  disp.darkMode
+                    ? 'bg-amber-400 text-slate-950 border border-amber-500'
+                    : 'bg-slate-900 text-white hover:bg-slate-800'
+                }`}
+              >
+                {disp.darkMode ? '🌙 ON' : '☀️ OFF'}
+              </button>
+            </div>
+
+            {/* 5-Level Font Size (- / +) */}
+            <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5 min-w-0">
+                  <Type className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span className="truncate">അക്ഷരവലുപ്പം</span>
+                </p>
+                <span className="text-[11px] font-extrabold text-emerald-700 tabular-nums shrink-0">
+                  {fontMeta.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={disp.fontLevel <= 1}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    displayPrefs.stepFontLevel(-1);
+                  }}
+                  aria-label="അക്ഷരവലുപ്പം കുറയ്ക്കുക"
+                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-slate-900 flex items-center justify-center shrink-0 cursor-pointer notranslate"
+                >
+                  A−
+                </button>
+                <div className="flex-1 flex items-center gap-1" aria-label="അക്ഷരവലുപ്പം ലെവൽ">
+                  {([1, 2, 3, 4, 5] as const).map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        displayPrefs.setFontLevel(lvl);
+                      }}
+                      aria-label={`ലെവൽ ${lvl}`}
+                      className={`flex-1 h-2.5 rounded-full transition-colors cursor-pointer ${
+                        lvl <= disp.fontLevel ? 'bg-emerald-600' : 'bg-slate-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  disabled={disp.fontLevel >= 5}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    displayPrefs.stepFontLevel(1);
+                  }}
+                  aria-label="അക്ഷരവലുപ്പം കൂട്ടുക"
+                  className="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-white flex items-center justify-center shrink-0 cursor-pointer notranslate"
+                >
+                  A+
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Language Change (Google Translate) */}
+          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-slate-900">
+                <Languages className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>ഭാഷ മാറ്റാം (Google Translate)</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500">
+                ഇഷ്ട ഭാഷയിൽ വായിക്കാം
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 notranslate">
+              {TRANSLATE_LANGUAGES.map((lang) => {
+                const active = disp.language === lang.code;
+                return (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playClick();
+                      displayPrefs.setLanguage(lang.code);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs'
+                        : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'
+                    }`}
+                  >
+                    {lang.nativeLabel}
+                  </button>
+                );
+              })}
+            </div>
+            {disp.language !== 'ml' && (
+              <p className="text-[11px] font-semibold text-emerald-800 leading-snug">
+                Google Translate വഴി പേജ് വിവർത്തനം ചെയ്യുന്നു. പഴയ മലയാളത്തിലേക്ക് മടങ്ങാൻ ‘മലയാളം (Original)’ തൊടുക.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Master Audio & Auto Voice */}
@@ -989,12 +1141,12 @@ export const AudioLoadingFloatBadge: React.FC = () => {
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/92 text-amber-200 border border-amber-400/70 shadow-lg backdrop-blur-xs">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/92 text-amber-200 border border-amber-400/70 shadow-lg backdrop-blur-xs max-w-[88vw]">
             <span
               className="w-3.5 h-3.5 rounded-full border-2 border-amber-300 border-t-transparent animate-spin shrink-0"
               aria-hidden="true"
             />
-            <span className="text-[11px] font-extrabold whitespace-nowrap">
+            <span className="text-[11px] font-extrabold leading-tight sm:whitespace-nowrap break-words">
               സംസാരം ലോഡ് ചെയ്യുന്നു...
             </span>
           </div>
@@ -1385,7 +1537,7 @@ export const StoryNarrationStrip: React.FC<{
               }
             }}
             aria-label={state.speaking ? 'ശബ്ദ വിവരണം നിർത്താം' : 'ശബ്ദ വിവരണം കേൾക്കാം'}
-            className={`px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 shrink-0 text-xs font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 min-w-0 max-w-full text-xs font-extrabold leading-tight text-left transition-colors cursor-pointer ${
               state.speaking
                 ? 'bg-amber-400 text-slate-950'
                 : 'bg-emerald-700 text-white hover:bg-emerald-600'
@@ -1457,6 +1609,11 @@ export const StoryNarrationStrip: React.FC<{
           <ChevronUp className="w-4 h-4" />
         </button>
       </div>
+      {state.unavailableNotice && (
+        <div className="px-3.5 py-1.5 bg-emerald-950/80 border-t border-emerald-800/80 text-[11px] font-semibold text-amber-200/95 leading-snug">
+          🔇 ഈ വരിയുടെ ശബ്ദം ഓഫ്‌ലൈനിൽ ലഭ്യമല്ല — പ്രധാന പാഠങ്ങളിൽ ശബ്ദ വിവരണം പ്രവർത്തിക്കും.
+        </div>
+      )}
     </div>
   );
 };
@@ -1817,7 +1974,7 @@ export const UnseenLessonBanner: React.FC<{
           onJumpToLesson(firstUnseen.id);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border-b-2 border-amber-700 text-xs font-extrabold whitespace-nowrap shrink-0 transition-colors"
+        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 border-b-2 border-amber-700 text-xs font-extrabold text-center leading-tight sm:whitespace-nowrap shrink-0 transition-colors max-w-full"
       >
         <span>▶ വിട്ടുപോയ പാഠം പഠിക്കാം</span>
         <ArrowRight className="w-3.5 h-3.5" />
@@ -2116,41 +2273,41 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
         </div>
 
         {/* Current Attempt Summary */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
-            <p className="text-[11px] font-bold text-emerald-800">ആകെ പോയിന്റ്</p>
-            <p className="text-2xl font-extrabold text-emerald-950 tabular-nums mt-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+          <div className="min-w-0 overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+            <p className="text-[11px] font-bold text-emerald-800 leading-tight break-words">ആകെ പോയിന്റ്</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-emerald-950 tabular-nums mt-0.5 notranslate">
               {xp} XP
             </p>
             <p className="text-[11px] font-bold text-slate-600 leading-snug break-words mt-0.5">{rank}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200">
-            <p className="text-[11px] font-bold text-sky-800">പൂർത്തിയാക്കിയ പാഠങ്ങൾ</p>
-            <p className="text-2xl font-extrabold text-sky-950 tabular-nums mt-0.5">
+          <div className="min-w-0 overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-sky-50 border border-sky-200">
+            <p className="text-[11px] font-bold text-sky-800 leading-tight break-words">പൂർത്തിയായ പാഠങ്ങൾ</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-sky-950 tabular-nums mt-0.5 notranslate">
               {completedLessonsCount}/{totalLessonsCount}
             </p>
-            <p className="text-[11px] font-bold text-slate-600 mt-0.5">
+            <p className="text-[11px] font-bold text-slate-600 leading-snug break-words mt-0.5">
               {Math.round((completedLessonsCount / Math.max(1, totalLessonsCount)) * 100)}% പൂർത്തിയായി
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
-            <p className="text-[11px] font-bold text-amber-800">ക്വിസ് കൃത്യത</p>
-            <p className="text-2xl font-extrabold text-amber-950 tabular-nums mt-0.5">
+          <div className="min-w-0 overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+            <p className="text-[11px] font-bold text-amber-800 leading-tight break-words">ക്വിസ് കൃത്യത</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-amber-950 tabular-nums mt-0.5 notranslate">
               {quizzesAnswered > 0 ? `${currentAccuracy}%` : '—'}
             </p>
-            <p className="text-[11px] font-bold text-slate-600 mt-0.5 tabular-nums">
+            <p className="text-[11px] font-bold text-slate-600 leading-snug break-words mt-0.5 tabular-nums">
               {quizzesCorrect} / {quizzesAnswered} ശരി
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
-            <p className="text-[11px] font-bold text-amber-800">ബാഡ്ജുകൾ &amp; സമ്മാനം</p>
-            <p className="text-2xl font-extrabold text-amber-950 tabular-nums mt-0.5">
+          <div className="min-w-0 overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+            <p className="text-[11px] font-bold text-amber-800 leading-tight break-words">ബാഡ്ജുകൾ &amp; സമ്മാനം</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-amber-950 tabular-nums mt-0.5 notranslate">
               {badgesCount}
             </p>
-            <p className="text-[11px] font-bold text-slate-600 mt-0.5 tabular-nums">
+            <p className="text-[11px] font-bold text-slate-600 leading-snug break-words mt-0.5 tabular-nums">
               🎁 {eggsCount}/{EASTER_EGG_ITEMS.length} സമ്മാനങ്ങൾ
             </p>
           </div>

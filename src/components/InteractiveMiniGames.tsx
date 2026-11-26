@@ -6,6 +6,7 @@ import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
+import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 /* ============================================================================
  * 1. OPENING INTERACTIVE ACTIVITY: SKSSF ANNOUNCEMENT VEHICLE (പ്രചാരണ വാഹനം)
@@ -1158,17 +1159,17 @@ export const MadrasaBoardActivity: React.FC<{
             {placed.arch_flag ? (
               <>
                 <img
-                  src="./assets/official/flag_111154.jpg"
+                  src={OFFICIAL_FLAG_ASSETS.samastha}
                   alt="സമസ്ത പതാക"
                   referrerPolicy="no-referrer"
-                  className="w-7 h-7 object-contain rounded"
+                  className="w-8 h-7 object-contain rounded bg-white p-0.5"
                 />
                 <span className="text-xs font-extrabold">🌙 1926</span>
                 <img
-                  src="./assets/official/flag_111138.jpg"
+                  src={OFFICIAL_FLAG_ASSETS.skssf}
                   alt="SKSSF പതാക"
                   referrerPolicy="no-referrer"
-                  className="w-7 h-7 object-contain rounded"
+                  className="w-8 h-7 object-contain rounded bg-white p-0.5"
                 />
               </>
             ) : (

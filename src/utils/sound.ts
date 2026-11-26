@@ -20,16 +20,16 @@ export const QURAN_TRACKS: { id: QuranTrackId; label: string; url: string; durat
 
 const SCENE_TRACKS: Record<AmbienceScene, { primary: string; label: string }> = {
   harbor: {
-    primary: './assets/audio/birds_morning.mp3',
-    label: '🐦 പ്രഭാത പ്രകൃതി',
+    primary: './assets/audio/ocean_waves.mp3',
+    label: '🌊 തീരദേശ തിരമാലകൾ',
   },
   heritage: {
     primary: './assets/audio/birds_morning.mp3',
     label: '🐦 പൈതൃക പ്രഭാതം',
   },
   conference: {
-    primary: './assets/audio/birds_morning.mp3',
-    label: '🌿 സമ്മേളന ശാന്തത',
+    primary: './assets/audio/crowd_hall.mp3',
+    label: '🏛️ സമ്മേളന നഗരി',
   },
   study: {
     primary: './assets/audio/birds_morning.mp3',

@@ -310,6 +310,12 @@ async function startServer() {
     }
   });
 
+  // Redirect path-style direct links (/lesson/<id>) to /?lesson=<id> so relative ./assets/ paths always resolve
+  app.get('/lesson/:lessonId', (req, res) => {
+    const lessonId = encodeURIComponent(req.params.lessonId || '');
+    res.redirect(302, lessonId ? `/?lesson=${lessonId}` : '/');
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     app.use('/assets', express.static(path.resolve(__dirname, 'public', 'assets')));
     process.env.DISABLE_HMR = 'true';

@@ -67,7 +67,9 @@ import {
 import {
   ALL_LESSONS,
   getAllUnseenLessons,
+  getSequentialFrontierIndex,
   getSkippedUnseenLessonsBefore,
+  isLessonSequentiallyUnlocked,
   loadCompletedLessonIds,
   saveCompletedLessonIds,
 } from './utils/lessonTracker';
@@ -102,8 +104,12 @@ import {
   copyLessonShareLink,
   getAppShareUrl,
   getLessonShareUrl,
+  getWhatsAppShareHref,
+  resolveLessonFromUrl,
+  syncLessonUrl,
 } from './utils/shareLink';
 import { AppErrorBoundary } from './components/AppErrorBoundary';
+import { displayPrefs } from './utils/displayPrefs';
 
 const StageLoadingFallback: React.FC = () => (
   <div className="rounded-3xl border border-emerald-200 bg-white p-8 sm:p-10 text-center shadow-2xs space-y-3">
@@ -345,12 +351,18 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
 interface LessonWorkspaceFrameProps {
   completedCount: number;
   totalLessons: number;
+  isPreviewMode?: boolean;
+  nextSequentialLesson?: { number: number; id: string; title: string; emoji: string } | null;
+  onReturnToMyProgress?: () => void;
   children: React.ReactNode;
 }
 
 const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
   completedCount,
   totalLessons,
+  isPreviewMode = false,
+  nextSequentialLesson = null,
+  onReturnToMyProgress,
   children,
 }) => {
   const {
@@ -363,9 +375,16 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
   } = useLessonFlow();
   const currentGameDone = isGameDone(activeLessonId);
   const [lessonCopied, setLessonCopied] = useState(false);
+  const [shareBoxOpen, setShareBoxOpen] = useState(false);
   const lessonIdx = ALL_LESSONS.findIndex((l) => l.id === activeLessonId);
   const activeLesson = lessonIdx >= 0 ? ALL_LESSONS[lessonIdx] : null;
   const progressPct = Math.round((completedCount / Math.max(1, totalLessons)) * 100);
+  const lessonShareUrl = activeLesson ? getLessonShareUrl(activeLesson.id) : '';
+
+  useEffect(() => {
+    setShareBoxOpen(false);
+    setLessonCopied(false);
+  }, [activeLessonId]);
 
   const handleShareLesson = async () => {
     if (!activeLesson) return;
@@ -381,20 +400,52 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
         });
         return;
       } catch {
-        // Fallback to clipboard copy
+        // Fallback to clipboard copy + inline share bar
       }
     }
     const ok = await copyLessonShareLink(activeLesson.id);
     if (ok) {
       setLessonCopied(true);
-      window.setTimeout(() => setLessonCopied(false), 2200);
+      window.setTimeout(() => setLessonCopied(false), 2400);
+    } else {
+      setShareBoxOpen(true);
     }
   };
 
   return (
     <div className="space-y-4">
+      {/* Guest Preview Banner when viewing a locked lesson via a shared direct link */}
+      {isPreviewMode && activeLesson && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-50 via-white to-emerald-50 px-4 py-3 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="min-w-0 space-y-0.5">
+            <p className="text-xs font-black text-amber-900">
+              🔗 ഷെയർ ലിങ്ക് പ്രിവ്യൂ · പാഠം {lessonIdx + 1}/{totalLessons}
+            </p>
+            <p className="text-xs font-semibold text-slate-700 leading-relaxed">
+              ഈ പാഠം മാത്രം നിങ്ങൾക്ക് ഇപ്പോൾ കാണാനും കളിക്കാനും സാധിക്കും. ബാക്കി പാഠങ്ങളും സാക്ഷ്യപത്രവും തുറക്കാൻ
+              {nextSequentialLesson
+                ? ` പാഠം ${nextSequentialLesson.number} (${nextSequentialLesson.title}) മുതൽ ക്രമമായി കളിച്ച് മുന്നോട്ട് പോകൂ!`
+                : ' ക്രമമായി കളിച്ച് മുന്നോട്ട് പോകൂ!'}
+            </p>
+          </div>
+          {onReturnToMyProgress && nextSequentialLesson && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                onReturnToMyProgress();
+              }}
+              className="px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black text-center sm:whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
+            >
+              {nextSequentialLesson.emoji} പാഠം {nextSequentialLesson.number} മുതൽ തുടരാം →
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Compact Lesson Progress & 2-Step Indicator Strip */}
-      {activeLesson && hasGameOnPage && (
+      {activeLesson && (
         <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-2xs space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0 flex-1 flex items-center gap-2">
@@ -427,51 +478,85 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
             </div>
 
             {/* Interactive 2-Step Segmented Switcher */}
-            <div
-              className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 border border-slate-200 shrink-0"
-              role="tablist"
-              aria-label="പാഠത്തിന്റെ ഘട്ടങ്ങൾ"
-            >
+            {hasGameOnPage && (
+              <div
+                className="inline-flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 border border-slate-200 shrink-0"
+                role="tablist"
+                aria-label="പാഠത്തിന്റെ ഘട്ടങ്ങൾ"
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={lessonViewStep === 'play'}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    goToPlayStep();
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    lessonViewStep === 'play'
+                      ? 'bg-emerald-700 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  1. ഗെയിം
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={lessonViewStep === 'study'}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    goToStudyStep();
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    lessonViewStep === 'study'
+                      ? 'bg-amber-400 text-slate-950 shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  2. പാഠം + ക്വിസ്
+                </button>
+              </div>
+            )}
+          </div>
+
+          {shareBoxOpen && lessonShareUrl && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+              <input
+                type="text"
+                readOnly
+                value={lessonShareUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                aria-label="പാഠത്തിന്റെ ഡയറക്ട് ലിങ്ക്"
+                className="flex-1 min-w-[180px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700"
+              />
+              <a
+                href={getWhatsAppShareHref(
+                  `പാഠം ${lessonIdx + 1}: ${activeLesson.title} — SKSSF ഗൈഡ് ഗെയിമിൽ പഠിക്കൂ!`,
+                  lessonShareUrl
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold whitespace-nowrap"
+              >
+                WhatsApp
+              </a>
               <button
                 type="button"
-                role="tab"
-                aria-selected={lessonViewStep === 'play'}
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  goToPlayStep();
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  lessonViewStep === 'play'
-                    ? 'bg-emerald-700 text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={() => setShareBoxOpen(false)}
+                aria-label="അടയ്ക്കുക"
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
               >
-                1. ഗെയിം
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={lessonViewStep === 'study'}
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  goToStudyStep();
-                }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                  lessonViewStep === 'study'
-                    ? 'bg-amber-400 text-slate-950 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                2. പാഠം + ക്വിസ്
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
-          </div>
+          )}
 
           <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
             <div
-              style={{ width: `${Math.max(progressPct, Math.round(((lessonIdx + 1) / Math.max(1, totalLessons)) * 100) * 0.25)}%` }}
+              style={{ width: `${Math.max(progressPct, isPreviewMode ? 0 : Math.round(((lessonIdx + 1) / Math.max(1, totalLessons)) * 100) * 0.25)}%` }}
               className="h-full bg-gradient-to-r from-emerald-600 to-amber-400 transition-all duration-300"
             />
           </div>
@@ -520,10 +605,21 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
 
 export default function App() {
   const [savedInit] = useState(() => loadSavedGameState());
+  const [initialDeepLink] = useState(() => resolveLessonFromUrl(ALL_LESSONS));
+  const [initialCompleted] = useState<string[]>(() =>
+    savedInit?.completedLessonIds?.length ? savedInit.completedLessonIds : loadCompletedLessonIds()
+  );
+  const initialIsPreview = Boolean(
+    initialDeepLink &&
+      ALL_LESSONS.findIndex((l) => l.id === initialDeepLink.id) >
+        getSequentialFrontierIndex(initialCompleted)
+  );
 
-  const [stage, setStage] = useState<AppStage>(() => savedInit?.stage ?? 'prologue');
+  const [stage, setStage] = useState<AppStage>(
+    () => initialDeepLink?.stage ?? savedInit?.stage ?? 'prologue'
+  );
   const [currentLevel, setCurrentLevel] = useState<LevelNumber>(
-    () => savedInit?.currentLevel ?? 1
+    () => initialDeepLink?.level ?? savedInit?.currentLevel ?? 1
   );
   const [unlockedLevels, setUnlockedLevels] = useState<LevelNumber[]>(() =>
     savedInit?.unlockedLevels?.length
@@ -567,51 +663,70 @@ export default function App() {
   const [heartBreakEvent, setHeartBreakEvent] = useState<HeartBreakEvent | null>(null);
   const [activeFlightEvent, setActiveFlightEvent] = useState<HeartBreakEvent | null>(null);
   const [gameOverOpen, setGameOverOpen] = useState<boolean>(() =>
-    typeof savedInit?.lives === 'number' ? savedInit.lives <= 0 : false
+    !initialDeepLink && typeof savedInit?.lives === 'number' ? savedInit.lives <= 0 : false
   );
   const [runNumber, setRunNumber] = useState<number>(() => savedInit?.runNumber ?? 1);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>(() => loadRunHistory());
   const [attemptKey, setAttemptKey] = useState<number>(0);
+  const [lessonJumpSeq, setLessonJumpSeq] = useState<number>(0);
   const [showResumeToast, setShowResumeToast] = useState<boolean>(() =>
     Boolean(
-      savedInit &&
+      !initialDeepLink &&
+        savedInit &&
         (savedInit.xp > 0 ||
           savedInit.completedLessonIds.length > 0 ||
           Object.keys(savedInit.quizAnswers || {}).length > 0)
     )
   );
 
-  const [showIntro, setShowIntro] = useState<boolean>(true);
+  const [showIntro, setShowIntro] = useState<boolean>(() => !initialDeepLink);
+  const [previewLessonId, setPreviewLessonId] = useState<string | null>(() =>
+    initialIsPreview && initialDeepLink ? initialDeepLink.id : null
+  );
   const [devUnlocked, setDevUnlocked] = useState<boolean>(false);
   const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
   const [resourceHubOpen, setResourceHubOpen] = useState<boolean>(false);
 
-  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() =>
-    savedInit?.completedLessonIds?.length ? savedInit.completedLessonIds : loadCompletedLessonIds()
-  );
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() => initialCompleted);
   const [activeLessonId, setActiveLessonId] = useState<string>(
-    () => savedInit?.activeLessonId ?? 'prologue_curiosity'
+    () => initialDeepLink?.id ?? savedInit?.activeLessonId ?? 'prologue_curiosity'
   );
   const [prologueInitialLessonId, setPrologueInitialLessonId] = useState<string | undefined>(() =>
-    savedInit?.stage === 'prologue' ? savedInit?.activeLessonId : undefined
+    initialDeepLink?.stage === 'prologue'
+      ? initialDeepLink.id
+      : savedInit?.stage === 'prologue'
+      ? savedInit?.activeLessonId
+      : undefined
   );
   const [storyboardInitialTab, setStoryboardInitialTab] = useState<string | undefined>(() =>
-    getInitialTabForLesson<string>(savedInit?.activeLessonId, 'storyboard')
+    initialDeepLink?.stage === 'storyboard'
+      ? initialDeepLink.tab
+      : getInitialTabForLesson<string>(savedInit?.activeLessonId, 'storyboard')
   );
   const [povInitialTab, setPovInitialTab] = useState<string | undefined>(() =>
-    getInitialTabForLesson<string>(savedInit?.activeLessonId, 'pov')
+    initialDeepLink?.stage === 'pov'
+      ? initialDeepLink.tab ?? initialDeepLink.id
+      : getInitialTabForLesson<string>(savedInit?.activeLessonId, 'pov')
   );
   const [l1InitialTab, setL1InitialTab] = useState<L1Tab | undefined>(() =>
-    getInitialTabForLesson<L1Tab>(savedInit?.activeLessonId, 'world', 1)
+    initialDeepLink?.stage === 'world' && initialDeepLink.level === 1
+      ? (initialDeepLink.tab as L1Tab)
+      : getInitialTabForLesson<L1Tab>(savedInit?.activeLessonId, 'world', 1)
   );
   const [l2InitialTab, setL2InitialTab] = useState<L2GameTab | undefined>(() =>
-    getInitialTabForLesson<L2GameTab>(savedInit?.activeLessonId, 'world', 2)
+    initialDeepLink?.stage === 'world' && initialDeepLink.level === 2
+      ? (initialDeepLink.tab as L2GameTab)
+      : getInitialTabForLesson<L2GameTab>(savedInit?.activeLessonId, 'world', 2)
   );
   const [l3InitialTab, setL3InitialTab] = useState<L3Tab | undefined>(() =>
-    getInitialTabForLesson<L3Tab>(savedInit?.activeLessonId, 'world', 3)
+    initialDeepLink?.stage === 'world' && initialDeepLink.level === 3
+      ? (initialDeepLink.tab as L3Tab)
+      : getInitialTabForLesson<L3Tab>(savedInit?.activeLessonId, 'world', 3)
   );
   const [l4InitialTab, setL4InitialTab] = useState<L4Tab | undefined>(() =>
-    getInitialTabForLesson<L4Tab>(savedInit?.activeLessonId, 'world', 4)
+    initialDeepLink?.stage === 'world' && initialDeepLink.level === 4
+      ? (initialDeepLink.tab as L4Tab)
+      : getInitialTabForLesson<L4Tab>(savedInit?.activeLessonId, 'world', 4)
   );
 
   // Sync completed lessons to legacy key & auto-save full progress to browser localStorage
@@ -619,12 +734,32 @@ export default function App() {
     saveCompletedLessonIds(completedLessonIds);
   }, [completedLessonIds]);
 
+  const isPreviewMode = Boolean(
+    previewLessonId &&
+      !devUnlocked &&
+      ALL_LESSONS.findIndex((l) => l.id === activeLessonId) >
+        getSequentialFrontierIndex(completedLessonIds)
+  );
+
   useEffect(() => {
+    const frontierIdx = getSequentialFrontierIndex(completedLessonIds);
+    const frontierLesson = ALL_LESSONS[frontierIdx] ?? ALL_LESSONS[0];
+    // Never overwrite the learner's real saved stage/lesson position while previewing a locked shared link
+    const persistedStage = isPreviewMode
+      ? savedInit?.stage ?? frontierLesson.stage
+      : stage;
+    const persistedLevel = isPreviewMode
+      ? savedInit?.currentLevel ?? frontierLesson.level ?? 1
+      : currentLevel;
+    const persistedLessonId = isPreviewMode
+      ? savedInit?.activeLessonId ?? frontierLesson.id
+      : activeLessonId;
+
     saveGameState({
       version: 2,
-      stage,
-      currentLevel,
-      activeLessonId,
+      stage: persistedStage,
+      currentLevel: persistedLevel,
+      activeLessonId: persistedLessonId,
       xp,
       awardedActions: Object.keys(awardedActions).filter((k) => awardedActions[k]),
       badges,
@@ -641,6 +776,8 @@ export default function App() {
     stage,
     currentLevel,
     activeLessonId,
+    isPreviewMode,
+    savedInit,
     xp,
     awardedActions,
     badges,
@@ -677,12 +814,21 @@ export default function App() {
     [activeLessonId]
   );
 
-  // Milestone celebrations at 10, 25, 40, and 52 completed lessons
+  // Stage-aligned milestone celebrations (Prologue 6, Practical 18, Unit 26, Cluster/Zone 35, District 40, Full 52)
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
   const [milestoneShareCopied, setMilestoneShareCopied] = useState(false);
 
+  const STAGE_MILESTONE_LABELS: Record<number, { title: string; badgePreset: string }> = {
+    6: { title: 'ആമുഖ ഘട്ടം പൂർത്തിയാക്കി!', badgePreset: 'starter_member' },
+    18: { title: 'പ്രായോഗിക യാത്ര പൂർത്തിയാക്കി!', badgePreset: 'unit_organizer' },
+    26: { title: 'യൂണിറ്റ് തലം പൂർത്തിയാക്കി!', badgePreset: 'flag_keeper' },
+    35: { title: 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'wing_hero' },
+    40: { title: 'ജില്ലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'cyber_guardian' },
+    [ALL_LESSONS.length]: { title: 'എല്ലാ 52 പാഠങ്ങളും പൂർത്തിയാക്കി!', badgePreset: 'master_guide' },
+  };
+
   useEffect(() => {
-    const milestones = [10, 25, 40, ALL_LESSONS.length];
+    const milestones = [6, 18, 26, 35, 40, ALL_LESSONS.length];
     const reached = milestones.filter((m) => canonicalCompletedCount >= m).pop();
     if (!reached) return;
     try {
@@ -707,11 +853,24 @@ export default function App() {
     };
   }, [quizAnswers]);
 
+  const nextSequentialIdx = useMemo(
+    () => getSequentialFrontierIndex(completedLessonIds),
+    [completedLessonIds]
+  );
+
+  const nextSequentialLesson = useMemo(() => {
+    const desc = ALL_LESSONS[nextSequentialIdx] ?? ALL_LESSONS[0];
+    return {
+      number: nextSequentialIdx + 1,
+      id: desc.id,
+      title: desc.title,
+      emoji: desc.emoji,
+    };
+  }, [nextSequentialIdx]);
+
   const storyboardUnlocked =
     devUnlocked ||
-    stage === 'storyboard' ||
-    stage === 'pov' ||
-    stage === 'world' ||
+    (!isPreviewMode && (stage === 'storyboard' || stage === 'pov' || stage === 'world')) ||
     completedLessonIds.includes('prologue_story') ||
     completedLessonIds.includes('storyboard') ||
     completedLessonIds.includes('pov_journey') ||
@@ -719,8 +878,7 @@ export default function App() {
 
   const povUnlocked =
     devUnlocked ||
-    stage === 'pov' ||
-    stage === 'world' ||
+    (!isPreviewMode && (stage === 'pov' || stage === 'world')) ||
     completedLessonIds.includes('storyboard') ||
     completedLessonIds.includes('pov_journey') ||
     completedLevels.length > 0 ||
@@ -728,56 +886,75 @@ export default function App() {
 
   const world1Unlocked =
     devUnlocked ||
-    stage === 'world' ||
+    (!isPreviewMode && stage === 'world') ||
     completedLessonIds.includes('pov_journey') ||
     completedLevels.length > 0 ||
     unlockedLevels.length > 1;
 
-  const handleJumpToLesson = useCallback((lessonId: string) => {
-    const target = ALL_LESSONS.find((l) => l.id === lessonId);
-    if (!target) return;
-    sound.unlockAudio();
-    sound.playClick();
-    if (target.stage === 'prologue') {
-      setPrologueInitialLessonId(target.id);
-      setStage('prologue');
-    } else if (target.stage === 'storyboard') {
-      setStoryboardInitialTab(target.tab);
-      setStage('storyboard');
-    } else if (target.stage === 'pov') {
-      setPovInitialTab(target.tab ?? target.id);
-      setStage('pov');
-    } else if (target.stage === 'world' && target.level) {
-      const lvl = target.level;
-      setUnlockedLevels((prev) => (prev.includes(lvl) ? prev : [...prev, lvl]));
-      if (lvl === 1 && target.tab) setL1InitialTab(target.tab as L1Tab);
-      if (lvl === 2 && target.tab) setL2InitialTab(target.tab as L2GameTab);
-      if (lvl === 3 && target.tab) setL3InitialTab(target.tab as L3Tab);
-      if (lvl === 4 && target.tab) setL4InitialTab(target.tab as L4Tab);
-      setStage('world');
-      setCurrentLevel(lvl);
-    }
-    setActiveLessonId(target.id);
-    setShowIntro(false);
-    setLessonsMapOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const handleJumpToLesson = useCallback(
+    (lessonId: string, options?: { isDirectLink?: boolean }) => {
+      const target = ALL_LESSONS.find((l) => l.id === lessonId);
+      if (!target) return;
+      const unlocked = isLessonSequentiallyUnlocked(target.id, completedLessonIds, devUnlocked);
+      // Direct links to locked lessons open in isolated Guest Preview mode without unlocking earlier lessons
+      const enteringPreview = Boolean(options?.isDirectLink && !unlocked);
+      if (!options?.isDirectLink && !unlocked) return;
 
-  // Support URL deep-links (?lesson=<lessonId>) for WhatsApp/mentor sharing
+      sound.unlockAudio();
+      sound.playClick();
+      setPreviewLessonId(enteringPreview ? target.id : null);
+
+      if (target.stage === 'prologue') {
+        setPrologueInitialLessonId(target.id);
+        setStage('prologue');
+      } else if (target.stage === 'storyboard') {
+        setStoryboardInitialTab(target.tab);
+        setStage('storyboard');
+      } else if (target.stage === 'pov') {
+        setPovInitialTab(target.tab ?? target.id);
+        setStage('pov');
+      } else if (target.stage === 'world' && target.level) {
+        const lvl = target.level;
+        if (!enteringPreview) {
+          setUnlockedLevels((prev) => (prev.includes(lvl) ? prev : [...prev, lvl]));
+        }
+        if (lvl === 1 && target.tab) setL1InitialTab(target.tab as L1Tab);
+        if (lvl === 2 && target.tab) setL2InitialTab(target.tab as L2GameTab);
+        if (lvl === 3 && target.tab) setL3InitialTab(target.tab as L3Tab);
+        if (lvl === 4 && target.tab) setL4InitialTab(target.tab as L4Tab);
+        setStage('world');
+        setCurrentLevel(lvl);
+      }
+      setActiveLessonId(target.id);
+      setLessonJumpSeq((s) => s + 1);
+      setShowIntro(false);
+      setLessonsMapOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [completedLessonIds, devUnlocked]
+  );
+
+  // Keep browser URL cleanly synced with the active lesson so copying/reloading always works
+  useEffect(() => {
+    syncLessonUrl(showIntro ? null : activeLessonId);
+  }, [showIntro, activeLessonId]);
+
+  // Listen to browser hash/history changes (?lesson=... or #lesson=...) for instant direct-link jumps
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const linkedLesson = params.get('lesson');
-    if (linkedLesson && ALL_LESSONS.some((l) => l.id === linkedLesson)) {
-      handleJumpToLesson(linkedLesson);
-      try {
-        const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
-        window.history.replaceState({}, '', cleanUrl);
-      } catch {
-        // Ignore history API restrictions in sandboxed iframes
+    const handleLocationChange = () => {
+      const target = resolveLessonFromUrl(ALL_LESSONS);
+      if (target && target.id !== activeLessonId) {
+        handleJumpToLesson(target.id, { isDirectLink: true });
       }
-    }
-  }, [handleJumpToLesson]);
+    };
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, [activeLessonId, handleJumpToLesson]);
 
   // Gently prefetch the active stage chunk while the user reads the Welcome Intro screen
   useEffect(() => {
@@ -801,11 +978,11 @@ export default function App() {
   }, [showIntro, stage, currentLevel]);
 
   const currentRank = useMemo(() => {
-    if (xp >= 550 || completedLevels.includes(4)) return '🏆 SKSSF ഗൈഡ് താരം';
-    if (xp >= 340 || completedLevels.includes(3)) return '🛡️ നല്ല പ്രവർത്തകൻ';
-    if (xp >= 150 || completedLevels.includes(2)) return '🧭 സജീവ കൂട്ടുകാരൻ';
+    if (canonicalCompletedCount >= ALL_LESSONS.length || xp >= 550) return '🏆 SKSSF ഗൈഡ് താരം';
+    if (canonicalCompletedCount >= 35 || xp >= 340) return '🛡️ നല്ല പ്രവർത്തകൻ';
+    if (canonicalCompletedCount >= 18 || xp >= 150) return '🧭 സജീവ കൂട്ടുകാരൻ';
     return '🌱 പുതിയ കൂട്ടുകാരൻ';
-  }, [xp, completedLevels]);
+  }, [xp, canonicalCompletedCount]);
 
   const handleAwardXp = useCallback((amount: number, actionId: string) => {
     setAwardedActions((prev) => {
@@ -873,6 +1050,9 @@ export default function App() {
   };
 
   const handleCompleteLevel = (level: LevelNumber) => {
+    // Do not unlock subsequent levels or mark Level 4 complete when viewing via Guest Preview link
+    if (isPreviewMode && !devUnlocked) return;
+    if (level === 4 && !devUnlocked && canonicalCompletedCount < ALL_LESSONS.length) return;
     setCompletedLevels((prev) => (prev.includes(level) ? prev : [...prev, level]));
     if (level < 4) {
       const next = (level + 1) as LevelNumber;
@@ -967,6 +1147,7 @@ export default function App() {
     setActiveFlightEvent(null);
     setGameOverOpen(false);
     setActiveLessonId('prologue_curiosity');
+    setPreviewLessonId(null);
     setPrologueInitialLessonId('prologue_curiosity');
     setStoryboardInitialTab(undefined);
     setPovInitialTab(undefined);
@@ -988,6 +1169,7 @@ export default function App() {
 
   const handleClearAllSavedData = async () => {
     clearAllAppStorage();
+    displayPrefs.resetToDefaults();
     sound.resetToDefaults();
     await narrator.clearVoiceCache();
     setRunHistory([]);
@@ -1104,10 +1286,10 @@ export default function App() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }}
     >
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col overflow-x-clip">
       {/* Slim Sticky Top Bar — Single Settings Icon Only + Icon-First Status */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2">
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 py-2 flex items-center justify-between gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => {
@@ -1122,7 +1304,7 @@ export default function App() {
             <GuideGameBrandLogo size="sm" />
           </button>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-1.5 min-w-0">
             {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
             <HeaderHeartsBar />
 
@@ -1135,7 +1317,7 @@ export default function App() {
               }}
               aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
               title="സ്കോർ"
-              className="inline-flex items-center gap-1 h-9 px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              className="inline-flex items-center gap-1 h-[34px] sm:h-9 px-2 sm:px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 notranslate"
             >
               <BarChart3 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>{xp}</span>
@@ -1226,10 +1408,10 @@ export default function App() {
       <AudioLoadingFloatBadge />
 
       {/* Main Game Workspace */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-5 pb-24 sm:pb-20">
         {!showIntro && showResumeToast && (
           <div className="mb-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
-            <span className="tabular-nums">
+            <span className="tabular-nums notranslate min-w-0 break-words">
               💾 #{runNumber} · {xp} XP · {canonicalCompletedCount}/{ALL_LESSONS.length}
             </span>
             <div className="flex items-center gap-1.5">
@@ -1294,74 +1476,96 @@ export default function App() {
           />
         ) : (
           <>
-            {activeMilestone && (
-              <div className="mb-3 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-2.5 min-w-0">
-                  <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
-                    <Trophy className="w-5 h-5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-black text-amber-300 tabular-nums">
-                      അഭിനന്ദനങ്ങൾ! {activeMilestone} പാഠങ്ങൾ പൂർത്തിയാക്കി!
-                    </p>
-                    <p className="text-xs text-emerald-50 font-medium leading-snug mt-0.5">
-                      നിങ്ങളുടെ പുരോഗതി ({xp} XP · {currentRank}) ഫോട്ടോ ബാഡ്ജായി സുഹൃത്തുക്കളുമായി പങ്കുവെക്കാം.
-                    </p>
+            {activeMilestone && (() => {
+              const meta = STAGE_MILESTONE_LABELS[activeMilestone] ?? {
+                title: `${activeMilestone} പാഠങ്ങൾ പൂർത്തിയാക്കി!`,
+                badgePreset: 'starter_member',
+              };
+              const shareText = `🏆 SKSSF ഗൈഡ് ഗെയിമിൽ ഞാൻ "${meta.title}" (${activeMilestone}/${ALL_LESSONS.length} പാഠങ്ങൾ · ${xp} XP · ${currentRank})! നിങ്ങളും കളിച്ചു പഠിക്കൂ 👉`;
+              const whatsappHref = getWhatsAppShareHref(shareText, getAppShareUrl());
+              return (
+                <div className="mb-3 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                      <Trophy className="w-5 h-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-black text-amber-300 leading-snug break-words">
+                        അഭിനന്ദനങ്ങൾ! {meta.title} ({activeMilestone}/{ALL_LESSONS.length})
+                      </p>
+                      <p className="text-xs text-emerald-50 font-medium leading-snug mt-0.5 break-words">
+                        നിങ്ങളുടെ നേട്ടം ({xp} XP · {currentRank}) വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം അല്ലെങ്കിൽ ഫോട്ടോ ബാഡ്ജ് നിർമ്മിക്കാം.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => sound.playPop()}
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black cursor-pointer"
+                    >
+                      WhatsApp ഷെയർ
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playPop();
+                        setBadgeStudioPreset(meta.badgePreset);
+                        setBadgeStudioOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black cursor-pointer"
+                    >
+                      ഫോട്ടോ ബാഡ്ജ്
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        sound.playClick();
+                        const ok = await copyAppShareLink();
+                        if (ok) {
+                          setMilestoneShareCopied(true);
+                          window.setTimeout(() => setMilestoneShareCopied(false), 2200);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold cursor-pointer"
+                    >
+                      {milestoneShareCopied ? 'കോപ്പി ചെയ്തു!' : 'ലിങ്ക്'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveMilestone(null)}
+                      aria-label="അടയ്ക്കുക"
+                      className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      sound.playPop();
-                      setBadgeStudioPreset(activeMilestone >= ALL_LESSONS.length ? 'master_guide' : 'starter_member');
-                      setBadgeStudioOpen(true);
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black cursor-pointer whitespace-nowrap"
-                  >
-                    ഫോട്ടോ ബാഡ്ജ്
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      sound.playClick();
-                      const ok = await copyAppShareLink();
-                      if (ok) {
-                        setMilestoneShareCopied(true);
-                        window.setTimeout(() => setMilestoneShareCopied(false), 2200);
-                      }
-                    }}
-                    className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold cursor-pointer whitespace-nowrap"
-                  >
-                    {milestoneShareCopied ? 'കോപ്പി ചെയ്തു!' : 'ഷെയർ ലിങ്ക്'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveMilestone(null)}
-                    aria-label="അടയ്ക്കുക"
-                    className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
-            <UnseenLessonBanner
-              unseenLessons={skippedUnseenBefore}
-              onJumpToLesson={handleJumpToLesson}
-            />
+            {!isPreviewMode && (
+              <UnseenLessonBanner
+                unseenLessons={skippedUnseenBefore}
+                onJumpToLesson={handleJumpToLesson}
+              />
+            )}
 
             <LessonWorkspaceFrame
               completedCount={canonicalCompletedCount}
               totalLessons={ALL_LESSONS.length}
+              isPreviewMode={isPreviewMode}
+              nextSequentialLesson={nextSequentialLesson}
+              onReturnToMyProgress={() => handleJumpToLesson(nextSequentialLesson.id)}
             >
             <AppErrorBoundary onReset={() => setAttemptKey((k) => k + 1)}>
             <Suspense fallback={<StageLoadingFallback />}>
             {stage === 'prologue' && (
               <StoryPrologueTheater
-                key={`prologue_${attemptKey}`}
+                key={`prologue_${attemptKey}_${lessonJumpSeq}`}
                 xp={xp}
                 badgesCount={badges.length}
                 onStartAdventure={handleStartAdventure}
@@ -1386,7 +1590,7 @@ export default function App() {
 
             {stage === 'pov' && (
               <SkssfPovJourneyGame
-                key={`pov_${attemptKey}`}
+                key={`pov_${attemptKey}_${lessonJumpSeq}`}
                 initialTab={povInitialTab}
                 devUnlocked={devUnlocked}
                 onAwardXp={handleAwardXp}
@@ -1410,7 +1614,7 @@ export default function App() {
 
             {stage === 'storyboard' && (
               <VisualStoryboardArena
-                key={`storyboard_${attemptKey}`}
+                key={`storyboard_${attemptKey}_${lessonJumpSeq}`}
                 initialTab={storyboardInitialTab}
                 devUnlocked={devUnlocked}
                 onAwardXp={handleAwardXp}
@@ -1434,7 +1638,7 @@ export default function App() {
               <>
                 {currentLevel === 1 && (
                   <Level1Story
-                    key={`l1_${attemptKey}`}
+                    key={`l1_${attemptKey}_${lessonJumpSeq}`}
                     isCompleted={completedLevels.includes(1)}
                     onAwardXp={handleAwardXp}
                     onUnlockBadge={handleUnlockBadge}
@@ -1453,7 +1657,7 @@ export default function App() {
 
                 {currentLevel === 2 && (
                   <Level2Ecosystem
-                    key={`l2_${attemptKey}`}
+                    key={`l2_${attemptKey}_${lessonJumpSeq}`}
                     isCompleted={completedLevels.includes(2)}
                     onAwardXp={handleAwardXp}
                     onUnlockBadge={handleUnlockBadge}
@@ -1476,7 +1680,7 @@ export default function App() {
 
                 {currentLevel === 3 && (
                   <Level3Organizer
-                    key={`l3_${attemptKey}`}
+                    key={`l3_${attemptKey}_${lessonJumpSeq}`}
                     isCompleted={completedLevels.includes(3)}
                     onAwardXp={handleAwardXp}
                     onUnlockBadge={handleUnlockBadge}
@@ -1495,7 +1699,7 @@ export default function App() {
 
                 {currentLevel === 4 && (
                   <Level4Strategy
-                    key={`l4_${attemptKey}`}
+                    key={`l4_${attemptKey}_${lessonJumpSeq}`}
                     xp={xp}
                     rank={currentRank}
                     badges={badges}
@@ -1766,7 +1970,7 @@ export default function App() {
         </Suspense>
       )}
 
-      <footer className="border-t border-slate-200 bg-white py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500">
         <p>
           ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”
         </p>

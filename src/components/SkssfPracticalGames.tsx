@@ -475,7 +475,7 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
       const archZone = MURAL_ZONES.find((z) => z.id === 'arches')!;
       drawMinaretPair(ctx, getProgress(archZone));
 
-      // Zone 1: Official SKSSF Tri-Color Flag Banner
+      // Zone 1: Authentic SKSSF Flag Banner (Top-Left Blue Canton + Crescent & Star, Top-Right White + Mosque Dome & Minaret, Bottom Green Strip with SKSSF)
       const flagZone = MURAL_ZONES.find((z) => z.id === 'flag')!;
       const flagProg = getProgress(flagZone);
       ctx.save();
@@ -490,19 +490,87 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
       ctx.beginPath();
       ctx.roundRect(flagZone.x, flagZone.y, flagZone.w * Math.max(0.08, flagProg), flagZone.h, 10);
       ctx.clip();
-      const bandH = flagZone.h / 3;
-      ctx.fillStyle = flagProg > 0.05 ? '#0284C7' : '#CBD5E1';
-      ctx.fillRect(flagZone.x, flagZone.y, flagZone.w, bandH);
+
+      const upperH = flagZone.h * 0.67;
+      const greenH = flagZone.h - upperH;
+      const cantonW = flagZone.w * 0.36;
+      const painted = flagProg > 0.05;
+
+      // Top-right white field
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(flagZone.x, flagZone.y + bandH, flagZone.w, bandH);
-      ctx.fillStyle = flagProg > 0.05 ? '#059669' : '#CBD5E1';
-      ctx.fillRect(flagZone.x, flagZone.y + bandH * 2, flagZone.w, bandH + 2);
-      // Crescent & Star on center band
-      ctx.fillStyle = '#0369A1';
-      ctx.font = '800 13px sans-serif';
+      ctx.fillRect(flagZone.x, flagZone.y, flagZone.w, upperH);
+
+      // Top-left Royal/Sky Blue Canton
+      ctx.fillStyle = painted ? '#0284C7' : '#CBD5E1';
+      ctx.fillRect(flagZone.x, flagZone.y, cantonW, upperH);
+
+      // White Crescent Moon + 5-Pointed Star inside Canton
+      const crescentX = flagZone.x + cantonW * 0.52;
+      const crescentY = flagZone.y + upperH * 0.52;
+      const cr = Math.min(cantonW, upperH) * 0.32;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(crescentX, crescentY, cr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = painted ? '#0284C7' : '#CBD5E1';
+      ctx.beginPath();
+      ctx.arc(crescentX - cr * 0.36, crescentY - cr * 0.28, cr * 0.82, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5-pointed star nestled cleanly inside crescent opening
+      const starCx = crescentX - cr * 0.42;
+      const starCy = crescentY - cr * 0.32;
+      const outerR = cr * 0.34;
+      const innerR = outerR * 0.44;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+        const r = i % 2 === 0 ? outerR : innerR;
+        const sxPt = starCx + Math.cos(angle) * r;
+        const syPt = starCy + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(sxPt, syPt);
+        else ctx.lineTo(sxPt, syPt);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Mosque Dome + Left Minaret Line Art on Right White Field
+      const mx = flagZone.x + cantonW + (flagZone.w - cantonW) * 0.5;
+      const my = flagZone.y + upperH * 0.86;
+      ctx.strokeStyle = painted ? '#0F172A' : '#94A3B8';
+      ctx.lineWidth = 1.25;
+      // Base platform
+      ctx.beginPath();
+      ctx.moveTo(mx - 20, my);
+      ctx.lineTo(mx + 22, my);
+      ctx.stroke();
+      // Left tall minaret
+      ctx.strokeRect(mx - 17, my - 24, 5, 24);
+      ctx.beginPath();
+      ctx.moveTo(mx - 18, my - 24);
+      ctx.quadraticCurveTo(mx - 14.5, my - 30, mx - 11, my - 24);
+      ctx.stroke();
+      // Ribbed dome
+      ctx.beginPath();
+      ctx.moveTo(mx - 10, my);
+      ctx.quadraticCurveTo(mx - 10, my - 18, mx + 4, my - 24);
+      ctx.quadraticCurveTo(mx + 18, my - 18, mx + 18, my);
+      ctx.stroke();
+      // Dome center rib & spire
+      ctx.beginPath();
+      ctx.moveTo(mx + 4, my - 28);
+      ctx.lineTo(mx + 4, my);
+      ctx.stroke();
+
+      // Bottom Official Green Strip with crisp white SKSSF
+      ctx.fillStyle = painted ? '#15803D' : '#CBD5E1';
+      ctx.fillRect(flagZone.x, flagZone.y + upperH, flagZone.w, greenH + 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 13px Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('☪ ★  SKSSF  ★ ☪', flagZone.x + flagZone.w / 2, flagZone.y + flagZone.h / 2 + 1);
+      ctx.fillText('S K S S F', flagZone.x + flagZone.w / 2, flagZone.y + upperH + greenH / 2 + 0.5);
       ctx.restore();
 
       // Zone 2: Bold 3D "SKSSF" Heading
@@ -855,7 +923,7 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
       </div>
 
       {/* Paint Bucket Selector Bar */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
         {WALL_PALETTE.map((bucket) => {
           const isSelected = selectedColor === bucket.id;
           const isNeeded = activeZone?.requiredColor === bucket.id && !won && !failed;
@@ -867,7 +935,7 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
                 sound.playClick();
                 setSelectedColor(bucket.id);
               }}
-              className={`px-2 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`min-w-0 px-2 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 isSelected
                   ? 'border-slate-950 bg-slate-900 text-white shadow-md scale-[1.02]'
                   : isNeeded
@@ -879,7 +947,7 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
                 className="w-4 h-4 rounded-full border border-white shadow-xs shrink-0"
                 style={{ backgroundColor: bucket.color }}
               />
-              <span className="truncate">{bucket.label}</span>
+              <span className="leading-tight break-words text-left">{bucket.label}</span>
             </button>
           );
         })}
@@ -2301,10 +2369,10 @@ export const ProgramBudgetCheeraniGame: React.FC<PracticalGameProps> = ({
                 : 'നീക്കിയിരിപ്പ്'}
             </span>
           </div>
-          <div className="rounded-xl bg-emerald-950/90 border border-emerald-600/60 px-3 py-2 text-right font-mono text-lg font-black text-emerald-100 tabular-nums overflow-x-auto">
+          <div className="rounded-xl bg-emerald-950/90 border border-emerald-600/60 px-3 py-2 text-right font-mono text-lg font-black text-emerald-100 tabular-nums overflow-x-auto notranslate">
             {calcExpr}
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-1.5 notranslate">
             {calcButtons.map((btn) => {
               const isOp = ['+', '-', '*', '='].includes(btn);
               const isClear = btn === 'C' || btn === '⌫';

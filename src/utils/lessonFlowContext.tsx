@@ -297,7 +297,7 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
+    <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -305,7 +305,7 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 14, scale: 0.94 }}
             transition={{ duration: 0.2 }}
-            className="pointer-events-auto w-[275px] sm:w-[300px] bg-white/95 backdrop-blur-md rounded-2xl border-2 border-emerald-200 shadow-2xl overflow-hidden"
+            className="pointer-events-auto w-[min(290px,calc(100vw-24px))] sm:w-[300px] bg-white/95 backdrop-blur-md rounded-2xl border-2 border-emerald-200 shadow-2xl overflow-hidden"
           >
             {/* Header */}
             <div className="bg-emerald-700 px-3.5 py-2.5 flex items-center justify-between text-white">
@@ -480,10 +480,10 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label="പേജ് നാവിഗേഷൻ തുറക്കുക"
-          className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-full font-extrabold text-xs shadow-lg border-2 transition-all active:scale-95 cursor-pointer ${
+          className={`flex items-center gap-1.5 p-2.5 sm:px-3.5 sm:py-2.5 rounded-full font-extrabold text-xs shadow-lg border-2 backdrop-blur-xs transition-all active:scale-95 cursor-pointer ${
             open
-              ? 'bg-slate-900 text-white border-slate-700'
-              : 'bg-emerald-700 hover:bg-emerald-800 text-white border-amber-300'
+              ? 'bg-slate-900/95 text-white border-slate-700'
+              : 'bg-emerald-700/95 hover:bg-emerald-800 text-white border-amber-300'
           }`}
         >
           {open ? <X className="w-4 h-4" /> : <Compass className="w-4 h-4 text-amber-300" />}

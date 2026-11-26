@@ -226,9 +226,9 @@ export const HeartBreakFlightOverlay: React.FC<{
               initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: [0.7, 1.1, 1], opacity: [0, 1, 1] }}
               transition={{ duration: 0.45, delay: 0.15 }}
-              className="mt-2 px-4 py-1.5 rounded-full bg-rose-700 text-white border-2 border-amber-300 text-xs sm:text-sm font-extrabold shadow-xl whitespace-nowrap"
+              className="mt-2 px-4 py-1.5 rounded-2xl bg-rose-700 text-white border-2 border-amber-300 text-xs sm:text-sm font-extrabold shadow-xl max-w-[92vw] text-center leading-snug break-words"
             >
-              💔 ഒരു ജീവൻ പൊട്ടി! (ബാക്കി: {event.remaining}/3)
+              💔 ഒരു ജീവൻ പൊട്ടി! (ബാക്കി: <span className="notranslate tabular-nums">{event.remaining}/3</span>)
             </motion.div>
           </motion.div>
         </motion.div>

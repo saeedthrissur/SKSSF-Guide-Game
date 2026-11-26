@@ -1,9 +1,15 @@
 @import "tailwindcss";
 
 @layer base {
+  html {
+    overflow-x: clip;
+  }
+
   body {
     font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     font-feature-settings: "tnum" on;
+    overflow-x: clip;
+    top: 0 !important;
   }
 
   .font-arabic {
@@ -16,6 +22,249 @@
   .font-display {
     font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif;
   }
+}
+
+/* Suppress Google Translate floating top iframe banner so header stays aligned */
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none !important;
+}
+
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Cohesive Deep Slate + Emerald + Warm Amber Dark Mode */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0b1220 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/95,
+html.dark .bg-white\/90 {
+  background-color: #111c2e !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/80 {
+  background-color: #0f172a !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/90,
+html.dark .bg-emerald-50\/80,
+html.dark .bg-emerald-50\/70,
+html.dark .bg-emerald-50\/60 {
+  background-color: rgba(6, 78, 59, 0.34) !important;
+}
+
+html.dark .bg-emerald-100 {
+  background-color: rgba(6, 95, 70, 0.5) !important;
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-50\/80,
+html.dark .bg-amber-50\/70,
+html.dark .bg-amber-50\/50 {
+  background-color: rgba(120, 53, 15, 0.32) !important;
+}
+
+html.dark .bg-amber-100 {
+  background-color: rgba(146, 64, 14, 0.48) !important;
+}
+
+html.dark .bg-sky-50,
+html.dark .bg-sky-50\/80 {
+  background-color: rgba(12, 74, 110, 0.35) !important;
+}
+
+html.dark .bg-rose-50,
+html.dark .bg-rose-50\/70,
+html.dark .bg-red-50 {
+  background-color: rgba(136, 19, 55, 0.34) !important;
+}
+
+html.dark .bg-rose-100,
+html.dark .bg-red-100 {
+  background-color: rgba(159, 18, 57, 0.5) !important;
+}
+
+html.dark .from-amber-50,
+html.dark .from-emerald-50,
+html.dark .from-emerald-50\/80,
+html.dark .via-white,
+html.dark .to-emerald-50,
+html.dark .to-amber-50\/50 {
+  --tw-gradient-from: #132237 !important;
+  --tw-gradient-via: #111c2e !important;
+  --tw-gradient-to: #0f2523 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #24344d !important;
+}
+
+html.dark .border-emerald-100,
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+
+html.dark .border-amber-200,
+html.dark .border-amber-300 {
+  border-color: rgba(245, 158, 11, 0.42) !important;
+}
+
+html.dark .border-sky-200,
+html.dark .border-sky-300 {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+html.dark .border-rose-200,
+html.dark .border-rose-300,
+html.dark .border-red-200,
+html.dark .border-red-300 {
+  border-color: rgba(244, 63, 94, 0.4) !important;
+}
+
+html.dark .text-slate-950,
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-emerald-950,
+html.dark .text-emerald-900,
+html.dark .text-emerald-800 {
+  color: #a7f3d0 !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #34d399 !important;
+}
+
+html.dark .text-amber-950,
+html.dark .text-amber-900,
+html.dark .text-amber-800,
+html.dark .text-amber-700 {
+  color: #fde68a !important;
+}
+
+html.dark .text-sky-950,
+html.dark .text-sky-900,
+html.dark .text-sky-800 {
+  color: #bae6fd !important;
+}
+
+html.dark .text-rose-950,
+html.dark .text-rose-900,
+html.dark .text-red-900 {
+  color: #fecdd3 !important;
+}
+
+/* Preserve high-contrast dark text on bright amber & light emerald pill/CTA backgrounds */
+html.dark .bg-amber-400,
+html.dark .bg-amber-300,
+html.dark .bg-amber-500 {
+  color: #020617 !important;
+}
+
+html.dark .bg-amber-400 *,
+html.dark .bg-amber-300 *,
+html.dark .bg-amber-500 * {
+  color: #020617 !important;
+}
+
+html.dark .bg-emerald-700,
+html.dark .bg-emerald-800,
+html.dark .bg-emerald-900,
+html.dark .bg-emerald-950 {
+  color: #ffffff;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0f172a;
+  color: #f1f5f9;
+  border-color: #334155;
+}
+
+/* Keep printed/exported certificates crisp paper-white with original emerald & gold accents in dark mode */
+html.dark #certificate-print-area {
+  background-color: #fcfbf7 !important;
+  color: #0f172a !important;
+  border-color: #064e3b !important;
+}
+
+html.dark #certificate-print-area .bg-white {
+  background-color: #ffffff !important;
+}
+
+html.dark #certificate-print-area .bg-emerald-50\/80,
+html.dark #certificate-print-area .bg-emerald-50 {
+  background-color: rgba(236, 253, 245, 0.9) !important;
+}
+
+html.dark #certificate-print-area .border-emerald-200 {
+  border-color: #a7f3d0 !important;
+}
+
+html.dark #certificate-print-area .text-slate-900,
+html.dark #certificate-print-area .text-slate-950 {
+  color: #0f172a !important;
+}
+
+html.dark #certificate-print-area .text-slate-700,
+html.dark #certificate-print-area .text-slate-600 {
+  color: #334155 !important;
+}
+
+html.dark #certificate-print-area .text-slate-500 {
+  color: #64748b !important;
+}
+
+html.dark #certificate-print-area .text-emerald-950,
+html.dark #certificate-print-area .text-emerald-900 {
+  color: #064e3b !important;
+}
+
+html.dark #certificate-print-area .text-emerald-800 {
+  color: #065f46 !important;
+}
+
+html.dark #certificate-print-area .text-red-900 {
+  color: #7f1d1d !important;
+}
+
+html.dark #certificate-print-area .text-amber-100 {
+  color: #fef3c7 !important;
 }
 
 /* 3D Perspective & Tactile Card Flip Utilities */

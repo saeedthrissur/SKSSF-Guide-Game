@@ -1882,61 +1882,106 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           }}
           onNextLesson={nextL4Tab ? handleAdvanceL4Tab : undefined}
           nextLessonLabel={
-            nextL4Tab?.id === 'certificate' ? 'സാക്ഷ്യപത്രം നേടാം 🏆' : 'അടുത്ത പാഠം ➡️'
+            nextL4Tab?.id === 'certificate'
+              ? unseenLessons.length === 0 || devUnlocked
+                ? 'സാക്ഷ്യപത്രം നേടാം 🏆'
+                : 'സാക്ഷ്യപത്ര നില കാണാം 🔒'
+              : 'അടുത്ത പാഠം ➡️'
           }
         />
       )}
 
-      {/* TAB 11: CERTIFICATE STUDIO + UNSEEN-ONLY RE-SURFACING */}
+      {/* TAB 13: STRICT 52/52 CERTIFICATE STUDIO */}
       {activeTab === 'certificate' && (
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
 
-          {unseenLessons.length > 0 && onJumpToLesson && (
-            <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 sm:p-5 space-y-3">
-              <div>
-                <p className="text-xs font-extrabold text-red-900">
-                  📌 നിങ്ങൾ ഇതുവരെ കാണാതെ വിട്ടുപോയ {unseenLessons.length} പാഠങ്ങൾ ഇവിടെയുണ്ട് (കണ്ട പാഠങ്ങൾ ആവർത്തിക്കില്ല!)
+          {!devUnlocked && unseenLessons.length > 0 ? (
+            <div className="rounded-3xl border-2 border-amber-300 bg-white overflow-hidden shadow-sm">
+              <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white border-b-4 border-amber-400">
+                <p className="text-xs font-extrabold text-amber-300">
+                  🔒 സാക്ഷ്യപത്രം ലോക്കാണ് · കർശന പഠന നിയമം
                 </p>
-                <p className="text-xs text-slate-700 mt-0.5">
-                  താഴെയുള്ള ഏതെങ്കിലും വിട്ടുപോയ പാഠത്തിൽ ക്ലിക്ക് ചെയ്ത് എപ്പോൾ വേണമെങ്കിലും അത് പൂർത്തിയാക്കാം:
+                <h3 className="text-base sm:text-xl font-black mt-1">
+                  സാക്ഷ്യപത്രം നേടാൻ എല്ലാ 52 പാഠങ്ങളും കളിച്ച് പൂർത്തിയാക്കണം!
+                </h3>
+                <p className="text-xs sm:text-sm text-emerald-100 mt-1">
+                  ഡയറക്ട് ലിങ്ക് വഴി അവസാന പാഠത്തിൽ എത്തിയാലും, 52 പാഠങ്ങളും യഥാർത്ഥത്തിൽ പൂർത്തിയാക്കുന്നവർക്കാണ് ഔദ്യോഗിക SKSSF ഗൈഡ് സാക്ഷ്യപത്രം അൺലോക്ക് ആകുക.
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {unseenLessons.map((lesson) => (
+
+              <div className="p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-extrabold text-emerald-950 tabular-nums">
+                    <span>പൂർത്തിയാക്കിയ പാഠങ്ങൾ: {52 - unseenLessons.length} / 52</span>
+                    <span className="text-amber-700">ബാക്കി: {unseenLessons.length}</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+                    <div
+                      style={{
+                        width: `${Math.round(((52 - unseenLessons.length) / 52) * 100)}%`,
+                      }}
+                      className="h-full bg-gradient-to-r from-emerald-600 to-amber-400 transition-all duration-300"
+                    />
+                  </div>
+                </div>
+
+                {onJumpToLesson && unseenLessons[0] && (
                   <button
-                    key={lesson.id}
                     type="button"
                     onClick={() => {
+                      sound.unlockAudio();
                       sound.playClick();
-                      onJumpToLesson(lesson.id);
+                      onJumpToLesson(unseenLessons[0].id);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-amber-300 hover:border-emerald-600 hover:bg-emerald-50 text-xs font-extrabold text-slate-900 transition-colors"
+                    className="w-full min-h-[48px] px-5 py-3 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm sm:text-base shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
                   >
-                    <span>{lesson.emoji}</span>
                     <span>
-                      {lesson.groupLabel}: {lesson.title}
+                      {unseenLessons[0].emoji} അടുത്ത പാഠം മുതൽ തുടരാം: {unseenLessons[0].title} →
                     </span>
-                    <span className="text-emerald-700">▶</span>
                   </button>
-                ))}
+                )}
+
+                <div className="rounded-2xl bg-amber-50/70 border border-amber-200 p-3.5 space-y-2">
+                  <p className="text-xs font-extrabold text-amber-950">
+                    📌 ഇനി പൂർത്തിയാക്കാനുള്ള പാഠങ്ങൾ ({unseenLessons.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+                    {unseenLessons.slice(0, 12).map((lesson) => (
+                      <span
+                        key={lesson.id}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white border border-amber-200 text-[11px] font-bold text-slate-800"
+                      >
+                        <span>{lesson.emoji}</span>
+                        <span>{lesson.title}</span>
+                      </span>
+                    ))}
+                    {unseenLessons.length > 12 && (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-xl bg-amber-100 text-[11px] font-extrabold text-amber-950">
+                        + {unseenLessons.length - 12} പാഠങ്ങൾ കൂടി
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
+          ) : (
+            <>
+              <CertificateGenerator xp={xp} rank={rank} badges={badges} />
+
+              <div className="rounded-3xl border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 text-center space-y-1.5">
+                <p className="text-xl" aria-hidden="true">
+                  ✨🚀📚
+                </p>
+                <h3 className="text-sm sm:text-base font-extrabold text-emerald-950">
+                  കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
+                </h3>
+                <p className="text-xs font-semibold text-slate-600">
+                  More Lessons &amp; Challenges Coming Soon! · 52 പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
+                </p>
+              </div>
+            </>
           )}
-
-          <CertificateGenerator xp={xp} rank={rank} badges={badges} />
-
-          <div className="rounded-3xl border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 text-center space-y-1.5">
-            <p className="text-xl" aria-hidden="true">
-              ✨🚀📚
-            </p>
-            <h3 className="text-sm sm:text-base font-extrabold text-emerald-950">
-              കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
-            </h3>
-            <p className="text-xs font-semibold text-slate-600">
-              More Lessons &amp; Challenges Coming Soon! · 52 പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
-            </p>
-          </div>
         </div>
       )}
 

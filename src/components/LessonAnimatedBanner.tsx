@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { getOfficialLogosForLesson } from '../data/officialLogos';
 import { getLinksForLesson } from '../data/officialLinks';
 import { InlineOfficialLinksStrip } from './OfficialResourceHubModal';
+import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 type BannerTheme =
   | 'mosque_heritage'
@@ -403,7 +404,7 @@ function resolveQuickGuide(lessonId: string): LessonQuickGuide {
   };
 }
 
-const AnimatedSceneArt: React.FC<{ theme: BannerTheme }> = ({ theme }) => {
+const AnimatedSceneArt: React.FC<{ theme: BannerTheme; lessonId: string }> = ({ theme, lessonId }) => {
   switch (theme) {
     case 'mosque_heritage':
       return (
@@ -514,8 +515,7 @@ const AnimatedSceneArt: React.FC<{ theme: BannerTheme }> = ({ theme }) => {
             <path d="M150 74 L218 74 L206 90 L162 90 Z" fill="#78350F" stroke="#FDE68A" strokeWidth="1.5" />
             <line x1="184" y1="30" x2="184" y2="74" stroke="#F8FAFC" strokeWidth="3" />
             <path d="M186 34 Q215 52 188 70 Z" fill="#FFFFFF" />
-            <rect x="160" y="32" width="22" height="14" rx="2" fill="#0EA5E9" />
-            <rect x="160" y="42" width="22" height="4" fill="#16A34A" />
+            <polygon points="183,31 163,36 183,41" fill="#F59E0B" stroke="#FEF08A" strokeWidth="0.8" />
           </motion.g>
         </svg>
       );
@@ -550,29 +550,57 @@ const AnimatedSceneArt: React.FC<{ theme: BannerTheme }> = ({ theme }) => {
         </svg>
       );
 
-    case 'flag_unit':
+    case 'flag_unit': {
+      const showAllThreeFlags =
+        lessonId === 'l1_flags' || lessonId === 'l2_memory' || lessonId === 'l2_dawa_age';
       return (
-        <svg viewBox="0 0 420 110" className="w-full h-24 sm:h-28 block" aria-hidden="true">
-          <rect width="420" height="110" fill="#065F46" />
-          <rect x="0" y="90" width="420" height="20" fill="#16A34A" />
-          <rect x="172" y="16" width="5" height="78" fill="#E2E8F0" />
-          <circle cx="174.5" cy="15" r="5" fill="#FACC15" />
-          <motion.g
-            animate={{ skewY: [-2.5, 2.5, -2.5] }}
-            transition={{ duration: 1.6, repeat: Infinity }}
-            style={{ transformOrigin: '177px 36px' }}
-          >
-            <rect x="177" y="18" width="84" height="48" rx="2" fill="#FFFFFF" stroke="#0F172A" strokeWidth="1.5" />
-            <rect x="177" y="18" width="32" height="32" fill="#0EA5E9" />
-            <circle cx="193" cy="34" r="7" fill="#FFFFFF" />
-            <circle cx="190" cy="32" r="5.5" fill="#0EA5E9" />
-            <rect x="177" y="50" width="84" height="16" fill="#16A34A" />
-            <text x="219" y="61" textAnchor="middle" fill="#FFFFFF" fontSize="9.5" fontWeight="900">
-              SKSSF
-            </text>
-          </motion.g>
-        </svg>
+        <div
+          className="relative w-full h-28 sm:h-32 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 flex items-center justify-center px-3 py-2 overflow-hidden"
+          aria-hidden="true"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(254,240,138,0.16),transparent_65%)] pointer-events-none" />
+          {showAllThreeFlags ? (
+            <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-4 w-full max-w-md">
+              {[
+                { src: OFFICIAL_FLAG_ASSETS.samastha, label: 'സമസ്ത' },
+                { src: OFFICIAL_FLAG_ASSETS.skssf, label: 'SKSSF' },
+                { src: OFFICIAL_FLAG_ASSETS.sksbv, label: 'SKSBV' },
+              ].map((flag, idx) => (
+                <motion.div
+                  key={flag.label}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2.6 + idx * 0.35, repeat: Infinity, ease: 'easeInOut' }}
+                  className="bg-white rounded-xl px-2 py-1.5 shadow-md border border-emerald-200/90 flex flex-col items-center justify-center min-w-0"
+                >
+                  <img
+                    src={flag.src}
+                    alt={`${flag.label} ഔദ്യോഗിക പതാക`}
+                    referrerPolicy="no-referrer"
+                    className="h-14 sm:h-16 w-auto object-contain"
+                  />
+                  <span className="text-[9px] sm:text-[10px] font-black text-emerald-950 leading-none mt-0.5">
+                    {flag.label}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative z-10 bg-white rounded-2xl px-4 py-1.5 shadow-lg border-2 border-amber-300/80 flex items-center justify-center"
+            >
+              <img
+                src={OFFICIAL_FLAG_ASSETS.skssf}
+                alt="SKSSF ഔദ്യോഗിക പതാക"
+                referrerPolicy="no-referrer"
+                className="h-20 sm:h-24 w-auto object-contain"
+              />
+            </motion.div>
+          )}
+        </div>
       );
+    }
 
     case 'relief_vehicle':
       return (
@@ -733,31 +761,33 @@ export const LessonAnimatedBanner: React.FC<{
 
   return (
     <div className="space-y-3">
-      {/* Animated Lesson-Relevant Visual Header */}
-      <div className="relative rounded-xl overflow-hidden border border-emerald-200 shadow-xs">
-        <AnimatedSceneArt theme={guide.theme} />
-        {wingLogos.length > 0 && wingLogos.length <= 2 && (
-          <div className="absolute top-2 right-2 flex items-center gap-1.5">
-            {wingLogos.map((logo) => (
-              <div
-                key={logo.id}
-                className="bg-white/95 backdrop-blur-xs rounded-xl px-2 py-1 border border-emerald-200 shadow-md flex items-center justify-center"
-                title={logo.label}
-              >
-                <img
-                  src={logo.src}
-                  alt={logo.label}
-                  className="h-8 sm:h-10 w-auto max-w-[92px] object-contain"
-                />
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent px-3.5 py-2 flex items-center gap-2">
-          <span className="text-base shrink-0" aria-hidden="true">
+      {/* Animated Lesson-Relevant Visual Header with Clean Separate Caption Bar */}
+      <div className="rounded-xl overflow-hidden border border-emerald-200 shadow-xs bg-emerald-950">
+        <div className="relative">
+          <AnimatedSceneArt theme={guide.theme} lessonId={lessonId} />
+          {wingLogos.length > 0 && wingLogos.length <= 2 && (
+            <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5">
+              {wingLogos.map((logo) => (
+                <div
+                  key={logo.id}
+                  className="bg-white/95 backdrop-blur-xs rounded-xl px-2 py-1 border border-emerald-200 shadow-md flex items-center justify-center"
+                  title={logo.label}
+                >
+                  <img
+                    src={logo.src}
+                    alt={logo.label}
+                    className="h-8 sm:h-10 w-auto max-w-[92px] object-contain"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-emerald-950/95 border-t border-emerald-800/70 px-3.5 py-2 flex items-center gap-2">
+          <span className="text-base shrink-0 leading-none" aria-hidden="true">
             {emoji}
           </span>
-          <p className="text-xs sm:text-sm font-extrabold text-white leading-tight truncate">
+          <p className="text-xs sm:text-sm font-extrabold text-white leading-snug break-words min-w-0">
             {title}
           </p>
         </div>
@@ -769,11 +799,11 @@ export const LessonAnimatedBanner: React.FC<{
           <p className="text-[11px] font-extrabold text-emerald-900">
             🏅 ഔദ്യോഗിക വിംഗ് ലോഗോകൾ:
           </p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {wingLogos.map((logo) => (
               <div
                 key={logo.id}
-                className="rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                className="min-w-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-1"
                 title={logo.label}
               >
                 <img
@@ -781,7 +811,7 @@ export const LessonAnimatedBanner: React.FC<{
                   alt={logo.label}
                   className="h-9 sm:h-11 w-full object-contain"
                 />
-                <span className="text-[9px] font-extrabold text-slate-700 text-center leading-tight truncate w-full">
+                <span className="text-[10px] font-extrabold text-slate-700 text-center leading-tight break-words w-full">
                   {logo.shortLabel}
                 </span>
               </div>

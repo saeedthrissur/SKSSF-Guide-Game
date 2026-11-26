@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Award, Camera, Copy, Download, Printer, Share2, Trash2 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
+import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 interface CertificateGeneratorProps {
   xp: number;
@@ -145,8 +146,8 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
     const liveQr = qrDataUrl || (await generateAppQrDataUrl(220));
     const [samasthaFlag, skssfFlag, userPhoto, qrImg] = await Promise.all([
-      loadImage('./assets/official/flag_111154.jpg'),
-      loadImage('./assets/official/flag_111138.jpg'),
+      loadImage(OFFICIAL_FLAG_ASSETS.samastha),
+      loadImage(OFFICIAL_FLAG_ASSETS.skssf),
       photoDataUrl ? loadImage(photoDataUrl) : Promise.resolve(null),
       liveQr ? loadImage(liveQr) : Promise.resolve(null),
     ]);
@@ -558,9 +559,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           {/* Top Row: Samastha Flag + Center Photo/Crest + SKSSF Flag */}
           <div className="flex items-center justify-between gap-2 max-w-3xl mx-auto">
             <img
-              src="./assets/official/flag_111154.jpg"
+              src={OFFICIAL_FLAG_ASSETS.samastha}
               alt="സമസ്ത ഔദ്യോഗിക പതാക"
-              className="w-16 h-14 sm:w-24 sm:h-20 object-contain"
+              className="w-20 h-16 sm:w-28 sm:h-20 object-contain rounded-lg bg-white p-0.5"
               referrerPolicy="no-referrer"
             />
             {photoDataUrl ? (
@@ -579,9 +580,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               </div>
             )}
             <img
-              src="./assets/official/flag_111138.jpg"
+              src={OFFICIAL_FLAG_ASSETS.skssf}
               alt="SKSSF ഔദ്യോഗിക പതാക"
-              className="w-16 h-14 sm:w-24 sm:h-20 object-contain"
+              className="w-20 h-16 sm:w-28 sm:h-20 object-contain rounded-lg bg-white p-0.5"
               referrerPolicy="no-referrer"
             />
           </div>

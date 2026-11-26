@@ -49,7 +49,7 @@ export const GameShatterLives: React.FC<{
     <motion.div
       animate={shatterIdx !== null ? { x: [0, -5, 5, -3, 3, 0] } : { x: 0 }}
       transition={{ duration: 0.36 }}
-      className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 border ${
+      className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 border notranslate ${
         dark
           ? 'bg-slate-950/85 border-amber-400/35 text-amber-200'
           : 'bg-white border-emerald-200 text-slate-900 shadow-2xs'

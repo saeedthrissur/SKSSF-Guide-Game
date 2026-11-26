@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Award, Camera, Check, Copy, Download, Lock, Share2, Trash2, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
+import { ALL_LESSONS } from '../utils/lessonTracker';
+import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 export interface ShareableBadgeMeta {
   id: string;
@@ -167,7 +169,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
         completedLessonIds.includes('l4_viqaya_van') ||
         completedLevels.includes(3)
     );
-    const allDone = Boolean(completedLevels.includes(4));
+    const allDone = ALL_LESSONS.every((l) => completedLessonIds.includes(l.id));
 
     return {
       starter_member: true,
@@ -237,8 +239,8 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
     const liveQr = qrDataUrl || (await generateAppQrDataUrl(220));
     const [samasthaFlag, skssfFlag, userImg, qrImg] = await Promise.all([
-      loadImg('./assets/official/flag_111154.jpg'),
-      loadImg('./assets/official/flag_111138.jpg'),
+      loadImg(OFFICIAL_FLAG_ASSETS.samastha),
+      loadImg(OFFICIAL_FLAG_ASSETS.skssf),
       photoDataUrl ? loadImg(photoDataUrl) : Promise.resolve(null),
       liveQr ? loadImg(liveQr) : Promise.resolve(null),
     ]);
@@ -682,10 +684,10 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 {/* Official Flags Row */}
                 <div className="flex items-center justify-between gap-2">
                   <img
-                    src="./assets/official/flag_111154.jpg"
+                    src={OFFICIAL_FLAG_ASSETS.samastha}
                     alt="സമസ്ത പതാക"
                     referrerPolicy="no-referrer"
-                    className="w-12 h-12 object-contain"
+                    className="w-14 h-12 object-contain rounded-lg bg-white p-0.5"
                   />
                   <div className="leading-tight">
                     <p className="text-xs font-extrabold text-emerald-900">SKSSF ഗൈഡ് ഗെയിം</p>
@@ -694,10 +696,10 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                     </p>
                   </div>
                   <img
-                    src="./assets/official/flag_111138.jpg"
+                    src={OFFICIAL_FLAG_ASSETS.skssf}
                     alt="SKSSF ഔദ്യോഗിക പതാക"
                     referrerPolicy="no-referrer"
-                    className="w-12 h-12 object-contain"
+                    className="w-14 h-12 object-contain rounded-lg bg-white p-0.5"
                   />
                 </div>
 

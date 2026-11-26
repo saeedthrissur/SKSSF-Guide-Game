@@ -10,6 +10,7 @@ export interface NarratorState {
   speaking: boolean;
   loading: boolean;
   awaitingUnlock: boolean;
+  unavailableNotice: boolean;
   currentText: string;
 }
 
@@ -109,6 +110,7 @@ class MaleStoryNarrator {
   private pendingSpeech: { text: string; caption?: string } | null = null;
   private gestureListenerAttached: boolean = false;
   private serverTtsUnavailable: boolean = false;
+  private unavailableNotice: boolean = false;
 
   constructor() {
     sound.registerNarratorHooks({
@@ -165,6 +167,7 @@ class MaleStoryNarrator {
       speaking: this.speaking,
       loading: this.loading,
       awaitingUnlock: this.awaitingUnlock,
+      unavailableNotice: this.unavailableNotice,
       currentText: this.currentText,
     };
   }
@@ -214,6 +217,7 @@ class MaleStoryNarrator {
     }
     this.speaking = false;
     this.loading = false;
+    this.unavailableNotice = false;
     sound.setAmbienceDucked(false);
     this.emit();
   }
@@ -222,6 +226,7 @@ class MaleStoryNarrator {
     const cleanText = normalizeSpeechKeyText(text);
     this.lastSpeechText = text;
     this.currentText = captionDisplay || text;
+    this.unavailableNotice = false;
     this.emit();
 
     if (!this.enabled || sound.isMuted() || !cleanText) return;
@@ -231,6 +236,7 @@ class MaleStoryNarrator {
     this.lastSpeechText = text;
     this.currentText = captionDisplay || text;
     this.awaitingUnlock = false;
+    this.unavailableNotice = false;
     this.loading = true;
     this.emit();
 
@@ -344,7 +350,7 @@ class MaleStoryNarrator {
     }
 
     // 4. Fail silently immediately — NEVER fall back to browser/female/robotic speechSynthesis
-    this.finishSilentOnFailure(mySeq);
+    this.finishSilentOnFailure(mySeq, this.serverTtsUnavailable);
   }
 
   private storeInMemory(keyHash: string, entry: CachedAudioBlob) {
@@ -355,10 +361,11 @@ class MaleStoryNarrator {
     this.clientCache.set(keyHash, entry);
   }
 
-  private finishSilentOnFailure(seq: number) {
+  private finishSilentOnFailure(seq: number, markUnavailable = false) {
     if (seq !== this.requestSeq) return;
     this.speaking = false;
     this.loading = false;
+    this.unavailableNotice = markUnavailable;
     sound.setAmbienceDucked(false);
     this.emit();
   }

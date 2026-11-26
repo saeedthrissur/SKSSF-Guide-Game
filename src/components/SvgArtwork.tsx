@@ -4,11 +4,17 @@ interface ImageFlagProps {
   className?: string;
 }
 
+export const OFFICIAL_FLAG_ASSETS = {
+  samastha: './assets/aistudio/image_376c67eb.png',
+  skssf: './assets/aistudio/image_26225796.png',
+  sksbv: './assets/aistudio/image_6f3b1f1a.png',
+} as const;
+
 export const OfficialSamasthaFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="./assets/official/flag_111154.jpg"
+    src={OFFICIAL_FLAG_ASSETS.samastha}
     alt="സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ (SKJU) ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
@@ -19,7 +25,7 @@ export const OfficialSkssfFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="./assets/official/flag_111138.jpg"
+    src={OFFICIAL_FLAG_ASSETS.skssf}
     alt="SKSSF ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
@@ -30,7 +36,7 @@ export const OfficialSksbvFlagImg: React.FC<ImageFlagProps> = ({
   className = 'w-full max-w-[240px] mx-auto',
 }) => (
   <img
-    src="./assets/official/flag_111134.jpg"
+    src={OFFICIAL_FLAG_ASSETS.sksbv}
     alt="SKSBV ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"

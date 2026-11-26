@@ -1,7 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, CheckCircle2, Lock, Play, Search, Unlock, X } from 'lucide-react';
-import { ALL_LESSONS, LessonDescriptor } from '../utils/lessonTracker';
+import {
+  ALL_LESSONS,
+  getSequentialFrontierIndex,
+  LessonDescriptor,
+} from '../utils/lessonTracker';
 import { sound } from '../utils/sound';
 
 interface AllLessonsMapPageProps {
@@ -41,11 +45,16 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   const remainingCount = Math.max(0, totalCount - completedCount);
   const progressPct = Math.round((completedCount / Math.max(1, totalCount)) * 100);
 
+  const nextSequentialIdx = useMemo(
+    () => getSequentialFrontierIndex(completedLessonIds),
+    [completedLessonIds]
+  );
   const activeIdx = Math.max(
     0,
     ALL_LESSONS.findIndex((l) => l.id === activeLessonId)
   );
-  const activeLesson = ALL_LESSONS[activeIdx];
+  const resumeIdx = devUnlocked || activeIdx <= nextSequentialIdx ? activeIdx : nextSequentialIdx;
+  const activeLesson = ALL_LESSONS[resumeIdx];
 
   // Group lessons by groupLabel preserving curriculum order + applying search & filter
   const groups = useMemo(() => {
@@ -144,9 +153,9 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
       className="space-y-4"
     >
       {/* Top Overview Header Card */}
-      <div className="rounded-3xl border-2 border-emerald-200 bg-white p-4 sm:p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
+      <div className="rounded-3xl border-2 border-emerald-200 bg-white p-3.5 sm:p-5 shadow-sm space-y-4 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <button
               type="button"
               onClick={handleIconTap}
@@ -155,12 +164,12 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
             >
               🗺️
             </button>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-xl font-extrabold text-emerald-950 leading-tight">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base sm:text-xl font-extrabold text-emerald-950 leading-tight break-words">
                 എല്ലാ പാഠങ്ങളും ({totalCount})
               </h2>
-              <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                പൂർത്തിയാക്കിയവയും ഇനി ബാക്കിയുള്ളവയും
+              <p className="text-xs font-semibold text-slate-600 mt-0.5 leading-snug break-words">
+                പൂർത്തിയായവയും ഇനി ബാക്കിയുള്ളവയും
               </p>
             </div>
           </div>
@@ -193,23 +202,29 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
           </div>
         </div>
 
-        {/* 3 Clear Stat Tiles */}
-        <div className="grid grid-cols-3 gap-2.5 text-center">
-          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3">
-            <p className="text-[11px] font-bold text-slate-600">ആകെ പാഠങ്ങൾ</p>
-            <p className="text-xl sm:text-2xl font-extrabold text-slate-900 tabular-nums mt-0.5">
+        {/* 3 Clear Stat Tiles (Overflow-Safe on Narrow Mobile & Font Level 5) */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
+          <div className="min-w-0 overflow-hidden rounded-2xl bg-slate-50 border border-slate-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
+            <p className="text-[10px] sm:text-xs font-bold text-slate-600 leading-tight break-words max-w-full">
+              ആകെ പാഠങ്ങൾ
+            </p>
+            <p className="text-lg sm:text-2xl font-extrabold text-slate-900 tabular-nums mt-1 notranslate">
               {totalCount}
             </p>
           </div>
-          <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3">
-            <p className="text-[11px] font-bold text-emerald-800">പൂർത്തിയാക്കിയവ</p>
-            <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 tabular-nums mt-0.5">
+          <div className="min-w-0 overflow-hidden rounded-2xl bg-emerald-50 border border-emerald-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
+            <p className="text-[10px] sm:text-xs font-bold text-emerald-800 leading-tight break-words max-w-full">
+              പൂർത്തിയായവ
+            </p>
+            <p className="text-lg sm:text-2xl font-extrabold text-emerald-700 tabular-nums mt-1 notranslate">
               {completedCount}
             </p>
           </div>
-          <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3">
-            <p className="text-[11px] font-bold text-amber-900">ഇനി ബാക്കിയുള്ളവ</p>
-            <p className="text-xl sm:text-2xl font-extrabold text-amber-700 tabular-nums mt-0.5">
+          <div className="min-w-0 overflow-hidden rounded-2xl bg-amber-50 border border-amber-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
+            <p className="text-[10px] sm:text-xs font-bold text-amber-900 leading-tight break-words max-w-full">
+              ബാക്കിയുള്ളവ
+            </p>
+            <p className="text-lg sm:text-2xl font-extrabold text-amber-700 tabular-nums mt-1 notranslate">
               {remainingCount}
             </p>
           </div>
@@ -242,7 +257,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
               className="w-full px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer"
             >
               <span className="text-xs font-extrabold text-emerald-950 truncate">
-                നിലവിലെ പാഠം തുടരാം: {activeIdx + 1}. {activeLesson.title}
+                നിലവിലെ പാഠം തുടരാം: {resumeIdx + 1}. {activeLesson.title}
               </span>
               <span className="inline-flex items-center gap-1 text-xs font-black text-emerald-700 shrink-0 whitespace-nowrap">
                 <Play className="w-3.5 h-3.5 fill-current" /> തുടരാം
@@ -273,7 +288,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
               )}
             </div>
 
-            <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 shrink-0">
+            <div className="grid grid-cols-3 sm:inline-flex items-stretch gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 w-full sm:w-auto shrink-0">
               {(
                 [
                   { id: 'all', label: `എല്ലാം (${totalCount})` },
@@ -288,7 +303,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                     sound.playClick();
                     setStatusFilter(tab.id);
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer tabular-nums ${
+                  className={`min-w-0 px-1.5 sm:px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-extrabold leading-tight text-center break-words transition-colors cursor-pointer tabular-nums ${
                     statusFilter === tab.id
                       ? 'bg-white text-emerald-950 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -341,7 +356,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                 {grp.items.map(({ lesson, globalIdx }) => {
                   const isDone = completedSet.has(lesson.id);
                   const isCurrent = lesson.id === activeLessonId;
-                  const canOpen = devUnlocked || isDone || isCurrent || globalIdx <= activeIdx;
+                  const canOpen = devUnlocked || isDone || globalIdx <= nextSequentialIdx;
                   return (
                     <button
                       key={lesson.id}
@@ -353,7 +368,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                         sound.playClick();
                         onSelectLesson(lesson.id);
                       }}
-                      className={`w-full text-left px-3.5 py-2.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-2.5 ${
+                      className={`w-full min-w-0 overflow-hidden text-left px-3 sm:px-3.5 py-2.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-2 ${
                         isCurrent
                           ? 'bg-emerald-700 text-white border-emerald-900 shadow-sm'
                           : isDone
@@ -363,9 +378,9 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                           : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-75'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
                         <span
-                          className={`w-7 h-7 rounded-xl text-xs font-extrabold flex items-center justify-center shrink-0 tabular-nums ${
+                          className={`w-7 h-7 rounded-xl text-xs font-extrabold flex items-center justify-center shrink-0 tabular-nums notranslate ${
                             isCurrent
                               ? 'bg-amber-400 text-slate-950'
                               : isDone
@@ -377,10 +392,10 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                         >
                           {globalIdx + 1}
                         </span>
-                        <span className="text-lg shrink-0" aria-hidden="true">
+                        <span className="text-lg shrink-0 notranslate" aria-hidden="true">
                           {lesson.emoji}
                         </span>
-                        <span className="text-xs sm:text-sm font-extrabold leading-snug break-words">
+                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-extrabold leading-snug break-words">
                           {lesson.title}
                         </span>
                       </div>

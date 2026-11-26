@@ -1216,7 +1216,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
               <p className="text-[11px] font-black text-emerald-900">
                 🏫 സമസ്ത വിദ്യാഭ്യാസ ശൃംഖല · ഔദ്യോഗിക ലോഗോകൾ
               </p>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {[
                   OFFICIAL_WING_LOGOS.skimvb,
                   OFFICIAL_WING_LOGOS.skjmcc,
@@ -1226,7 +1226,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                 ].map((logo) => (
                   <div
                     key={logo.id}
-                    className="rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                    className="min-w-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-200 p-2 flex flex-col items-center justify-center gap-1"
                     title={logo.label}
                   >
                     <img
@@ -1234,7 +1234,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                       alt={logo.label}
                       className="h-10 sm:h-12 w-full object-contain"
                     />
-                    <span className="text-[9px] font-extrabold text-slate-700 text-center leading-tight truncate w-full">
+                    <span className="text-[10px] font-extrabold text-slate-700 text-center leading-tight break-words w-full">
                       {logo.shortLabel}
                     </span>
                   </div>
@@ -1714,7 +1714,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                             ))}
                           </div>
                           {item.id === 'skimvb' && (
-                            <div className="grid grid-cols-4 gap-2 pt-1">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                               {[
                                 OFFICIAL_WING_LOGOS.snec,
                                 OFFICIAL_WING_LOGOS.skjmcc,
@@ -1723,7 +1723,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                               ].map((logo) => (
                                 <div
                                   key={logo.id}
-                                  className="rounded-xl bg-emerald-50/50 border border-emerald-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                                  className="min-w-0 overflow-hidden rounded-xl bg-emerald-50/50 border border-emerald-200 p-2 flex flex-col items-center justify-center gap-1"
                                   title={logo.label}
                                 >
                                   <img
@@ -1731,7 +1731,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                                     alt={logo.label}
                                     className="h-9 w-full object-contain"
                                   />
-                                  <span className="text-[9px] font-extrabold text-emerald-950 text-center leading-tight truncate w-full">
+                                  <span className="text-[10px] font-extrabold text-emerald-950 text-center leading-tight break-words w-full">
                                     {logo.shortLabel}
                                   </span>
                                 </div>

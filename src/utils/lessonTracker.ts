@@ -513,3 +513,30 @@ export function getAllUnseenLessons(completedIds: string[]): LessonDescriptor[] 
   const completedSet = new Set(completedIds);
   return ALL_LESSONS.filter((l) => !completedSet.has(l.id));
 }
+
+/**
+ * Returns the 0-based index of the learner's real sequential frontier
+ * (the first lesson in ALL_LESSONS that is not yet completed, or the last lesson if all 52 are done).
+ */
+export function getSequentialFrontierIndex(completedIds: string[]): number {
+  const completedSet = new Set(completedIds);
+  const firstUncompleted = ALL_LESSONS.findIndex((l) => !completedSet.has(l.id));
+  return firstUncompleted === -1 ? ALL_LESSONS.length - 1 : firstUncompleted;
+}
+
+/**
+ * True ONLY if the learner has genuinely unlocked this lesson through sequential play
+ * (or already completed it, or devUnlocked is active).
+ */
+export function isLessonSequentiallyUnlocked(
+  lessonId: string,
+  completedIds: string[],
+  devUnlocked = false
+): boolean {
+  if (devUnlocked) return true;
+  const idx = ALL_LESSONS.findIndex((l) => l.id === lessonId);
+  if (idx < 0) return false;
+  if (completedIds.includes(lessonId)) return true;
+  return idx <= getSequentialFrontierIndex(completedIds);
+}
+
