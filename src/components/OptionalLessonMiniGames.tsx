@@ -31,12 +31,12 @@ import {
   MasjidCleanSweepGame,
   PaintRollerGame,
   PhotoCropEditGame,
-  PosterWallStickGame,
   ScratchCleanBoardGame,
   StageSetupDragGame,
   TrophyGiftPackGame,
   UnitRoomDecorGame,
 } from './HandsOnSkssfGames';
+import { CyberWingCyconFeedGame } from './CyberWingCyconFeedGame';
 import {
   IslamicLibraryShelfGame,
   MajlisAgendaNoticeGame,
@@ -4481,7 +4481,12 @@ export const OptionalLessonMiniGame: React.FC<OptionalLessonMiniGameProps> = ({
   if (lessonKey === 'pov_3') {
     const title = '🖌️ സമ്മേളന ചുമരിലെഴുത്ത് (Wall Writing)!';
     return (
-      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+      <GameFullscreenShell
+        title={title}
+        subtitle="അനുവാദമുള്ള ചുമരിൽ 5 ഭാഗങ്ങൾക്കും ചേരുന്ന നിറം തിരഞ്ഞെടുത്ത് പെയിന്റ് ചെയ്യൂ — തെറ്റായ നിറമോ സ്വകാര്യ ഗേറ്റിൽ തട്ടലോ സമയം തീരലോ കവചം തകർക്കും!"
+        isGameDone={externalCompleted}
+        onSkipGame={onComplete}
+      >
         <WallWritingPaintGame
           xpKey="pov_3_wall_writing"
           onAwardXp={onAwardXp}
@@ -4494,7 +4499,12 @@ export const OptionalLessonMiniGame: React.FC<OptionalLessonMiniGameProps> = ({
   if (lessonKey === 'pov_4') {
     const title = '🏗️ സമ്മേളന സ്റ്റേജ് നിർമ്മാണം (7 ഘട്ടങ്ങൾ)!';
     return (
-      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
+      <GameFullscreenShell
+        title={title}
+        subtitle="കലക്കിവെച്ച ഭാഗങ്ങളിൽ നിന്ന് 30 സെക്കൻഡിനുള്ളിൽ തറ മുതൽ പ്രസംഗപീഠം വരെ ശരിയായ ക്രമത്തിൽ തിരഞ്ഞെടുക്കൂ! അപകട വസ്തുക്കളും തെറ്റായ ക്രമവും കവചം തകർക്കും."
+        isGameDone={externalCompleted}
+        onSkipGame={onComplete}
+      >
         <StageBuildSequenceGame
           xpKey="pov_4_stage_build"
           onAwardXp={onAwardXp}
@@ -4576,14 +4586,20 @@ export const OptionalLessonMiniGame: React.FC<OptionalLessonMiniGameProps> = ({
     );
   }
   if (lessonKey === 'storyboard') {
-    const title = '📜 SKSSF സൈബർ വിംഗ് (സൈകോൺ) & സമ്മേളന പോസ്റ്റർ അലങ്കാരം!';
+    const title = '📱 SKSSF സൈബർ വിംഗ് (സൈകോൺ) — ലൈവ് ഫീഡ് മോഡറേറ്റർ!';
+    const subtitle =
+      'നല്ല സൈകോൺ / SKICR / സഹചാരി പോസ്റ്റുകൾ പബ്ലിഷ് (➡️) ചെയ്യൂ, വ്യാജ വാർത്തകളും പ്രകോപന തർക്കങ്ങളും ബ്ലോക്ക് (⬅️) ചെയ്യൂ! തെറ്റായ തീരുമാനമോ സമയം തീരലോ സ്പാം-ബോട്ട് ആക്രമണമോ കവചം തകർക്കും.';
     return (
-      <GameFullscreenShell title={title} isGameDone={externalCompleted} onSkipGame={onComplete}>
-        <PosterWallStickGame
+      <GameFullscreenShell
+        title={title}
+        subtitle={subtitle}
+        isGameDone={externalCompleted}
+        onSkipGame={onComplete}
+      >
+        <CyberWingCyconFeedGame
           xpKey="storyboard_posters"
-          variant="wall"
           title={title}
-          subtitle="SKSSF സൈബർ വിംഗ് നല്ല സന്ദേശ പോസ്റ്ററുകളും വർണ്ണ തോരണങ്ങളും കൊടികളും ചുമരിലെ തിളങ്ങുന്ന സ്ഥലത്ത് ഒട്ടിക്കൂ!"
+          subtitle={subtitle}
           onAwardXp={onAwardXp}
           onComplete={onComplete}
           isCompleted={externalCompleted}

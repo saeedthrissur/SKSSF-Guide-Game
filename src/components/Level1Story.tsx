@@ -938,6 +938,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
           <GameFullscreenShell
             title={`${board.emoji} ${board.title}`}
             subtitle={`${board.year} · ${board.missionCue}`}
+            isGameDone={currentBoardFoundCount >= board.artifacts.length}
           >
             <div className="relative rounded-2xl border-2 border-emerald-300 overflow-hidden shadow-md bg-slate-950">
               <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />

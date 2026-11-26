@@ -813,3 +813,12 @@ export const LessonAnimatedBanner: React.FC<{
     </div>
   );
 };
+
+/** Returns a concise 1-sentence Malayalam theme brief for any lesson ID (used on blurred game start screens). */
+export function getLessonThemeBrief(lessonId?: string | null): string | null {
+  if (!lessonId) return null;
+  const guide = LESSON_QUICK_GUIDES[lessonId];
+  if (!guide || guide.points.length === 0) return null;
+  return guide.points[0];
+}
+

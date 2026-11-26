@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { BookOpen, Compass, Home, Info, Map as MapIcon, RotateCcw, Sparkles, X } from 'lucide-react';
 import { sound } from '../utils/sound';
+import { useGameStagePortal } from './GameFullscreenShell';
 import guideLogoUrl from '../assets/images/guide_game_logo_1795638356373.jpg';
 
 /* ============================================================================
@@ -162,6 +164,17 @@ export const GameDefeatBurstOverlay: React.FC<{
   onRetry,
   overlay = true,
 }) => {
+  const stagePortal = useGameStagePortal();
+
+  // Whenever a defeat overlay mounts inside GameFullscreenShell, blur the entire game screen & center it over the stage!
+  useEffect(() => {
+    if (!stagePortal) return;
+    stagePortal.setPortalOverlayActive(true);
+    return () => {
+      stagePortal.setPortalOverlayActive(false);
+    };
+  }, [stagePortal]);
+
   const card = (
     <motion.div
       initial={{ scale: 0.82, opacity: 0, y: 10 }}
@@ -243,12 +256,17 @@ export const GameDefeatBurstOverlay: React.FC<{
     </motion.div>
   );
 
+  // If mounted inside GameFullscreenShell, ALWAYS portal dead-center over the blurred game screen!
+  if (stagePortal?.overlayHostEl) {
+    return createPortal(card, stagePortal.overlayHostEl);
+  }
+
   if (!overlay) {
     return <div className="flex justify-center py-2">{card}</div>;
   }
 
   return (
-    <div className="absolute inset-0 z-40 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
       {card}
     </div>
   );
