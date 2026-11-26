@@ -10,7 +10,6 @@ import {
   Info,
   Play,
   RotateCcw,
-  SkipForward,
   Sparkles,
   Trophy,
 } from 'lucide-react';
@@ -29,6 +28,8 @@ export interface GameStagePortalContextValue {
   setPortalOverlayActive: (active: boolean) => void;
   isStagePaused: boolean;
   notifyStageWin: (summary?: string) => void;
+  openLesson: () => void;
+  hasLesson: boolean;
 }
 
 const GameStagePortalContext = createContext<GameStagePortalContextValue | null>(null);
@@ -133,7 +134,13 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
 }) => {
   const shellId = useId();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { activeLessonId, markGameDone, registerFullscreen } = useLessonFlow();
+  const {
+    activeLessonId,
+    markGameDone,
+    registerFullscreen,
+    hasLessonDrawerOnPage,
+    isLessonConfirmed,
+  } = useLessonFlow();
 
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -324,9 +331,12 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     }
   };
 
-  const handleSkipToLesson = () => {
+  const handleOpenLessonFromGame = useCallback(() => {
     sound.unlockAudio();
     sound.playClick();
+    setShowWinOverlay(false);
+    setBriefingOpen(false);
+    setPortalOverlayActive(false);
     if (isFullscreen) {
       setIsFullscreen(false);
       setAutoFullscreenActive(false);
@@ -340,12 +350,19 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
       }
     }
     setIsExpanded(false);
-    onSkipGame?.();
+    if (!isGameDone && allowSkip) {
+      onSkipGame?.();
+    }
     window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
-    setTimeout(() => {
-      smoothScrollToSelector('[data-lesson-drawer="true"]');
-    }, 100);
-  };
+    window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>('[data-lesson-drawer="true"]');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        smoothScrollToSelector('[data-lesson-drawer="true"]');
+      }
+    }, 120);
+  }, [isFullscreen, isGameDone, allowSkip, onSkipGame]);
 
   const handleReplay = () => {
     sound.unlockAudio();
@@ -369,17 +386,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     setReplayKey((k) => k + 1);
   };
 
-  const handleGoToLesson = () => {
-    sound.playClick();
-    setShowWinOverlay(false);
-    if (isFullscreen) {
-      exitFullscreen();
-    }
-    window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
-    setTimeout(() => {
-      smoothScrollToSelector('[data-lesson-drawer="true"]');
-    }, 100);
-  };
+  const lessonAlreadyRead = isLessonConfirmed(activeLessonId);
 
   const themeLine =
     subtitle?.trim() ||
@@ -393,6 +400,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     setPortalOverlayActive,
     isStagePaused: shouldBlurGame,
     notifyStageWin,
+    openLesson: handleOpenLessonFromGame,
+    hasLesson: hasLessonDrawerOnPage,
   };
 
   // Shared game viewport with blurred background + Start Theme / Victory / Defeat Portal overlays
@@ -457,11 +466,21 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleStartFromBriefing}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-black shadow-lg cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-black shadow-lg cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>കളിക്കാം! (Start Game)</span>
                 </motion.button>
+                {hasLessonDrawerOnPage && (
+                  <button
+                    type="button"
+                    onClick={handleOpenLessonFromGame}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs sm:text-sm font-extrabold cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <BookOpen className="w-4 h-4 text-amber-300" />
+                    <span>പാഠം വായിക്കാം</span>
+                  </button>
+                )}
               </div>
             </motion.div>
           </motion.div>
@@ -504,19 +523,21 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   🏆 ജയിച്ചു! അഭിനന്ദനങ്ങൾ!
                 </h4>
                 <p className="text-xs font-bold text-slate-200 leading-relaxed">
-                  {winSummary || `${title} വിജയകരമായി പൂർത്തിയാക്കി! ഇനി താഴത്തെ പാഠവും ക്വിസും തുറക്കാം.`}
+                  {winSummary || `${title} വിജയകരമായി പൂർത്തിയാക്കി! ഇനി പാഠം വായിച്ച് ക്വിസ് തുറക്കാം.`}
                 </p>
               </div>
 
               <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleGoToLesson}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-black shadow-md cursor-pointer active:scale-95 transition-transform"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span>പാഠത്തിലേക്ക്</span>
-                </button>
+                {hasLessonDrawerOnPage && (
+                  <button
+                    type="button"
+                    onClick={handleOpenLessonFromGame}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-black shadow-md cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>പാഠത്തിലേക്ക്</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -674,15 +695,20 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">വീണ്ടും</span>
                   </button>
-                  {allowSkip && !isGameDone && (
+                  {hasLessonDrawerOnPage && (
                     <button
                       type="button"
-                      onClick={handleSkipToLesson}
-                      aria-label="ഗെയിം സ്കിപ്പ് ചെയ്യുക"
-                      title="പാഠത്തിലേക്ക്"
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-amber-300 transition-colors cursor-pointer"
+                      onClick={handleOpenLessonFromGame}
+                      aria-label="പാഠം തുറക്കാം"
+                      title="പാഠം തുറക്കാം"
+                      className={`inline-flex items-center gap-1 px-2.5 h-8 rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer ${
+                        isGameDone && !lessonAlreadyRead
+                          ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 border border-amber-300 shadow-sm'
+                          : 'bg-teal-600/90 hover:bg-teal-500 border border-teal-300/60 text-white'
+                      }`}
                     >
-                      <SkipForward className="w-4 h-4" />
+                      <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                      <span>പാഠം</span>
                     </button>
                   )}
                   <button
@@ -766,16 +792,20 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   <span>Replay</span>
                 </button>
 
-                {allowSkip && !isGameDone && (
+                {hasLessonDrawerOnPage && (
                   <button
                     type="button"
-                    onClick={handleSkipToLesson}
-                    title="പാഠത്തിലേക്ക് പോകാം"
-                    aria-label="ഗെയിം സ്കിപ്പ് ചെയ്യാം"
-                    className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-white hover:bg-amber-50 border border-slate-300 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                    onClick={handleOpenLessonFromGame}
+                    title="പാഠം തുറക്കാം"
+                    aria-label="പാഠം തുറക്കാം"
+                    className={`inline-flex items-center gap-1 px-3 h-8 rounded-lg text-xs font-extrabold transition-all cursor-pointer active:scale-95 ${
+                      isGameDone && !lessonAlreadyRead
+                        ? 'bg-teal-700 hover:bg-teal-800 text-white border-b-2 border-teal-950 ring-2 ring-amber-300 shadow-xs'
+                        : 'bg-teal-700 hover:bg-teal-800 text-white border-b-2 border-teal-950 shadow-2xs'
+                    }`}
                   >
-                    <SkipForward className="w-3.5 h-3.5" />
-                    <span>Skip</span>
+                    <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    <span>{lessonAlreadyRead ? 'പാഠം ✓' : 'പാഠം'}</span>
                   </button>
                 )}
 
@@ -794,37 +824,12 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
 
           {showInfo && (
             <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-950 leading-relaxed">
-              ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാൽ താഴെയുള്ള 📖 പാഠം വായിച്ച് ഉറപ്പിക്കാം, തുടർന്ന് ക്വിസ് തുറക്കാം. “Replay” ബട്ടൺ അമർത്തി ഗെയിം വീണ്ടും കളിക്കാം (അധിക XP ആവർത്തിക്കില്ല).
+              ℹ️ ഗെയിം കളിക്കുമ്പോഴോ പൂർത്തിയാക്കിയാലോ മുകളിലെ <strong>“📖 പാഠം”</strong> ബട്ടൺ അമർത്തി നേരിട്ട് പാഠം വായിച്ച് ക്വിസ് തുറക്കാം. “Replay” അമർത്തി എപ്പോൾ വേണമെങ്കിലും വീണ്ടും കളിക്കാം.
             </div>
           )}
 
-          {/* Game Viewport (NO duplicate inner fullscreen icon!) */}
+          {/* Game Viewport (NO duplicate inner fullscreen icon, NO hidden below-screen lesson strip!) */}
           {renderGameViewport(false)}
-
-          {/* Compact Helper Strip only when Victory overlay was dismissed */}
-          {isGameDone && !showWinOverlay && !briefingOpen && !portalOverlayActive && (
-            <div className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-extrabold text-emerald-950">
-                ✅ ഗെയിം പൂർത്തിയാക്കി!
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleReplay}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-[11px] font-extrabold cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" /> വീണ്ടും കളിക്കാം
-                </button>
-                <button
-                  type="button"
-                  onClick={handleGoToLesson}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5" /> പാഠത്തിലേക്ക്
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </GameStagePortalContext.Provider>
     </GameFullscreenContext.Provider>

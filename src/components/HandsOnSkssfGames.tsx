@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, Camera, CheckCircle2, Crop, Info, PanelRightClose, PanelRightOpen, RotateCcw, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
-import { useGameFullscreen } from './GameFullscreenShell';
+import { useGameFullscreen, useGameStagePaused, useGameStagePortal } from './GameFullscreenShell';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
@@ -23,6 +23,7 @@ const WinOverlay: React.FC<{
   onReplay: () => void;
 }> = ({ headline, note, onReplay }) => {
   const [showInfo, setShowInfo] = useState(false);
+  const stagePortal = useGameStagePortal();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.92 }}
@@ -47,7 +48,7 @@ const WinOverlay: React.FC<{
             type="button"
             onClick={onReplay}
             aria-label="വീണ്ടും കളിക്കാം"
-            className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white font-extrabold shrink-0"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white font-extrabold shrink-0 cursor-pointer"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -56,11 +57,15 @@ const WinOverlay: React.FC<{
             onClick={() => {
               sound.unlockAudio();
               sound.playClick();
-              scrollToActiveQuiz();
+              if (stagePortal?.hasLesson) {
+                stagePortal.openLesson();
+              } else {
+                scrollToActiveQuiz();
+              }
             }}
-            className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shrink-0 shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shrink-0 shadow-xs cursor-pointer"
           >
-            <span>അടുത്തത് · ക്വിസ്</span>
+            <span>{stagePortal?.hasLesson ? '📖 പാഠത്തിലേക്ക്' : 'അടുത്തത് · ക്വിസ്'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -2317,34 +2322,68 @@ const PrizeArtSvg: React.FC<{ slotId: string; done: boolean }> = ({ slotId, done
   );
 };
 
+const SCRATCH_COLS = 8;
+const SCRATCH_ROWS = 4;
+const SCRATCH_TARGET_CELLS = Math.ceil(SCRATCH_COLS * SCRATCH_ROWS * 0.65);
+
 const MetallicScratchCard: React.FC<{
+  revealed: boolean;
   onRevealed: () => void;
-}> = ({ onRevealed }) => {
+  onClaimVictory: () => void;
+  claimed: boolean;
+}> = ({ revealed, onRevealed, onClaimVictory, claimed }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
-  const revealedRef = useRef(false);
-  const strokesRef = useRef(0);
-  const [pct, setPct] = useState(0);
+  const revealedRef = useRef(revealed);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+  const clearedCellsRef = useRef<Set<string>>(new Set());
+  const [pct, setPct] = useState(revealed ? 100 : 0);
 
   useEffect(() => {
+    revealedRef.current = revealed;
+    if (revealed) setPct(100);
+  }, [revealed]);
+
+  useEffect(() => {
+    if (revealed) return;
+    clearedCellsRef.current.clear();
+    lastPosRef.current = null;
+    setPct(0);
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
     const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    grad.addColorStop(0, '#D97706');
-    grad.addColorStop(0.5, '#FDE68A');
-    grad.addColorStop(1, '#B45309');
+    grad.addColorStop(0, '#B45309');
+    grad.addColorStop(0.32, '#F59E0B');
+    grad.addColorStop(0.55, '#FEF08A');
+    grad.addColorStop(0.8, '#D97706');
+    grad.addColorStop(1, '#92400E');
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Metallic shine lines + prompt
+    // Subtle diagonal foil sheen
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.lineWidth = 3;
+    for (let i = -120; i < canvas.width + 120; i += 28) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i + 70, canvas.height);
+      ctx.stroke();
+    }
+
+    // Crisp scratch prompt on gold foil
     ctx.fillStyle = '#451A03';
-    ctx.font = 'bold 16px "Noto Sans Malayalam", sans-serif';
+    ctx.font = 'bold 17px "Noto Sans Malayalam", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✨ വിരൽ ഉരച്ച് സ്ക്രാച്ച് ചെയ്യൂ! ✨', canvas.width / 2, canvas.height / 2 + 6);
-  }, []);
+    ctx.fillText('🪙 വിരൽ ഉരച്ച് സ്വർണ്ണ ഫോയിൽ നീക്കൂ!', canvas.width / 2, canvas.height / 2 + 4);
+    ctx.font = 'bold 11px "Noto Sans Malayalam", sans-serif';
+    ctx.fillStyle = '#78350F';
+    ctx.fillText('അടിയിലെ സമ്മാനം കാണാൻ മുഴുവൻ ഉരയ്ക്കൂ ✨', canvas.width / 2, canvas.height / 2 + 24);
+  }, [revealed]);
 
   const scratchAt = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -2356,66 +2395,142 @@ const MetallicScratchCard: React.FC<{
     if (!ctx) return;
 
     ctx.globalCompositeOperation = 'destination-out';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 42;
     ctx.beginPath();
-    ctx.arc(x, y, 24, 0, Math.PI * 2);
+    if (lastPosRef.current) {
+      ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+    ctx.arc(x, y, 21, 0, Math.PI * 2);
     ctx.fill();
+    lastPosRef.current = { x, y };
 
-    strokesRef.current += 1;
-    const approx = Math.min(100, Math.round((strokesRef.current / 22) * 100));
-    setPct(approx);
-    if (strokesRef.current % 5 === 0) sound.playPop();
+    // Mark real spatial coverage across an 8x4 grid so fast swipes reveal what's underneath
+    const cellW = canvas.width / SCRATCH_COLS;
+    const cellH = canvas.height / SCRATCH_ROWS;
+    const col = Math.floor(x / cellW);
+    const row = Math.floor(y / cellH);
+    const prevSize = clearedCellsRef.current.size;
+    for (let dc = -1; dc <= 1; dc++) {
+      for (let dr = -1; dr <= 1; dr++) {
+        const nc = col + dc;
+        const nr = row + dr;
+        if (nc >= 0 && nc < SCRATCH_COLS && nr >= 0 && nr < SCRATCH_ROWS) {
+          const cx = (nc + 0.5) * cellW;
+          const cy = (nr + 0.5) * cellH;
+          if (Math.hypot(cx - x, cy - y) <= 30) {
+            clearedCellsRef.current.add(`${nc},${nr}`);
+          }
+        }
+      }
+    }
 
-    if (approx >= 100 && !revealedRef.current) {
-      revealedRef.current = true;
-      onRevealed();
+    const newSize = clearedCellsRef.current.size;
+    if (newSize > prevSize) {
+      if (newSize % 4 === 0) sound.playPop();
+      const approx = Math.min(100, Math.round((newSize / SCRATCH_TARGET_CELLS) * 100));
+      setPct(approx);
+
+      if (approx >= 100 && !revealedRef.current) {
+        revealedRef.current = true;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        onRevealed();
+      }
     }
   };
 
   return (
-    <div className="space-y-2">
-      <div className="relative rounded-2xl overflow-hidden border-2 border-amber-500 shadow-md bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 min-h-[110px] flex items-center justify-center p-4 select-none touch-none">
-        <div className="flex items-center justify-center gap-3 text-white pointer-events-none">
-          <div className="bg-white rounded-lg p-1 shrink-0 shadow-sm">
+    <div className="space-y-2.5">
+      <div
+        className={`relative rounded-2xl overflow-hidden border-2 shadow-lg bg-gradient-to-br from-emerald-900 via-teal-800 to-emerald-950 min-h-[140px] flex items-center justify-center p-4 select-none touch-none transition-all ${
+          revealed
+            ? 'border-amber-400 ring-4 ring-amber-300/50'
+            : 'border-amber-500'
+        }`}
+      >
+        {/* Underlying Golden Prize Certificate — stays permanently visible after scratching! */}
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 text-white pointer-events-none">
+          <div className="bg-white rounded-xl p-1.5 shrink-0 shadow-md border border-amber-300">
             <img
               src={OFFICIAL_WING_LOGOS.albirr_preschool.src}
               alt={OFFICIAL_WING_LOGOS.albirr_preschool.label}
-              className="h-9 w-auto object-contain"
+              className="h-10 sm:h-11 w-auto object-contain"
             />
           </div>
-          <div className="text-center space-y-1">
-            <p className="text-xs font-extrabold text-amber-300">🌟 അൽബിർ &amp; മജ്‌ലിസുൽ മആരിഫ് സമ്മാനം</p>
-            <p className="text-sm sm:text-base font-extrabold">🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം! ✨</p>
+          <div className="text-center space-y-1 flex-1 min-w-0">
+            <p className="text-[11px] font-black text-amber-300 tracking-wide uppercase">
+              🌟 അൽബിർ കിഡ്‌സ് ഫെസ്റ്റ് &amp; SKSBV മജ്‌ലിസുൽ മആരിഫ്
+            </p>
+            <p className="text-base sm:text-lg font-black text-white leading-snug drop-shadow-xs">
+              🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം! ✨
+            </p>
+            <p className="text-[11px] font-bold text-emerald-100">
+              സുവർണ്ണ സമ്മാന കാർഡ് വിജയകരമായി തുറന്നു · +35 XP
+            </p>
           </div>
-          <div className="bg-white rounded-lg p-1 shrink-0 shadow-sm">
+          <div className="bg-white rounded-xl p-1.5 shrink-0 shadow-md border border-amber-300">
             <img
-              src={OFFICIAL_WING_LOGOS.albirr_emblem.src}
-              alt={OFFICIAL_WING_LOGOS.albirr_emblem.label}
-              className="h-9 w-auto object-contain"
+              src={OFFICIAL_WING_LOGOS.skimvb.src}
+              alt={OFFICIAL_WING_LOGOS.skimvb.label}
+              className="h-10 sm:h-11 w-auto object-contain"
             />
           </div>
         </div>
+
+        {/* Interactive Gold Foil Scratch Canvas (fades away cleanly instead of hiding the card!) */}
         <canvas
           ref={canvasRef}
-          width={380}
-          height={116}
+          width={420}
+          height={144}
           onPointerDown={(e) => {
+            if (revealed) return;
             drawingRef.current = true;
+            lastPosRef.current = null;
             e.currentTarget.setPointerCapture(e.pointerId);
             scratchAt(e.clientX, e.clientY);
           }}
           onPointerMove={(e) => {
-            if (drawingRef.current) scratchAt(e.clientX, e.clientY);
+            if (drawingRef.current && !revealed) scratchAt(e.clientX, e.clientY);
           }}
           onPointerUp={() => {
             drawingRef.current = false;
+            lastPosRef.current = null;
           }}
-          className="absolute inset-0 w-full h-full cursor-crosshair touch-none"
+          className={`absolute inset-0 w-full h-full touch-none transition-opacity duration-500 ${
+            revealed ? 'opacity-0 pointer-events-none' : 'opacity-100 cursor-crosshair'
+          }`}
         />
       </div>
-      <div className="flex items-center justify-between text-xs font-extrabold text-amber-900 px-1">
-        <span>👆 സ്വർണ്ണ ഫോയിൽ വിരൽ കൊണ്ട് ഉരയ്ക്കൂ</span>
-        <span className="tabular-nums">{pct}%</span>
-      </div>
+
+      {!revealed ? (
+        <div className="flex items-center justify-between text-xs font-extrabold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5">
+          <span>👆 സ്വർണ്ണ ഫോയിൽ വിരൽ കൊണ്ട് ഉരച്ച് അടിയിലെ സമ്മാനം കാണൂ!</span>
+          <span className="tabular-nums text-emerald-800">{pct}%</span>
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl bg-emerald-50 border-2 border-emerald-400 p-3 flex flex-wrap items-center justify-between gap-2.5"
+        >
+          <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
+            🎉 സമ്മാനം തെളിഞ്ഞു! മുകളിലെ <span className="text-amber-800">മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം</span> കണ്ടില്ലേ?
+          </p>
+          {!claimed && (
+            <button
+              type="button"
+              onClick={onClaimVictory}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-black shadow-md cursor-pointer active:scale-95 transition-transform"
+            >
+              <span>🏆 സമ്മാനം സ്വീകരിക്കൂ</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </motion.div>
+      )}
     </div>
   );
 };
@@ -2426,26 +2541,27 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
   subtitle,
   onAwardXp,
   onComplete,
-  isCompleted = false,
 }) => {
-  const [doneIds, setDoneIds] = useState<string[]>(
-    isCompleted ? GIFT_SLOTS.map((t) => t.id) : []
-  );
+  const stagePaused = useGameStagePaused();
+  const stagePortal = useGameStagePortal();
+
+  const [doneIds, setDoneIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
-  const [scratched, setScratched] = useState(isCompleted);
+  const [cardRevealed, setCardRevealed] = useState(false);
+  const [claimedWin, setClaimedWin] = useState(false);
   const [lives, setLives] = useState(3);
-  const [timeLeft, setTimeLeft] = useState(35);
+  const [timeLeft, setTimeLeft] = useState(40);
   const [started, setStarted] = useState(false);
   const [msg, setMsg] = useState<string>(
     '👇 താഴെ നിന്ന് ശരിയായ സ്റ്റിക്കർ/റിബ്ബൺ/സീൽ തിരഞ്ഞെടുത്ത് ശരിയായ സമ്മാനത്തിൽ വെക്കൂ! (അനാവശ്യ സാധനങ്ങൾ ഒഴിവാക്കണം)'
   );
 
-  const won = doneIds.length === 3 && scratched;
-  const failed = (lives <= 0 || timeLeft <= 0) && !won;
+  const won = doneIds.length === 3 && cardRevealed && claimedWin;
+  const failed = (lives <= 0 || timeLeft <= 0) && !cardRevealed && !won;
 
   useEffect(() => {
-    if (!started || won || failed) return;
+    if (!started || stagePaused || cardRevealed || won || failed) return;
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
@@ -2456,11 +2572,11 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, won, failed]);
+  }, [started, stagePaused, cardRevealed, won, failed]);
 
   const snapTask = (itemId: string | null, slotId: string) => {
     sound.unlockAudio();
-    if (failed || won || doneIds.includes(slotId)) return;
+    if (failed || won || cardRevealed || doneIds.includes(slotId)) return;
     if (!itemId) {
       setMsg('👆 ആദ്യം താഴത്തെ ട്രേയിൽ നിന്ന് ഒരു സാധനം തൊടൂ!');
       return;
@@ -2487,20 +2603,29 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
     sound.playSuccess(next.length);
     setMsg(
       next.length === 3
-        ? '🎉 മൂന്ന് സമ്മാനങ്ങളും ഒരുങ്ങി! ഇനി താഴത്തെ സ്വർണ്ണ സ്ക്രാച്ച് കാർഡ് വിരൽ കൊണ്ട് ഉരച്ച് തുറക്കൂ!'
+        ? '🎉 മൂന്ന് സമ്മാനങ്ങളും ഒരുങ്ങി! ഇനി താഴത്തെ സ്വർണ്ണ സ്ക്രാച്ച് കാർഡ് വിരൽ കൊണ്ട് ഉരച്ച് അടിയിലെ സമ്മാനം കാണൂ!'
         : `✅ മനോഹരം! ബാക്കി ${3 - next.length} എണ്ണം കൂടി പൂർത്തിയാക്കാം.`
     );
   };
 
   const handleScratchRevealed = () => {
-    if (scratched || failed) return;
-    setScratched(true);
+    if (cardRevealed || failed) return;
+    setCardRevealed(true);
     sound.playHoist();
     onAwardXp(35, `hands_${xpKey}`);
-    onComplete?.();
     narrator.speak(
-      'അടിപൊളി! അൽബിർ കിഡ്‌സ് ഫെസ്റ്റിലെയും SKSBV മജ്‌ലിസുൽ മആരിഫിലെയും ട്രോഫികളും സമ്മാനങ്ങളും സ്ക്രാച്ച് കാർഡും വിജയകരമായി പൂർത്തിയാക്കി!',
+      'അടിപൊളി! സ്ക്രാച്ച് കാർഡിൽ അൽബിർ കിഡ്‌സ് ഫെസ്റ്റിലെയും SKSBV മജ്‌ലിസുൽ മആരിഫിലെയും മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം തെളിഞ്ഞു!',
       title
+    );
+  };
+
+  const handleClaimVictory = () => {
+    if (claimedWin) return;
+    sound.playSuccess(4);
+    setClaimedWin(true);
+    onComplete?.();
+    stagePortal?.notifyStageWin(
+      'സ്ക്രാച്ച് കാർഡിൽ തെളിഞ്ഞത്: 🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം (അൽബിർ കിഡ്‌സ് ഫെസ്റ്റ് & SKSBV മജ്‌ലിസുൽ മആരിഫ്)! (+35 XP)'
     );
   };
 
@@ -2509,9 +2634,10 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
     setDoneIds([]);
     setSelected(null);
     setDragging(null);
-    setScratched(false);
+    setCardRevealed(false);
+    setClaimedWin(false);
     setLives(3);
-    setTimeLeft(35);
+    setTimeLeft(40);
     setStarted(false);
     setMsg('👇 താഴെ നിന്ന് ശരിയായ സ്റ്റിക്കർ/റിബ്ബൺ/സീൽ തിരഞ്ഞെടുത്ത് ശരിയായ സമ്മാനത്തിൽ വെക്കൂ!');
   };
@@ -2522,12 +2648,12 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
         badge="🏆 ട്രോഫി · സമ്മാന പാക്കിംഗ് · സ്ക്രാച്ച് കാർഡ്"
         title={title}
         subtitle={subtitle}
-        done={won}
+        done={cardRevealed}
         lives={lives}
-        progressText={`⏱️ ${timeLeft}s · ${doneIds.length + (scratched ? 1 : 0)}/4`}
+        progressText={`⏱️ ${timeLeft}s · ${doneIds.length + (cardRevealed ? 1 : 0)}/4`}
         logos={[
           { src: OFFICIAL_WING_LOGOS.albirr_preschool.src, alt: OFFICIAL_WING_LOGOS.albirr_preschool.label },
-          { src: OFFICIAL_WING_LOGOS.albirr_emblem.src, alt: OFFICIAL_WING_LOGOS.albirr_emblem.label },
+          { src: OFFICIAL_WING_LOGOS.skimvb.src, alt: OFFICIAL_WING_LOGOS.skimvb.label },
         ]}
       />
 
@@ -2619,9 +2745,14 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
         </div>
       )}
 
-      {/* Real HTML5 Canvas Metallic Scratch Card! */}
-      {doneIds.length === 3 && !scratched && !failed && (
-        <MetallicScratchCard onRevealed={handleScratchRevealed} />
+      {/* Real HTML5 Canvas Metallic Scratch Card — STAYS VISIBLE AFTER SCRATCHING so the player clearly sees the revealed prize! */}
+      {doneIds.length === 3 && !failed && (
+        <MetallicScratchCard
+          revealed={cardRevealed}
+          onRevealed={handleScratchRevealed}
+          onClaimVictory={handleClaimVictory}
+          claimed={claimedWin}
+        />
       )}
 
       {failed && (
@@ -2635,7 +2766,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
       {won && (
         <WinOverlay
           headline="🏆 അൽബിർ & SKSBV ട്രോഫികളും സമ്മാനങ്ങളും സ്ക്രാച്ച് കാർഡും വിജയം! (+35 XP)"
-          note="മദ്രസയിലെ കൂട്ടുകാർക്കായി ട്രോഫി സ്റ്റിക്കറും സമ്മാനപ്പൊതിയും സ്വർണ്ണ സീലും ഭംഗിയായി ഒരുങ്ങി!"
+          note="സ്ക്രാച്ച് കാർഡിൽ മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം തെളിഞ്ഞു!"
           onReplay={reset}
         />
       )}

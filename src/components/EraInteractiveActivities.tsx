@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { CheckCircle2, RotateCcw, Volume2, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { useGameStagePaused, useGameStagePortal } from './GameFullscreenShell';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 export interface EraArtifactItem {
@@ -87,60 +88,72 @@ const InStageStoryModal: React.FC<{
 );
 
 /* ============================================================================
- * ERA 1 (1921–1926): MALABAR DHOW HERITAGE RESCUE VOYAGE (3-Lane Sailing Game!)
- * Dodge storms & reefs while collecting the 3 golden 1921–1926 historical scrolls.
+ * ERA 1 (1921–1926): MALABAR DHOW HERITAGE RESCUE VOYAGE (3-Lane Action Sailing!)
+ * - Starts immediately when blurred shell theme card closes (no double-start!)
+ * - Double-lane monsoon storm & reef barriers + 35s monsoon deadline timer + 3 shields!
+ * - Local session collection so Replay always works cleanly from 0/3!
  * ========================================================================== */
 interface SeaObj {
   uid: number;
   lane: 0 | 1 | 2;
   y: number;
   kind: 'scroll' | 'storm' | 'reef';
-  artifactIdx?: number;
 }
+
+const ERA1_TIME_LIMIT = 35;
 
 const RealisticChestUnlockGame: React.FC<{
   artifacts: EraArtifactItem[];
   collectedIds: string[];
   onCollect: (art: EraArtifactItem) => void;
 }> = ({ artifacts, collectedIds, onCollect }) => {
+  const stagePaused = useGameStagePaused();
+  const stagePortal = useGameStagePortal();
+
   const [boatLane, setBoatLane] = useState<0 | 1 | 2>(1);
   const [seaObjs, setSeaObjs] = useState<SeaObj[]>([]);
+  const [sessionCollectedIds, setSessionCollectedIds] = useState<string[]>([]);
   const [lives, setLives] = useState<number>(3);
-  const [playing, setPlaying] = useState<boolean>(false);
+  const [timeLeft, setTimeLeft] = useState<number>(ERA1_TIME_LIMIT);
   const [failed, setFailed] = useState<boolean>(false);
+  const [failReason, setFailReason] = useState<string>('');
+  const [won, setWon] = useState<boolean>(false);
   const [hitFlash, setHitFlash] = useState<boolean>(false);
+  const [catchToast, setCatchToast] = useState<string | null>(null);
   const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
   const [statusMsg, setStatusMsg] = useState<string>(
-    '⛵ ഉരു ഇടത്തോട്ടും വലത്തോട്ടും നീക്കി 1921–1926 കാലത്തെ 3 സുവർണ്ണ ചരിത്ര ചുരുളുകൾ ശേഖരിക്കൂ! കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കൂ.'
+    '⛵ ഉരു ഇടത്തോട്ടും വലത്തോട്ടും നീക്കി 35 സെക്കൻഡിനുള്ളിൽ 3 ചരിത്ര ചുരുളുകൾ (📜) ശേഖരിക്കൂ! ⛈️ കൊടുങ്കാറ്റും 🪨 പാറയും ഒഴിവാക്കൂ.'
   );
 
   const laneRef = useRef<0 | 1 | 2>(1);
   const livesRef = useRef<number>(3);
-  const collectedRef = useRef<string[]>(collectedIds);
-  const activeArtRef = useRef<EraArtifactItem | null>(null);
+  const sessionCollectedRef = useRef<string[]>([]);
   const uidRef = useRef<number>(1);
+  const toastTimerRef = useRef<number | null>(null);
 
   laneRef.current = boatLane;
   livesRef.current = lives;
-  collectedRef.current = collectedIds;
-  activeArtRef.current = activeArt;
+  sessionCollectedRef.current = sessionCollectedIds;
 
-  const collectedCount = artifacts.filter((a) => collectedIds.includes(a.id)).length;
-  const allCollected = collectedCount === artifacts.length;
+  const collectedCount = sessionCollectedIds.length;
 
-  const steer = (dir: -1 | 1) => {
-    if (!playing || failed || allCollected) return;
-    sound.unlockAudio();
-    sound.playClick();
-    setBoatLane((prev) => {
-      const next = Math.max(0, Math.min(2, prev + dir)) as 0 | 1 | 2;
-      laneRef.current = next;
-      return next;
-    });
-  };
+  const steer = useCallback(
+    (dir: -1 | 1) => {
+      if (stagePaused || failed || won) return;
+      sound.unlockAudio();
+      sound.playClick();
+      setBoatLane((prev) => {
+        const next = Math.max(0, Math.min(2, prev + dir)) as 0 | 1 | 2;
+        laneRef.current = next;
+        return next;
+      });
+    },
+    [stagePaused, failed, won]
+  );
 
+  // Keyboard steering
   useEffect(() => {
-    if (!playing || failed || allCollected) return;
+    if (stagePaused || failed || won) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
@@ -152,34 +165,61 @@ const RealisticChestUnlockGame: React.FC<{
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [playing, failed, allCollected]);
+  }, [stagePaused, failed, won, steer]);
 
+  // 35-second Monsoon Deadline Countdown (pauses while blurred overlay is open)
   useEffect(() => {
-    if (!playing || failed || allCollected) return;
+    if (stagePaused || failed || won) return;
+    const t = window.setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(t);
+          setFailed(true);
+          setFailReason('⏱️ മൺസൂൺ കൊടുങ്കാറ്റ് ശക്തമായി! 35 സെക്കൻഡിനുള്ളിൽ 3 ചരിത്ര ചുരുളുകളും തീരത്തെത്തിക്കാനായില്ല.');
+          sound.playError();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [stagePaused, failed, won]);
+
+  // Main Sea Voyage Loop (faster waves + double-lane hazard barriers for real dodging!)
+  useEffect(() => {
+    if (stagePaused || failed || won) return;
     let tick = 0;
 
     const interval = window.setInterval(() => {
-      // Pause movement gently while player reads a discovered scroll card
-      if (activeArtRef.current) return;
       tick += 1;
 
       setSeaObjs((prev) => {
         const nextList: SeaObj[] = [];
         for (const obj of prev) {
-          const ny = obj.y + 3.4;
+          const ny = obj.y + 4.3;
           if (ny >= 72 && ny <= 90 && obj.lane === laneRef.current) {
             if (obj.kind === 'scroll') {
-              const missing = artifacts.filter((a) => !collectedRef.current.includes(a.id));
+              const missing = artifacts.filter((a) => !sessionCollectedRef.current.includes(a.id));
               const picked = missing[0];
               if (picked) {
                 sound.playUnlock();
+                const updatedIds = [...sessionCollectedRef.current, picked.id];
+                sessionCollectedRef.current = updatedIds;
+                setSessionCollectedIds(updatedIds);
                 onCollect(picked);
-                setActiveArt(picked);
-                setStatusMsg(`📜 കണ്ടെത്തി: ${picked.label}!`);
-                if (missing.length <= 1) {
-                  setPlaying(false);
+
+                setCatchToast(`📜 കണ്ടെത്തി (${updatedIds.length}/${artifacts.length}): ${picked.label}`);
+                if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current);
+                toastTimerRef.current = window.setTimeout(() => setCatchToast(null), 2400);
+                setStatusMsg(`📜 ചരിത്രരേഖ ശേഖരിച്ചു: ${picked.label}!`);
+
+                if (updatedIds.length >= artifacts.length) {
+                  setWon(true);
                   sound.playHoist();
-                  setStatusMsg('🎉 മൂന്ന് ചരിത്ര ചുരുളുകളും സുരക്ഷിതമായി തീരത്തെത്തിച്ചു!');
+                  stagePortal?.notifyStageWin(
+                    '1921–1926 പ്രക്ഷുബ്ധ കാലത്തെ കൊടുങ്കാറ്റുകൾ മറികടന്ന് 3 സുവർണ്ണ ചരിത്രരേഖകളും സുരക്ഷിതമായി തീരത്തെത്തിച്ചു!'
+                  );
+                  return [];
                 }
               }
             } else {
@@ -191,14 +231,13 @@ const RealisticChestUnlockGame: React.FC<{
               window.setTimeout(() => setHitFlash(false), 320);
               if (nextLives <= 0) {
                 setFailed(true);
-                setPlaying(false);
-                setStatusMsg('💥 കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും ഉരു തട്ടി! വീണ്ടും ശ്രമിക്കാം.');
+                setFailReason('💥 കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും 3 തവണ ഉരു തട്ടി! ശ്രദ്ധിച്ച് ലെയിൻ മാറി തുഴയൂ.');
                 return [];
               } else {
                 setStatusMsg(
                   obj.kind === 'storm'
-                    ? `⛈️ കൊടുങ്കാറ്റ് അടിച്ചു! ശ്രദ്ധിച്ച് തുഴയൂ (🛡️ ${nextLives})`
-                    : `🪨 പാറക്കെട്ടിൽ തട്ടി! ലെയിൻ മാറ്റൂ (🛡️ ${nextLives})`
+                    ? `⛈️ കൊടുങ്കാറ്റ് അടിച്ചു! ഉടൻ ലെയിൻ മാറ്റൂ (ബാക്കി കവചം: ${nextLives})`
+                    : `🪨 പാറക്കെട്ടിൽ തട്ടി! സൂക്ഷിച്ച് തുഴയൂ (ബാക്കി കവചം: ${nextLives})`
                 );
               }
             }
@@ -209,35 +248,62 @@ const RealisticChestUnlockGame: React.FC<{
           }
         }
 
-        if (tick % 14 === 0) {
-          const spawnLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
-          const r = Math.random();
-          const kind: SeaObj['kind'] = r < 0.45 ? 'scroll' : r < 0.75 ? 'storm' : 'reef';
-          nextList.push({
-            uid: uidRef.current++,
-            lane: spawnLane,
-            y: -8,
-            kind,
-          });
+        // Spawn wave every 11 ticks (~0.66s): alternating double-hazard barriers & scroll waves
+        if (tick % 11 === 0) {
+          const isScrollWave = tick % 22 === 0;
+          if (isScrollWave) {
+            const scrollLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+            const hazardLane = ((scrollLane + (Math.random() < 0.5 ? 1 : 2)) % 3) as 0 | 1 | 2;
+            nextList.push({
+              uid: uidRef.current++,
+              lane: scrollLane,
+              y: -8,
+              kind: 'scroll',
+            });
+            nextList.push({
+              uid: uidRef.current++,
+              lane: hazardLane,
+              y: -8,
+              kind: Math.random() < 0.5 ? 'storm' : 'reef',
+            });
+          } else {
+            // Double hazard barrier leaving 1 safe passage lane!
+            const safeLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+            ([0, 1, 2] as const).forEach((ln) => {
+              if (ln !== safeLane) {
+                nextList.push({
+                  uid: uidRef.current++,
+                  lane: ln,
+                  y: -8,
+                  kind: Math.random() < 0.55 ? 'storm' : 'reef',
+                });
+              }
+            });
+          }
         }
         return nextList;
       });
-    }, 65);
+    }, 60);
 
     return () => window.clearInterval(interval);
-  }, [playing, failed, allCollected, artifacts, onCollect]);
+  }, [stagePaused, failed, won, artifacts, onCollect, stagePortal]);
 
-  const startVoyage = () => {
+  const restartVoyage = () => {
     sound.unlockAudio();
     sound.playPop();
     livesRef.current = 3;
     laneRef.current = 1;
+    sessionCollectedRef.current = [];
     setLives(3);
+    setTimeLeft(ERA1_TIME_LIMIT);
     setBoatLane(1);
     setSeaObjs([]);
+    setSessionCollectedIds([]);
     setFailed(false);
+    setFailReason('');
+    setWon(false);
+    setCatchToast(null);
     setActiveArt(null);
-    setPlaying(true);
     setStatusMsg('⛵ യാത്ര തുടങ്ങി! സുവർണ്ണ ചുരുളുകൾ (📜) ശേഖരിക്കൂ, കൊടുങ്കാറ്റും (⛈️) പാറയും (🪨) ഒഴിവാക്കൂ!');
   };
 
@@ -250,15 +316,40 @@ const RealisticChestUnlockGame: React.FC<{
         <span className="text-xs font-extrabold text-amber-300 tabular-nums">
           ⛵ 1921–1926 ചരിത്ര കടൽയാത്ര · 📜 {collectedCount}/{artifacts.length}
         </span>
-        <GameShatterLives lives={lives} maxLives={3} dark compact />
+        <div className="flex items-center gap-2">
+          <span
+            className={`px-2 py-0.5 rounded-lg text-xs font-black tabular-nums border ${
+              timeLeft <= 10 && !won
+                ? 'bg-rose-600 border-rose-300 text-white animate-pulse'
+                : 'bg-slate-900/90 border-sky-400/40 text-amber-300'
+            }`}
+          >
+            ⏱️ {timeLeft}s
+          </span>
+          <GameShatterLives lives={lives} maxLives={3} dark compact />
+        </div>
       </div>
 
       {/* Animated Malabar Sea Stage */}
       <div
-        className={`relative h-[270px] sm:h-[300px] rounded-2xl border-4 overflow-hidden select-none bg-gradient-to-b from-[#0c4a6e] via-[#0369a1] to-[#082f49] transition-colors ${
+        className={`relative h-[265px] sm:h-[295px] rounded-2xl border-4 overflow-hidden select-none bg-gradient-to-b from-[#0c4a6e] via-[#0369a1] to-[#082f49] transition-colors ${
           hitFlash ? 'border-rose-400 ring-4 ring-rose-400/40' : 'border-amber-400/60'
         }`}
       >
+        {/* In-stage Scroll Caught Toast (Never blocks boat or forces scrolling!) */}
+        <AnimatePresence>
+          {catchToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-2.5 inset-x-3 z-30 rounded-xl bg-emerald-950/92 border-2 border-amber-300 px-3 py-1.5 text-center text-xs font-extrabold text-amber-200 shadow-lg pointer-events-none"
+            >
+              {catchToast}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Subtle shimmering sea lane guides */}
         <div className="absolute inset-y-0 left-1/3 w-px border-l-2 border-dashed border-sky-200/25" />
         <div className="absolute inset-y-0 left-2/3 w-px border-l-2 border-dashed border-sky-200/25" />
@@ -279,7 +370,7 @@ const RealisticChestUnlockGame: React.FC<{
         ))}
 
         {/* Direct tap-lane controls */}
-        {playing && !activeArt && (
+        {!stagePaused && !failed && !won && (
           <div className="absolute inset-0 z-10 grid grid-cols-3">
             {([0, 1, 2] as const).map((tLane) => (
               <button
@@ -331,81 +422,55 @@ const RealisticChestUnlockGame: React.FC<{
           className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none w-20 sm:w-24"
         >
           <svg viewBox="0 0 110 120" className="w-full h-auto drop-shadow-[0_10px_14px_rgba(0,0,0,0.55)]">
-            {/* Water wake */}
             <ellipse cx="55" cy="108" rx="34" ry="8" fill="#BAE6FD" opacity="0.35" />
-            {/* Wooden Malabar Uru Hull */}
             <path d="M55 10 Q85 42 82 92 Q55 108 28 92 Q25 42 55 10 Z" fill="#78350F" stroke="#FDE68A" strokeWidth="2.5" />
             <path d="M55 18 Q76 45 74 86 Q55 98 36 86 Q34 45 55 18 Z" fill="#92400E" />
-            {/* Cross wooden deck planks */}
             <line x1="36" y1="52" x2="74" y2="52" stroke="#451A03" strokeWidth="2.5" />
             <line x1="36" y1="72" x2="74" y2="72" stroke="#451A03" strokeWidth="2.5" />
-            {/* Billowing White Sail */}
             <path d="M55 24 Q92 48 55 76 Q42 50 55 24 Z" fill="#FFFBEB" stroke="#D97706" strokeWidth="2" />
-            {/* Mast & Green Heritage Pennant */}
             <circle cx="55" cy="54" r="4" fill="#FBBF24" />
             <polygon points="55,10 74,16 55,22" fill="#16A34A" />
           </svg>
         </motion.div>
 
-        {/* Start Overlay */}
-        {!playing && !allCollected && !failed && (
-          <div className="absolute inset-0 z-30 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center space-y-3">
-            <div className="text-4xl">⛵</div>
-            <h4 className="text-base sm:text-lg font-extrabold text-amber-300">
-              മലബാർ ഉരു — 1921–1926 ചരിത്ര രക്ഷായാത്ര
-            </h4>
-            <p className="text-xs font-semibold text-sky-100 max-w-sm leading-relaxed">
-              1921-ന് ശേഷമുള്ള പ്രക്ഷുബ്ധ കാലത്തെ വെല്ലുവിളികളെ (⛈️, 🪨) മറികടന്ന്, സുവർണ്ണ ചരിത്ര ചുരുളുകൾ (📜) ശേഖരിച്ച് സുരക്ഷിതമായി തീരത്തെത്തിക്കൂ!
-            </p>
-            <button
-              type="button"
-              onClick={startVoyage}
-              className="px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 shadow-lg cursor-pointer"
-            >
-              ⛵ കടൽയാത്ര തുടങ്ങാം!
-            </button>
-          </div>
-        )}
-
-        {/* Fail Overlay */}
-        {failed && !allCollected && (
+        {/* Fail Overlay (Portals directly centered onto blurred GameFullscreenShell!) */}
+        {failed && !won && (
           <GameDefeatBurstOverlay
-            title="ഉരുവിന് 3 തവണ ആഘാതമേറ്റു!"
-            reason="കൊടുങ്കാറ്റും പാറക്കെട്ടും ഒഴിവാക്കി ചരിത്ര ചുരുളുകൾ ശേഖരിക്കാൻ വീണ്ടും ശ്രമിക്കാം."
-            onRetry={startVoyage}
+            title="⛵ 1921 കടൽയാത്ര പരാജയപ്പെട്ടു!"
+            reason={failReason || 'കൊടുങ്കാറ്റിലും പാറക്കെട്ടിലും തട്ടി ഉരുവിന് ആഘാതമേറ്റു! വീണ്ടും ശ്രമിക്കാം.'}
+            scoreText={`ശേഖരിച്ച ചരിത്രരേഖകൾ: ${collectedCount}/${artifacts.length}`}
+            onRetry={restartVoyage}
           />
         )}
       </div>
 
       {/* Steering Controls */}
-      {!allCollected && (
-        <div className="flex items-center justify-between gap-2">
-          <button
-            type="button"
-            disabled={!playing || Boolean(activeArt)}
-            onClick={() => steer(-1)}
-            className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
-          >
-            ⬅️ ഇടത്തോട്ട്
-          </button>
-          <span className="text-[11px] font-bold text-sky-100 px-2 text-center">
-            📜 ശേഖരിക്കൂ · ⛈️🪨 ഒഴിവാക്കൂ
-          </span>
-          <button
-            type="button"
-            disabled={!playing || Boolean(activeArt)}
-            onClick={() => steer(1)}
-            className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
-          >
-            വലത്തോട്ട് ➡️
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-between gap-2">
+        <button
+          type="button"
+          disabled={stagePaused || failed || won}
+          onClick={() => steer(-1)}
+          className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
+        >
+          ⬅️ ഇടത്തോട്ട്
+        </button>
+        <span className="text-[11px] font-bold text-sky-100 px-2 text-center">
+          📜 ശേഖരിക്കൂ · ⛈️🪨 ഒഴിവാക്കൂ
+        </span>
+        <button
+          type="button"
+          disabled={stagePaused || failed || won}
+          onClick={() => steer(1)}
+          className="flex-1 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 text-sm font-extrabold border-b-4 border-amber-700 active:scale-95 transition-transform cursor-pointer"
+        >
+          വലത്തോട്ട് ➡️
+        </button>
+      </div>
 
       {/* Collected Historical Scroll Chips (Always Re-Readable!) */}
       <div className="grid grid-cols-3 gap-2">
         {artifacts.map((art) => {
-          const found = collectedIds.includes(art.id);
+          const found = collectedIds.includes(art.id) || sessionCollectedIds.includes(art.id);
           return (
             <button
               key={art.id}
@@ -445,130 +510,402 @@ const RealisticChestUnlockGame: React.FC<{
 };
 
 /* ============================================================================
- * ERA 2 (1925–1934): KOZHIKODE TOWN HALL WAX SEAL & REGISTRATION STAMP PRESS
+ * ERA 2 (1925–1934): KOZHIKODE TOWN HALL ARCHIVE & OFFICIAL SKJU 1926 WAX SEAL
+ * - Authenticate 6 historical documents (3 genuine 1925–1934 records + 3 forged records!)
+ * - Live 8.5s urgency timer per document + 3 Shatterable Shields!
+ * - Stamp authentic documents with embossed SKJU 1926 Crimson Wax Seal; reject forgeries!
+ * - Failing (wrong stamp, rejecting genuine doc, or timeout x3) triggers GameDefeatBurstOverlay!
  * ========================================================================== */
+interface SealDocumentCase {
+  id: string;
+  docNumber: string;
+  yearTag: string;
+  title: string;
+  excerpt: string;
+  isAuthentic: boolean;
+  artifactIdx?: number;
+  okFeedback: string;
+  errFeedback: string;
+}
+
+const SEAL_DOCUMENT_CASES: SealDocumentCase[] = [
+  {
+    id: 'doc_1925_valiya_palli',
+    docNumber: 'രേഖ #1925-A',
+    yearTag: '1925 · കോഴിക്കോട്',
+    title: 'വലിയ ജുമുഅത്ത് പള്ളി പ്രാരംഭ ആലോചനാ യോഗം',
+    excerpt:
+      'കോഴിക്കോട് വലിയ ജുമുഅത്ത് പള്ളിയിൽ പ്രമുഖ പണ്ഡിതന്മാർ സംഗമിച്ച് സുന്നത്ത് ജമാഅത്തിന്റെ സംരക്ഷണത്തിനായി ഒരു സംഘടന രൂപീകരിക്കാൻ പ്രാരംഭ സമിതി (മുശാവറ) നിശ്ചയിച്ചു.',
+    isAuthentic: true,
+    artifactIdx: 0,
+    okFeedback: '🔖 സീൽ പതിച്ചു! 1925 പ്രാരംഭ യോഗരേഖ ഔദ്യോഗിക ആർക്കൈവിൽ ചേർത്തു!',
+    errFeedback: '💥 തെറ്റ്! 1925 കോഴിക്കോട് വലിയ ജുമുഅത്ത് പള്ളി യോഗം യഥാർത്ഥ ചരിത്രരേഖയാണ് — സീൽ പതിക്കണം!',
+  },
+  {
+    id: 'doc_fake_1942',
+    docNumber: 'രേഖ #FAKE-42',
+    yearTag: '1942 · തിരുവനന്തപുരം?!',
+    title: '1942-ൽ തിരുവനന്തപുരത്ത് സമസ്ത രൂപീകരിച്ചു?!',
+    excerpt:
+      '1942 ഓഗസ്റ്റിൽ തിരുവനന്തപുരം സെക്രട്ടേറിയറ്റ് ഹാളിലാണ് സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ ആദ്യമായി രൂപീകരിച്ചതെന്ന് അവകാശപ്പെടുന്ന തെറ്റായ കുറിപ്പ്.',
+    isAuthentic: false,
+    okFeedback: '🛡️ വ്യാജ രേഖ തടഞ്ഞു! സമസ്ത രൂപീകരിച്ചത് 1926 ജൂൺ 26-ന് കോഴിക്കോട് ടൗൺ ഹാളിലാണ്!',
+    errFeedback: '💥 വ്യാജ രേഖയിൽ സീൽ പതിച്ചു! സമസ്ത പിറന്നത് 1926-ൽ കോഴിക്കോടാണ്, 1942 തിരുവനന്തപുരത്തല്ല!',
+  },
+  {
+    id: 'doc_1926_townhall',
+    docNumber: 'രേഖ #1926-B',
+    yearTag: '1926 ജൂൺ 26 · ടൗൺ ഹാൾ',
+    title: 'സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ ഔദ്യോഗിക രൂപീകരണ രേഖ',
+    excerpt:
+      'കോഴിക്കോട് ടൗൺ ഹാളിൽ വരക്കൽ മുല്ലക്കോയ തങ്ങൾ അധ്യക്ഷനായി (പ്രസിഡന്റ്), പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്‌ലിയാർ സെക്രട്ടറിയായി സമസ്ത ഔദ്യോഗികമായി നിലവിൽ വന്നു.',
+    isAuthentic: true,
+    artifactIdx: 1,
+    okFeedback: '🔖 SKJU 1926 സീൽ പതിച്ചു! ടൗൺ ഹാൾ ചരിത്ര പ്രഖ്യാപന രേഖ അംഗീകരിച്ചു!',
+    errFeedback: '💥 തെറ്റ്! 1926 ജൂൺ 26 ടൗൺ ഹാൾ രേഖ സമസ്തയുടെ ചരിത്രപരമായ പിറവി രേഖയാണ് — സീൽ പതിക്കണം!',
+  },
+  {
+    id: 'doc_fake_1960_reg',
+    docNumber: 'രേഖ #FAKE-60',
+    yearTag: '1960 · വ്യാജ രജിസ്റ്റർ?!',
+    title: '1960-ലാണ് സമസ്ത ആദ്യമായി രജിസ്റ്റർ ചെയ്തത്?!',
+    excerpt:
+      'സൊസൈറ്റീസ് ആക്ട് പ്രകാരം 1960-ൽ മാത്രമാണ് സമസ്തയുടെ ഭരണഘടന രജിസ്റ്റർ ചെയ്തതെന്ന് തിരുത്തിയെഴുതിയ വ്യാജ പേപ്പർ.',
+    isAuthentic: false,
+    okFeedback: '🛡️ വ്യാജ രജിസ്റ്റർ നിരസിച്ചു! യഥാർത്ഥ രജിസ്ട്രേഷൻ 1934 നവംബർ 14-ന് (S1/1934-35) ആയിരുന്നു!',
+    errFeedback: '💥 വ്യാജ രേഖയിൽ സീൽ പതിച്ചു! സമസ്ത രജിസ്റ്റർ ചെയ്തത് 1934 നവംബർ 14-നാണ്, 1960-ലല്ല!',
+  },
+  {
+    id: 'doc_1934_registration',
+    docNumber: 'രേഖ #1934-C',
+    yearTag: '1934 നവംബർ 14 · Reg S1',
+    title: 'സൊസൈറ്റീസ് ആക്ട് പ്രകാരം ഔദ്യോഗിക രജിസ്ട്രേഷൻ (S1/1934-35)',
+    excerpt:
+      '1934 നവംബർ 14-ന് കോഴിക്കോട് ജില്ലാ രജിസ്ട്രാർ ഓഫീസിൽ (S1/1934-35) സമസ്തയുടെ ഭരണഘടനയും ലക്ഷ്യങ്ങളും ഔദ്യോഗികമായി രജിസ്റ്റർ ചെയ്തു.',
+    isAuthentic: true,
+    artifactIdx: 2,
+    okFeedback: '🔖 1934 ഔദ്യോഗിക രജിസ്ട്രേഷൻ രേഖയിൽ SKJU സീൽ പതിച്ചു!',
+    errFeedback: '💥 തെറ്റ്! 1934 നവംബർ 14 (S1/1934-35) സമസ്തയുടെ യഥാർത്ഥ രജിസ്ട്രേഷൻ രേഖയാണ് — സീൽ പതിക്കണം!',
+  },
+  {
+    id: 'doc_fake_no_scholars',
+    docNumber: 'രേഖ #FAKE-99',
+    yearTag: 'വ്യാജ പ്രമേയം?!',
+    title: 'പണ്ഡിത മുശാവറ ഇല്ലാതെ ആദർശം മാറ്റാമെന്ന് പ്രമേയം?!',
+    excerpt:
+      'അഹ്‌ലുസ്സുന്നത്തി വൽ ജമാഅത്തിന്റെ പണ്ഡിത പരമ്പരയുടെ അംഗീകാരമില്ലാതെ സ്വന്തം ഇഷ്ടപ്രകാരം മതവിധികൾ മാറ്റാമെന്ന് എഴുതിയ വ്യാജ പ്രമേയം.',
+    isAuthentic: false,
+    okFeedback: '🛡️ വ്യാജ പ്രമേയം നിരസിച്ചു! സമസ്തയുടെ അടിത്തറ 40 അംഗ പണ്ഡിത മുശാവറയുടെ നേതൃത്വമാണ്!',
+    errFeedback: '💥 വ്യാജ പ്രമേയത്തിൽ സീൽ പതിച്ചു! പണ്ഡിത മുശാവറയും സുന്നത്ത് ജമാഅത്തുമാണ് സമസ്തയുടെ അടിത്തറ!',
+  },
+];
+
+const DOC_TIME_LIMIT = 9.0;
+
+function shuffleSealDocs(): SealDocumentCase[] {
+  const copy = [...SEAL_DOCUMENT_CASES];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 const HeritageStampPressGame: React.FC<{
   artifacts: EraArtifactItem[];
   collectedIds: string[];
   onCollect: (art: EraArtifactItem) => void;
 }> = ({ artifacts, collectedIds, onCollect }) => {
-  const [stampingId, setStampingId] = useState<string | null>(null);
-  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(18);
-  const [started, setStarted] = useState<boolean>(false);
+  const stagePaused = useGameStagePaused();
+  const stagePortal = useGameStagePortal();
+
+  const [docs, setDocs] = useState<SealDocumentCase[]>(() => shuffleSealDocs());
+  const [docIdx, setDocIdx] = useState<number>(0);
+  const [verifiedCount, setVerifiedCount] = useState<number>(0);
+  const [stampedArtifactIds, setStampedArtifactIds] = useState<string[]>([]);
+  const [shields, setShields] = useState<number>(3);
+  const [docTimeLeft, setDocTimeLeft] = useState<number>(DOC_TIME_LIMIT);
+  const [stampAnim, setStampAnim] = useState<'seal' | 'reject' | null>(null);
   const [failed, setFailed] = useState<boolean>(false);
-  const allStamped = artifacts.every((a) => collectedIds.includes(a.id));
+  const [failReason, setFailReason] = useState<string>('');
+  const [won, setWon] = useState<boolean>(false);
+  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; tone: 'info' | 'ok' | 'err' }>({
+    text: '📜 ചരിത്രരേഖ വായിച്ച് സത്യമാണെങ്കിൽ "🔖 സീൽ പതിക്കൂ", വ്യാജമാണെങ്കിൽ "🚫 നിരസിക്കൂ" അമർത്തൂ!',
+    tone: 'info',
+  });
 
-  useEffect(() => {
-    if (!started || allStamped || failed) return;
-    const id = window.setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
+  const currentDoc = docs[docIdx];
+
+  const advanceToNext = useCallback(
+    (nextVerified: number, nextDocIdx: number) => {
+      if (nextVerified >= SEAL_DOCUMENT_CASES.length || nextDocIdx >= docs.length) {
+        setWon(true);
+        sound.playHoist();
+        stagePortal?.notifyStageWin(
+          '1925–1934 കാലത്തെ 3 യഥാർത്ഥ ചരിത്രരേഖകളിലും ഔദ്യോഗിക SKJU 1926 സീൽ പതിച്ച് വ്യാജരേഖകൾ തടഞ്ഞു!'
+        );
+        return;
+      }
+      setDocIdx(nextDocIdx);
+      setDocTimeLeft(DOC_TIME_LIMIT);
+    },
+    [docs.length, stagePortal]
+  );
+
+  const damageShield = useCallback(
+    (reasonMsg: string) => {
+      sound.playError();
+      setFeedback({ text: reasonMsg, tone: 'err' });
+      setShields((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) {
           setFailed(true);
-          sound.playError();
-          return 0;
+          setFailReason(reasonMsg);
+        } else {
+          // Move to next document or reset timer on current doc if time ran out
+          setDocTimeLeft(DOC_TIME_LIMIT);
         }
-        return t - 1;
+        return next;
       });
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, [started, allStamped, failed]);
+    },
+    []
+  );
 
-  const handleStamp = (art: EraArtifactItem) => {
-    if (failed) return;
-    setStarted(true);
-    setStampingId(art.id);
-    sound.playDrop();
+  // Per-document countdown timer (pauses during blurred shell overlay or stamp animation)
+  useEffect(() => {
+    if (stagePaused || failed || won || stampAnim !== null) return;
+    const interval = window.setInterval(() => {
+      setDocTimeLeft((prev) => {
+        const next = Math.max(0, +(prev - 0.1).toFixed(1));
+        if (next <= 0) {
+          window.clearInterval(interval);
+          damageShield('⏱️ സമയം തീർന്നു! ചരിത്രരേഖ പരിശോധിക്കാതെ മേശയിൽ നിന്ന് നഷ്ടപ്പെട്ടു (-1 കവചം).');
+        }
+        return next;
+      });
+    }, 100);
+    return () => window.clearInterval(interval);
+  }, [stagePaused, failed, won, stampAnim, docIdx, damageShield]);
+
+  const handleVerdict = (verdict: 'seal' | 'reject') => {
+    if (stagePaused || failed || won || stampAnim !== null || !currentDoc) return;
+    sound.unlockAudio();
+
+    const isCorrect =
+      (verdict === 'seal' && currentDoc.isAuthentic) ||
+      (verdict === 'reject' && !currentDoc.isAuthentic);
+
+    if (!isCorrect) {
+      damageShield(currentDoc.errFeedback);
+      return;
+    }
+
+    // Correct decision! Play tactile stamp animation
+    setStampAnim(verdict);
+    if (verdict === 'seal') {
+      sound.playDrop();
+    } else {
+      sound.playSuccess(verifiedCount + 1);
+    }
+
+    if (currentDoc.isAuthentic && typeof currentDoc.artifactIdx === 'number') {
+      const art = artifacts[currentDoc.artifactIdx];
+      if (art) {
+        onCollect(art);
+        setStampedArtifactIds((prev) => (prev.includes(art.id) ? prev : [...prev, art.id]));
+      }
+    }
+
+    const nextVerified = verifiedCount + 1;
+    setVerifiedCount(nextVerified);
+    setFeedback({ text: currentDoc.okFeedback, tone: 'ok' });
+
     window.setTimeout(() => {
-      setStampingId(null);
-      setActiveArt(art);
-      onCollect(art);
-    }, 320);
+      setStampAnim(null);
+      advanceToNext(nextVerified, docIdx + 1);
+    }, 520);
   };
 
+  const resetGame = () => {
+    sound.unlockAudio();
+    sound.playPop();
+    setDocs(shuffleSealDocs());
+    setDocIdx(0);
+    setVerifiedCount(0);
+    setStampedArtifactIds([]);
+    setShields(3);
+    setDocTimeLeft(DOC_TIME_LIMIT);
+    setStampAnim(null);
+    setFailed(false);
+    setFailReason('');
+    setWon(false);
+    setActiveArt(null);
+    setFeedback({
+      text: '📜 ചരിത്രരേഖ വായിച്ച് സത്യമാണെങ്കിൽ "🔖 സീൽ പതിക്കൂ", വ്യാജമാണെങ്കിൽ "🚫 നിരസിക്കൂ" അമർത്തൂ!',
+      tone: 'info',
+    });
+  };
+
+  const timePct = Math.max(0, Math.min(100, (docTimeLeft / DOC_TIME_LIMIT) * 100));
+
   return (
-    <div className="p-4 sm:p-5 bg-gradient-to-b from-[#4c1024] via-[#6e1532] to-slate-950 text-white space-y-4">
-      <div className="flex items-center justify-between gap-2 bg-black/30 border border-amber-400/30 rounded-xl px-3.5 py-2">
+    <div className="p-3.5 sm:p-5 bg-gradient-to-b from-[#4c1024] via-[#6e1532] to-slate-950 text-white space-y-3">
+      {/* Top Heritage Archive HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-black/35 border border-amber-400/35 rounded-xl px-3 py-2">
         <span className="text-xs font-extrabold text-amber-300 tabular-nums">
-          🔖 {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
+          🕌 1926 ചരിത്രരേഖ പരിശോധന · {verifiedCount}/{SEAL_DOCUMENT_CASES.length}
         </span>
-        <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-amber-400/20 text-amber-200'}`}>
-          ⏱️ {timeLeft}s
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs font-black tabular-nums px-2 py-0.5 rounded-lg border ${
+              docTimeLeft <= 2.5 && !won
+                ? 'bg-rose-600 border-rose-300 text-white animate-pulse'
+                : 'bg-amber-400/20 border-amber-400/40 text-amber-200'
+            }`}
+          >
+            ⏱️ {docTimeLeft.toFixed(1)}s
+          </span>
+          <GameShatterLives lives={shields} maxLives={3} dark compact />
+        </div>
       </div>
 
-      {failed && !allStamped && (
-        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-200">⏰ 🔖</span>
-          <button
-            type="button"
-            onClick={() => {
-              sound.playClick();
-              setTimeLeft(18);
-              setFailed(false);
-              setStarted(false);
-            }}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
-          >
-            🔄
-          </button>
+      {/* Live Per-Document Timer Bar */}
+      <div className="h-2 w-full rounded-full bg-black/40 overflow-hidden border border-amber-400/25">
+        <div
+          className={`h-full transition-all duration-100 ${
+            timePct > 50 ? 'bg-amber-400' : timePct > 25 ? 'bg-orange-400' : 'bg-rose-500 animate-pulse'
+          }`}
+          style={{ width: `${timePct}%` }}
+        />
+      </div>
+
+      {/* Active Historical Parchment Document on the 1926 Town Hall Desk */}
+      {currentDoc && !won && (
+        <div className="relative rounded-2xl border-2 border-amber-300/80 bg-[#FFFDF5] text-slate-900 p-4 sm:p-5 shadow-2xl space-y-2.5 min-h-[185px] overflow-hidden">
+          <div className="flex items-center justify-between gap-2 border-b border-amber-200 pb-2">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#8C1D40] text-amber-100 text-[10px] font-black tracking-wide">
+              {currentDoc.docNumber}
+            </span>
+            <span className="text-[11px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-md">
+              📅 {currentDoc.yearTag}
+            </span>
+          </div>
+
+          <h4 className="text-sm sm:text-base font-black text-slate-950 leading-snug">
+            📜 {currentDoc.title}
+          </h4>
+
+          <p className="text-xs sm:text-sm font-semibold text-slate-700 leading-relaxed">
+            {currentDoc.excerpt}
+          </p>
+
+          {/* Animated Wax Seal or Rejection Stamp Slam */}
+          <AnimatePresence>
+            {stampAnim === 'seal' && (
+              <motion.div
+                initial={{ scale: 2.4, opacity: 0, rotate: -28 }}
+                animate={{ scale: 1, opacity: 1, rotate: -10 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 w-20 h-20 rounded-full bg-gradient-to-br from-red-600 via-[#8C1D40] to-red-950 border-4 border-amber-300 shadow-xl flex flex-col items-center justify-center text-amber-200"
+              >
+                <span className="text-[10px] font-black leading-none">SKJU</span>
+                <span className="text-xs font-black leading-tight">1926</span>
+                <span className="text-[9px] font-extrabold">OFFICIAL ✓</span>
+              </motion.div>
+            )}
+            {stampAnim === 'reject' && (
+              <motion.div
+                initial={{ scale: 2.2, opacity: 0, rotate: 18 }}
+                animate={{ scale: 1, opacity: 1, rotate: 8 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+                className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 px-3 py-1.5 rounded-xl border-4 border-rose-600 bg-rose-100/95 text-rose-700 font-black text-xs shadow-xl"
+              >
+                🚫 വ്യാജരേഖ!
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-2.5">
+      {/* Action Stamp Controls */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.94 }}
+          disabled={stagePaused || failed || won || stampAnim !== null}
+          onClick={() => handleVerdict('reject')}
+          className="py-3 px-3 rounded-xl bg-rose-700 hover:bg-rose-600 disabled:opacity-40 text-white border-b-4 border-rose-950 font-black text-xs sm:text-sm shadow-lg cursor-pointer"
+        >
+          🚫 വ്യാജരേഖ — നിരസിക്കൂ
+        </motion.button>
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.94 }}
+          disabled={stagePaused || failed || won || stampAnim !== null}
+          onClick={() => handleVerdict('seal')}
+          className="py-3 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 border-b-4 border-amber-700 font-black text-xs sm:text-sm shadow-lg cursor-pointer"
+        >
+          🔖 ഔദ്യോഗിക സീൽ പതിക്കൂ
+        </motion.button>
+      </div>
+
+      {/* Feedback Banner */}
+      <div
+        className={`rounded-xl px-3 py-2 text-xs font-extrabold border text-center ${
+          feedback.tone === 'err'
+            ? 'bg-rose-950/90 border-rose-400/70 text-rose-200'
+            : feedback.tone === 'ok'
+            ? 'bg-emerald-950/85 border-emerald-400/60 text-emerald-200'
+            : 'bg-black/35 border-amber-400/30 text-amber-200'
+        }`}
+      >
+        {feedback.text}
+      </div>
+
+      {/* 3 Sealed Official Historical Archive Slots (Tap to Read Anytime!) */}
+      <div className="grid grid-cols-3 gap-2">
         {artifacts.map((art) => {
-          const stamped = collectedIds.includes(art.id);
-          const isPressing = stampingId === art.id;
+          const stamped = collectedIds.includes(art.id) || stampedArtifactIds.includes(art.id);
           return (
-            <div
+            <button
               key={art.id}
-              className="relative rounded-2xl border-2 border-amber-300/60 bg-[#FFFDF5] text-slate-900 p-3 shadow-lg flex flex-col justify-between min-h-[135px]"
+              type="button"
+              disabled={!stamped}
+              onClick={() => {
+                if (!stamped) return;
+                sound.playClick();
+                setActiveArt(art);
+              }}
+              className={`p-2 rounded-xl border-2 text-center transition-all ${
+                stamped
+                  ? 'bg-emerald-900/80 border-amber-300 text-white cursor-pointer hover:bg-emerald-800'
+                  : 'bg-black/25 border-white/15 text-amber-200/50 cursor-default'
+              }`}
             >
-              <div className="space-y-1.5 text-center">
-                <span className="text-3xl block">{art.emoji}</span>
-                <div className="space-y-1">
-                  <div className="h-1.5 rounded bg-slate-200 w-full" />
-                  <div className="h-1.5 rounded bg-slate-200 w-3/4 mx-auto" />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.88 }}
-                  onClick={() => handleStamp(art)}
-                  aria-label={art.label}
-                  title={art.label}
-                  className={`w-full py-2 rounded-xl font-extrabold text-lg flex items-center justify-center border-b-4 transition-all ${
-                    stamped
-                      ? 'bg-emerald-700 text-white border-emerald-950'
-                      : 'bg-[#8C1D40] hover:bg-[#a3234b] text-amber-100 border-[#4d0d22]'
-                  }`}
-                >
-                  {isPressing ? '💥' : stamped ? '✅' : '🔖'}
-                </motion.button>
-              </div>
-
-              {/* Realistic Embossed Crimson Wax Seal */}
-              <AnimatePresence>
-                {(stamped || isPressing) && (
-                  <motion.div
-                    initial={{ scale: 2.2, opacity: 0, rotate: -25 }}
-                    animate={{ scale: 1, opacity: 1, rotate: -10 }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 18 }}
-                    className="pointer-events-none absolute top-11 right-3 w-14 h-14 rounded-full bg-gradient-to-br from-red-600 via-[#8C1D40] to-red-950 border-2 border-amber-300 shadow-md flex flex-col items-center justify-center text-amber-200"
-                  >
-                    <span className="text-[9px] font-extrabold leading-none">SKJU</span>
-                    <span className="text-[10px] font-extrabold leading-tight">1926</span>
-                    <span className="text-[8px] font-bold">✓</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              <div className="text-lg">{stamped ? '🔖✅' : '🔒'}</div>
+              <p className="text-[10px] font-extrabold mt-0.5 leading-tight line-clamp-2">
+                {stamped ? art.label : '1926 ചരിത്രരേഖ'}
+              </p>
+            </button>
           );
         })}
       </div>
+
+      {/* Defeat Overlay (Portals directly centered onto blurred GameFullscreenShell!) */}
+      {failed && !won && (
+        <GameDefeatBurstOverlay
+          title="🔖 ചരിത്രരേഖ പരിശോധന പരാജയപ്പെട്ടു!"
+          reason={
+            failReason ||
+            'വ്യാജരേഖയിൽ സീൽ പതിച്ചതോ യഥാർത്ഥ ചരിത്രരേഖ തെറ്റി നിരസിച്ചതോ കാരണം കവചം തകർന്നു!'
+          }
+          scoreText={`പരിശോധിച്ച രേഖകൾ: ${verifiedCount}/${SEAL_DOCUMENT_CASES.length}`}
+          onRetry={resetGame}
+        />
+      )}
 
       <InStageStoryModal
         artifact={activeArt}
@@ -805,23 +1142,12 @@ const MadrasaLanternSweepGame: React.FC<{
 
         {/* Failure Overlay inside Pitch-Black Stage when Lantern Oil Runs Out */}
         {failed && !allLit && (
-          <div
-            onPointerDown={(e) => e.stopPropagation()}
-            className="absolute inset-0 z-40 bg-black/90 flex flex-col items-center justify-center p-5 text-center space-y-3 cursor-auto"
-          >
-            <span className="text-4xl">🪔 ❌</span>
-            <p className="text-sm font-extrabold text-rose-300 tabular-nums">
-              {litCount}/{artifacts.length}
-            </p>
-            <button
-              type="button"
-              onClick={handleRetry}
-              aria-label="വീണ്ടും ശ്രമിക്കാം"
-              className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold shadow-lg"
-            >
-              <RotateCcw className="w-4 h-4" /> 🔄
-            </button>
-          </div>
+          <GameDefeatBurstOverlay
+            title="🪔 റാന്തൽ എണ്ണ തീർന്നു!"
+            reason="സമയത്തിനുള്ളിൽ 3 ചരിത്ര ബോർഡുകളും വെളിച്ചം തെളിച്ച് കണ്ടെത്താൻ കഴിഞ്ഞില്ല."
+            scoreText={`കണ്ടെത്തിയവ: ${litCount}/${artifacts.length}`}
+            onRetry={handleRetry}
+          />
         )}
       </div>
 

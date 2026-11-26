@@ -14,7 +14,7 @@ export type OfficialWingLogoId =
   | 'snec'
   | 'skjmcc'
   | 'albirr_preschool'
-  | 'albirr_emblem';
+  | 'thwalaba';
 
 export interface OfficialWingLogo {
   id: OfficialWingLogoId;
@@ -114,11 +114,11 @@ export const OFFICIAL_WING_LOGOS: Record<OfficialWingLogoId, OfficialWingLogo> =
     label: 'ALBIRR Islamic Pre School (مدرسة البر الإسلامية)',
     shortLabel: 'ALBIRR',
   },
-  albirr_emblem: {
-    id: 'albirr_emblem',
+  thwalaba: {
+    id: 'thwalaba',
     src: './assets/aistudio/image_6fc99749.png',
-    label: 'അൽബിർ (Al-Birr) ചിഹ്നം',
-    shortLabel: 'Al-Birr',
+    label: 'SKSSF ത്വലബ വിംഗ് (Twalaba Wing · الطلبة)',
+    shortLabel: 'ത്വലബ വിംഗ്',
   },
 };
 
@@ -130,6 +130,7 @@ export const ALL_OFFICIAL_WING_LOGOS: OfficialWingLogo[] = [
   OFFICIAL_WING_LOGOS.meem,
   OFFICIAL_WING_LOGOS.organet,
   OFFICIAL_WING_LOGOS.campus,
+  OFFICIAL_WING_LOGOS.thwalaba,
   OFFICIAL_WING_LOGOS.ibad,
   OFFICIAL_WING_LOGOS.trend,
   OFFICIAL_WING_LOGOS.sargalayam,
@@ -143,6 +144,7 @@ export const SUBWING_OFFICIAL_LOGO_MAP: Partial<Record<string, OfficialWingLogo>
   meem: OFFICIAL_WING_LOGOS.meem,
   organet: OFFICIAL_WING_LOGOS.organet,
   campus: OFFICIAL_WING_LOGOS.campus,
+  thwalaba: OFFICIAL_WING_LOGOS.thwalaba,
   ibad: OFFICIAL_WING_LOGOS.ibad,
   trend: OFFICIAL_WING_LOGOS.trend,
   sargalayam: OFFICIAL_WING_LOGOS.sargalayam,
@@ -164,7 +166,7 @@ export function getOfficialLogosForLesson(lessonId: string): OfficialWingLogo[] 
       OFFICIAL_WING_LOGOS.skjmcc,
       OFFICIAL_WING_LOGOS.skicr,
       OFFICIAL_WING_LOGOS.albirr_preschool,
-      OFFICIAL_WING_LOGOS.albirr_emblem,
+      OFFICIAL_WING_LOGOS.thwalaba,
       OFFICIAL_WING_LOGOS.cyber,
       OFFICIAL_WING_LOGOS.ifc,
     ];
@@ -189,7 +191,7 @@ export function getOfficialLogosForLesson(lessonId: string): OfficialWingLogo[] 
     return [OFFICIAL_WING_LOGOS.skimvb, OFFICIAL_WING_LOGOS.snec];
   }
   if (id === 'l1_cosmic') {
-    return [OFFICIAL_WING_LOGOS.albirr_preschool, OFFICIAL_WING_LOGOS.albirr_emblem];
+    return [OFFICIAL_WING_LOGOS.albirr_preschool, OFFICIAL_WING_LOGOS.skimvb];
   }
   if (id === 'l2_memory') {
     return [OFFICIAL_WING_LOGOS.skimvb, OFFICIAL_WING_LOGOS.skjmcc];

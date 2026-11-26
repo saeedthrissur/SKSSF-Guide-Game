@@ -1222,7 +1222,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                   OFFICIAL_WING_LOGOS.skjmcc,
                   OFFICIAL_WING_LOGOS.snec,
                   OFFICIAL_WING_LOGOS.albirr_preschool,
-                  OFFICIAL_WING_LOGOS.albirr_emblem,
+                  OFFICIAL_WING_LOGOS.skicr,
                 ].map((logo) => (
                   <div
                     key={logo.id}
@@ -1719,7 +1719,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                                 OFFICIAL_WING_LOGOS.snec,
                                 OFFICIAL_WING_LOGOS.skjmcc,
                                 OFFICIAL_WING_LOGOS.albirr_preschool,
-                                OFFICIAL_WING_LOGOS.albirr_emblem,
+                                OFFICIAL_WING_LOGOS.skicr,
                               ].map((logo) => (
                                 <div
                                   key={logo.id}

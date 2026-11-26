@@ -261,7 +261,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
 
         {showInfo && (
           <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-            ℹ️ ആദ്യം മുകളിലെ 📖 പാഠം വായിച്ച് <strong>“പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> എന്ന ബട്ടൺ അമർത്തുക. അതിന് ശേഷമേ ക്വിസ് തുറക്കൂ. ക്വിസിന് ഉത്തരം നൽകിയാലേ അടുത്ത പാഠത്തിലേക്കും ഗെയിമിലേക്കും കടക്കാൻ കഴിയൂ!
+            ℹ️ ആദ്യം മുകളിലെ 📖 പാഠം വായിച്ച് താഴത്തെ മഞ്ഞ <strong>“🔓 ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!”</strong> ബട്ടൺ അമർത്തുക. അതിന് ശേഷമേ ക്വിസ് തുറക്കൂ. ക്വിസിന് ഉത്തരം നൽകിയാലേ അടുത്ത പാഠത്തിലേക്കും ഗെയിമിലേക്കും കടക്കാൻ കഴിയൂ!
           </div>
         )}
 
@@ -286,7 +286,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                       ആദ്യം മുകളിലെ പാഠം തുറന്ന് പൂർത്തിയാക്കാം!
                     </p>
                     <p className="text-xs font-semibold text-slate-600 max-w-md mx-auto leading-relaxed">
-                      പാഠം എന്താണോ പറയുന്നത് അത് വായിച്ച് <strong>“✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> അമർത്തിയാലുടൻ ഈ ക്വിസ് തുറക്കും.
+                      പാഠം തുറന്ന് വായിച്ച ശേഷം താഴത്തെ മഞ്ഞ <strong>“🔓 ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!”</strong> ബട്ടൺ ഞെക്കിയാലുടൻ ഈ ക്വിസ് തുറക്കും.
                     </p>
                   </div>
                   <button

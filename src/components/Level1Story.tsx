@@ -1017,7 +1017,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                       OFFICIAL_WING_LOGOS.snec,
                       OFFICIAL_WING_LOGOS.skjmcc,
                       OFFICIAL_WING_LOGOS.albirr_preschool,
-                      OFFICIAL_WING_LOGOS.albirr_emblem,
+                      OFFICIAL_WING_LOGOS.thwalaba,
                     ].map((logo) => (
                       <div
                         key={logo.id}

@@ -237,7 +237,7 @@ export const GameDefeatBurstOverlay: React.FC<{
         </p>
       )}
 
-      <div className="pt-1 flex justify-center">
+      <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
         <motion.button
           type="button"
           whileHover={{ scale: 1.04 }}
@@ -247,11 +247,21 @@ export const GameDefeatBurstOverlay: React.FC<{
             sound.playClick();
             onRetry();
           }}
-          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-extrabold shadow-lg cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-extrabold shadow-lg cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           <span>വീണ്ടും കളിക്കാം</span>
         </motion.button>
+        {stagePortal?.hasLesson && (
+          <button
+            type="button"
+            onClick={() => stagePortal.openLesson()}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-extrabold shadow-md cursor-pointer active:scale-95 transition-transform"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>പാഠത്തിലേക്ക്</span>
+          </button>
+        )}
       </div>
     </motion.div>
   );

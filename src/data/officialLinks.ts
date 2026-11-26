@@ -242,7 +242,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'education',
     description: 'പ്രീ-പ്രൈമറി ക്ലാസുകൾ, അൽബിർ കിഡ്‌സ് ഫെസ്റ്റ് & ഗ്ലോബൽ ശാഖകൾ.',
-    logoId: 'albirr_emblem',
+    logoId: 'albirr_preschool',
     tags: ['albirr', 'youtube', 'kids'],
   },
   {
@@ -497,6 +497,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'skssf',
     description: 'പള്ളി ദർസുകളിലെയും അറബിക് കോളേജുകളിലെയും മുതഅല്ലിം വിദ്യാർത്ഥികളുടെ കൂട്ടായ്മ.',
+    logoId: 'thwalaba',
     tags: ['twalaba', 'thwalaba', 'dars', 'arabic college'],
   },
   {
@@ -507,6 +508,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'skssf',
     description: 'ത്വലബ വിംഗ് പഠന ക്ലാസുകളും കോൺഫറൻസുകളും.',
+    logoId: 'thwalaba',
     tags: ['twalaba', 'youtube'],
   },
   {

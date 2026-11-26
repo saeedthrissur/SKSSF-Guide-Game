@@ -14,6 +14,7 @@ import {
   Gift,
   Info,
   Lock,
+  MousePointerClick,
   Music,
   Play,
   RotateCcw,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Trash2,
   Trophy,
+  Unlock,
   Volume2,
   VolumeX,
   X,
@@ -1172,7 +1174,7 @@ export const CollapsibleLessonDrawer: React.FC<{
 
       {showInfo && (
         <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ <strong>“Open Lesson”</strong> അമർത്തി ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള <strong>“✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം”</strong> അമർത്തിയാൽ ക്വിസ് തുറക്കും!
+          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ <strong>“Open Lesson”</strong> അമർത്തി ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള മഞ്ഞ <strong>“🔓 ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!”</strong> ബട്ടൺ ഞെക്കിയാൽ അടുത്ത ക്വിസ് തുറക്കും!
         </div>
       )}
 
@@ -1231,13 +1233,13 @@ export const CollapsibleLessonDrawer: React.FC<{
                 </AnimatePresence>
               </div>
 
-              {/* Mandatory Lesson Confirmation CTA to Unlock Quiz */}
-              <div className="pt-3 border-t border-emerald-100 flex flex-wrap items-center justify-between gap-2.5">
+              {/* Mandatory Lesson Confirmation CTA — Unmistakable 3D Tactile Unlock-Quiz Push-Button */}
+              <div className="pt-3 border-t border-emerald-100">
                 {confirmed ? (
-                  <div className="w-full flex flex-wrap items-center justify-between gap-2 rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5">
+                  <div className="w-full flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50 border-2 border-emerald-300 px-3.5 py-2.5">
                     <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-900">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      പാഠം ഉറപ്പിച്ചു — ഇനി താഴത്തെ ക്വിസിന് ഉത്തരം നൽകാം!
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      പാഠം ഉറപ്പിച്ചു — ക്വിസ് തുറന്നു!
                     </span>
                     <button
                       type="button"
@@ -1246,27 +1248,70 @@ export const CollapsibleLessonDrawer: React.FC<{
                         window.dispatchEvent(new CustomEvent('skssf:open-quiz'));
                         window.setTimeout(() => scrollDirectToQuiz(), 120);
                       }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-700 text-xs font-black shadow-xs cursor-pointer active:scale-95 transition-transform"
                     >
-                      <span>Open Quiz</span>
+                      <span>ക്വിസിലേക്ക് പോകാം</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleConfirmLesson}
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-900 shadow-md flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
-                  >
-                    <motion.span
-                      animate={{ y: [0, -3, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.9 }}
-                      className="text-base"
+                  <div className="w-full rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-yellow-50/90 to-emerald-50 p-3.5 sm:p-4 shadow-md space-y-3">
+                    {/* Crystal-Clear Next-Step Instruction Above Button */}
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-amber-400/30 border border-amber-500/60 flex items-center justify-center shrink-0 mt-0.5">
+                        <Lock className="w-4 h-4 text-amber-900" />
+                      </div>
+                      <div className="space-y-0.5 text-left">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-amber-800">
+                          അടുത്ത ഘട്ടം · ക്വിസ് തുറക്കാൻ ഇവിടെ ഞെക്കൂ 👇
+                        </p>
+                        <p className="text-xs font-bold text-slate-800 leading-snug">
+                          പാഠം വായിച്ചു കഴിഞ്ഞോ? താഴത്തെ <strong>മഞ്ഞ ബട്ടൺ അമർത്തിയാലേ</strong> അടുത്ത ക്വിസ് അൺലോക്ക് ആയി തുടങ്ങൂ!
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* High-Contrast 3D Tactile Push-Button with Animated Tap Hand & Shine */}
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.015 }}
+                      whileTap={{ scale: 0.97, y: 2 }}
+                      onClick={handleConfirmLesson}
+                      className="relative overflow-hidden w-full py-3.5 px-4 rounded-2xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 hover:from-amber-200 hover:via-amber-300 hover:to-amber-400 text-slate-950 border-2 border-amber-600 border-b-[6px] border-b-amber-800 shadow-lg flex items-center justify-between gap-3 cursor-pointer group"
                     >
-                      👆
-                    </motion.span>
-                    <span>✅ പാഠം മനസ്സിലാക്കി — ക്വിസ് തുറക്കാം</span>
-                  </button>
+                      {/* Subtle Animated Shine Sweep */}
+                      <motion.span
+                        aria-hidden="true"
+                        animate={{ x: ['-120%', '220%'] }}
+                        transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut', repeatDelay: 1.4 }}
+                        className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/45 to-transparent -skew-x-12"
+                      />
+
+                      <div className="relative z-10 flex items-center gap-2.5 text-left">
+                        <span className="w-9 h-9 rounded-xl bg-slate-950 text-amber-300 flex items-center justify-center shrink-0 shadow-sm">
+                          <Unlock className="w-5 h-5" />
+                        </span>
+                        <div className="leading-tight">
+                          <span className="block text-sm sm:text-base font-black text-slate-950">
+                            ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!
+                          </span>
+                          <span className="block text-[11px] font-extrabold text-amber-950/90 mt-0.5">
+                            പാഠം മനസ്സിലാക്കി · അടുത്ത ക്വിസ് തുടങ്ങാൻ തൊടുക
+                          </span>
+                        </div>
+                      </div>
+
+                      <motion.div
+                        animate={{ scale: [1, 1.15, 1], x: [0, 3, 0] }}
+                        transition={{ repeat: Infinity, duration: 1.1 }}
+                        className="relative z-10 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-950 text-amber-300 text-[11px] font-black shrink-0 shadow-sm"
+                      >
+                        <MousePointerClick className="w-4 h-4" />
+                        <span className="hidden sm:inline">തൊടുക</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </motion.div>
+                    </motion.button>
+                  </div>
                 )}
               </div>
             </div>
