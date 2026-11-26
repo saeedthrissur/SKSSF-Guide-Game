@@ -38,56 +38,184 @@ export interface RunHistoryEntry {
   reachedCertificate: boolean;
 }
 
+export interface UnitProfile {
+  playerName: string;
+  unitName: string;
+  mekhalaName: string;
+  lockedCertificateName?: string;
+}
+
+export interface DailyAndProfileState {
+  streakDays: number;
+  bestStreak: number;
+  lastActiveDate: string;
+  todayDate: string;
+  todayLessonsCount: number;
+  todayQuizzesCorrect: number;
+  claimedMissionsToday: string[];
+  profile: UnitProfile;
+}
+
+export interface DailyMissionDef {
+  id: 'daily_checkin' | 'daily_lesson' | 'daily_quiz';
+  emoji: string;
+  title: string;
+  rewardXp: number;
+  target: number;
+}
+
+export const DAILY_MISSIONS: DailyMissionDef[] = [
+  {
+    id: 'daily_checkin',
+    emoji: '🌅',
+    title: 'ഇന്നത്തെ പഠന യാത്ര തുടങ്ങാം',
+    rewardXp: 10,
+    target: 1,
+  },
+  {
+    id: 'daily_lesson',
+    emoji: '📘',
+    title: 'ഇന്ന് 1 പാഠം പൂർത്തിയാക്കാം',
+    rewardXp: 20,
+    target: 1,
+  },
+  {
+    id: 'daily_quiz',
+    emoji: '✅',
+    title: 'ഇന്ന് 1 ക്വിസ് ശരിയായി ഉത്തരം നൽകാം',
+    rewardXp: 15,
+    target: 1,
+  },
+];
+
 const SAVE_KEY = 'skssf_guide_progress_v2';
 const HISTORY_KEY = 'skssf_guide_run_history_v2';
+const DAILY_KEY = 'skssf_guide_daily_v1';
+const AUDIO_KEY = 'skssf_guide_audio_v3';
+const BACKUP_V1_PREFIX = 'SKSSF-BK1:';
+const BACKUP_V2_PREFIX = 'SKSSF-BK2:';
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+export function getLocalDateKey(date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getYesterdayDateKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return getLocalDateKey(d);
+}
+
+export function sanitizeQuizAnswers(raw: unknown): QuizAnswerMap {
+  const clean: QuizAnswerMap = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return clean;
+  }
+  const source = raw as Record<string, unknown>;
+  for (const key of Object.keys(source)) {
+    if (!Object.prototype.hasOwnProperty.call(source, key)) continue;
+    if (FORBIDDEN_KEYS.has(key) || key.length === 0 || key.length > 80) continue;
+    const entry = source[key];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const rec = entry as Partial<QuizAnswerRecord>;
+    if (
+      typeof rec.selectedIdx === 'number' &&
+      Number.isFinite(rec.selectedIdx) &&
+      rec.selectedIdx >= 0 &&
+      rec.selectedIdx <= 20 &&
+      typeof rec.isCorrect === 'boolean'
+    ) {
+      clean[key] = {
+        selectedIdx: Math.round(rec.selectedIdx),
+        isCorrect: rec.isCorrect,
+        answeredAt:
+          typeof rec.answeredAt === 'number' && Number.isFinite(rec.answeredAt)
+            ? rec.answeredAt
+            : Date.now(),
+      };
+    }
+  }
+  return clean;
+}
+
+function sanitizeStringArray(raw: unknown, maxLen = 300): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string' && item.length > 0 && item.length <= 160) {
+      out.push(item);
+      if (out.length >= maxLen) break;
+    }
+  }
+  return out;
+}
+
+export function sanitizeSavedGameState(parsed: unknown): SavedGameState | null {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const p = parsed as Partial<SavedGameState>;
+
+  const validStage =
+    p.stage === 'prologue' ||
+    p.stage === 'storyboard' ||
+    p.stage === 'pov' ||
+    p.stage === 'world'
+      ? p.stage
+      : 'prologue';
+
+  const validLevel: 1 | 2 | 3 | 4 =
+    p.currentLevel === 2 || p.currentLevel === 3 || p.currentLevel === 4
+      ? p.currentLevel
+      : 1;
+
+  const parsedLives =
+    typeof p.lives === 'number' && Number.isFinite(p.lives)
+      ? Math.max(0, Math.min(3, Math.round(p.lives)))
+      : 3;
+
+  const unlocked = Array.isArray(p.unlockedLevels)
+    ? p.unlockedLevels.filter((x): x is number => typeof x === 'number' && x >= 1 && x <= 4)
+    : [];
+
+  return {
+    version: 2,
+    stage: validStage,
+    currentLevel: validLevel,
+    activeLessonId:
+      typeof p.activeLessonId === 'string' && p.activeLessonId.length <= 80
+        ? p.activeLessonId
+        : 'prologue_curiosity',
+    xp:
+      typeof p.xp === 'number' && Number.isFinite(p.xp)
+        ? Math.max(0, Math.min(100000, Math.round(p.xp)))
+        : 0,
+    awardedActions: sanitizeStringArray(p.awardedActions, 500),
+    badges: sanitizeStringArray(p.badges, 100),
+    unlockedLevels: unlocked.length > 0 ? unlocked : [1],
+    completedLevels: Array.isArray(p.completedLevels)
+      ? p.completedLevels.filter((x): x is number => typeof x === 'number' && x >= 1 && x <= 4)
+      : [],
+    completedLessonIds: sanitizeStringArray(p.completedLessonIds, 100),
+    collectedEggs: sanitizeStringArray(p.collectedEggs, 30),
+    quizAnswers: sanitizeQuizAnswers(p.quizAnswers),
+    lives: parsedLives,
+    runNumber:
+      typeof p.runNumber === 'number' && Number.isFinite(p.runNumber) && p.runNumber >= 1
+        ? Math.min(999, Math.round(p.runNumber))
+        : 1,
+    savedAt:
+      typeof p.savedAt === 'number' && Number.isFinite(p.savedAt) ? p.savedAt : Date.now(),
+  };
+}
 
 export function loadSavedGameState(): SavedGameState | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SavedGameState>;
-    if (!parsed || typeof parsed !== 'object') return null;
-
-    const validStage =
-      parsed.stage === 'prologue' ||
-      parsed.stage === 'storyboard' ||
-      parsed.stage === 'pov' ||
-      parsed.stage === 'world'
-        ? parsed.stage
-        : 'prologue';
-
-    const validLevel: 1 | 2 | 3 | 4 =
-      parsed.currentLevel === 2 || parsed.currentLevel === 3 || parsed.currentLevel === 4
-        ? parsed.currentLevel
-        : 1;
-
-    const parsedLives =
-      typeof parsed.lives === 'number' && Number.isFinite(parsed.lives)
-        ? Math.max(0, Math.min(3, Math.round(parsed.lives)))
-        : 3;
-
-    return {
-      version: 2,
-      stage: validStage,
-      currentLevel: validLevel,
-      activeLessonId: typeof parsed.activeLessonId === 'string' ? parsed.activeLessonId : 'prologue_curiosity',
-      xp: typeof parsed.xp === 'number' && Number.isFinite(parsed.xp) ? Math.max(0, parsed.xp) : 0,
-      awardedActions: Array.isArray(parsed.awardedActions) ? parsed.awardedActions.filter((x): x is string => typeof x === 'string') : [],
-      badges: Array.isArray(parsed.badges) ? parsed.badges.filter((x): x is string => typeof x === 'string') : [],
-      unlockedLevels:
-        Array.isArray(parsed.unlockedLevels) && parsed.unlockedLevels.length > 0
-          ? parsed.unlockedLevels.filter((x): x is number => typeof x === 'number')
-          : [1],
-      completedLevels: Array.isArray(parsed.completedLevels) ? parsed.completedLevels.filter((x): x is number => typeof x === 'number') : [],
-      completedLessonIds: Array.isArray(parsed.completedLessonIds)
-        ? parsed.completedLessonIds.filter((x): x is string => typeof x === 'string')
-        : [],
-      collectedEggs: Array.isArray(parsed.collectedEggs) ? parsed.collectedEggs.filter((x): x is string => typeof x === 'string') : [],
-      quizAnswers: parsed.quizAnswers && typeof parsed.quizAnswers === 'object' ? parsed.quizAnswers : {},
-      lives: parsedLives,
-      runNumber: typeof parsed.runNumber === 'number' && parsed.runNumber >= 1 ? parsed.runNumber : 1,
-      savedAt: typeof parsed.savedAt === 'number' ? parsed.savedAt : Date.now(),
-    };
+    const parsed = JSON.parse(raw);
+    return sanitizeSavedGameState(parsed);
   } catch {
     return null;
   }
@@ -109,13 +237,59 @@ export function clearSavedGameState(): void {
   }
 }
 
+function sanitizeRunHistory(raw: unknown): RunHistoryEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (item): item is RunHistoryEntry =>
+        Boolean(item) &&
+        typeof item === 'object' &&
+        !Array.isArray(item) &&
+        typeof (item as RunHistoryEntry).runNumber === 'number' &&
+        Number.isFinite((item as RunHistoryEntry).runNumber)
+    )
+    .slice(-10)
+    .map((item) => ({
+      runNumber: Math.max(1, Math.round(item.runNumber)),
+      finishedAt: typeof item.finishedAt === 'number' ? item.finishedAt : Date.now(),
+      xp: typeof item.xp === 'number' && Number.isFinite(item.xp) ? Math.max(0, Math.round(item.xp)) : 0,
+      completedLessons:
+        typeof item.completedLessons === 'number' && Number.isFinite(item.completedLessons)
+          ? Math.max(0, Math.round(item.completedLessons))
+          : 0,
+      totalLessons:
+        typeof item.totalLessons === 'number' && Number.isFinite(item.totalLessons)
+          ? Math.max(1, Math.round(item.totalLessons))
+          : 52,
+      quizzesAnswered:
+        typeof item.quizzesAnswered === 'number' && Number.isFinite(item.quizzesAnswered)
+          ? Math.max(0, Math.round(item.quizzesAnswered))
+          : 0,
+      quizzesCorrect:
+        typeof item.quizzesCorrect === 'number' && Number.isFinite(item.quizzesCorrect)
+          ? Math.max(0, Math.round(item.quizzesCorrect))
+          : 0,
+      badgesCount:
+        typeof item.badgesCount === 'number' && Number.isFinite(item.badgesCount)
+          ? Math.max(0, Math.round(item.badgesCount))
+          : 0,
+      eggsCount:
+        typeof item.eggsCount === 'number' && Number.isFinite(item.eggsCount)
+          ? Math.max(0, Math.round(item.eggsCount))
+          : 0,
+      highestLevel:
+        typeof item.highestLevel === 'number' && Number.isFinite(item.highestLevel)
+          ? Math.max(1, Math.min(4, Math.round(item.highestLevel)))
+          : 1,
+      reachedCertificate: Boolean(item.reachedCertificate),
+    }));
+}
+
 export function loadRunHistory(): RunHistoryEntry[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is RunHistoryEntry => item && typeof item.runNumber === 'number');
+    return sanitizeRunHistory(JSON.parse(raw));
   } catch {
     return [];
   }
@@ -140,10 +314,423 @@ export function clearRunHistory(): void {
   }
 }
 
+// ==================== DAILY STREAK, DAILY MISSIONS & UNIT PROFILE ====================
+function createDefaultDailyState(): DailyAndProfileState {
+  const today = getLocalDateKey();
+  return {
+    streakDays: 1,
+    bestStreak: 1,
+    lastActiveDate: today,
+    todayDate: today,
+    todayLessonsCount: 0,
+    todayQuizzesCorrect: 0,
+    claimedMissionsToday: [],
+    profile: {
+      playerName: '',
+      unitName: '',
+      mekhalaName: '',
+    },
+  };
+}
+
+function sanitizeDailyState(raw: unknown): DailyAndProfileState {
+  const today = getLocalDateKey();
+  const yesterday = getYesterdayDateKey();
+  const fallback = createDefaultDailyState();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback;
+
+  const p = raw as Partial<DailyAndProfileState>;
+  const rawProfile =
+    p.profile && typeof p.profile === 'object' && !Array.isArray(p.profile)
+      ? (p.profile as Partial<UnitProfile>)
+      : {};
+
+  const lockedCert =
+    typeof rawProfile.lockedCertificateName === 'string'
+      ? rawProfile.lockedCertificateName.trim().slice(0, 60)
+      : '';
+
+  const cleanProfile: UnitProfile = {
+    playerName: typeof rawProfile.playerName === 'string' ? rawProfile.playerName.slice(0, 60) : '',
+    unitName: typeof rawProfile.unitName === 'string' ? rawProfile.unitName.slice(0, 60) : '',
+    mekhalaName: typeof rawProfile.mekhalaName === 'string' ? rawProfile.mekhalaName.slice(0, 60) : '',
+    ...(lockedCert ? { lockedCertificateName: lockedCert } : {}),
+  };
+
+  const prevLastActive = typeof p.lastActiveDate === 'string' ? p.lastActiveDate : today;
+  let streakDays =
+    typeof p.streakDays === 'number' && Number.isFinite(p.streakDays) && p.streakDays >= 1
+      ? Math.min(3650, Math.round(p.streakDays))
+      : 1;
+  let bestStreak =
+    typeof p.bestStreak === 'number' && Number.isFinite(p.bestStreak) && p.bestStreak >= 1
+      ? Math.min(3650, Math.round(p.bestStreak))
+      : streakDays;
+
+  let todayLessonsCount =
+    typeof p.todayLessonsCount === 'number' && Number.isFinite(p.todayLessonsCount)
+      ? Math.max(0, Math.round(p.todayLessonsCount))
+      : 0;
+  let todayQuizzesCorrect =
+    typeof p.todayQuizzesCorrect === 'number' && Number.isFinite(p.todayQuizzesCorrect)
+      ? Math.max(0, Math.round(p.todayQuizzesCorrect))
+      : 0;
+  let claimedMissionsToday = sanitizeStringArray(p.claimedMissionsToday, 10);
+
+  if (prevLastActive !== today) {
+    // New local day: update streak and reset daily mission counters
+    streakDays = prevLastActive === yesterday ? streakDays + 1 : 1;
+    bestStreak = Math.max(bestStreak, streakDays);
+    todayLessonsCount = 0;
+    todayQuizzesCorrect = 0;
+    claimedMissionsToday = [];
+  } else if (p.todayDate !== today) {
+    todayLessonsCount = 0;
+    todayQuizzesCorrect = 0;
+    claimedMissionsToday = [];
+  }
+
+  return {
+    streakDays,
+    bestStreak: Math.max(bestStreak, streakDays),
+    lastActiveDate: today,
+    todayDate: today,
+    todayLessonsCount,
+    todayQuizzesCorrect,
+    claimedMissionsToday,
+    profile: cleanProfile,
+  };
+}
+
+export function loadDailyAndProfileState(): DailyAndProfileState {
+  try {
+    const raw = localStorage.getItem(DAILY_KEY);
+    if (!raw) {
+      const fresh = createDefaultDailyState();
+      saveDailyAndProfileState(fresh);
+      return fresh;
+    }
+    const clean = sanitizeDailyState(JSON.parse(raw));
+    saveDailyAndProfileState(clean);
+    return clean;
+  } catch {
+    return createDefaultDailyState();
+  }
+}
+
+export function saveDailyAndProfileState(state: DailyAndProfileState): void {
+  try {
+    localStorage.setItem(DAILY_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage quota / privacy errors
+  }
+}
+
+export function getLockedCertificateName(): string {
+  const daily = loadDailyAndProfileState();
+  return daily.profile.lockedCertificateName?.trim() || '';
+}
+
+// ==================== PIN + NAME PROTECTED PROGRESS BACKUP & RESTORE (SKSSF-BK2) ====================
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(b64: string): Uint8Array {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function fnv1aHex(input: string): string {
+  let h1 = 0x811c9dc5;
+  let h2 = 0x9e3779b9;
+  for (let i = 0; i < input.length; i++) {
+    const c = input.charCodeAt(i);
+    h1 ^= c;
+    h1 = Math.imul(h1, 0x01000193) >>> 0;
+    h2 ^= c + ((i * 31) & 0xff);
+    h2 = Math.imul(h2, 0x85ebca6b) >>> 0;
+  }
+  return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
+}
+
+function xorCipherBytes(data: Uint8Array, pin: string, salt: string): Uint8Array {
+  const seedStr = `SKSSF-GUIDE-BK2-KEY::${pin}::${salt}`;
+  let state = 0x6a09e667;
+  for (let i = 0; i < seedStr.length; i++) {
+    state ^= seedStr.charCodeAt(i);
+    state = Math.imul(state, 0x01000193) >>> 0;
+  }
+  const out = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    // xorshift32 keystream mixed with position
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state = (state + (i * 0x9e3779b1)) >>> 0;
+    out[i] = data[i] ^ ((state >>> 16) & 0xff);
+  }
+  return out;
+}
+
+function generateSaltHex(len = 8): string {
+  const chars = '0123456789abcdef';
+  const buf = new Uint8Array(len);
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(buf);
+  } else {
+    for (let i = 0; i < len; i++) {
+      buf[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  let s = '';
+  for (let i = 0; i < len; i++) {
+    s += chars[buf[i] & 15];
+  }
+  return s;
+}
+
+interface BackupBundleV2 {
+  v: 2;
+  exportedAt: number;
+  ownerName: string;
+  sig: string;
+  game: SavedGameState | null;
+  history: RunHistoryEntry[];
+  daily: DailyAndProfileState;
+  soundPack?: string;
+}
+
+export interface ExportBackupResult {
+  ok: boolean;
+  code?: string;
+  ownerName?: string;
+  error?: string;
+}
+
+export function exportProgressBackupCode(learnerName: string, pin: string): ExportBackupResult {
+  const cleanPin = pin.trim();
+  if (!/^\d{4}$/.test(cleanPin)) {
+    return {
+      ok: false,
+      error: '4 അക്ക രഹസ്യ PIN നമ്പർ നൽകുക (ഉദാ: 4829).',
+    };
+  }
+
+  const daily = loadDailyAndProfileState();
+  // Prevent re-exporting someone else's restored backup under a different name
+  const lockedExisting = daily.profile.lockedCertificateName?.trim();
+  const cleanName = (lockedExisting || learnerName.trim()).slice(0, 60);
+
+  if (cleanName.length < 2) {
+    return {
+      ok: false,
+      error: 'ബാക്കപ്പ് സുരക്ഷിതമാക്കാൻ നിങ്ങളുടെ പേര് നൽകുക (കുറഞ്ഞത് 2 അക്ഷരം).',
+    };
+  }
+
+  // Keep local profile synced with learner's chosen name
+  const updatedDaily: DailyAndProfileState = {
+    ...daily,
+    profile: {
+      ...daily.profile,
+      playerName: cleanName,
+      ...(lockedExisting ? { lockedCertificateName: lockedExisting } : {}),
+    },
+  };
+  saveDailyAndProfileState(updatedDaily);
+
+  let soundPack: string | undefined;
+  try {
+    const audioRaw = localStorage.getItem(AUDIO_KEY);
+    if (audioRaw) {
+      const audioObj = JSON.parse(audioRaw) as { soundPack?: string };
+      if (typeof audioObj.soundPack === 'string') {
+        soundPack = audioObj.soundPack;
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  const game = loadSavedGameState();
+  const history = loadRunHistory();
+  const exportedAt = Date.now();
+  const sig = fnv1aHex(
+    `${cleanPin}|${cleanName}|${exportedAt}|${game?.xp ?? 0}|${game?.completedLessonIds.length ?? 0}`
+  );
+
+  const bundle: BackupBundleV2 = {
+    v: 2,
+    exportedAt,
+    ownerName: cleanName,
+    sig,
+    game,
+    history,
+    daily: updatedDaily,
+    soundPack,
+  };
+
+  const salt = generateSaltHex(8);
+  const plainBytes = new TextEncoder().encode(JSON.stringify(bundle));
+  const cipherBytes = xorCipherBytes(plainBytes, cleanPin, salt);
+
+  return {
+    ok: true,
+    ownerName: cleanName,
+    code: `${BACKUP_V2_PREFIX}${salt}:${bytesToBase64(cipherBytes)}`,
+  };
+}
+
+export interface RestoreBackupResult {
+  ok: boolean;
+  error?: string;
+  restoredName?: string;
+  restoredLessons?: number;
+  restoredXp?: number;
+  restoredStreak?: number;
+}
+
+export function importProgressBackupCode(rawInput: string, pin: string): RestoreBackupResult {
+  try {
+    const trimmed = rawInput.trim();
+    const cleanPin = pin.trim();
+
+    if (trimmed.startsWith(BACKUP_V1_PREFIX)) {
+      return {
+        ok: false,
+        error:
+          'പഴയ SKSSF-BK1 കോഡുകൾ സർട്ടിഫിക്കറ്റ് സുരക്ഷയ്ക്കായി നിർത്തലാക്കി. പുതിയ PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് (SKSSF-BK2) ഉപയോഗിക്കുക.',
+      };
+    }
+
+    if (!trimmed.startsWith(BACKUP_V2_PREFIX)) {
+      return {
+        ok: false,
+        error: 'തെറ്റായ ബാക്കപ്പ് കോഡാണ്. SKSSF-BK2: എന്ന് തുടങ്ങുന്ന മുഴുവൻ കോഡും ഒട്ടിക്കുക.',
+      };
+    }
+
+    if (!/^\d{4}$/.test(cleanPin)) {
+      return {
+        ok: false,
+        error: 'ബാക്കപ്പ് ഉണ്ടാക്കിയപ്പോൾ നൽകിയ 4 അക്ക PIN നമ്പർ നൽകുക.',
+      };
+    }
+
+    const body = trimmed.slice(BACKUP_V2_PREFIX.length).replace(/\s+/g, '');
+    const sepIdx = body.indexOf(':');
+    if (sepIdx <= 0 || sepIdx > 16) {
+      return { ok: false, error: 'ബാക്കപ്പ് കോഡ് അപൂർണ്ണമാണ് അല്ലെങ്കിൽ തകരാറുള്ളതാണ്.' };
+    }
+
+    const salt = body.slice(0, sepIdx);
+    const payloadB64 = body.slice(sepIdx + 1);
+    if (!/^[0-9a-f]{4,16}$/i.test(salt) || !payloadB64 || payloadB64.length > 65000) {
+      return { ok: false, error: 'ബാക്കപ്പ് കോഡ് അപൂർണ്ണമാണ് അല്ലെങ്കിൽ തകരാറുള്ളതാണ്.' };
+    }
+
+    const cipherBytes = base64ToBytes(payloadB64);
+    const plainBytes = xorCipherBytes(cipherBytes, cleanPin, salt);
+    const decodedText = new TextDecoder().decode(plainBytes);
+    const decoded = JSON.parse(decodedText) as Partial<BackupBundleV2>;
+
+    if (
+      !decoded ||
+      typeof decoded !== 'object' ||
+      decoded.v !== 2 ||
+      typeof decoded.ownerName !== 'string' ||
+      decoded.ownerName.trim().length < 2 ||
+      typeof decoded.sig !== 'string' ||
+      typeof decoded.exportedAt !== 'number'
+    ) {
+      return { ok: false, error: 'തെറ്റായ 4 അക്ക PIN അല്ലെങ്കിൽ തകരാറുള്ള ബാക്കപ്പ് കോഡ്!' };
+    }
+
+    const cleanOwnerName = decoded.ownerName.trim().slice(0, 60);
+    const cleanGame = decoded.game ? sanitizeSavedGameState(decoded.game) : null;
+    const expectedSig = fnv1aHex(
+      `${cleanPin}|${cleanOwnerName}|${decoded.exportedAt}|${cleanGame?.xp ?? 0}|${cleanGame?.completedLessonIds.length ?? 0}`
+    );
+
+    if (decoded.sig !== expectedSig) {
+      return { ok: false, error: 'തെറ്റായ 4 അക്ക PIN നമ്പറാണ്. കൃത്യമായ PIN നൽകി വീണ്ടും ശ്രമിക്കുക.' };
+    }
+
+    const cleanHistory = sanitizeRunHistory(decoded.history);
+    const cleanDaily = sanitizeDailyState(decoded.daily);
+    // Lock certificate name to the original backup owner's name
+    cleanDaily.profile = {
+      ...cleanDaily.profile,
+      playerName: cleanOwnerName,
+      lockedCertificateName: cleanOwnerName,
+    };
+
+    if (cleanGame) {
+      saveGameState(cleanGame);
+      try {
+        localStorage.setItem(
+          'skssf_guide_completed_lessons_v1',
+          JSON.stringify(cleanGame.completedLessonIds)
+        );
+      } catch {
+        // Ignore
+      }
+    }
+
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(cleanHistory));
+    } catch {
+      // Ignore
+    }
+
+    saveDailyAndProfileState(cleanDaily);
+
+    if (
+      decoded.soundPack === 'classic' ||
+      decoded.soundPack === 'oud_warm' ||
+      decoded.soundPack === 'crystal_bell'
+    ) {
+      try {
+        const prevAudio = localStorage.getItem(AUDIO_KEY);
+        const parsedAudio = prevAudio ? JSON.parse(prevAudio) : {};
+        localStorage.setItem(
+          AUDIO_KEY,
+          JSON.stringify({ ...parsedAudio, soundPack: decoded.soundPack })
+        );
+      } catch {
+        // Ignore
+      }
+    }
+
+    return {
+      ok: true,
+      restoredName: cleanOwnerName,
+      restoredLessons: cleanGame?.completedLessonIds.length ?? 0,
+      restoredXp: cleanGame?.xp ?? 0,
+      restoredStreak: cleanDaily.streakDays,
+    };
+  } catch {
+    return {
+      ok: false,
+      error: 'തെറ്റായ 4 അക്ക PIN നമ്പർ അല്ലെങ്കിൽ അപൂർണ്ണമായ ബാക്കപ്പ് കോഡ്. വീണ്ടും പരിശോധിക്കുക.',
+    };
+  }
+}
+
 export function clearAllAppStorage(): void {
   try {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(DAILY_KEY);
     localStorage.removeItem('skssf_guide_completed_lessons_v1');
     localStorage.removeItem('skssf_confirmed_lessons_v1');
     localStorage.removeItem('skssf_guide_audio_v3');

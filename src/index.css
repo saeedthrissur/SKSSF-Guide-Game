@@ -6,7 +6,7 @@
   }
 
   body {
-    font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', 'Amiri', 'Noto Naskh Arabic', system-ui, -apple-system, sans-serif;
     font-feature-settings: "tnum" on;
     overflow-x: clip;
     top: 0 !important;
@@ -45,75 +45,158 @@ html.dark body {
   color: #e2e8f0 !important;
 }
 
+/* White & Neutral Light Surfaces (preserves translucent glass bg-white/5..25 on dark banners) */
 html.dark .bg-white,
 html.dark .bg-white\/95,
-html.dark .bg-white\/90 {
+html.dark .bg-white\/90,
+html.dark .bg-white\/85,
+html.dark .bg-white\/80,
+html.dark .bg-white\/75,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60,
+html.dark .bg-white\/55,
+html.dark .bg-white\/50 {
   background-color: #111c2e !important;
 }
 
 html.dark .bg-slate-50,
-html.dark .bg-slate-50\/80 {
+html.dark [class*="bg-slate-50/"] {
   background-color: #0f172a !important;
 }
 
-html.dark .bg-slate-100 {
+html.dark .bg-slate-100,
+html.dark [class*="bg-slate-100/"] {
   background-color: #1e293b !important;
 }
 
-html.dark .bg-slate-200 {
+html.dark .bg-slate-200,
+html.dark [class*="bg-slate-200/"] {
   background-color: #334155 !important;
 }
 
+/* Emerald & Teal Light Tints */
 html.dark .bg-emerald-50,
-html.dark .bg-emerald-50\/90,
-html.dark .bg-emerald-50\/80,
-html.dark .bg-emerald-50\/70,
-html.dark .bg-emerald-50\/60 {
-  background-color: rgba(6, 78, 59, 0.34) !important;
+html.dark [class*="bg-emerald-50/"] {
+  background-color: rgba(6, 78, 59, 0.42) !important;
 }
 
-html.dark .bg-emerald-100 {
-  background-color: rgba(6, 95, 70, 0.5) !important;
+html.dark .bg-emerald-100,
+html.dark [class*="bg-emerald-100/"] {
+  background-color: rgba(6, 95, 70, 0.56) !important;
 }
 
+html.dark .bg-emerald-200,
+html.dark [class*="bg-emerald-200/"] {
+  background-color: rgba(4, 120, 87, 0.48) !important;
+}
+
+/* Amber & Orange Light Tints */
 html.dark .bg-amber-50,
-html.dark .bg-amber-50\/80,
-html.dark .bg-amber-50\/70,
-html.dark .bg-amber-50\/50 {
-  background-color: rgba(120, 53, 15, 0.32) !important;
+html.dark [class*="bg-amber-50/"],
+html.dark .bg-orange-50,
+html.dark [class*="bg-orange-50/"] {
+  background-color: rgba(120, 53, 15, 0.4) !important;
 }
 
-html.dark .bg-amber-100 {
-  background-color: rgba(146, 64, 14, 0.48) !important;
+html.dark .bg-amber-100,
+html.dark [class*="bg-amber-100/"] {
+  background-color: rgba(146, 64, 14, 0.54) !important;
 }
 
+html.dark .bg-amber-200,
+html.dark [class*="bg-amber-200/"] {
+  background-color: rgba(180, 83, 9, 0.52) !important;
+}
+
+/* Sky, Cyan, Indigo & Purple Light Tints */
 html.dark .bg-sky-50,
-html.dark .bg-sky-50\/80 {
-  background-color: rgba(12, 74, 110, 0.35) !important;
+html.dark [class*="bg-sky-50/"],
+html.dark .bg-cyan-50,
+html.dark [class*="bg-cyan-50/"] {
+  background-color: rgba(12, 74, 110, 0.44) !important;
 }
 
+html.dark .bg-sky-100,
+html.dark [class*="bg-sky-100/"],
+html.dark .bg-sky-200,
+html.dark [class*="bg-sky-200/"] {
+  background-color: rgba(7, 89, 133, 0.55) !important;
+}
+
+html.dark .bg-indigo-50,
+html.dark [class*="bg-indigo-50/"],
+html.dark .bg-purple-50,
+html.dark [class*="bg-purple-50/"] {
+  background-color: rgba(49, 46, 129, 0.42) !important;
+}
+
+html.dark .bg-indigo-100,
+html.dark [class*="bg-indigo-100/"] {
+  background-color: rgba(55, 48, 163, 0.54) !important;
+}
+
+/* Rose & Red Light Tints */
 html.dark .bg-rose-50,
-html.dark .bg-rose-50\/70,
-html.dark .bg-red-50 {
-  background-color: rgba(136, 19, 55, 0.34) !important;
+html.dark [class*="bg-rose-50/"],
+html.dark .bg-red-50,
+html.dark [class*="bg-red-50/"] {
+  background-color: rgba(136, 19, 55, 0.42) !important;
 }
 
 html.dark .bg-rose-100,
-html.dark .bg-red-100 {
-  background-color: rgba(159, 18, 57, 0.5) !important;
+html.dark [class*="bg-rose-100/"],
+html.dark .bg-red-100,
+html.dark [class*="bg-red-100/"],
+html.dark .bg-rose-200,
+html.dark .bg-red-200 {
+  background-color: rgba(159, 18, 57, 0.54) !important;
 }
 
-html.dark .from-amber-50,
-html.dark .from-emerald-50,
-html.dark .from-emerald-50\/80,
-html.dark .via-white,
-html.dark .to-emerald-50,
-html.dark .to-amber-50\/50 {
+/* Light Gradient Stops Across All Lessons & Modals */
+html.dark [class*="from-amber-50"],
+html.dark .from-amber-100,
+html.dark .from-amber-200,
+html.dark [class*="from-emerald-50"],
+html.dark .from-emerald-100,
+html.dark .from-sky-50,
+html.dark .from-sky-100,
+html.dark .from-sky-200,
+html.dark .from-cyan-50,
+html.dark .from-indigo-50,
+html.dark .from-rose-50 {
   --tw-gradient-from: #132237 !important;
+}
+
+html.dark .via-white,
+html.dark .via-slate-50,
+html.dark [class*="via-amber-50"],
+html.dark [class*="via-emerald-50"],
+html.dark .via-emerald-100,
+html.dark .via-emerald-200,
+html.dark [class*="via-orange-50"],
+html.dark [class*="via-yellow-50"],
+html.dark .via-sky-100,
+html.dark .via-sky-200,
+html.dark .via-teal-50 {
   --tw-gradient-via: #111c2e !important;
+}
+
+html.dark [class*="to-emerald-50"],
+html.dark .to-emerald-100,
+html.dark [class*="to-amber-50"],
+html.dark .to-amber-100,
+html.dark [class*="to-sky-50"],
+html.dark .to-sky-200,
+html.dark .to-cyan-50,
+html.dark .to-lime-50,
+html.dark .to-orange-50,
+html.dark .to-red-50,
+html.dark .to-rose-50,
+html.dark .to-teal-50 {
   --tw-gradient-to: #0f2523 !important;
 }
 
+/* Borders */
 html.dark .border-slate-100,
 html.dark .border-slate-200,
 html.dark .border-slate-300 {
@@ -122,36 +205,39 @@ html.dark .border-slate-300 {
 
 html.dark .border-emerald-100,
 html.dark .border-emerald-200,
+html.dark [class*="border-emerald-200/"],
 html.dark .border-emerald-300 {
-  border-color: rgba(16, 185, 129, 0.35) !important;
+  border-color: rgba(16, 185, 129, 0.38) !important;
 }
 
 html.dark .border-amber-200,
 html.dark .border-amber-300 {
-  border-color: rgba(245, 158, 11, 0.42) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
 }
 
 html.dark .border-sky-200,
-html.dark .border-sky-300 {
-  border-color: rgba(56, 189, 248, 0.35) !important;
+html.dark .border-sky-300,
+html.dark .border-indigo-200 {
+  border-color: rgba(56, 189, 248, 0.38) !important;
 }
 
 html.dark .border-rose-200,
 html.dark .border-rose-300,
 html.dark .border-red-200,
 html.dark .border-red-300 {
-  border-color: rgba(244, 63, 94, 0.4) !important;
+  border-color: rgba(244, 63, 94, 0.42) !important;
 }
 
+/* High-Contrast Readable Text in Dark Mode */
 html.dark .text-slate-950,
 html.dark .text-slate-900,
 html.dark .text-slate-800 {
-  color: #f1f5f9 !important;
+  color: #f8fafc !important;
 }
 
 html.dark .text-slate-700,
 html.dark .text-slate-600 {
-  color: #cbd5e1 !important;
+  color: #dbe4f0 !important;
 }
 
 html.dark .text-slate-500,
@@ -165,8 +251,9 @@ html.dark .text-emerald-800 {
   color: #a7f3d0 !important;
 }
 
-html.dark .text-emerald-700 {
-  color: #34d399 !important;
+html.dark .text-emerald-700,
+html.dark .text-emerald-600 {
+  color: #6ee7b7 !important;
 }
 
 html.dark .text-amber-950,
@@ -176,19 +263,42 @@ html.dark .text-amber-700 {
   color: #fde68a !important;
 }
 
+html.dark .text-amber-600 {
+  color: #fbbf24 !important;
+}
+
 html.dark .text-sky-950,
 html.dark .text-sky-900,
 html.dark .text-sky-800 {
   color: #bae6fd !important;
 }
 
+html.dark .text-sky-700 {
+  color: #7dd3fc !important;
+}
+
+html.dark .text-indigo-950,
+html.dark .text-indigo-900,
+html.dark .text-indigo-800,
+html.dark .text-indigo-700 {
+  color: #c7d2fe !important;
+}
+
 html.dark .text-rose-950,
 html.dark .text-rose-900,
+html.dark .text-rose-800,
+html.dark .text-red-950,
 html.dark .text-red-900 {
   color: #fecdd3 !important;
 }
 
-/* Preserve high-contrast dark text on bright amber & light emerald pill/CTA backgrounds */
+html.dark .text-rose-700,
+html.dark .text-rose-600,
+html.dark .text-red-700 {
+  color: #fda4af !important;
+}
+
+/* Preserve high-contrast dark text on bright amber CTA backgrounds */
 html.dark .bg-amber-400,
 html.dark .bg-amber-300,
 html.dark .bg-amber-500 {
@@ -211,9 +321,14 @@ html.dark .bg-emerald-950 {
 html.dark input,
 html.dark textarea,
 html.dark select {
-  background-color: #0f172a;
-  color: #f1f5f9;
-  border-color: #334155;
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8 !important;
 }
 
 /* Keep printed/exported certificates crisp paper-white with original emerald & gold accents in dark mode */
@@ -265,6 +380,12 @@ html.dark #certificate-print-area .text-red-900 {
 
 html.dark #certificate-print-area .text-amber-100 {
   color: #fef3c7 !important;
+}
+
+/* Keep official logo emblem tiles crisp white in dark mode so dark-ink logos stay vivid */
+html.dark .logo-emblem-frame {
+  background-color: #ffffff !important;
+  border-color: #334155 !important;
 }
 
 /* 3D Perspective & Tactile Card Flip Utilities */
@@ -406,6 +527,51 @@ html.dark #certificate-print-area .text-amber-100 {
   animation: glitter-drop 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes map-group-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.map-group-enter {
+  animation: map-group-fade-up 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lesson-card-lift {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.lesson-card-lift:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.lesson-card-lift:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.map-lesson-row {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.map-lesson-row:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+}
+
+.map-lesson-row:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flag-wave,
   .animate-sway-plant,
@@ -415,9 +581,17 @@ html.dark #certificate-print-area .text-amber-100 {
   .animate-float-bob,
   .animate-twinkle,
   .animate-glitter-drop,
+  .map-group-enter,
+  .lesson-card-lift,
+  .lesson-card-lift:hover:not(:disabled),
+  .lesson-card-lift:active:not(:disabled),
+  .map-lesson-row,
+  .map-lesson-row:hover:not(:disabled),
+  .map-lesson-row:active:not(:disabled),
   .card-3d-tilt:hover {
-    animation: none;
-    transform: none;
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
 

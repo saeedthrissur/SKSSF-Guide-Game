@@ -359,7 +359,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     guests: [
       {
         id: 'tg_shamsul',
-        emoji: '🕊️',
+        emoji: '🌿',
         name: 'സമാധാന സദസ്സ് പ്രതിനിധി',
         message: 'ശംസുൽ ഉലമയുടെ ആഹ്വാനപ്രകാരം മതസൗഹാർദ്ദവും സാഹോദര്യവും പകരാൻ വന്നതാണ്.',
         allow: true,
@@ -398,7 +398,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         feedback: 'അടിപൊളി! വിദ്യാഭ്യാസ പുരോഗതിക്കായുള്ള TREND Educare ടീമിനെ സ്വാഗതം ചെയ്തു!',
       },
     ],
-    doneMessage: '🏛️🕊️ വിസ്മയം! 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ സമാധാന സദസ്സ് വിജയകരമായി സംരക്ഷിച്ചു! (+25 XP)',
+    doneMessage: '🏛️🌿 വിസ്മയം! 1995 കോഴിക്കോട് ടാഗോർ ഹാൾ സമാധാന സദസ്സ് വിജയകരമായി സംരക്ഷിച്ചു! (+25 XP)',
   },
   sb_ch3: {
     engine: 'road_vehicle_drive',
@@ -654,8 +654,8 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       {
         id: 'family',
         label: '3. ഉമ്മയുടെ ദുആ തണൽ',
-        bloomEmoji: '🦋',
-        message: 'ഉമ്മയോടും കുടുംബത്തോടും സ്നേഹം കാണിച്ചപ്പോൾ പൂമ്പാറ്റകൾ പറന്നുയർന്നു!',
+        bloomEmoji: '🌸',
+        message: 'ഉമ്മയോടും കുടുംബത്തോടും സ്നേഹം കാണിച്ചപ്പോൾ ഹൃദയ തോട്ടത്തിൽ പുഷ്പങ്ങൾ വിരിഞ്ഞു!',
       },
     ],
     doneMessage: '🌿 മനോഹരം! സൽസ്വഭാവ പൂന്തോട്ടം മുഴുവൻ പൂത്തുലഞ്ഞു! (+25 XP)',
@@ -697,7 +697,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'c_giraffe',
-        year: '🦒',
+        year: '🗼',
         label: 'ജിറാഫും ഏണിയും',
         coachColor: '#D97706',
         note: 'ദൂരക്കാഴ്ചയോടെ കൂടെയുള്ളവരെ ഉയർത്തുന്ന സംഘാടക കോച്ചും ചേർത്തു!',
@@ -839,7 +839,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     students: [
       {
         id: 'st1',
-        avatar: '🧑‍⚕️',
+        avatar: '🩺',
         name: 'ആയിഷ (പ്ലസ് ടു സയൻസ്)',
         dream: 'എനിക്ക് ഡോക്ടറായി പാവപ്പെട്ട രോഗികളെ ചികിത്സിക്കാൻ ആഗ്രഹമുണ്ട്!',
         correctTrackId: 'neet',
@@ -847,7 +847,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'st2',
-        avatar: '👨‍⚖️',
+        avatar: '⚖️',
         name: 'അബ്ദുല്ല (ബിരുദ വിദ്യാർത്ഥി)',
         dream: 'എനിക്ക് ജില്ലാ കളക്ടറായി (IAS) നാടിനെ സത്യസന്ധമായി സേവിക്കണം!',
         correctTrackId: 'ias',
@@ -855,7 +855,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'st3',
-        avatar: '🧑‍💼',
+        avatar: '📊',
         name: 'ഫാത്തിമ (കൊമേഴ്‌സ്)',
         dream: 'കണക്കുകളും ഓഡിറ്റിംഗും എനിക്ക് വലിയ ഇഷ്ടമാണ് — ചാർട്ടേഡ് അക്കൗണ്ടന്റ് ആകണം!',
         correctTrackId: 'ca',
@@ -863,7 +863,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'st4',
-        avatar: '🗣️',
+        avatar: '🎙️',
         name: 'മുഹമ്മദ് (ഹൈസ്കൂൾ)',
         dream: 'വേദിയിൽ കയറി പേടിയില്ലാതെ പ്രസംഗിക്കാനും നേതൃപാടവം വളർത്താനും പഠിക്കണം!',
         correctTrackId: 'taste',

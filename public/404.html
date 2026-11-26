@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ml">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SKSSF ഗൈഡ് ഗെയിം — തിരിച്ചുവിടുന്നു…</title>
+    <script>
+      (function () {
+        var path = window.location.pathname || '/';
+        var marker = '/lesson/';
+        var idx = path.indexOf(marker);
+        if (idx !== -1) {
+          var base = path.slice(0, idx + 1);
+          var rawId = path.slice(idx + marker.length).split('/')[0];
+          if (/^[a-zA-Z0-9_-]{1,64}$/.test(rawId)) {
+            window.location.replace(base + '?lesson=' + encodeURIComponent(rawId));
+            return;
+          }
+          window.location.replace(base);
+          return;
+        }
+        // Fallback for any other unknown sub-path under GitHub Pages repo
+        var segments = path.split('/').filter(Boolean);
+        var repoBase = segments.length > 0 ? '/' + segments[0] + '/' : '/';
+        window.location.replace(repoBase);
+      })();
+    </script>
+  </head>
+  <body style="font-family: system-ui, sans-serif; display: flex; min-height: 100vh; align-items: center; justify-content: center; background: #f8fafc; color: #064e3b; padding: 24px; text-align: center;">
+    <div>
+      <p style="font-size: 16px; font-weight: 700;">SKSSF ഗൈഡ് ഗെയിമിലേക്ക് തിരിച്ചുവിടുന്നു…</p>
+      <p style="font-size: 13px; color: #475569; margin-top: 8px;">
+        <a href="./" style="color: #047857; font-weight: 700;">ഇവിടെ ക്ലിക്ക് ചെയ്യുക</a>
+      </p>
+    </div>
+  </body>
+</html>

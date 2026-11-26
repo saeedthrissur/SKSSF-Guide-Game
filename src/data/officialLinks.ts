@@ -201,6 +201,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'website',
     category: 'education',
     description: '93 ഡേ കോളേജുകൾ & 21 റെസിഡൻഷ്യൽ കോളേജുകൾ — ഫളീല (3 വർഷം) & ഫാദീല (2 വർഷം) കോഴ്സുകൾ.',
+    logoId: 'cswc',
     tags: ['cswc', 'womens', 'faleela', 'fadeela', 'colleges'],
   },
   {
@@ -211,6 +212,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'education',
     description: 'ഫളീല-ഫാദീല പാഠ്യപദ്ധതികളും അഡ്മിഷൻ വിവരങ്ങളും.',
+    logoId: 'cswc',
     tags: ['cswc', 'course', 'womens'],
   },
   {
@@ -221,6 +223,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'education',
     description: 'വനിതാ കോളേജ് കോഴ്സ് ഹൈലൈറ്റുകളും പരിപാടികളും.',
+    logoId: 'cswc',
     tags: ['cswc', 'youtube', 'womens'],
   },
   {
@@ -253,6 +256,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'website',
     category: 'education',
     description: 'SKIMVB-യുടെ മേൽനോട്ടത്തിലുള്ള ധാർമ്മിക-ആധുനിക ഇംഗ്ലീഷ് മീഡിയം സ്കൂൾ ശൃംഖല.',
+    logoId: 'asmi',
     tags: ['asmi', 'english medium', 'schools'],
   },
   {
@@ -263,6 +267,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'education',
     description: 'ASMI ഇംഗ്ലീഷ് മീഡിയം സ്കൂളുകളുടെ അക്കാദമിക് ഉള്ളടക്കങ്ങൾ.',
+    logoId: 'asmi',
     tags: ['asmi', 'youtube', 'schools'],
   },
   {
@@ -273,7 +278,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'education',
     description: '26+ രാജ്യങ്ങളിലെ കുട്ടികൾക്കായി 1 മുതൽ 10 വരെ ക്ലാസുകളിലേക്ക് ഓൺലൈൻ മദ്രസാ പഠനം.',
-    logoId: 'skimvb',
+    logoId: 'samastha_elearning',
     tags: ['elearning', 'online madrasa', 'global', 'classes'],
   },
   {
@@ -284,7 +289,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'education',
     description: 'ഓൺലൈൻ മദ്രസാ ക്ലാസുകൾ & ട്യൂട്ടോറിയലുകൾ.',
-    logoId: 'skimvb',
+    logoId: 'samastha_elearning',
     tags: ['elearning', 'youtube', 'online madrasa'],
   },
   {
@@ -411,6 +416,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'website',
     category: 'skssf',
     description: 'റമളാൻ ആദ്യ വെള്ളി സമാഹരണം, രോഗികൾക്കുള്ള ചികിത്സാ സഹായ അപേക്ഷാ ഫോമുകൾ & സുതാര്യ കണക്കുകൾ.',
+    logoId: 'sahachari',
     tags: ['sahachari', 'relief', 'charity', 'dialysis', 'cancer'],
   },
   {
@@ -421,6 +427,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'skssf',
     description: 'സഹചാരി റിലീഫ് സെൽ പദ്ധതി വിവരങ്ങൾ.',
+    logoId: 'sahachari',
     tags: ['sahachari', 'relief'],
   },
   {
@@ -541,6 +548,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'skssf',
     description: 'അഹ്ലുസ്സുന്നത്ത് ആശയ-ആദർശ പ്രചാരണവും സംവാദ പരിശീലന ക്യാമ്പുകളും.',
+    logoId: 'isthiqama',
     tags: ['isthiqama', 'ideology', 'debate'],
   },
   {
@@ -551,6 +559,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'skssf',
     description: 'ആശയ പ്രബോധനവും ആദർശ ക്ലാസുകളും.',
+    logoId: 'isthiqama',
     tags: ['isthiqama', 'youtube'],
   },
   {
@@ -561,6 +570,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'skssf',
     description: '‘ഇടം നേടുകയല്ല, ഇടപെടുകയാണ്’ — ബൗദ്ധിക-സാംസ്കാരിക ചർച്ചകളും ആശയ പ്രതിരോധവും.',
+    logoId: 'maneesha',
     tags: ['maneesha', 'intellectual', 'culture'],
   },
   {
@@ -571,6 +581,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'skssf',
     description: 'സാംസ്കാരിക-സാഹിത്യ സംവാദങ്ങളും പ്രഭാഷണങ്ങളും.',
+    logoId: 'maneesha',
     tags: ['maneesha', 'youtube'],
   },
   {
@@ -658,6 +669,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'skssf',
     description: 'മതം, ചരിത്രം, ബാലസാഹിത്യം പുസ്തകങ്ങളും ഓഡിയോ/വീഡിയോ ഡിജിറ്റൽ പ്രസിദ്ധീകരണങ്ങളും.',
+    logoId: 'isa',
     tags: ['isa', 'books', 'publications', 'literature'],
   },
   {
@@ -668,6 +680,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'skssf',
     description: 'ISA പുസ്തക-ഡിജിറ്റൽ പ്രചാരണ വീഡിയോകൾ.',
+    logoId: 'isa',
     tags: ['isa', 'youtube', 'books'],
   },
 
@@ -680,6 +693,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'website',
     category: 'community',
     description: 'മഹല്ലുകളുടെ വ്യവസ്ഥാപിത ഭരണം, ദർസ് വിദ്യാഭ്യാസം, ദുരന്തനിവാരണം, മഹല്ല് സന്ദേശം.',
+    logoId: 'smf',
     tags: ['smf', 'mahallu', '1976'],
   },
   {
@@ -690,6 +704,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'community',
     description: 'സുന്നി മഹല്ല് ഫെഡറേഷൻ സമ്മേളനങ്ങളും ഇവന്റുകളും.',
+    logoId: 'smf',
     tags: ['smf', 'youtube'],
   },
   {
@@ -732,6 +747,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'website',
     category: 'media',
     description: 'സമസ്തയുടെ ഔദ്യോഗിക മലയാള ദിനപത്രം — കേരളം, ഇന്ത്യ, ഗൾഫ് (ദുബായ് എഡിഷൻ), കരിയർ വാർത്തകൾ.',
+    logoId: 'suprabhaatham',
     tags: ['suprabhaatham', 'news', 'daily', 'gulf', 'dubai'],
   },
   {
@@ -742,6 +758,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'epaper',
     category: 'media',
     description: 'സുപ്രഭാതം ദിനപത്രത്തിന്റെ ഡിജിറ്റൽ എഡിഷൻ ഓൺലൈനായി വായിക്കാം.',
+    logoId: 'suprabhaatham',
     tags: ['suprabhaatham', 'epaper', 'newspaper'],
   },
   {
@@ -752,6 +769,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'youtube',
     category: 'media',
     description: 'ലൈവ് വാർത്താ സ്ട്രീമുകളും അഭിമുഖങ്ങളും.',
+    logoId: 'suprabhaatham',
     tags: ['suprabhaatham', 'youtube', 'news'],
   },
   {
@@ -762,7 +780,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'magazine',
     category: 'media',
     description: 'അധ്യാപക മാസിക ‘അൽ-മുഅല്ലിം’, കുടുംബ മാസിക ‘സന്തുഷ്ട കുടുംബം’ ഓൺലൈൻ പോർട്ടൽ.',
-    logoId: 'skjmcc',
+    logoId: 'samastha_magazines',
     tags: ['al muallim', 'santhustha kudumbam', 'magazine', 'skjmcc', 'family'],
   },
   {
@@ -773,7 +791,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'magazine',
     category: 'media',
     description: 'മദ്രസാ കുട്ടികൾക്കായുള്ള ഇസ്‌ലാമിക കഥകൾ, കവിതകൾ, ചിത്രരചന & ക്വിസ് ബാലമാസിക.',
-    logoId: 'skjmcc',
+    logoId: 'samastha_magazines',
     tags: ['kurunnukal', 'kids', 'magazine', 'stories', 'sksbv'],
   },
   {
@@ -784,7 +802,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'media',
     description: 'മദ്രസകൾക്കായി കുരുന്നുകൾ മാസിക ഒരുമിച്ച് ബുക്ക് ചെയ്യാനുള്ള പോർട്ടൽ.',
-    logoId: 'skjmcc',
+    logoId: 'samastha_magazines',
     tags: ['kurunnukal', 'booking', 'madrasa'],
   },
   {
@@ -795,6 +813,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'magazine',
     category: 'media',
     description: '1997 മുതൽ പുറത്തിറങ്ങുന്ന SKSSF-ന്റെ ഔദ്യോഗിക മുഖപത്രം — ആദർശം, ചരിത്രം, സാംസ്കാരികം.',
+    logoId: 'sathyadhara',
     tags: ['sathyadhara', 'magazine', '1997', 'skssf'],
   },
 
@@ -847,6 +866,7 @@ export const OFFICIAL_LINKS_CATALOG: OfficialLinkItem[] = [
     kind: 'portal',
     category: 'cells',
     description: 'വിദേശ രാജ്യങ്ങളിലെ സമസ്ത ഘടകങ്ങളുടെ കേന്ദ്ര ഏകോപന സമിതി.',
+    logoId: 'sic',
     tags: ['sic', 'gulf', 'international', 'global'],
   },
   {

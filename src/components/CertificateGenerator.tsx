@@ -1,13 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Award, Camera, Copy, Download, Printer, Share2, Trash2 } from 'lucide-react';
+import { Award, Camera, Copy, Download, Lock, Printer, Share2, ShieldAlert, Trash2 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
+import { loadDailyAndProfileState } from '../utils/gameStorage';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 interface CertificateGeneratorProps {
   xp: number;
   rank: string;
   badges: string[];
+  isPreviewOnly?: boolean;
+  completedLessonsCount?: number;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -89,9 +92,16 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   xp,
   rank,
   badges,
+  isPreviewOnly = false,
+  completedLessonsCount = 52,
 }) => {
-  const [recipientName, setRecipientName] = useState('');
-  const [unitName, setUnitName] = useState('');
+  const initialDaily = loadDailyAndProfileState();
+  const lockedName = initialDaily.profile.lockedCertificateName?.trim() || '';
+
+  const [recipientName, setRecipientName] = useState(
+    lockedName || initialDaily.profile.playerName || ''
+  );
+  const [unitName, setUnitName] = useState(initialDaily.profile.unitName || '');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [generated, setGenerated] = useState(false);
@@ -99,6 +109,12 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const [shareNote, setShareNote] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const appUrl = getAppShareUrl();
+
+  useEffect(() => {
+    if (lockedName && recipientName !== lockedName) {
+      setRecipientName(lockedName);
+    }
+  }, [lockedName, recipientName]);
 
   useEffect(() => {
     let active = true;
@@ -123,7 +139,8 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const displayName = recipientName.trim() || 'നിങ്ങളുടെ പേര്';
+  const effectiveName = lockedName || recipientName.trim();
+  const displayName = effectiveName || 'നിങ്ങളുടെ പേര്';
   const displayUnit = unitName.trim() || 'യൂണിറ്റ് / നാട്';
   const issueDate = new Date().toLocaleDateString('ml-IN', {
     year: 'numeric',
@@ -133,10 +150,14 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recipientName.trim()) return;
+    if (!effectiveName) return;
     sound.playUnlock();
     setGenerated(true);
-    setShareNote('നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ് റെഡിയായി! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാനോ ഷെയർ ചെയ്യാനോ കഴിയും.');
+    setShareNote(
+      isPreviewOnly
+        ? 'ഇത് പ്രിവ്യൂ മാത്രമാണ് — 52 പാഠങ്ങളും കളിച്ച് തീർത്താലേ ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.'
+        : 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.'
+    );
   };
 
   const buildCertificateCanvas = async (): Promise<HTMLCanvasElement | null> => {
@@ -262,7 +283,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     ctx.font = '600 24px "Noto Sans Malayalam", sans-serif';
     const lastLineY = wrapCenteredText(
       ctx,
-      'സമസ്തയുടെ ചരിത്രവും SKSSF യൂണിറ്റ്-കമ്മിറ്റി പ്രവർത്തനങ്ങളും 17 സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും ഭംഗിയായി പൂർത്തിയാക്കിയതിന് സ്നേഹപൂർവ്വം നൽകുന്ന സർട്ടിഫിക്കറ്റ്:',
+      'സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന സർട്ടിഫിക്കറ്റ്.',
       800,
       432,
       1180,
@@ -335,12 +356,12 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawCenteredFit(`നേടിയ സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${rank}`, 800, boxY + 48, 1140, 27, 18, 800);
+    drawCenteredFit(`സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${rank}`, 800, boxY + 48, 1140, 27, 18, 800);
 
     ctx.fillStyle = '#334155';
     const badgeLine =
-      badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും ഭംഗിയായി പൂർത്തിയാക്കി';
-    drawCenteredFit(`ലഭിച്ച ബാഡ്ജുകൾ: ${badgeLine}`, 800, boxY + 92, 1140, 21, 14, 600);
+      badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി';
+    drawCenteredFit(`ബാഡ്ജുകൾ: ${badgeLine}`, 800, boxY + 92, 1140, 21, 14, 600);
 
     // Symmetrically Centered Footer with QR Code + App Link + Date
     if (qrImg) {
@@ -353,7 +374,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     }
 
     ctx.fillStyle = '#065F46';
-    drawCenteredFit('📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ', 800, 948, 920, 21, 15, 800);
+    drawCenteredFit('നിങ്ങൾക്കും ഈ ഗെയിം കളിക്കാം — QR കോഡ് സ്കാൻ ചെയ്യൂ', 800, 948, 920, 21, 15, 800);
     ctx.fillStyle = '#0F172A';
     drawCenteredFit(
       appUrl.replace(/^https?:\/\//, ''),
@@ -372,6 +393,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   const handleDownloadPng = async () => {
+    if (isPreviewOnly) {
+      sound.playError();
+      setShareNote('പ്രിവ്യൂവിൽ ഡൗൺലോഡ് പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      return;
+    }
     setDownloading(true);
     setShareNote(null);
     sound.playSuccess();
@@ -382,17 +408,22 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       link.download = `SKSSF-Guide-Certificate-${displayName.replace(/\s+/g, '-')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      setShareNote('സർട്ടിഫിക്കറ്റ് ചിത്രം ഫോണിൽ സേവ് ചെയ്തു!');
+      setShareNote('സർട്ടിഫിക്കറ്റ് ഫോണിൽ സേവ് ആയി!');
     } finally {
       setDownloading(false);
     }
   };
 
   const handleShareSocial = async () => {
+    if (isPreviewOnly) {
+      sound.playError();
+      setShareNote('പ്രിവ്യൂവിൽ ഷെയർ പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      return;
+    }
     setDownloading(true);
     setShareNote(null);
     sound.playSuccess();
-    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ വിജയ സർട്ടിഫിക്കറ്റ് നേടി! (${xp} XP)\nനിങ്ങളും കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
+    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിം മുഴുവൻ കളിച്ച് സർട്ടിഫിക്കറ്റ് നേടി! (${xp} XP)\nനിങ്ങളും ഒന്ന് കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
     try {
       const canvas = await buildCertificateCanvas();
       if (!canvas) return;
@@ -412,7 +443,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             url: appUrl,
             files: [file],
           });
-          setShareNote('സർട്ടിഫിക്കറ്റും ഗെയിം ലിങ്കും ഷെയർ ചെയ്തു!');
+          setShareNote('സർട്ടിഫിക്കറ്റും ലിങ്കും ഷെയർ ചെയ്തു!');
           return;
         }
         await navigator.share({
@@ -428,9 +459,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       link.href = canvas.toDataURL('image/png');
       link.click();
       await copyAppShareLink();
-      setShareNote('സർട്ടിഫിക്കറ്റ് സേവ് ചെയ്തു, ഗെയിം ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്‌സ്ആപ്പിൽ അയക്കാം!');
+      setShareNote('സർട്ടിഫിക്കറ്റ് സേവ് ആയി, ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്‌സ്ആപ്പിൽ അയക്കാം.');
     } catch {
-      setShareNote('ഷെയർ വേണ്ടെന്ന് വെച്ചു — ഡൗൺലോഡ് അല്ലെങ്കിൽ ലിങ്ക് കോപ്പി ബട്ടൺ ഉപയോഗിക്കാം.');
+      setShareNote('ഷെയർ മാറ്റിവെച്ചു — വേണമെങ്കിൽ താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം.');
     } finally {
       setDownloading(false);
     }
@@ -447,6 +478,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   };
 
   const handlePrint = () => {
+    if (isPreviewOnly) {
+      sound.playError();
+      setShareNote('പ്രിവ്യൂവിൽ പ്രിന്റ് പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      return;
+    }
     sound.playClick();
     window.print();
   };
@@ -459,13 +495,25 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         </span>
         <div>
           <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-            🏆 നിങ്ങളുടെ വിജയ സർട്ടിഫിക്കറ്റ്
+            🏆 നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ്
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-            പേരും നാടും ഫോട്ടോയും ചേർത്ത് സമസ്തയുടെയും SKSSF-ന്റെയും ഔദ്യോഗിക കൊടികളുള്ള സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാം, വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.
+            പേരും നാടും (വേണമെങ്കിൽ ഫോട്ടോയും) ചേർത്ത് നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ് ഫോണിൽ സേവ് ചെയ്യാം, വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.
           </p>
         </div>
       </div>
+
+      {isPreviewOnly && (
+        <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-3.5 flex items-start gap-2.5 text-xs font-extrabold text-amber-950">
+          <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p>👁️ പ്രിവ്യൂ മാത്രം (ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് അല്ല)</p>
+            <p className="font-semibold text-amber-900 leading-relaxed">
+              ഇപ്പോൾ {completedLessonsCount}/52 പാഠങ്ങളേ കഴിഞ്ഞിട്ടുള്ളൂ. ഡിസൈൻ നോക്കാൻ മാത്രമാണ് ഇത് — 52 പാഠങ്ങളും കളിച്ച് തീർത്താലേ സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാനും ഷെയർ ചെയ്യാനും പറ്റൂ.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Simple 3-Step Form */}
       <form
@@ -475,19 +523,36 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <div className="md:col-span-5">
           <label
             htmlFor="cert-name"
-            className="block text-xs font-extrabold text-slate-700 mb-1.5"
+            className="flex items-center gap-1.5 text-xs font-extrabold text-slate-700 mb-1.5"
           >
-            1. നിങ്ങളുടെ പേര്
+            <span>1. നിങ്ങളുടെ പേര്</span>
+            {lockedName && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800">
+                <Lock className="w-3 h-3" /> ബാക്കപ്പ് ലോക്ക്
+              </span>
+            )}
           </label>
           <input
             id="cert-name"
             type="text"
             required
-            value={recipientName}
-            onChange={(e) => setRecipientName(e.target.value)}
+            readOnly={Boolean(lockedName)}
+            value={effectiveName}
+            onChange={(e) => {
+              if (!lockedName) setRecipientName(e.target.value);
+            }}
             placeholder="ഉദാ: മുഹമ്മദ് അമീൻ കെ."
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-700"
+            className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 focus:outline-none ${
+              lockedName
+                ? 'border-emerald-300 bg-emerald-50/70 font-extrabold cursor-not-allowed'
+                : 'border-slate-300 focus:border-emerald-700'
+            }`}
           />
+          {lockedName && (
+            <p className="text-[10px] font-bold text-emerald-800 mt-1">
+              🔒 ബാക്കപ്പിൽ നിന്ന് എടുത്ത പേരായതിനാൽ ഇവിടെ പേര് മാറ്റാൻ പറ്റില്ല.
+            </p>
+          )}
         </div>
 
         <div className="md:col-span-4">
@@ -512,7 +577,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             type="submit"
             className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 transition-colors whitespace-nowrap"
           >
-            സർട്ടിഫിക്കറ്റ് റെഡിയാക്കാം
+            സർട്ടിഫിക്കറ്റ് കാണാം
           </button>
         </div>
       </form>
@@ -520,7 +585,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       {/* Photo Upload Bar */}
       <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex flex-wrap items-center justify-between gap-2.5">
         <div className="text-xs font-extrabold text-amber-950">
-          3. നിങ്ങളുടെ ഫോട്ടോ കൂടി വെക്കാം (വേണമെങ്കിൽ മാത്രം — ഫോണിൽ തന്നെ സുരക്ഷിതം):
+          3. ഫോട്ടോ ചേർക്കാം (നിർബന്ധമില്ല — ഫോട്ടോ ഫോണിൽ തന്നെ സുരക്ഷിതമായിരിക്കും):
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -536,7 +601,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold"
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>{photoDataUrl ? 'വേറെ ഫോട്ടോ വെക്കാം' : 'എന്റെ ഫോട്ടോ വെക്കാം'}</span>
+            <span>{photoDataUrl ? 'ഫോട്ടോ മാറ്റാം' : 'ഫോട്ടോ ചേർക്കാം'}</span>
           </button>
           {photoDataUrl && (
             <button
@@ -544,7 +609,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
               onClick={() => setPhotoDataUrl(null)}
               className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold hover:bg-rose-50"
             >
-              <Trash2 className="w-3.5 h-3.5" /> നീക്കാം
+              <Trash2 className="w-3.5 h-3.5" /> ഒഴിവാക്കാം
             </button>
           )}
         </div>
@@ -555,6 +620,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         id="certificate-print-area"
         className="relative bg-[#FCFBF7] border-4 sm:border-[10px] border-emerald-900 rounded-2xl p-3 sm:p-6 shadow-md overflow-hidden"
       >
+        {isPreviewOnly && (
+          <div className="mb-3 rounded-xl bg-amber-300 border-2 border-amber-600 px-3 py-1.5 text-center text-xs font-black text-slate-950 tracking-wide">
+            PREVIEW ONLY · NOT OFFICIAL ({completedLessonsCount}/52 പാഠങ്ങൾ)
+          </div>
+        )}
         <div className="border-2 border-amber-600/80 rounded-xl p-4 sm:p-8 text-center space-y-4 sm:space-y-5 bg-gradient-to-b from-emerald-50/40 via-transparent to-transparent">
           {/* Top Row: Samastha Flag + Center Photo/Crest + SKSSF Flag */}
           <div className="flex items-center justify-between gap-2 max-w-3xl mx-auto">
@@ -598,7 +668,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
           <div className="max-w-2xl mx-auto border-t-2 border-amber-500/40 pt-4">
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-              സമസ്തയുടെ ചരിത്രവും SKSSF യൂണിറ്റ്-കമ്മിറ്റി പ്രവർത്തനങ്ങളും 17 സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും ഭംഗിയായി പൂർത്തിയാക്കിയതിന് സ്നേഹപൂർവ്വം നൽകുന്ന സർട്ടിഫിക്കറ്റ്:
+              സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന സർട്ടിഫിക്കറ്റ്.
             </p>
           </div>
 
@@ -614,11 +684,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
           <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 sm:p-4 max-w-2xl mx-auto text-xs sm:text-sm space-y-1.5">
             <p className="font-extrabold text-emerald-950 tabular-nums">
-              നേടിയ സ്കോർ: {xp} XP · സ്ഥാനം: {rank}
+              സ്കോർ: {xp} XP · സ്ഥാനം: {rank}
             </p>
             <p className="text-slate-700 font-semibold leading-relaxed">
-              ലഭിച്ച ബാഡ്ജുകൾ:{' '}
-              {badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും ഭംഗിയായി പൂർത്തിയാക്കി'}
+              ബാഡ്ജുകൾ:{' '}
+              {badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി'}
             </p>
           </div>
 
@@ -632,7 +702,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             )}
             <div className="leading-snug text-center">
               <p className="text-[11px] font-extrabold text-emerald-900">
-                📲 നിങ്ങളും ഈ ഗെയിം കളിക്കാൻ QR സ്കാൻ ചെയ്യൂ
+                നിങ്ങൾക്കും ഈ ഗെയിം കളിക്കാം — QR കോഡ് സ്കാൻ ചെയ്യൂ
               </p>
               <p className="text-[10px] font-semibold text-slate-700 break-all">
                 {appUrl.replace(/^https?:\/\//, '')}
@@ -653,39 +723,44 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-950 text-xs sm:text-sm font-extrabold hover:bg-emerald-100 whitespace-nowrap shrink-0 cursor-pointer"
         >
           <Copy className="w-4 h-4" />
-          🔗 ലിങ്ക് കോപ്പി
+          ലിങ്ക് കോപ്പി
         </button>
         <button
           type="button"
+          disabled={isPreviewOnly}
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 whitespace-nowrap shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-800 text-xs sm:text-sm font-bold hover:bg-slate-50 disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
         >
-          <Printer className="w-4 h-4" />
+          {isPreviewOnly ? <Lock className="w-4 h-4" /> : <Printer className="w-4 h-4" />}
           പ്രിന്റ് / PDF
         </button>
         <button
           type="button"
-          disabled={downloading}
+          disabled={downloading || isPreviewOnly}
           onClick={handleShareSocial}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-extrabold hover:bg-emerald-800 disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
         >
-          <Share2 className="w-4 h-4" />
+          {isPreviewOnly ? <Lock className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
           ഷെയർ ചെയ്യാം
         </button>
         <button
           type="button"
-          disabled={downloading}
+          disabled={downloading || isPreviewOnly}
           onClick={handleDownloadPng}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 border-b-4 border-amber-600 text-xs sm:text-sm font-black hover:bg-amber-300 disabled:opacity-50 whitespace-nowrap shrink-0 cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 border-b-4 border-amber-600 text-xs sm:text-sm font-black hover:bg-amber-300 disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap shrink-0 cursor-pointer"
         >
-          <Download className="w-4 h-4" />
-          {downloading ? 'തയ്യാറാക്കുന്നു...' : 'ചിത്രമായി ഡൗൺലോഡ്'}
+          {isPreviewOnly ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+          {isPreviewOnly
+            ? '52 പാഠങ്ങളും പൂർത്തിയാക്കൂ'
+            : downloading
+            ? 'തയ്യാറാക്കുന്നു...'
+            : 'ചിത്രമായി ഡൗൺലോഡ്'}
         </button>
       </div>
 
       {(generated || shareNote) && (
         <p className="text-xs text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 font-bold text-center sm:text-right">
-          ✅ {shareNote || 'സർട്ടിഫിക്കറ്റ് തയ്യാറായി! ഇനി ഡൗൺലോഡ് ചെയ്യാനോ ഷെയർ ചെയ്യാനോ കഴിയും.'}
+          ✅ {shareNote || 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ ഷെയർ ചെയ്യാം.'}
         </p>
       )}
     </div>

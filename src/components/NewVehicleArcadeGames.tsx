@@ -1327,7 +1327,7 @@ export const TagoreHallPassGateGame: React.FC<{
         {/* Tagore Hall Illustrated Banner */}
         <div className="bg-gradient-to-r from-emerald-900 via-teal-800 to-emerald-900 px-3 py-2.5 text-center border-b-2 border-amber-400">
           <p className="text-[11px] font-black tracking-wide text-amber-300">
-            🕊️ 1995 കോഴിക്കോട് ടാഗോർ സെന്റിനറി ഹാൾ · സമാധാന സദസ്സ്
+            🌿 1995 കോഴിക്കോട് ടാഗോർ സെന്റിനറി ഹാൾ · സമാധാന സദസ്സ്
           </p>
           <p className="text-[10px] font-bold text-emerald-100">
             ശംസുൽ ഉലമയുടെ സൗഹാർദ്ദ വേദി — പ്രവേശന പാസ് പരിശോധന
@@ -1360,7 +1360,7 @@ export const TagoreHallPassGateGame: React.FC<{
             </motion.div>
           ) : (
             <div className="p-4 rounded-2xl bg-emerald-100 border-2 border-emerald-400 text-center space-y-1">
-              <p className="text-2xl">🕊️🏛️✨</p>
+              <p className="text-2xl">🌿🏛️✨</p>
               <p className="text-sm font-black text-emerald-950">
                 1995 ടാഗോർ ഹാൾ സമാധാന സദസ്സ് മനോഹരമായി വിജയിച്ചു!
               </p>

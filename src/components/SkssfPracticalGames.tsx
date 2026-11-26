@@ -1834,7 +1834,7 @@ const AGENDA_SLOTS = [
 ] as const;
 
 const AGENDA_PEOPLE = [
-  { id: 'khateeb', emoji: '👳', label: 'ഖത്തീബ് ഉസ്താദ്' },
+  { id: 'khateeb', emoji: '🕌', label: 'ഖത്തീബ് ഉസ്താദ്' },
   { id: 'secretary', emoji: '📝', label: 'യൂണിറ്റ് സെക്രട്ടറി' },
   { id: 'president', emoji: '👑', label: 'യൂണിറ്റ് പ്രസിഡന്റ്' },
   { id: 'ustad', emoji: '🌙', label: 'മേഖലാ / സമസ്ത ഉസ്താദ്' },

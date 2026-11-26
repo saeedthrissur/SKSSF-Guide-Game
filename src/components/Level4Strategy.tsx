@@ -154,7 +154,7 @@ const STRATEGY_FLASH_CARDS = [
   },
   {
     id: 'sf3',
-    emoji: '🦒',
+    emoji: '🗼',
     tag: 'ടീം & പുതിയ തലമുറ',
     title: 'ജിറാഫ് & ഏണി + 10 ടീം തത്വങ്ങൾ',
     front: 'ഉപകാരപ്രദം · അർത്ഥപൂർണ്ണം · ഫലപ്രദം',
@@ -1769,7 +1769,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
-                  <p className="text-sm font-extrabold text-sky-950">👩‍🎓 CSWC · അൽബിർ · ASMI · E-Learning</p>
+                  <p className="text-sm font-extrabold text-sky-950">🎓 CSWC · അൽബിർ · ASMI · E-Learning</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     CSWC-ക്ക് 93 ഡേ &amp; 21 റെസിഡൻഷ്യൽ വനിതാ കോളേജുകളുണ്ട് (ഫളീല-ഫാദീല). അൽബിർ 350+ പ്രീ-സ്കൂളുകളും, സമസ്ത ഇ-ലേണിംഗ് 26+ രാജ്യങ്ങളിലേക്കുള്ള ഓൺലൈൻ മദ്രസയും നൽകുന്നു.
                   </p>
@@ -1967,7 +1967,13 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             </div>
           ) : (
             <>
-              <CertificateGenerator xp={xp} rank={rank} badges={badges} />
+              <CertificateGenerator
+                xp={xp}
+                rank={rank}
+                badges={badges}
+                isPreviewOnly={devUnlocked && unseenLessons.length > 0}
+                completedLessonsCount={52 - unseenLessons.length}
+              />
 
               <div className="rounded-3xl border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 text-center space-y-1.5">
                 <p className="text-xl" aria-hidden="true">

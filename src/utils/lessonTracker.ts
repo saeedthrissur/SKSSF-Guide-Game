@@ -74,7 +74,7 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     id: 'storyboard_ch2',
     stage: 'storyboard',
     tab: 'sb1',
-    emoji: '🕊️',
+    emoji: '🌿',
     groupLabel: 'സാഹചര്യങ്ങൾ',
     title: '1995 ടാഗോർ ഹാൾ & TREND',
   },

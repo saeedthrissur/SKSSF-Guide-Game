@@ -2,6 +2,33 @@ export type AmbienceScene = 'harbor' | 'heritage' | 'conference' | 'study';
 export type QuranTrackId = 'fatiha' | 'ikhlas';
 export type SoundPreset = 'voice_focus' | 'calm_balanced' | 'nature_immersion';
 export type BackgroundMode = 'auto' | 'birds' | 'ocean' | 'off';
+export type SoundPackId = 'classic' | 'oud_warm' | 'crystal_bell';
+
+export const SOUND_PACKS: {
+  id: SoundPackId;
+  label: string;
+  minXp: number;
+  desc: string;
+}[] = [
+  {
+    id: 'classic',
+    label: '🔔 ക്ലാസിക് ടോൺ',
+    minXp: 0,
+    desc: 'വ്യക്തവും ലളിതവുമായ അടിസ്ഥാന ക്ലിക്ക് & വിജയ സ്വരം',
+  },
+  {
+    id: 'oud_warm',
+    label: '🪕 ഊദ് വുഡ് ടോൺ',
+    minXp: 120,
+    desc: 'മൃദുവായ തന്ത്രി-സ്വരത്തിലുള്ള ഹാർമോണിക് ടോൺ',
+  },
+  {
+    id: 'crystal_bell',
+    label: '✨ ക്രിസ്റ്റൽ ബെൽ',
+    minXp: 280,
+    desc: 'തെളിമയുള്ള ഇരട്ട-സ്വര ക്രിസ്റ്റൽ മണിനാദം',
+  },
+];
 
 export const QURAN_TRACKS: { id: QuranTrackId; label: string; url: string; duration: string }[] = [
   {
@@ -25,7 +52,7 @@ const SCENE_TRACKS: Record<AmbienceScene, { primary: string; label: string }> = 
   },
   heritage: {
     primary: './assets/audio/birds_morning.mp3',
-    label: '🐦 പൈതൃക പ്രഭാതം',
+    label: '🌅 പൈതൃക പ്രഭാതം',
   },
   conference: {
     primary: './assets/audio/crowd_hall.mp3',
@@ -54,6 +81,7 @@ export interface SoundStateSnapshot {
   spiritualPct: number;
   sfxPct: number;
   preset: SoundPreset;
+  soundPack: SoundPackId;
 }
 
 type SoundListener = (snap: SoundStateSnapshot) => void;
@@ -90,6 +118,7 @@ class SoundEngine {
   private spiritualPct: number = 60;
   private sfxPct: number = 25;
   private preset: SoundPreset = 'voice_focus';
+  private soundPack: SoundPackId = 'classic';
 
   private listeners = new Set<SoundListener>();
   private onBeforeSpiritualPlay?: () => void;
@@ -125,6 +154,7 @@ class SoundEngine {
         autoNarrate: boolean;
         backgroundMode: BackgroundMode;
         userPausedAmbience: boolean;
+        soundPack: SoundPackId;
       }>;
       if (typeof p.narratorPct === 'number') this.narratorPct = Math.max(0, Math.min(100, p.narratorPct));
       if (typeof p.ambiencePct === 'number') this.ambiencePct = Math.max(0, Math.min(100, p.ambiencePct));
@@ -135,6 +165,9 @@ class SoundEngine {
       if (typeof p.userPausedAmbience === 'boolean') this.userPausedAmbience = p.userPausedAmbience;
       if (p.backgroundMode === 'birds' || p.backgroundMode === 'ocean' || p.backgroundMode === 'off') {
         this.backgroundMode = p.backgroundMode;
+      }
+      if (p.soundPack === 'classic' || p.soundPack === 'oud_warm' || p.soundPack === 'crystal_bell') {
+        this.soundPack = p.soundPack;
       }
     } catch {
       // Ignore storage errors
@@ -155,6 +188,7 @@ class SoundEngine {
           autoNarrate: this.autoNarrate,
           backgroundMode: this.backgroundMode,
           userPausedAmbience: this.userPausedAmbience,
+          soundPack: this.soundPack,
         })
       );
     } catch {
@@ -173,6 +207,7 @@ class SoundEngine {
     this.backgroundMode = 'off';
     this.userPausedAmbience = true;
     this.preset = 'voice_focus';
+    this.soundPack = 'classic';
     this.stopAmbience();
     if (typeof window !== 'undefined') {
       try {
@@ -233,7 +268,20 @@ class SoundEngine {
       spiritualPct: this.spiritualPct,
       sfxPct: this.sfxPct,
       preset: this.preset,
+      soundPack: this.soundPack,
     };
+  }
+
+  public setSoundPack(pack: SoundPackId) {
+    this.soundPack = pack;
+    this.savePrefs();
+    this.emit();
+  }
+
+  public reloadPrefsFromStorage() {
+    this.loadSavedPrefs();
+    this.syncActiveVolumes();
+    this.emit();
   }
 
   private emit() {
@@ -804,15 +852,37 @@ class SoundEngine {
     try {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(620, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.05);
-      gain.gain.setValueAtTime(g, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.055);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.06);
+      if (this.soundPack === 'oud_warm') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(340, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.07);
+        gain.gain.setValueAtTime(g * 1.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.085);
+      } else if (this.soundPack === 'crystal_bell') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1180, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.075);
+        gain.gain.setValueAtTime(g * 0.85, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.085);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.09);
+      } else {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(g, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.055);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+      }
     } catch {
       // Ignore
     }
@@ -825,15 +895,25 @@ class SoundEngine {
     try {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.09);
+      if (this.soundPack === 'oud_warm') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(293.66, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(587.33, ctx.currentTime + 0.11);
+      } else if (this.soundPack === 'crystal_bell') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(784, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1318.5, ctx.currentTime + 0.11);
+      } else {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.09);
+      }
       gain.gain.setValueAtTime(g, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.11);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.12);
+      osc.stop(ctx.currentTime + 0.13);
     } catch {
       // Ignore
     }
@@ -844,11 +924,16 @@ class SoundEngine {
     const g = this.getToneGain(0.04);
     if (!ctx || g <= 0) return;
     try {
-      const sparkles = [1046.5, 1318.5, 1567.98, 2093.0];
+      const sparkles =
+        this.soundPack === 'oud_warm'
+          ? [587.33, 739.99, 880.0, 1174.66]
+          : this.soundPack === 'crystal_bell'
+          ? [1318.5, 1567.98, 2093.0, 2637.02]
+          : [1046.5, 1318.5, 1567.98, 2093.0];
       sparkles.forEach((freq, i) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'sine';
+        osc.type = this.soundPack === 'oud_warm' ? 'triangle' : 'sine';
         const t = ctx.currentTime + i * 0.045;
         osc.frequency.setValueAtTime(freq, t);
         gain.gain.setValueAtTime(g, t);
@@ -870,9 +955,12 @@ class SoundEngine {
     try {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.08);
+      osc.type = this.soundPack === 'oud_warm' ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(this.soundPack === 'crystal_bell' ? 520 : 320, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(
+        this.soundPack === 'crystal_bell' ? 980 : 660,
+        ctx.currentTime + 0.08
+      );
       gain.gain.setValueAtTime(g, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
       osc.connect(gain);
@@ -890,19 +978,25 @@ class SoundEngine {
     if (!ctx || g <= 0) return;
     try {
       const shift = Math.min(combo - 1, 5) * 45;
-      const notes = [523.25 + shift, 659.25 + shift, 783.99 + shift];
+      const notes =
+        this.soundPack === 'oud_warm'
+          ? [392.0 + shift, 493.88 + shift, 587.33 + shift, 783.99 + shift]
+          : this.soundPack === 'crystal_bell'
+          ? [783.99 + shift, 987.77 + shift, 1174.66 + shift]
+          : [523.25 + shift, 659.25 + shift, 783.99 + shift];
+      const wave: OscillatorType = this.soundPack === 'crystal_bell' ? 'sine' : 'triangle';
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'triangle';
+        osc.type = wave;
         const start = ctx.currentTime + idx * 0.065;
         osc.frequency.setValueAtTime(freq, start);
         gain.gain.setValueAtTime(g, start);
-        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + (this.soundPack === 'crystal_bell' ? 0.28 : 0.22));
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(start);
-        osc.stop(start + 0.23);
+        osc.stop(start + (this.soundPack === 'crystal_bell' ? 0.29 : 0.23));
       });
     } catch {
       // Ignore

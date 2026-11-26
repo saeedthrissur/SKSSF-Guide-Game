@@ -37,6 +37,7 @@ const EDUCATION_PORTALS: PortalChoice[] = [
     shortUrl: 'cswc.in',
     url: 'https://cswc.in/',
     emoji: '🏛️',
+    logoSrc: OFFICIAL_WING_LOGOS.cswc.src,
   },
   {
     id: 'albirr',
@@ -52,14 +53,14 @@ const EDUCATION_PORTALS: PortalChoice[] = [
     shortUrl: 'samasthaelearning.com',
     url: 'https://www.samasthaelearning.com/',
     emoji: '💻',
-    logoSrc: OFFICIAL_WING_LOGOS.skimvb.src,
+    logoSrc: OFFICIAL_WING_LOGOS.samastha_elearning.src,
   },
   {
     id: 'skjmcc',
     label: 'SKJMCC മുഅല്ലിം പോർട്ടൽ',
     shortUrl: 'skjmcc.com',
     url: 'https://skjmcc.com/',
-    emoji: '👨‍🏫',
+    emoji: '📖',
     logoSrc: OFFICIAL_WING_LOGOS.skjmcc.src,
   },
   {
@@ -116,7 +117,7 @@ const PORTAL_CASES: PortalRequestCase[] = [
   {
     id: 'req_cswc',
     caller: 'പെൺകുട്ടി വിദ്യാർത്ഥിനി',
-    emoji: '👩‍🎓',
+    emoji: '🎓',
     request: '“വനിതകൾക്ക് സുരക്ഷിത ഇസ്‌ലാമിക അന്തരീക്ഷത്തിൽ 3 വർഷ ഫളീല ബിരുദവും 2 വർഷ ഫാദീല പി.ജിയും എവിടെ പഠിക്കാം?”',
     correctPortalId: 'cswc',
     tip: '93 ഡേ കോളേജുകളും 21 റെസിഡൻഷ്യൽ കോളേജുകളുമായി CSWC (cswc.in) ഫളീല-ഫാദീല കോഴ്സുകൾ നൽകുന്നു!',
@@ -405,6 +406,7 @@ const STUDIO_CHANNELS: StudioChannel[] = [
     sub: 'epaper.suprabhaatham.com',
     url: 'https://epaper.suprabhaatham.com/',
     emoji: '📰',
+    logoSrc: OFFICIAL_WING_LOGOS.suprabhaatham.src,
   },
   {
     id: 'kurunnukal_balavedhi',
@@ -413,6 +415,7 @@ const STUDIO_CHANNELS: StudioChannel[] = [
     url: 'https://www.youtube.com/@balavedhi',
     isYoutube: true,
     emoji: '🌟',
+    logoSrc: OFFICIAL_WING_LOGOS.samastha_magazines.src,
   },
   {
     id: 'skjmcc_mag',
@@ -420,7 +423,7 @@ const STUDIO_CHANNELS: StudioChannel[] = [
     sub: 'magazine.skjmcc.net',
     url: 'https://magazine.skjmcc.net/',
     emoji: '📖',
-    logoSrc: OFFICIAL_WING_LOGOS.skjmcc.src,
+    logoSrc: OFFICIAL_WING_LOGOS.samastha_magazines.src,
   },
   {
     id: 'skicr_live',
@@ -463,7 +466,7 @@ const BROADCAST_REQUESTS = [
   {
     id: 'b_kurunnukal',
     audience: 'മദ്രസാ കൂട്ടുകാരൻ',
-    emoji: '🧒',
+    emoji: '🌟',
     prompt: '“മദ്രസാ കുട്ടികൾക്കുള്ള ഇസ്‌ലാമിക കഥകളും ക്വിസുകളും മജ്‌ലിസുൽ മആരിഫ് ക്ലാസുകളും എവിടെ കാണാം?”',
     targetId: 'kurunnukal_balavedhi',
     note: 'കുരുന്നുകൾ ബാലമാസികയും SKSBV-യുടെ @balavedhi യൂട്യൂബ് ചാനലും കുട്ടികൾക്കുള്ള വിജ്ഞാന കലവറയാണ്!',

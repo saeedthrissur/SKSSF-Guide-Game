@@ -527,7 +527,10 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             {/* Photo Upload Box */}
             <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2.5">
               <p className="text-xs font-extrabold text-amber-950">
-                1. നിങ്ങളുടെ ഫോട്ടോ വെക്കാം (വേണമെങ്കിൽ മാത്രം — ഫോണിൽ തന്നെ സുരക്ഷിതം)
+                1. നിങ്ങളുടെ ഫോട്ടോ വെക്കാം (വേണമെങ്കിൽ മാത്രം)
+              </p>
+              <p className="text-[11px] font-semibold text-amber-900 leading-snug">
+                🔒 സ്വകാര്യത: നിങ്ങളുടെ ഫോട്ടോ ഈ ഫോണിൽ മാത്രമേ ഉപയോഗിക്കൂ — ഒരു സെർവറിലേക്കും അപ്‌ലോഡ് ചെയ്യില്ല.
               </p>
               <input
                 ref={fileInputRef}

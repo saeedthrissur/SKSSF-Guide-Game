@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Flame,
   Gift,
   Info,
   Languages,
@@ -22,6 +23,7 @@ import {
   RotateCcw,
   Settings,
   Share2,
+  ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Sun,
@@ -38,6 +40,7 @@ import {
   BackgroundMode,
   QURAN_TRACKS,
   sound,
+  SOUND_PACKS,
   SoundPreset,
   SoundStateSnapshot,
 } from '../utils/sound';
@@ -47,7 +50,16 @@ import {
   FONT_LEVEL_META,
   TRANSLATE_LANGUAGES,
 } from '../utils/displayPrefs';
-import { RunHistoryEntry } from '../utils/gameStorage';
+import {
+  DAILY_MISSIONS,
+  DailyAndProfileState,
+  exportProgressBackupCode,
+  importProgressBackupCode,
+  loadDailyAndProfileState,
+  RunHistoryEntry,
+  UnitProfile,
+} from '../utils/gameStorage';
+import { getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
 import { useLessonFlow } from '../utils/lessonFlowContext';
 import { scrollDirectToQuiz } from './LessonCheckQuiz';
@@ -296,7 +308,7 @@ export const AnimatedOceanLane: React.FC<{ boatLeft: string }> = ({ boatLeft }) 
   </div>
 );
 
-export const AnimatedGiraffeMascot: React.FC<{ className?: string }> = ({
+export const AnimatedVisionTowerEmblem: React.FC<{ className?: string }> = ({
   className = 'w-16 h-20',
 }) => (
   <svg
@@ -304,47 +316,73 @@ export const AnimatedGiraffeMascot: React.FC<{ className?: string }> = ({
     className={`${className} animate-float-bob`}
     aria-hidden="true"
   >
-    <path
-      d="M36 96 L38 56 L50 56 L54 96 Z"
+    {/* Subtle glowing halo behind beacon */}
+    <circle cx="45" cy="24" r="16" fill="#FDE68A" fillOpacity="0.22" />
+    {/* Golden 8-pointed Islamic geometric star beacon */}
+    <polygon
+      points="45,10 49,19 58,19 51,25 54,34 45,29 36,34 39,25 32,19 41,19"
       fill="#FBBF24"
       stroke="#92400E"
-      strokeWidth="2"
+      strokeWidth="1.5"
     />
-    <circle cx="43" cy="68" r="3" fill="#78350F" />
-    <circle cx="47" cy="80" r="3.5" fill="#78350F" />
-    <circle cx="41" cy="88" r="2.5" fill="#78350F" />
+    {/* Watchtower cupola & spire */}
     <path
-      d="M42 58 L44 22 C44 16 58 16 62 22 C65 26 58 32 52 32 L50 58 Z"
-      fill="#FBBF24"
-      stroke="#92400E"
+      d="M32 46 Q45 30 58 46 Z"
+      fill="#10B981"
+      stroke="#065F46"
       strokeWidth="2"
     />
-    <line x1="46" y1="18" x2="44" y2="9" stroke="#78350F" strokeWidth="2.5" />
-    <circle cx="44" cy="9" r="2.5" fill="#78350F" />
-    <line x1="52" y1="18" x2="53" y2="9" stroke="#78350F" strokeWidth="2.5" />
-    <circle cx="53" cy="9" r="2.5" fill="#78350F" />
-    <circle cx="53" cy="23" r="2" fill="#1E293B" />
-    <line x1="68" y1="98" x2="76" y2="36" stroke="#B45309" strokeWidth="3" />
-    <line x1="80" y1="98" x2="88" y2="36" stroke="#B45309" strokeWidth="3" />
-    <line x1="70" y1="86" x2="82" y2="86" stroke="#D97706" strokeWidth="2.5" />
-    <line x1="72" y1="70" x2="84" y2="70" stroke="#D97706" strokeWidth="2.5" />
-    <line x1="74" y1="54" x2="86" y2="54" stroke="#D97706" strokeWidth="2.5" />
+    {/* Tower shaft with arched window */}
+    <rect
+      x="34"
+      y="46"
+      width="22"
+      height="46"
+      rx="3"
+      fill="#F8FAFC"
+      stroke="#065F46"
+      strokeWidth="2"
+    />
+    <path
+      d="M40 70 L40 60 Q45 53 50 60 L50 70 Z"
+      fill="#065F46"
+    />
+    <line x1="34" y1="78" x2="56" y2="78" stroke="#D97706" strokeWidth="2.5" />
+    {/* Stepped base representing 7 organizational tiers */}
+    <rect x="26" y="92" width="38" height="7" rx="2" fill="#047857" />
+    <rect x="20" y="99" width="50" height="6" rx="2" fill="#064E3B" />
+    {/* Ascending golden ladder beside tower */}
+    <line x1="68" y1="98" x2="75" y2="40" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="78" y1="98" x2="85" y2="40" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="69" y1="86" x2="80" y2="86" stroke="#FBBF24" strokeWidth="2" />
+    <line x1="71" y1="72" x2="82" y2="72" stroke="#FBBF24" strokeWidth="2" />
+    <line x1="73" y1="58" x2="84" y2="58" stroke="#FBBF24" strokeWidth="2" />
   </svg>
 );
+
+export const AnimatedGiraffeMascot = AnimatedVisionTowerEmblem;
 
 /* Dedicated Interactive Audio, Volume Verification & Share/Embed Settings Modal */
 export const SettingsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
+  xp?: number;
   onResetProgress?: () => void;
   onClearAllData?: () => Promise<void> | void;
-}> = ({ isOpen, onClose, onResetProgress, onClearAllData }) => {
+  onRestoreBackup?: () => void;
+}> = ({ isOpen, onClose, xp = 0, onResetProgress, onClearAllData, onRestoreBackup }) => {
   const [snd, setSnd] = useState<SoundStateSnapshot>(sound.getSnapshot());
   const [nav, setNav] = useState<NarratorState>(narrator.getState());
   const [disp, setDisp] = useState<DisplayPrefsSnapshot>(displayPrefs.getSnapshot());
-  const [copiedMode, setCopiedMode] = useState<'link' | 'embed' | null>(null);
+  const [copiedMode, setCopiedMode] = useState<'link' | 'embed' | 'backup' | null>(null);
   const [confirmAction, setConfirmAction] = useState<'reset' | 'clear_all' | null>(null);
   const [actionDoneMsg, setActionDoneMsg] = useState<string | null>(null);
+  const [backupName, setBackupName] = useState('');
+  const [lockedOwnerName, setLockedOwnerName] = useState('');
+  const [exportPin, setExportPin] = useState('');
+  const [backupInput, setBackupInput] = useState('');
+  const [restorePin, setRestorePin] = useState('');
+  const [backupFeedback, setBackupFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     const u1 = sound.subscribe(setSnd);
@@ -357,13 +395,21 @@ export const SettingsModal: React.FC<{
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const daily = loadDailyAndProfileState();
+    const locked = daily.profile.lockedCertificateName?.trim() || '';
+    setLockedOwnerName(locked);
+    setBackupName((prev) => locked || prev || daily.profile.playerName || '');
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const shareUrl =
     typeof window !== 'undefined' ? window.location.href.split('#')[0] : '';
   const embedCode = `<iframe src="${shareUrl}" title="SKSSF ഗൈഡ് ഗെയിം" width="100%" height="780" style="border:0;border-radius:16px;overflow:hidden;" allow="autoplay; clipboard-write" allowfullscreen></iframe>`;
 
-  const copyText = async (text: string, mode: 'link' | 'embed') => {
+  const copyText = async (text: string, mode: 'link' | 'embed' | 'backup') => {
     sound.unlockAudio();
     sound.playPop();
     try {
@@ -384,7 +430,7 @@ export const SettingsModal: React.FC<{
 
   const bgModes: { id: BackgroundMode; label: string }[] = [
     { id: 'off', label: '🔇 നിശബ്ദം (OFF)' },
-    { id: 'birds', label: '🐦 പ്രഭാത പക്ഷികൾ' },
+    { id: 'birds', label: '🌅 പ്രഭാത പ്രകൃതി' },
     { id: 'ocean', label: '🌊 ശാന്തമായ കടൽ' },
   ];
 
@@ -803,6 +849,60 @@ export const SettingsModal: React.FC<{
             </div>
           </div>
 
+          {/* XP-Unlocked Synthesized Web Audio Sound Packs (0 KB extra assets) */}
+          <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-slate-900">
+                🎵 ഗെയിം ടോൺ പാക്കുകൾ (XP അൺലോക്ക്)
+              </span>
+              <span className="text-[10px] font-bold text-emerald-800 tabular-nums notranslate">
+                നിങ്ങളുടെ XP: {xp}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {SOUND_PACKS.map((pack) => {
+                const unlocked = xp >= pack.minXp;
+                const active = snd.soundPack === pack.id;
+                return (
+                  <button
+                    key={pack.id}
+                    type="button"
+                    disabled={!unlocked}
+                    onClick={() => {
+                      if (!unlocked) return;
+                      sound.unlockAudio();
+                      sound.setSoundPack(pack.id);
+                      sound.playSuccess(2);
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-colors ${
+                      active
+                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs cursor-pointer'
+                        : unlocked
+                        ? 'bg-slate-50 hover:bg-emerald-50 text-slate-900 border-slate-200 hover:border-emerald-400 cursor-pointer'
+                        : 'bg-slate-50 text-slate-400 border-slate-200 opacity-75 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs font-extrabold leading-tight">{pack.label}</span>
+                      {!unlocked && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md shrink-0 notranslate">
+                          <Lock className="w-2.5 h-2.5" /> {pack.minXp} XP
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`text-[10px] leading-snug mt-1 ${
+                        active ? 'text-emerald-100' : 'text-slate-500'
+                      }`}
+                    >
+                      {pack.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Background Sound Mode */}
           <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-extrabold text-emerald-950">🌿 പശ്ചാത്തല മോഡ്:</span>
@@ -972,6 +1072,172 @@ export const SettingsModal: React.FC<{
               )}
             </button>
           </div>
+        </div>
+
+        {/* PIN + Name Protected Progress Backup & Restore Code (SKSSF-BK2) */}
+        <div className="p-4 rounded-2xl bg-emerald-50/75 border border-emerald-200 space-y-3.5">
+          <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-950">
+            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span>🔐 സുരക്ഷിത പ്രോഗ്രസ് ബാക്കപ്പ് (പേര് + 4 അക്ക PIN)</span>
+          </div>
+          <p className="text-[11px] text-slate-700 leading-relaxed">
+            ഫോൺ മാറുമ്പോൾ നിങ്ങളുടെ പാഠങ്ങളും സ്കോറും തുടർച്ചയും നഷ്ടപ്പെടാതിരിക്കാൻ <strong>പേരും 4 അക്ക രഹസ്യ PIN-ഉം</strong> നൽകി സ്വകാര്യ ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാം.
+          </p>
+
+          {/* Step 1: Create Protected Backup */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div className="sm:col-span-7">
+                <input
+                  type="text"
+                  value={lockedOwnerName || backupName}
+                  readOnly={Boolean(lockedOwnerName)}
+                  onChange={(e) => {
+                    if (!lockedOwnerName) {
+                      setBackupName(e.target.value);
+                      setBackupFeedback(null);
+                    }
+                  }}
+                  placeholder="നിങ്ങളുടെ പേര് (സർട്ടിഫിക്കറ്റിൽ ലോക്ക് ആകും)"
+                  aria-label="ബാക്കപ്പ് ഉടമയുടെ പേര്"
+                  className={`w-full px-3 py-2 rounded-xl border text-xs font-semibold focus:outline-none ${
+                    lockedOwnerName
+                      ? 'border-emerald-300 bg-emerald-100/70 text-emerald-950 cursor-not-allowed'
+                      : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-600'
+                  }`}
+                />
+              </div>
+              <div className="sm:col-span-5">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={exportPin}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setExportPin(digits);
+                    setBackupFeedback(null);
+                  }}
+                  placeholder="4 അക്ക PIN (ഉദാ: 4829)"
+                  aria-label="ബാക്കപ്പ് 4 അക്ക പിൻ"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
+                />
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                const res = exportProgressBackupCode(lockedOwnerName || backupName, exportPin);
+                if (res.ok && res.code) {
+                  copyText(res.code, 'backup');
+                  setBackupFeedback({
+                    ok: true,
+                    text: `“${res.ownerName}” എന്ന പേരിൽ PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു! കോഡും 4 അക്ക PIN-ഉം സ്വകാര്യമായി സൂക്ഷിക്കുക.`,
+                  });
+                } else {
+                  sound.playError();
+                  setBackupFeedback({
+                    ok: false,
+                    text: res.error || 'ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
+                  });
+                }
+              }}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+            >
+              {copiedMode === 'backup' ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്യുക
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Step 2: Restore Protected Backup */}
+          <div className="pt-2.5 border-t border-emerald-200/80 space-y-2">
+            <label className="block text-[11px] font-extrabold text-slate-800">
+              മുമ്പ് സൂക്ഷിച്ച ബാക്കപ്പ് കോഡും 4 അക്ക PIN-ഉം നൽകി പ്രോഗ്രസ് തിരിച്ചെടുക്കാം:
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <input
+                type="text"
+                value={backupInput}
+                onChange={(e) => {
+                  setBackupInput(e.target.value);
+                  setBackupFeedback(null);
+                }}
+                placeholder="SKSSF-BK2:... കോഡ് ഒട്ടിക്കുക"
+                aria-label="ബാക്കപ്പ് കോഡ് ഒട്ടിക്കുക"
+                className="sm:col-span-6 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                value={restorePin}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                  setRestorePin(digits);
+                  setBackupFeedback(null);
+                }}
+                placeholder="4 അക്ക PIN"
+                aria-label="തിരിച്ചെടുക്കാനുള്ള 4 അക്ക പിൻ"
+                className="sm:col-span-3 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  const res = importProgressBackupCode(backupInput, restorePin);
+                  if (res.ok) {
+                    sound.reloadPrefsFromStorage();
+                    sound.playUnlock();
+                    onRestoreBackup?.();
+                    if (res.restoredName) {
+                      setLockedOwnerName(res.restoredName);
+                      setBackupName(res.restoredName);
+                    }
+                    setBackupInput('');
+                    setRestorePin('');
+                    setBackupFeedback({
+                      ok: true,
+                      text: `“${res.restoredName}” എന്ന പ്രൊഫൈൽ തിരിച്ചെടുത്തു! (${res.restoredLessons ?? 0} പാഠങ്ങൾ · ${res.restoredXp ?? 0} XP · 🔥 ${res.restoredStreak ?? 1} ദിവസം · സർട്ടിഫിക്കറ്റ് പേര് ലോക്ക് ചെയ്തു)`,
+                    });
+                  } else {
+                    sound.playError();
+                    setBackupFeedback({
+                      ok: false,
+                      text: res.error || 'ബാക്കപ്പ് കോഡ് തിരിച്ചെടുക്കാൻ കഴിഞ്ഞില്ല.',
+                    });
+                  }
+                }}
+                disabled={!backupInput.trim() || restorePin.length !== 4}
+                className="sm:col-span-3 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 text-xs font-extrabold shrink-0 cursor-pointer"
+              >
+                തിരിച്ചെടുക്കുക
+              </button>
+            </div>
+            {backupFeedback && (
+              <p
+                className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg border ${
+                  backupFeedback.ok
+                    ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950'
+                    : 'bg-rose-50 border-rose-300 text-rose-900'
+                }`}
+              >
+                {backupFeedback.ok ? '✅ ' : '⚠️ '}
+                {backupFeedback.text}
+              </p>
+            )}
+          </div>
+
+          <p className="text-[11px] font-bold text-emerald-900 bg-white/80 border border-emerald-200 rounded-xl px-3 py-2 leading-snug">
+            🔒 സർട്ടിഫിക്കറ്റ് സുരക്ഷ: ബാക്കപ്പ് തിരിച്ചെടുത്താൽ സർട്ടിഫിക്കറ്റിൽ ആ ഉടമയുടെ പേര് ലോക്ക് ആകും — മറ്റൊരാൾക്ക് ആ കോഡ് വെച്ച് സ്വന്തം പേരിൽ സർട്ടിഫിക്കറ്റ് എടുക്കാനാകില്ല. എല്ലാ വിവരങ്ങളും ഫോണിൽ മാത്രം സുരക്ഷിതം.
+          </p>
         </div>
 
         {/* Game Reset & Clear Saved Browser Data Section */}
@@ -1754,14 +2020,14 @@ export const LessonProgressTrack: React.FC<{
                     setTouchedNotice(`🔒 ${item.label}`);
                   }
                 }}
-                className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center border transition-all ${
+                className={`lesson-card-lift w-8 h-8 rounded-lg text-sm flex items-center justify-center border ${
                   isCurrent
-                    ? 'bg-emerald-700 text-white border-emerald-900 shadow-2xs scale-105'
+                    ? 'bg-emerald-700 text-white border-emerald-900 shadow-2xs scale-105 cursor-pointer'
                     : isDone
-                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                    ? 'bg-emerald-50 text-emerald-900 border-emerald-300 hover:bg-emerald-100 cursor-pointer'
                     : isReachable
-                    ? 'bg-white text-slate-800 border-slate-300'
-                    : 'bg-slate-100 text-slate-400 border-slate-200'
+                    ? 'bg-white text-slate-800 border-slate-300 hover:border-emerald-400 cursor-pointer'
+                    : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                 }`}
               >
                 {isDone ? '✅' : isCurrent ? item.emoji || '▶️' : isReachable ? item.emoji || '📘' : '🔒'}
@@ -2027,11 +2293,11 @@ export const EASTER_EGG_ITEMS: EasterEggItem[] = [
   },
   {
     id: 'egg_dawa_dove',
-    emoji: '🕊️',
-    badge: '🕊️ സമാധാന പ്രാവ് സമ്മാനം',
-    title: 'ദഅ്‌വത്ത് ഗ്രാമത്തിലെ സമാധാന പ്രാവ്!',
-    giftNote: 'ദീനീ ദഅ്‌വത്തിന്റെ സന്ദേശവുമായി പറക്കുന്ന വെള്ളപ്രാവിനെ കണ്ടെത്തിയതിനാൽ പ്രത്യേക സമ്മാനം!',
-    speech: 'സർപ്രൈസ് സമ്മാനം! ദഅ് വത്ത് ഗ്രാമത്തിലെ സമാധാന പ്രാവിനെ കണ്ടെത്തിയതിന് പ്രത്യേക സമ്മാനവും ബോണസ് പോയിന്റും ലഭിച്ചു!',
+    emoji: '🌿',
+    badge: '🌿 സമാധാന ദീപം സമ്മാനം',
+    title: 'ദഅ്‌വത്ത് ഗ്രാമത്തിലെ സമാധാന ദീപം!',
+    giftNote: 'ദീനീ ദഅ്‌വത്തിന്റെ സന്ദേശവുമായി തിളങ്ങുന്ന സമാധാന ദീപം കണ്ടെത്തിയതിനാൽ പ്രത്യേക സമ്മാനം!',
+    speech: 'സർപ്രൈസ് സമ്മാനം! ദഅ് വത്ത് ഗ്രാമത്തിലെ സമാധാന ദീപം കണ്ടെത്തിയതിന് പ്രത്യേക സമ്മാനവും ബോണസ് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'ക്ലസ്റ്റർ & മേഖല: സേവന ദൗത്യം',
   },
   {
@@ -2045,11 +2311,11 @@ export const EASTER_EGG_ITEMS: EasterEggItem[] = [
   },
   {
     id: 'egg_giraffe_star',
-    emoji: '🦒',
-    badge: '🦒 സ്വർണ്ണ ജിറാഫ് ചങ്ങാതി',
-    title: 'ഗോപുരത്തിലെ സ്വർണ്ണ ജിറാഫ് സമ്മാനം!',
-    giftNote: 'ദൂരക്കാഴ്ചയുള്ള ജിറാഫിന്റെ രഹസ്യ സമ്മാനം നേടിയതിനാൽ എല്ലാ ഘട്ടങ്ങളിലും തിളങ്ങാം!',
-    speech: 'സർപ്രൈസ് സമ്മാനം! ആഗോള ഗോപുരത്തിലെ സ്വർണ്ണ ജിറാഫ് സമ്മാനം കണ്ടെത്തിയതിന് പ്രത്യേക ബാഡ്ജും ബോണസ് പോയിന്റും ലഭിച്ചു!',
+    emoji: '🗼',
+    badge: '🗼 സുവർണ്ണ ഗോപുര നക്ഷത്രം',
+    title: 'ഗോപുരത്തിലെ സുവർണ്ണ ദൂരക്കാഴ്ച സമ്മാനം!',
+    giftNote: 'ഉയരമുള്ള ദൂരക്കാഴ്ചയുടെ ഗോപുര നക്ഷത്രം നേടിയതിനാൽ എല്ലാ ഘട്ടങ്ങളിലും തിളങ്ങാം!',
+    speech: 'സർപ്രൈസ് സമ്മാനം! ആഗോള ഗോപുരത്തിലെ സുവർണ്ണ നക്ഷത്ര സമ്മാനം കണ്ടെത്തിയതിന് പ്രത്യേക ബാഡ്ജും ബോണസ് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം',
   },
 ];
@@ -2209,6 +2475,9 @@ export interface ScoreComparisonModalProps {
   eggsCount: number;
   runHistory: RunHistoryEntry[];
   onStartNewAttempt: () => void;
+  dailyState?: DailyAndProfileState;
+  onClaimMission?: (missionId: string, rewardXp: number) => void;
+  onUpdateUnitProfile?: (patch: Partial<UnitProfile>) => void;
 }
 
 export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
@@ -2225,6 +2494,9 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
   eggsCount,
   runHistory,
   onStartNewAttempt,
+  dailyState,
+  onClaimMission,
+  onUpdateUnitProfile,
 }) => {
   if (!isOpen) return null;
 
@@ -2236,6 +2508,22 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
       ? Math.round((previousRun.quizzesCorrect / previousRun.quizzesAnswered) * 100)
       : 0;
   const xpDiff = previousRun ? xp - previousRun.xp : 0;
+  const bestXp = Math.max(xp, ...runHistory.map((r) => r.xp));
+  const bestLessons = Math.max(completedLessonsCount, ...runHistory.map((r) => r.completedLessons));
+
+  const profile = dailyState?.profile ?? { playerName: '', unitName: '', mekhalaName: '' };
+  const unitLine = [profile.unitName.trim(), profile.mekhalaName.trim()].filter(Boolean).join(' · ');
+  const challengeShareText = [
+    `🏆 SKSSF ഗൈഡ് ഗെയിം — യൂണിറ്റ് & മേഖലാ സ്കോർ കാർഡ്`,
+    profile.playerName.trim() ? `👤 പേര്: ${profile.playerName.trim()}` : null,
+    unitLine ? `🏛️ യൂണിറ്റ് / മേഖല: ${unitLine}` : null,
+    `📚 പാഠങ്ങൾ: ${completedLessonsCount}/${totalLessonsCount} · ⭐ ${xp} XP (${rank})`,
+    dailyState ? `🔥 തുടർച്ച: ${dailyState.streakDays} ദിവസം` : null,
+    `നിങ്ങളുടെ യൂണിറ്റിലെ സ്കോറും ഇവിടെ കളിച്ചു നോക്കൂ 👉`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const challengeWhatsappHref = getWhatsAppShareHref(challengeShareText, getAppShareUrl());
 
   return (
     <div
@@ -2250,15 +2538,15 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
       >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0">
               <BarChart3 className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
                 സ്കോർ &amp; പുരോഗതി റിപ്പോർട്ട്
               </h2>
               <p className="text-xs text-emerald-800 font-bold">
-                നിങ്ങളുടെ പുരോഗതി ഈ ബ്രൗസറിൽ തനിയെ സേവ് ആകുന്നുണ്ട് · ശ്രമം #{runNumber}
+                ഈ ബ്രൗസറിൽ തനിയെ സേവ് ആകുന്നു · ശ്രമം #{runNumber}
               </p>
             </div>
           </div>
@@ -2266,7 +2554,7 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -2312,6 +2600,131 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
             </p>
           </div>
         </div>
+
+        {/* Daily Streak & Daily Missions */}
+        {dailyState && (
+          <div className="p-4 rounded-2xl bg-amber-50/75 border-2 border-amber-200 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                  <Flame className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900">
+                    പ്രതിദിന തുടർച്ച &amp; ഇന്നത്തെ ദൗത്യങ്ങൾ
+                  </h3>
+                  <p className="text-[11px] font-bold text-amber-900 tabular-nums">
+                    🔥 {dailyState.streakDays} ദിവസം തുടർച്ച · മികച്ചത്: {dailyState.bestStreak} ദിവസം
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {DAILY_MISSIONS.map((mission) => {
+                const progress =
+                  mission.id === 'daily_checkin'
+                    ? 1
+                    : mission.id === 'daily_lesson'
+                    ? Math.min(1, dailyState.todayLessonsCount)
+                    : Math.min(1, dailyState.todayQuizzesCorrect);
+                const ready = progress >= mission.target;
+                const claimed = dailyState.claimedMissionsToday.includes(mission.id);
+                return (
+                  <div
+                    key={mission.id}
+                    className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-amber-200"
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-base shrink-0">{mission.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-slate-900 leading-snug break-words">
+                          {mission.title}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-500 tabular-nums">
+                          പുരോഗതി: {progress}/{mission.target} · സമ്മാനം: +{mission.rewardXp} XP
+                        </p>
+                      </div>
+                    </div>
+                    {claimed ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 text-[11px] font-extrabold shrink-0">
+                        ✅ നേടി
+                      </span>
+                    ) : ready ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sound.unlockAudio();
+                          sound.playSuccess(3);
+                          onClaimMission?.(mission.id, mission.rewardXp);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold shrink-0 cursor-pointer"
+                      >
+                        +{mission.rewardXp} XP നേടാം
+                      </button>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-bold shrink-0">
+                        ബാക്കി
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Honest Client-Side Unit & Mekhala Score Card + WhatsApp Challenge Share */}
+        {dailyState && onUpdateUnitProfile && (
+          <div className="p-4 rounded-2xl bg-emerald-50/75 border-2 border-emerald-200 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-extrabold text-emerald-950 flex items-center gap-1.5">
+                <Trophy className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>🏛️ യൂണിറ്റ് &amp; മേഖലാ സ്കോർ കാർഡ്</span>
+              </h3>
+              <span className="text-[11px] font-extrabold text-emerald-900 bg-white border border-emerald-200 px-2.5 py-0.5 rounded-lg tabular-nums notranslate">
+                മികച്ച സ്കോർ: {bestXp} XP · {bestLessons}/{totalLessonsCount}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-700 leading-relaxed">
+              നിങ്ങളുടെ യൂണിറ്റും മേഖലയും രേഖപ്പെടുത്തി സ്വന്തം സ്കോർ കാർഡ് വാട്‌സ്ആപ്പ് ഗ്രൂപ്പിൽ പങ്കുവെച്ച് കൂട്ടുകാരുമായി സ്കോർ താരതമ്യം ചെയ്യാം. (വിവരങ്ങൾ ഈ ഫോണിൽ മാത്രമേ സൂക്ഷിക്കൂ.)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={profile.playerName}
+                onChange={(e) => onUpdateUnitProfile({ playerName: e.target.value })}
+                placeholder="നിങ്ങളുടെ പേര്"
+                className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
+              />
+              <input
+                type="text"
+                value={profile.unitName}
+                onChange={(e) => onUpdateUnitProfile({ unitName: e.target.value })}
+                placeholder="യൂണിറ്റ് (ഉദാ: അഞ്ചങ്ങാടി)"
+                className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
+              />
+              <input
+                type="text"
+                value={profile.mekhalaName}
+                onChange={(e) => onUpdateUnitProfile({ mekhalaName: e.target.value })}
+                placeholder="മേഖല / ജില്ല"
+                className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <a
+                href={challengeWhatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>വാട്‌സ്ആപ്പിൽ യൂണിറ്റ്/മേഖലാ സ്കോർ ഷെയർ ചെയ്യാം</span>
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Comparison with Previous Run */}
         {previousRun ? (

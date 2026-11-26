@@ -174,7 +174,7 @@ function shuffleDeck(items: CyberFeedPost[]): CyberFeedPost[] {
 function makeBotNodes(): BotNode[] {
   const slots = [
     { x: 20 + Math.random() * 18, y: 24 + Math.random() * 20, label: '🤖 SPAM BOT' },
-    { x: 58 + Math.random() * 22, y: 26 + Math.random() * 22, label: '🦠 FAKE LINK' },
+    { x: 58 + Math.random() * 22, y: 26 + Math.random() * 22, label: '⚠️ FAKE LINK' },
     { x: 34 + Math.random() * 32, y: 62 + Math.random() * 18, label: '⚡ TROLL FLOOD' },
   ];
   return slots.map((s, idx) => ({ id: idx + 1, ...s, cleared: false }));

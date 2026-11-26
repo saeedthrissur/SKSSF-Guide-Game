@@ -17,7 +17,75 @@ interface AllLessonsMapPageProps {
   onClose: () => void;
 }
 
-const SECRET_CODES = ['1989', 'skssf1989', 'dev1989'];
+const DEV_UNLOCK_SALT = 'skssf-guide-dev-salt-v2::';
+const DEV_UNLOCK_SHA256_HEX = '97ebdf29fd603f7868c9d598f14e770fa5db72fb85ffb44ad77e92066eb530d5';
+
+function sha256FallbackHex(message: string): string {
+  const bytes = new TextEncoder().encode(message);
+  const K = new Uint32Array([
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ]);
+  let h0 = 0x6a09e667, h1 = 0xbb67ae85, h2 = 0x3c6ef372, h3 = 0xa54ff53a;
+  let h4 = 0x510e527f, h5 = 0x9b05688c, h6 = 0x1f83d9ab, h7 = 0x5be0cd19;
+
+  const bitLen = bytes.length * 8;
+  const paddedLen = Math.ceil((bytes.length + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(bytes);
+  padded[bytes.length] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+  view.setUint32(paddedLen - 4, bitLen >>> 0, false);
+
+  const w = new Uint32Array(64);
+  const rotr = (v: number, n: number) => (v >>> n) | (v << (32 - n));
+
+  for (let offset = 0; offset < paddedLen; offset += 64) {
+    for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4, false);
+    for (let i = 16; i < 64; i++) {
+      const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+      const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+      w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+    }
+    let a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+    for (let i = 0; i < 64; i++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + K[i] + w[i]) >>> 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + temp1) >>> 0;
+      d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+    }
+    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+    h4 = (h4 + e) >>> 0; h5 = (h5 + f) >>> 0; h6 = (h6 + g) >>> 0; h7 = (h7 + h) >>> 0;
+  }
+  return [h0, h1, h2, h3, h4, h5, h6, h7].map((n) => n.toString(16).padStart(8, '0')).join('');
+}
+
+async function verifyDevUnlockCode(rawCode: string): Promise<boolean> {
+  const payload = `${DEV_UNLOCK_SALT}${rawCode.trim().toLowerCase()}`;
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle?.digest) {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+      const hex = Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+      return hex === DEV_UNLOCK_SHA256_HEX;
+    }
+  } catch {
+    // Fall back to pure-JS SHA-256 on non-HTTPS local preview
+  }
+  return sha256FallbackHex(payload) === DEV_UNLOCK_SHA256_HEX;
+}
 
 export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   activeLessonId,
@@ -34,7 +102,6 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   const [codeError, setCodeError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'done' | 'remaining'>('all');
-  const keyBufferRef = useRef('');
 
   const totalCount = ALL_LESSONS.length;
   const completedSet = useMemo(() => new Set(completedLessonIds), [completedLessonIds]);
@@ -85,24 +152,6 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
     return Array.from(map.values());
   }, [searchQuery, statusFilter, completedSet]);
 
-  // Silent keyboard cheat code listener ("dev1989") — zero visible hint in UI
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (codePromptOpen) return;
-      if (e.key.length === 1) {
-        keyBufferRef.current = (keyBufferRef.current + e.key.toLowerCase()).slice(-12);
-        if (keyBufferRef.current.endsWith('dev1989')) {
-          keyBufferRef.current = '';
-          sound.unlockAudio();
-          sound.playUnlock();
-          onSetDevUnlocked(!devUnlocked);
-        }
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [codePromptOpen, devUnlocked, onSetDevUnlocked]);
-
   useEffect(() => {
     return () => {
       if (tapTimerRef.current !== null) {
@@ -111,13 +160,13 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
     };
   }, []);
 
-  // Silent 7-tap trigger on the decorative map icon
+  // Silent 6-tap trigger on the decorative map icon
   const handleIconTap = () => {
     const next = tapCount + 1;
     if (tapTimerRef.current !== null) {
       window.clearTimeout(tapTimerRef.current);
     }
-    if (next >= 7) {
+    if (next >= 6) {
       setTapCount(0);
       setCodeValue('');
       setCodeError(false);
@@ -130,10 +179,10 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
     }
   };
 
-  const handleSubmitCode = (e: React.FormEvent) => {
+  const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = codeValue.trim().toLowerCase();
-    if (SECRET_CODES.includes(cleaned)) {
+    const ok = await verifyDevUnlockCode(codeValue);
+    if (ok) {
       sound.unlockAudio();
       sound.playUnlock();
       onSetDevUnlocked(true);
@@ -203,9 +252,9 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
         </div>
 
         {/* 3 Clear Stat Tiles (Overflow-Safe on Narrow Mobile & Font Level 5) */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 text-center">
           <div className="min-w-0 overflow-hidden rounded-2xl bg-slate-50 border border-slate-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
-            <p className="text-[10px] sm:text-xs font-bold text-slate-600 leading-tight break-words max-w-full">
+            <p className="max-[380px]:text-[9.5px] text-[10px] sm:text-xs font-bold text-slate-600 leading-snug text-center [overflow-wrap:anywhere] max-w-full">
               ആകെ പാഠങ്ങൾ
             </p>
             <p className="text-lg sm:text-2xl font-extrabold text-slate-900 tabular-nums mt-1 notranslate">
@@ -213,7 +262,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
             </p>
           </div>
           <div className="min-w-0 overflow-hidden rounded-2xl bg-emerald-50 border border-emerald-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
-            <p className="text-[10px] sm:text-xs font-bold text-emerald-800 leading-tight break-words max-w-full">
+            <p className="max-[380px]:text-[9.5px] text-[10px] sm:text-xs font-bold text-emerald-800 leading-snug text-center [overflow-wrap:anywhere] max-w-full">
               പൂർത്തിയായവ
             </p>
             <p className="text-lg sm:text-2xl font-extrabold text-emerald-700 tabular-nums mt-1 notranslate">
@@ -221,7 +270,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
             </p>
           </div>
           <div className="min-w-0 overflow-hidden rounded-2xl bg-amber-50 border border-amber-200 px-1.5 sm:px-3 py-2.5 sm:py-3 flex flex-col items-center justify-center">
-            <p className="text-[10px] sm:text-xs font-bold text-amber-900 leading-tight break-words max-w-full">
+            <p className="max-[380px]:text-[9.5px] text-[10px] sm:text-xs font-bold text-amber-900 leading-snug text-center [overflow-wrap:anywhere] max-w-full">
               ബാക്കിയുള്ളവ
             </p>
             <p className="text-lg sm:text-2xl font-extrabold text-amber-700 tabular-nums mt-1 notranslate">
@@ -288,7 +337,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
               )}
             </div>
 
-            <div className="grid grid-cols-3 sm:inline-flex items-stretch gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 w-full sm:w-auto shrink-0">
+            <div className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)_minmax(0,1fr)] sm:inline-flex items-stretch gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200 w-full sm:w-auto shrink-0">
               {(
                 [
                   { id: 'all', label: `എല്ലാം (${totalCount})` },
@@ -303,7 +352,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                     sound.playClick();
                     setStatusFilter(tab.id);
                   }}
-                  className={`min-w-0 px-1.5 sm:px-2.5 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-extrabold leading-tight text-center break-words transition-colors cursor-pointer tabular-nums ${
+                  className={`min-w-0 px-1.5 sm:px-2.5 py-1.5 rounded-lg max-[380px]:text-[9.5px] text-[10px] sm:text-[11px] font-extrabold leading-tight text-center [overflow-wrap:anywhere] transition-colors cursor-pointer tabular-nums ${
                     statusFilter === tab.id
                       ? 'bg-white text-emerald-950 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -336,12 +385,13 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
             </button>
           </div>
         )}
-        {groups.map((grp) => {
+        {groups.map((grp, grpIdx) => {
           const grpDone = grp.items.filter((x) => completedSet.has(x.lesson.id)).length;
           return (
             <div
               key={grp.label}
-              className="rounded-3xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-2.5"
+              style={{ animationDelay: `${Math.min(grpIdx * 40, 200)}ms` }}
+              className="map-group-enter rounded-3xl border border-slate-200 bg-white p-3.5 sm:p-4 shadow-2xs space-y-2.5"
             >
               <div className="flex items-center justify-between gap-2 px-1">
                 <h3 className="text-sm sm:text-base font-extrabold text-emerald-950">
@@ -368,13 +418,13 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                         sound.playClick();
                         onSelectLesson(lesson.id);
                       }}
-                      className={`w-full min-w-0 overflow-hidden text-left px-3 sm:px-3.5 py-2.5 rounded-2xl border-2 transition-all flex items-center justify-between gap-2 ${
+                      className={`map-lesson-row w-full min-w-0 overflow-hidden text-left px-3 sm:px-3.5 py-2.5 rounded-2xl border-2 flex items-center justify-between gap-2 ${
                         isCurrent
-                          ? 'bg-emerald-700 text-white border-emerald-900 shadow-sm'
+                          ? 'bg-emerald-700 text-white border-emerald-900 shadow-sm cursor-pointer'
                           : isDone
-                          ? 'bg-emerald-50/90 text-emerald-950 border-emerald-300 hover:bg-emerald-100'
+                          ? 'bg-emerald-50/90 text-emerald-950 border-emerald-300 hover:bg-emerald-100 hover:shadow-xs cursor-pointer'
                           : canOpen
-                          ? 'bg-white text-slate-900 border-amber-300 hover:bg-amber-50'
+                          ? 'bg-white text-slate-900 border-amber-300 hover:bg-amber-50 hover:shadow-xs cursor-pointer'
                           : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-75'
                       }`}
                     >
@@ -435,7 +485,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
         </p>
       </div>
 
-      {/* Silent Unmarked Access Modal — ONLY opens after 7 rapid taps on the corner icon */}
+      {/* Silent Unmarked Access Modal — ONLY opens after 6 rapid taps on the corner icon */}
       {codePromptOpen && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"

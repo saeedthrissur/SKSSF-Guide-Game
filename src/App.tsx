@@ -9,7 +9,6 @@ import {
   Compass,
   Gamepad2,
   Gift,
-  Link2,
   Settings,
   Share2,
   Trophy,
@@ -77,11 +76,15 @@ import {
   archiveRunToHistory,
   clearAllAppStorage,
   clearSavedGameState,
+  DailyAndProfileState,
+  loadDailyAndProfileState,
   loadRunHistory,
   loadSavedGameState,
   QuizAnswerMap,
   RunHistoryEntry,
+  saveDailyAndProfileState,
   saveGameState,
+  UnitProfile,
 } from './utils/gameStorage';
 import { sound } from './utils/sound';
 import { narrator } from './utils/narrator';
@@ -147,7 +150,7 @@ const LEVEL_META: { id: LevelNumber; short: string; full: string; introSpeech: s
   },
   {
     id: 4,
-    short: '🦒 4. സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    short: '🗼 4. സ്റ്റേറ്റ് & ഗ്ലോബൽ',
     full: 'ഘട്ടം 4 · സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം — ശാഖ മുതൽ SIC വരെ, സൈബർ ഷീൽഡ് & സാക്ഷ്യപത്രം',
     introSpeech:
       'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലത്തിലേക്ക് സ്വാഗതം! ശാഖ മുതൽ ഗ്ലോബൽ വരെയുള്ള ഘടന കയറി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം സ്വന്തമാക്കൂ!',
@@ -667,6 +670,7 @@ export default function App() {
   );
   const [runNumber, setRunNumber] = useState<number>(() => savedInit?.runNumber ?? 1);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>(() => loadRunHistory());
+  const [dailyState, setDailyState] = useState<DailyAndProfileState>(() => loadDailyAndProfileState());
   const [attemptKey, setAttemptKey] = useState<number>(0);
   const [lessonJumpSeq, setLessonJumpSeq] = useState<number>(0);
   const [showResumeToast, setShowResumeToast] = useState<boolean>(() =>
@@ -790,8 +794,19 @@ export default function App() {
     runNumber,
   ]);
 
+  useEffect(() => {
+    saveDailyAndProfileState(dailyState);
+  }, [dailyState]);
+
   const handleMarkLessonCompleted = useCallback((lessonId: string) => {
-    setCompletedLessonIds((prev) => (prev.includes(lessonId) ? prev : [...prev, lessonId]));
+    setCompletedLessonIds((prev) => {
+      if (prev.includes(lessonId)) return prev;
+      setDailyState((d) => ({
+        ...d,
+        todayLessonsCount: d.todayLessonsCount + 1,
+      }));
+      return [...prev, lessonId];
+    });
   }, []);
 
   const skippedUnseenBefore = useMemo(
@@ -978,7 +993,7 @@ export default function App() {
   }, [showIntro, stage, currentLevel]);
 
   const currentRank = useMemo(() => {
-    if (canonicalCompletedCount >= ALL_LESSONS.length || xp >= 550) return '🏆 SKSSF ഗൈഡ് താരം';
+    if (canonicalCompletedCount >= ALL_LESSONS.length) return '🏆 SKSSF ഗൈഡ് താരം';
     if (canonicalCompletedCount >= 35 || xp >= 340) return '🛡️ നല്ല പ്രവർത്തകൻ';
     if (canonicalCompletedCount >= 18 || xp >= 150) return '🧭 സജീവ കൂട്ടുകാരൻ';
     return '🌱 പുതിയ കൂട്ടുകാരൻ';
@@ -994,8 +1009,10 @@ export default function App() {
 
   const handleQuizAnswered = useCallback(
     (lessonId: string, selectedIdx: number, isCorrect: boolean) => {
+      let isFirstTimeAnswer = false;
       setQuizAnswers((prev) => {
         if (prev[lessonId]) return prev;
+        isFirstTimeAnswer = true;
         return {
           ...prev,
           [lessonId]: {
@@ -1008,6 +1025,12 @@ export default function App() {
 
       if (isCorrect) {
         handleAwardXp(15, `quiz_${lessonId}`);
+        if (isFirstTimeAnswer) {
+          setDailyState((d) => ({
+            ...d,
+            todayQuizzesCorrect: d.todayQuizzesCorrect + 1,
+          }));
+        }
       } else {
         // Deduct 1 global heart, play dramatic heartbreak-to-header flight animation!
         // On 3rd mistake (lives === 0), reset ALL lessons back to Lesson 1 from the beginning!
@@ -1174,6 +1197,7 @@ export default function App() {
     await narrator.clearVoiceCache();
     setRunHistory([]);
     setRunNumber(1);
+    setDailyState(loadDailyAndProfileState());
     setStage('prologue');
     setCurrentLevel(1);
     setUnlockedLevels([1]);
@@ -1201,6 +1225,58 @@ export default function App() {
     setAttemptKey((k) => k + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const handleClaimDailyMission = useCallback(
+    (missionId: string, rewardXp: number) => {
+      setDailyState((prev) => {
+        if (prev.claimedMissionsToday.includes(missionId)) return prev;
+        handleAwardXp(rewardXp, `daily_${prev.todayDate}_${missionId}`);
+        return {
+          ...prev,
+          claimedMissionsToday: [...prev.claimedMissionsToday, missionId],
+        };
+      });
+    },
+    [handleAwardXp]
+  );
+
+  const handleUpdateUnitProfile = useCallback((patch: Partial<UnitProfile>) => {
+    setDailyState((prev) => ({
+      ...prev,
+      profile: {
+        playerName: patch.playerName !== undefined ? patch.playerName.slice(0, 60) : prev.profile.playerName,
+        unitName: patch.unitName !== undefined ? patch.unitName.slice(0, 60) : prev.profile.unitName,
+        mekhalaName: patch.mekhalaName !== undefined ? patch.mekhalaName.slice(0, 60) : prev.profile.mekhalaName,
+      },
+    }));
+  }, []);
+
+  const handleRestoreFromBackup = useCallback(() => {
+    const restored = loadSavedGameState();
+    setRunHistory(loadRunHistory());
+    setDailyState(loadDailyAndProfileState());
+    if (restored) {
+      setStage(restored.stage);
+      setCurrentLevel(restored.currentLevel);
+      setActiveLessonId(restored.activeLessonId);
+      setXp(restored.xp);
+      const actionMap: Record<string, boolean> = {};
+      restored.awardedActions.forEach((a) => {
+        actionMap[a] = true;
+      });
+      setAwardedActions(actionMap);
+      setBadges(restored.badges);
+      setUnlockedLevels(restored.unlockedLevels as LevelNumber[]);
+      setCompletedLevels(restored.completedLevels as LevelNumber[]);
+      setCompletedLessonIds(restored.completedLessonIds);
+      setCollectedEggs(restored.collectedEggs);
+      setQuizAnswers(restored.quizAnswers);
+      setLives(restored.lives);
+      setRunNumber(restored.runNumber);
+      setPreviewLessonId(null);
+      setAttemptKey((k) => k + 1);
+    }
+  }, []);
 
   useEffect(() => {
     return sound.subscribe((snap) => {
@@ -1357,7 +1433,7 @@ export default function App() {
               </button>
             )}
 
-            {/* OFFICIAL LINKS & PDF STUDY LIBRARY BUTTON */}
+            {/* OFFICIAL LOGOS, WINGS & LINKS REFERENCE HUB BUTTON */}
             <button
               type="button"
               onClick={() => {
@@ -1365,11 +1441,11 @@ export default function App() {
                 sound.playClick();
                 setResourceHubOpen(true);
               }}
-              aria-label="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
-              title="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
+              aria-label="ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും"
+              title="ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും"
               className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
-              <Link2 className="w-4 h-4" />
+              <BookOpen className="w-4 h-4" />
             </button>
 
             {/* SINGLE SETTINGS BUTTON AT THE TOP */}
@@ -1838,7 +1914,7 @@ export default function App() {
                       if (!unlocked) return null;
                       const completed = completedLevels.includes(lvl.id);
                       const active = stage === 'world' && currentLevel === lvl.id;
-                      const lvlEmoji = lvl.id === 1 ? '⛵' : lvl.id === 2 ? '🏛️' : lvl.id === 3 ? '🎈' : '🦒';
+                      const lvlEmoji = lvl.id === 1 ? '⛵' : lvl.id === 2 ? '🏛️' : lvl.id === 3 ? '🎈' : '🗼';
                       return (
                         <button
                           key={lvl.id}
@@ -1890,8 +1966,10 @@ export default function App() {
       <SettingsModal
         isOpen={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        xp={xp}
         onResetProgress={handleResetCurrentGame}
         onClearAllData={handleClearAllSavedData}
+        onRestoreBackup={handleRestoreFromBackup}
       />
       <ScoreComparisonModal
         isOpen={scoreModalOpen}
@@ -1907,6 +1985,9 @@ export default function App() {
         eggsCount={collectedEggs.length}
         runHistory={runHistory}
         onStartNewAttempt={handleStartNewAttempt}
+        dailyState={dailyState}
+        onClaimMission={handleClaimDailyMission}
+        onUpdateUnitProfile={handleUpdateUnitProfile}
       />
       {badgeStudioOpen && (
         <Suspense fallback={null}>
