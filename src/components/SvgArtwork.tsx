@@ -41,7 +41,7 @@ export const OfficialSkimvbLogoImg: React.FC<ImageFlagProps> = ({
   className = 'w-28 h-28 mx-auto',
 }) => (
   <img
-    src="./assets/official/logo_skimvb.png"
+    src="./assets/aistudio/image_e03981e1.png"
     alt="SKIMVB ഔദ്യോഗിക ലോഗോ"
     className={`object-contain ${className}`}
     referrerPolicy="no-referrer"

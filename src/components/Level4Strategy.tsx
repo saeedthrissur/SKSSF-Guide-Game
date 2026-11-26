@@ -37,6 +37,10 @@ import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniG
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
+import { OFFICIAL_PDF_GUIDES, getLinksForLesson } from '../data/officialLinks';
+import { InlineOfficialLinksStrip } from './OfficialResourceHubModal';
+import { SamasthaMediaStudioGame, SamasthaPortalRouterGame } from './PortalAndMediaGames';
 
 export type L4Tab =
   | 'climb'
@@ -49,6 +53,8 @@ export type L4Tab =
   | 'trend_career'
   | 'sargalayam'
   | 'green_earth'
+  | 'samastha_portals'
+  | 'media_youtube_hub'
   | 'certificate';
 
 interface Level4StrategyProps {
@@ -289,13 +295,18 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   }, [solvedSocial.length, completedSceneGames, quizAnswers.l4_cyber_shield, onMarkLessonCompleted]);
 
   useEffect(() => {
-    (['l4_sahachari', 'l4_trend_career', 'l4_sargalayam', 'l4_green_earth'] as const).forEach(
-      (lid) => {
-        if (quizAnswers[lid]) {
-          onMarkLessonCompleted?.(lid);
-        }
+    ([
+      'l4_sahachari',
+      'l4_trend_career',
+      'l4_sargalayam',
+      'l4_green_earth',
+      'l4_samastha_portals',
+      'l4_media_youtube_hub',
+    ] as const).forEach((lid) => {
+      if (quizAnswers[lid]) {
+        onMarkLessonCompleted?.(lid);
       }
-    );
+    });
   }, [quizAnswers, onMarkLessonCompleted]);
 
   useEffect(() => {
@@ -348,6 +359,16 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
       narrator.speak(
         'ഹരിത ക്യാമ്പസും പരിസ്ഥിതി സംരക്ഷണവും! മരങ്ങൾ നട്ടും പ്ലാസ്റ്റിക് ഒഴിവാക്കിയും പ്രവാചക മാതൃക ജീവിതത്തിൽ പകർത്താം!',
         '🌿 ഹരിത ക്യാമ്പസ്'
+      );
+    } else if (activeTab === 'samastha_portals') {
+      narrator.speak(
+        'സമസ്തയുടെ വിദ്യാഭ്യാസ ശൃംഖലയും ഔദ്യോഗിക പോർട്ടലുകളും! SNEC, CSWC, അൽബിർ, സമസ്ത ഇ-ലേണിംഗ്, ജാമിഅ നൂരിയ്യ എന്നിവയുടെ ഔദ്യോഗിക സൈറ്റുകളിലേക്ക് വിദ്യാർത്ഥികളെ നയിക്കൂ!',
+        '🌐 സമസ്ത വിദ്യാഭ്യാസ പോർട്ടലുകൾ'
+      );
+    } else if (activeTab === 'media_youtube_hub') {
+      narrator.speak(
+        'സമസ്ത മീഡിയ, മാസികകൾ & യൂട്യൂബ് സ്റ്റുഡിയോ! സുപ്രഭാതം ഇ-പേപ്പർ, കുരുന്നുകൾ, അൽ-മുഅല്ലിം, SKICR, ബാലവേദി ചാനലുകൾ പരിചയപ്പെടാം!',
+        '📺 മീഡിയ & യൂട്യൂബ് സ്റ്റുഡിയോ'
       );
     } else {
       narrator.speak(
@@ -435,7 +456,9 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     { id: 'trend_career', label: '8. ട്രെൻഡ് കരിയർ' },
     { id: 'sargalayam', label: '9. സർഗ്ഗലയം' },
     { id: 'green_earth', label: '10. ഹരിത ക്യാമ്പസ്' },
-    { id: 'certificate', label: '11. സാക്ഷ്യപത്രം' },
+    { id: 'samastha_portals', label: '11. വിദ്യാഭ്യാസ പോർട്ടലുകൾ' },
+    { id: 'media_youtube_hub', label: '12. മീഡിയ & യൂട്യൂബ്' },
+    { id: 'certificate', label: '13. സാക്ഷ്യപത്രം' },
   ];
   const activeL4Idx = l4Tabs.findIndex((t) => t.id === activeTab);
   const nextL4Tab = activeL4Idx < l4Tabs.length - 1 ? l4Tabs[activeL4Idx + 1] : undefined;
@@ -470,6 +493,8 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     { id: 'trend_career', lessonId: 'l4_trend_career', label: 'ട്രെൻഡ് കരിയർ', emoji: '🎓' },
     { id: 'sargalayam', lessonId: 'l4_sargalayam', label: 'സർഗ്ഗലയം', emoji: '🎨' },
     { id: 'green_earth', lessonId: 'l4_green_earth', label: 'ഹരിത ക്യാമ്പസ്', emoji: '🌿' },
+    { id: 'samastha_portals', lessonId: 'l4_samastha_portals', label: 'വിദ്യാഭ്യാസ പോർട്ടലുകൾ', emoji: '🌐' },
+    { id: 'media_youtube_hub', lessonId: 'l4_media_youtube_hub', label: 'മീഡിയ & യൂട്യൂബ്', emoji: '📺' },
     { id: 'certificate', lessonId: 'l4_certificate_done', label: 'സാക്ഷ്യപത്രം', emoji: '🏆' },
   ];
 
@@ -657,24 +682,39 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-emerald-950">🌊 പ്രളയ & ദുരന്ത രക്ഷാപ്രവർത്തനം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                കേരളത്തിലെ പ്രളയങ്ങളിലും പ്രകൃതിദുരന്തങ്ങളിലും ആദ്യം ഓടിയെത്തുന്ന അച്ചടക്കമുള്ള പരിശീലനം നേടിയ വളണ്ടിയർ നിരയാണ് SKSSF വിഖായയും അലേർട്ട് (ALERT) റെസ്ക്യൂ ടീമും.
-              </p>
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-rose-200 flex items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.viqaya.src}
+                alt={OFFICIAL_WING_LOGOS.viqaya.label}
+                className="h-12 sm:h-14 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-rose-800">SKSSF VIQAYA · ALERT</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  Acute Life Emergency Rescue Team — സന്നദ്ധ സേവനത്തിന് യുവജാഗ്രത
+                </p>
+              </div>
             </div>
-            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-sky-950">🏥 ആംബുലൻസ് & ആതുരസേവനം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                അപകടങ്ങളിലും അടിയന്തര ചികിത്സാ ഘട്ടങ്ങളിലും സൗജന്യ ആംബുലൻസ് സേവനവും പ്രഥമശുശ്രൂഷയും രക്തദാനവും ഏകോപിപ്പിക്കുന്നു.
-              </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-amber-950">🕋 മക്ക–മദീന ഹജ്ജ് വിഖായ & SIC</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                പ്രവാസി സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC) വഴി മക്കയിലും മദീനയിലും ഹാജിമാർക്കും ഉംറ തീർത്ഥാടകർക്കും വഴികാട്ടിയും സഹായികളുമായ ഹജ്ജ് വിഖായ സേവനം ലോകശ്രദ്ധ നേടിയിട്ടുണ്ട്.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">🌊 പ്രളയ & ദുരന്ത രക്ഷാപ്രവർത്തനം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  കേരളത്തിലെ പ്രളയങ്ങളിലും പ്രകൃതിദുരന്തങ്ങളിലും ആദ്യം ഓടിയെത്തുന്ന അച്ചടക്കമുള്ള പരിശീലനം നേടിയ വളണ്ടിയർ നിരയാണ് SKSSF വിഖായയും അലേർട്ട് (ALERT) റെസ്ക്യൂ ടീമും.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-sky-950">🏥 ആംബുലൻസ് & ആതുരസേവനം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  അപകടങ്ങളിലും അടിയന്തര ചികിത്സാ ഘട്ടങ്ങളിലും സൗജന്യ ആംബുലൻസ് സേവനവും പ്രഥമശുശ്രൂഷയും രക്തദാനവും ഏകോപിപ്പിക്കുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-amber-950">🕋 മക്ക–മദീന ഹജ്ജ് വിഖായ & SIC</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  പ്രവാസി സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC) വഴി മക്കയിലും മദീനയിലും ഹാജിമാർക്കും ഉംറ തീർത്ഥാടകർക്കും വഴികാട്ടിയും സഹായികളുമായ ഹജ്ജ് വിഖായ സേവനം ലോകശ്രദ്ധ നേടിയിട്ടുണ്ട്.
+                </p>
+              </div>
             </div>
           </div>
         </CollapsibleLessonDrawer>
@@ -1442,12 +1482,32 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {CYBER_RULES.map((rule) => (
-              <div key={rule} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950">
-                {rule}
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-sky-200 flex flex-wrap items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.cyber.src}
+                alt={OFFICIAL_WING_LOGOS.cyber.label}
+                className="h-12 sm:h-14 w-auto object-contain shrink-0"
+              />
+              <img
+                src={OFFICIAL_WING_LOGOS.skicr.src}
+                alt={OFFICIAL_WING_LOGOS.skicr.label}
+                className="h-12 sm:h-14 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-sky-900">CYBER WING @SKSSF · SKICR</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  സൈബർ വിംഗ്, SKICR ഇസ്‌ലാമിക് ക്ലാസ് റൂം &amp; ധാർമ്മിക ഡിജിറ്റൽ പ്രബോധനം — തർക്കുൽ മാലായഅ്നി
+                </p>
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {CYBER_RULES.map((rule) => (
+                <div key={rule} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-extrabold text-emerald-950">
+                  {rule}
+                </div>
+              ))}
+            </div>
           </div>
         </CollapsibleLessonDrawer>
         </div>
@@ -1459,7 +1519,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           key="l4-drawer-sahachari"
           emoji="🤝"
           title="സഹചാരി റിലീഫ് സെല്ലും ജീവകാരുണ്യവും · പാഠം 47"
-          badgeText="പാഠം 47/50"
+          badgeText="പാഠം 47/52"
           onSpeak={() =>
             narrator.speak(
               'SKSSF സഹചാരി റിലീഫ് സെൽ രോഗികൾക്കും നിർധനർക്കും ജാതിമത ഭേദമന്യേ ചികിത്സാ സഹായം, ഡയാലിസിസ് പിന്തുണ, രക്തദാനം, ഭക്ഷ്യ-ഭവന സഹായങ്ങൾ എത്തിക്കുന്ന കാരുണ്യ വിഭാഗമാണ്.',
@@ -1467,24 +1527,44 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-rose-950">🩸 രക്തദാന & ചികിത്സാ സഹായം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                അടിയന്തര ശസ്ത്രക്രിയകൾക്കും ഡയാലിസിസ് രോഗികൾക്കും കൃത്യസമയത്ത് രക്തവും മരുന്നുകളും ചികിത്സാ സഹായവും സഹചാരി വളണ്ടിയർമാർ എത്തിക്കുന്നു.
-              </p>
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-emerald-200 flex flex-wrap items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.meem.src}
+                alt={OFFICIAL_WING_LOGOS.meem.label}
+                className="h-12 sm:h-14 w-auto object-contain shrink-0"
+              />
+              <img
+                src={OFFICIAL_WING_LOGOS.viqaya.src}
+                alt={OFFICIAL_WING_LOGOS.viqaya.label}
+                className="h-10 sm:h-12 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-emerald-900">സഹചാരി · MEEM മെഡിക്കൽ വിംഗ് · വിഖായ</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  Medical Eminence for Ethical Movement — ആതുരസേവനവും ആരോഗ്യ പരിരക്ഷയും
+                </p>
+              </div>
             </div>
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-emerald-950">🏥 ആശുപത്രികളിൽ സാന്ത്വന സാന്നിധ്യം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                മെഡിക്കൽ കോളേജുകളിലും പ്രധാന ആശുപത്രികളിലും സഹചാരി ഹെൽപ്പ് ഡെസ്ക്കുകളും സൗജന്യ ഭക്ഷണ-താമസ സൗകര്യങ്ങളും ആയിരങ്ങൾക്ക് ആശ്വാസമാകുന്നു.
-              </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-amber-950">🤲 ആത്മാഭിമാനം കാത്തുള്ള കാരുണ്യം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                സഹായം സ്വീകരിക്കുന്നവരുടെ ആത്മാഭിമാനത്തിന് മുറിവേൽപ്പിക്കാതെ, പരസ്യ പ്രദർശനം ഒഴിവാക്കി, അല്ലാഹുവിന്റെ പ്രീതിക്കായി മാത്രം (ഇഖ്‌ലാസ്) സേവനം ചെയ്യലാണ് സഹചാരിയുടെ മാതൃക.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-rose-950">🩸 രക്തദാന & ചികിത്സാ സഹായം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  അടിയന്തര ശസ്ത്രക്രിയകൾക്കും ഡയാലിസിസ് രോഗികൾക്കും കൃത്യസമയത്ത് രക്തവും മരുന്നുകളും ചികിത്സാ സഹായവും സഹചാരി വളണ്ടിയർമാർ എത്തിക്കുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">🏥 ആശുപത്രികളിൽ സാന്ത്വന സാന്നിധ്യം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  മെഡിക്കൽ കോളേജുകളിലും പ്രധാന ആശുപത്രികളിലും സഹചാരി ഹെൽപ്പ് ഡെസ്ക്കുകളും MEEM മെഡിക്കൽ ക്യാമ്പുകളും ആയിരങ്ങൾക്ക് ആശ്വാസമാകുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-amber-950">🤲 ആത്മാഭിമാനം കാത്തുള്ള കാരുണ്യം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  സഹായം സ്വീകരിക്കുന്നവരുടെ ആത്മാഭിമാനത്തിന് മുറിവേൽപ്പിക്കാതെ, പരസ്യ പ്രദർശനം ഒഴിവാക്കി, അല്ലാഹുവിന്റെ പ്രീതിക്കായി മാത്രം (ഇഖ്‌ലാസ്) സേവനം ചെയ്യലാണ് സഹചാരിയുടെ മാതൃക.
+                </p>
+              </div>
             </div>
           </div>
         </CollapsibleLessonDrawer>
@@ -1496,7 +1576,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           key="l4-drawer-trend-career"
           emoji="🎓"
           title="ട്രെൻഡ് (TREND) & കരിയർ വഴികാട്ടി · പാഠം 48"
-          badgeText="പാഠം 48/50"
+          badgeText="പാഠം 48/52"
           onSpeak={() =>
             narrator.speak(
               'വിദ്യാർത്ഥികളെ ഉന്നത വിദ്യാഭ്യാസത്തിലേക്കും സിവിൽ സർവീസ് ഉൾപ്പെടെയുള്ള മികച്ച കരിയറുകളിലേക്കും കൈപിടിച്ചുയർത്തുന്ന SKSSF-ന്റെ വിദ്യാഭ്യാസ വിംഗാണ് ട്രെൻഡ്. സ്കോളർഷിപ്പുകൾ, കരിയർ ക്ലാസ്സുകൾ, ടേസ്റ്റ്, എജ്യൂകെയർ പദ്ധതികൾ ട്രെൻഡ് ഒരുക്കുന്നു.',
@@ -1504,24 +1584,39 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-sky-950">🧭 ശാസ്ത്രീയ കരിയർ ഗൈഡൻസ്</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                ഓരോ വിദ്യാർത്ഥിയുടെയും അഭിരുചിയും കഴിവും തിരിച്ചറിഞ്ഞ് പ്ലസ് ടുവിനും ബിരുദത്തിനും ശേഷം അനുയോജ്യമായ കോഴ്സുകൾ തിരഞ്ഞെടുക്കാൻ TREND വഴികാട്ടുന്നു.
-              </p>
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-indigo-200 flex items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.trend.src}
+                alt={OFFICIAL_WING_LOGOS.trend.label}
+                className="h-14 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-indigo-900">SKSSF TREND</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  Team Resource for Education and National Development
+                </p>
+              </div>
             </div>
-            <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-indigo-950">🏛️ സിവിൽ സർവീസ് & ഉന്നത പഠനം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                IAS, IPS, കേന്ദ്ര സർവകലാശാലകൾ, IIT, IIM, സ്കോളർഷിപ്പ് പരീക്ഷകൾ എന്നിവയ്ക്കായി TASTE, Educare തുടങ്ങിയ പദ്ധതികളിലൂടെ മികച്ച പരിശീലനം നൽകുന്നു.
-              </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-emerald-950">📚 അറിവും വിനയവും ഒരുമിച്ച്</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                ഭൗതിക വിദ്യാഭ്യാസത്തിൽ ഉന്നത സ്ഥാനങ്ങളിൽ എത്തുമ്പോഴും ധാർമ്മിക മൂല്യങ്ങളും സമൂഹത്തോടുള്ള കടപ്പാടും മുറുകെ പിടിക്കുന്ന തലമുറയെ വാർത്തെടുക്കുകയാണ് ട്രെൻഡിന്റെ ലക്ഷ്യം.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-sky-950">🧭 ശാസ്ത്രീയ കരിയർ ഗൈഡൻസ്</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  ഓരോ വിദ്യാർത്ഥിയുടെയും അഭിരുചിയും കഴിവും തിരിച്ചറിഞ്ഞ് പ്ലസ് ടുവിനും ബിരുദത്തിനും ശേഷം അനുയോജ്യമായ കോഴ്സുകൾ തിരഞ്ഞെടുക്കാൻ TREND വഴികാട്ടുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-indigo-950">🏛️ സിവിൽ സർവീസ് & ഉന്നത പഠനം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  IAS, IPS, കേന്ദ്ര സർവകലാശാലകൾ, IIT, IIM, സ്കോളർഷിപ്പ് പരീക്ഷകൾ എന്നിവയ്ക്കായി TASTE, Educare തുടങ്ങിയ പദ്ധതികളിലൂടെ മികച്ച പരിശീലനം നൽകുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">📚 അറിവും വിനയവും ഒരുമിച്ച്</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  ഭൗതിക വിദ്യാഭ്യാസത്തിൽ ഉന്നത സ്ഥാനങ്ങളിൽ എത്തുമ്പോഴും ധാർമ്മിക മൂല്യങ്ങളും സമൂഹത്തോടുള്ള കടപ്പാടും മുറുകെ പിടിക്കുന്ന തലമുറയെ വാർത്തെടുക്കുകയാണ് ട്രെൻഡിന്റെ ലക്ഷ്യം.
+                </p>
+              </div>
             </div>
           </div>
         </CollapsibleLessonDrawer>
@@ -1533,7 +1628,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           key="l4-drawer-sargalayam"
           emoji="🎨"
           title="സർഗ്ഗലയം & ഇസ്‌ലാമിക കലാവേദി · പാഠം 49"
-          badgeText="പാഠം 49/50"
+          badgeText="പാഠം 49/52"
           onSpeak={() =>
             narrator.speak(
               'സർഗ്ഗലയം വിദ്യാർത്ഥികളുടെ പ്രസംഗം, എഴുത്ത്, ഖിറാഅത്ത്, മാപ്പിളപ്പാട്ട്, ബുർദ, കലിഗ്രഫി തുടങ്ങിയ സർഗ്ഗാത്മക കഴിവുകളെ ധാർമ്മിക ബോധത്തോടെ വളർത്തുന്ന ഇസ്‌ലാമിക കലാവേദിയാണ്.',
@@ -1541,24 +1636,39 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-purple-950">🎤 പ്രസംഗം, ഖിറാഅത്ത് & സാഹിത്യം</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                ഖുർആൻ പാരായണം, അറബി-മലയാളം-ഇംഗ്ലീഷ്-ഉറുദു പ്രസംഗങ്ങൾ, കഥ, കവിത, പ്രബന്ധ രചന എന്നിവയിലൂടെ മികച്ച പ്രഭാഷകരെയും എഴുത്തുകാരെയും വളർത്തുന്നു.
-              </p>
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-purple-200 flex items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.sargalayam.src}
+                alt={OFFICIAL_WING_LOGOS.sargalayam.label}
+                className="h-14 sm:h-16 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-purple-900">സർഗലയ (SARGALAYAM) · SKSSF STATE COMMITTEE</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  വിദ്യാർത്ഥികളുടെ കലാ-സാഹിത്യ-പ്രഭാഷണ പ്രതിഭകളെ വളർത്തുന്ന ഇസ്‌ലാമിക കലാവേദി
+                </p>
+              </div>
             </div>
-            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-amber-950">🖌️ പൈതൃക കലകളും കലിഗ്രഫിയും</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                മാപ്പിളപ്പാട്ട്, ദഫ്‌മുട്ട്, അറബനമുട്ട്, ബുർദ ആലാപനം, അറബിക് കലിഗ്രഫി തുടങ്ങിയ സമ്പന്നമായ ഇസ്‌ലാമിക-കേരളീയ പൈതൃക കലകളെ പുതുതലമുറയ്ക്ക് പകർന്നുനൽകുന്നു.
-              </p>
-            </div>
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
-              <p className="text-sm font-extrabold text-emerald-950">🌟 മത്സരമല്ല, സൗഹൃദവും വളർച്ചയും</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                ജയപരാജയങ്ങളെക്കാൾ പരസ്പര സ്നേഹവും ആത്മവിശ്വാസവും നല്ല സന്ദേശങ്ങൾ കലയിലൂടെ സമൂഹത്തിലേക്ക് എത്തിക്കലുമാണ് സർഗ്ഗലയത്തിന്റെ യഥാർത്ഥ വിജയം.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-purple-950">🎤 പ്രസംഗം, ഖിറാഅത്ത് & സാഹിത്യം</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  ഖുർആൻ പാരായണം, അറബി-മലയാളം-ഇംഗ്ലീഷ്-ഉറുദു പ്രസംഗങ്ങൾ, കഥ, കവിത, പ്രബന്ധ രചന എന്നിവയിലൂടെ മികച്ച പ്രഭാഷകരെയും എഴുത്തുകാരെയും വളർത്തുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-amber-950">🖌️ പൈതൃക കലകളും കലിഗ്രഫിയും</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  മാപ്പിളപ്പാട്ട്, ദഫ്‌മുട്ട്, അറബനമുട്ട്, ബുർദ ആലാപനം, അറബിക് കലിഗ്രഫി തുടങ്ങിയ സമ്പന്നമായ ഇസ്‌ലാമിക-കേരളീയ പൈതൃക കലകളെ പുതുതലമുറയ്ക്ക് പകർന്നുനൽകുന്നു.
+                </p>
+              </div>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">🌟 മത്സരമല്ല, സൗഹൃദവും വളർച്ചയും</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  ജയപരാജയങ്ങളെക്കാൾ പരസ്പര സ്നേഹവും ആത്മവിശ്വാസവും നല്ല സന്ദേശങ്ങൾ കലയിലൂടെ സമൂഹത്തിലേക്ക് എത്തിക്കലുമാണ് സർഗ്ഗലയത്തിന്റെ യഥാർത്ഥ വിജയം.
+                </p>
+              </div>
             </div>
           </div>
         </CollapsibleLessonDrawer>
@@ -1570,7 +1680,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           key="l4-drawer-green-earth"
           emoji="🌿"
           title="ഹരിത ക്യാമ്പസും പരിസ്ഥിതി സംരക്ഷണവും · പാഠം 50"
-          badgeText="പാഠം 50/50"
+          badgeText="പാഠം 50/52"
           onSpeak={() =>
             narrator.speak(
               'അന്ത്യദിനം അടുത്താലും കയ്യിലൊരു ചെറിയ തൈ ഉണ്ടെങ്കിൽ അത് നടുക എന്നത് മുഹമ്മദ് നബി സ്വല്ലല്ലാഹു അലൈഹിവസല്ലമയുടെ ഉത്തമ സന്ദേശമാണ്. മരങ്ങൾ നട്ടും ജലം പാഴാക്കാതെയും പ്ലാസ്റ്റിക് ഒഴിവാക്കിയും ഹരിത ക്യാമ്പസും വൃത്തിയുള്ള നാടും പടുത്തുയർത്താം.',
@@ -1579,6 +1689,19 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           }
         >
           <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-emerald-200 flex items-center gap-3 shadow-xs">
+              <img
+                src={OFFICIAL_WING_LOGOS.campus.src}
+                alt={OFFICIAL_WING_LOGOS.campus.label}
+                className="h-14 w-auto object-contain shrink-0"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-black text-emerald-900">SKSSF CAMPUS WING</p>
+                <p className="text-[11px] font-bold text-slate-600">
+                  Struggle for a dream generation — ഹരിത ക്യാമ്പസും പരിസ്ഥിതി സംരക്ഷണവും
+                </p>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
                 <p className="text-sm font-extrabold text-emerald-950">🌱 മരം നടൽ ഒരു സ്വദഖയാണ്</p>
@@ -1601,11 +1724,151 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             </div>
             <div className="rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/80 px-4 py-3 text-center">
               <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
-                🎉 അഭിനന്ദനങ്ങൾ! 50-ാം പാഠത്തിലെത്തി! ✨ കൂടുതൽ പാഠങ്ങളും ഗെയിമുകളും ഉടൻ വരുന്നു (More Lessons Coming Soon!)
+                ✨ അടുത്തത് പാഠം 51: സമസ്തയുടെ എല്ലാ ഔദ്യോഗിക വിദ്യാഭ്യാസ പോർട്ടലുകളും ലിങ്കുകളും!
               </p>
             </div>
           </div>
         </CollapsibleLessonDrawer>
+      )}
+
+      {/* LESSON 51: SAMASTHA DIGITAL PORTALS & EDUCATION NETWORK */}
+      {activeTab === 'samastha_portals' && (
+        <div className="space-y-4">
+          <SamasthaPortalRouterGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_samastha_portals') ||
+              completedSceneGames.includes('l4_samastha_portals')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_samastha_portals') ? prev : [...prev, 'l4_samastha_portals']
+              );
+              if (quizAnswers.l4_samastha_portals) onMarkLessonCompleted?.('l4_samastha_portals');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-samastha-portals"
+            emoji="🌐"
+            title="സമസ്ത വിദ്യാഭ്യാസ ശൃംഖല & ഔദ്യോഗിക പോർട്ടലുകൾ · പാഠം 51"
+            badgeText="പാഠം 51/52"
+            onSpeak={() =>
+              narrator.speak(
+                'സമസ്തയുടെ വിദ്യാഭ്യാസ ശൃംഖലയിൽ SKIMVB, ഒരു ലക്ഷം അധ്യാപകരുള്ള SKJMCC, SNEC സമന്വയ കൗൺസിൽ, 114 വനിതാ കോളേജുകളുള്ള CSWC, 350-ലധികം ശാഖകളുള്ള അൽബിർ പ്രീ-സ്കൂൾ, സമസ്ത ഇ-ലേണിംഗ്, ജാമിഅ നൂരിയ്യ, MEAEC എന്നിവ ഉൾപ്പെടുന്നു. ഇവയുടെ ഔദ്യോഗിക വെബ്സൈറ്റുകളും PDF ഗൈഡുകളും ഇവിടെ നേരിട്ട് ഉപയോഗിക്കാം.',
+                '🌐 സമസ്ത വിദ്യാഭ്യാസ പോർട്ടലുകൾ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🏫 SKIMVB · SKJMCC · SNEC</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    1951-ൽ സ്ഥാപിതമായ SKIMVB 10,000+ മദ്രസകൾക്ക് നേതൃത്വം നൽകുന്നു. SKJMCC-യ്ക്ക് കീഴിൽ 1 ലക്ഷം അധ്യാപകരും 12 ലക്ഷം വിദ്യാർത്ഥികളുമുണ്ട്. SNEC ശരീഅഃ/ഷീ/ലൈഫ് (+2, ഡിഗ്രി, പി.ജി) പ്രോഗ്രാമുകൾ നയിക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">👩‍🎓 CSWC · അൽബിർ · ASMI · E-Learning</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    CSWC-ക്ക് 93 ഡേ &amp; 21 റെസിഡൻഷ്യൽ വനിതാ കോളേജുകളുണ്ട് (ഫളീല-ഫാദീല). അൽബിർ 350+ പ്രീ-സ്കൂളുകളും, സമസ്ത ഇ-ലേണിംഗ് 26+ രാജ്യങ്ങളിലേക്കുള്ള ഓൺലൈൻ മദ്രസയും നൽകുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🏛️ ജാമിഅ നൂരിയ്യ · ജലാലിയ്യ · MEAEC</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    പട്ടിക്കാട് ജാമിഅ നൂരിയ്യ (1963), മുണ്ടക്കുളം ജാമിഅ ജലാലിയ്യ എന്നിവ ഉന്നത മതപഠനവും, MEA എഞ്ചിനീയറിംഗ് കോളേജ് (B.Tech/BCA/MCA) പ്രൊഫഷണൽ സാങ്കേതിക പഠനവും നൽകുന്നു.
+                  </p>
+                </div>
+              </div>
+
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_samastha_portals')}
+                heading="🔗 വിദ്യാർത്ഥികൾക്ക് നേരിട്ട് ഉപയോഗിക്കാവുന്ന ഔദ്യോഗിക വിദ്യാഭ്യാസ പോർട്ടലുകൾ"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {OFFICIAL_PDF_GUIDES.map((pdf) => (
+                  <a
+                    key={pdf.id}
+                    href={pdf.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-3 rounded-xl bg-white border-2 border-emerald-200 hover:border-emerald-500 flex items-center justify-between gap-2 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-extrabold text-emerald-950 truncate">📄 {pdf.title}</p>
+                      <p className="text-[11px] font-semibold text-slate-600">{pdf.pagesLabel} · തുറന്ന് വായിക്കാം</p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-700 text-white text-[11px] font-extrabold shrink-0">
+                      തുറക്കാം
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 52: SAMASTHA MEDIA, MAGAZINES & YOUTUBE STUDIO */}
+      {activeTab === 'media_youtube_hub' && (
+        <div className="space-y-4">
+          <SamasthaMediaStudioGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_media_youtube_hub') ||
+              completedSceneGames.includes('l4_media_youtube_hub')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_media_youtube_hub') ? prev : [...prev, 'l4_media_youtube_hub']
+              );
+              if (quizAnswers.l4_media_youtube_hub) onMarkLessonCompleted?.('l4_media_youtube_hub');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-media-youtube-hub"
+            emoji="📺"
+            title="സമസ്ത മീഡിയ, മാസികകൾ & യൂട്യൂബ് സ്റ്റുഡിയോ · പാഠം 52"
+            badgeText="പാഠം 52/52"
+            onSpeak={() =>
+              narrator.speak(
+                'സുപ്രഭാതം ദിനപത്രവും ഇ-പേപ്പറും, 1959 മുതലുള്ള അൽ-മുഅല്ലിം, സന്തുഷ്ട കുടുംബം, കുട്ടികൾക്കായുള്ള കുരുന്നുകൾ, സത്യധാര ദ്വൈവാരിക എന്നിവ സമസ്തയുടെ പ്രമുഖ പ്രസിദ്ധീകരണങ്ങളാണ്. @SAMASTHAONLINEOFFICAL, @SKICROfficial, @balavedhi, @trendkerala, @skssfsargalaya എന്നീ യൂട്യൂബ് ചാനലുകളും വിദ്യാർത്ഥികൾക്ക് പഠനത്തിനായി ഉപയോഗിക്കാം.',
+                '📺 മീഡിയ & യൂട്യൂബ് സ്റ്റുഡിയോ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">📰 സുപ്രഭാതം &amp; സത്യധാര</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    കേരളം, ഇന്ത്യ, ഗൾഫ് (2024 ദുബായ് എഡിഷൻ) വാർത്തകളുമായി സുപ്രഭാതം ദിനപത്രവും ഇ-പേപ്പറും. 1997 മുതൽ SKSSF മുഖപത്രമായ സത്യധാര ദ്വൈവാരികയും പുറത്തിറങ്ങുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-purple-950">📖 അൽ-മുഅല്ലിം · സന്തുഷ്ട കുടുംബം · കുരുന്നുകൾ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SKJMCC പുറത്തിറക്കുന്ന അൽ-മുഅല്ലിം (1959) അധ്യാപകർക്കും, സന്തുഷ്ട കുടുംബം രക്ഷിതാക്കൾക്കും, കുരുന്നുകൾ മദ്രസാ കൂട്ടുകാർക്കും വിജ്ഞാനവും കഥകളും പകരുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-rose-950">▶ ഔദ്യോഗിക യൂട്യൂബ് ചാനലുകൾ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഖുർആൻ പാരായണത്തിനും ഥിലാവയ്ക്കും @SAMASTHAONLINEOFFICAL, ലൈവ് ക്ലാസുകൾക്ക് @SKICROfficial, കുട്ടികൾക്ക് @balavedhi, കരിയറിന് @trendkerala, കലയ്ക്ക് @skssfsargalaya!
+                  </p>
+                </div>
+              </div>
+
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_media_youtube_hub')}
+                heading="📺 നേരെ തുറന്ന് വായിക്കാനും കാണാനുമുള്ള ഔദ്യോഗിക മാധ്യമ ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
       )}
 
       {/* 3. STORYLINE (COLLAPSED) + MANDATORY QUIZ (UNLOCKS AFTER CONFIRMING LESSON) */}
@@ -1671,7 +1934,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
               കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
             </h3>
             <p className="text-xs font-semibold text-slate-600">
-              More Lessons &amp; Challenges Coming Soon! · 50 പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
+              More Lessons &amp; Challenges Coming Soon! · 52 പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
             </p>
           </div>
         </div>

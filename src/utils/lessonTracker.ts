@@ -456,6 +456,24 @@ export const ALL_LESSONS: LessonDescriptor[] = [
     groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
     title: 'ഹരിത ക്യാമ്പസും പരിസ്ഥിതി സംരക്ഷണവും',
   },
+  {
+    id: 'l4_samastha_portals',
+    stage: 'world',
+    level: 4,
+    tab: 'samastha_portals',
+    emoji: '🌐',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സമസ്ത വിദ്യാഭ്യാസ ശൃംഖല & ഔദ്യോഗിക പോർട്ടലുകൾ',
+  },
+  {
+    id: 'l4_media_youtube_hub',
+    stage: 'world',
+    level: 4,
+    tab: 'media_youtube_hub',
+    emoji: '📺',
+    groupLabel: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ',
+    title: 'സമസ്ത മീഡിയ, മാസികകൾ & യൂട്യൂബ് സ്റ്റുഡിയോ',
+  },
 ];
 
 const STORAGE_KEY = 'skssf_guide_completed_lessons_v1';

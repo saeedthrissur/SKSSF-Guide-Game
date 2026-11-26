@@ -294,6 +294,7 @@ export const GuideGameAboutModal: React.FC<{
   onClose: () => void;
   onGoHome: () => void;
   onOpenAllLessons: () => void;
+  onOpenResourceHub?: () => void;
   completedCount: number;
   totalLessons: number;
   xp: number;
@@ -302,6 +303,7 @@ export const GuideGameAboutModal: React.FC<{
   onClose,
   onGoHome,
   onOpenAllLessons,
+  onOpenResourceHub,
   completedCount,
   totalLessons,
   xp,
@@ -389,9 +391,24 @@ export const GuideGameAboutModal: React.FC<{
                   className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-extrabold border-b-4 border-amber-600 shadow-sm cursor-pointer transition-transform active:scale-95"
                 >
                   <MapIcon className="w-4 h-4" />
-                  <span>50 പാഠങ്ങൾ കാണാം</span>
+                  <span>{totalLessons} പാഠങ്ങൾ കാണാം</span>
                 </button>
               </div>
+
+              {onOpenResourceHub && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    onClose();
+                    onOpenResourceHub();
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-sky-950 shadow-sm cursor-pointer transition-transform active:scale-95"
+                >
+                  <span>🔗 സമസ്ത &amp; SKSSF ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും</span>
+                </button>
+              )}
 
               {/* About Guide Game */}
               <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2 text-left">
@@ -405,7 +422,7 @@ export const GuideGameAboutModal: React.FC<{
                 <div className="pt-1.5 border-t border-slate-200 flex flex-wrap items-center gap-3 text-[11px] font-bold text-slate-600">
                   <span className="inline-flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                    50 സംവേദനാത്മക പാഠങ്ങൾ
+                    {totalLessons} സംവേദനാത്മക പാഠങ്ങൾ
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5 text-teal-700" />

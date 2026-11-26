@@ -4,6 +4,7 @@ import { CheckCircle2, RotateCcw, Volume2, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 export interface EraArtifactItem {
   id: string;
@@ -1602,132 +1603,514 @@ const VintageLandlineBroadcastGame: React.FC<{
 };
 
 /* ============================================================================
- * ERA 5 (1993–GLOBAL): INTERACTIVE GLOBAL FLIGHT ROUTE RADAR PILOT
+ * ERA 5 (1993 SKSBV, 1999 WADINOOR & GLOBAL LIGHT):
+ * COMPLETELY REBUILT 60FPS GLOBAL LIGHT-BEAM & SATELLITE RELAY ARCADE GAME!
+ * Aim the golden Wadinoor Lighthouse beam past drifting storm clouds to light
+ * up the 3 orbiting global beacons (SKSBV/Wadinoor, Makkah-Madinah, SKICR/World).
  * ========================================================================== */
 const GlobalFlightBeaconGame: React.FC<{
   artifacts: EraArtifactItem[];
   collectedIds: string[];
   onCollect: (art: EraArtifactItem) => void;
 }> = ({ artifacts, collectedIds, onCollect }) => {
-  const [planeStop, setPlaneStop] = useState<number>(0);
-  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(20);
+  const [aimAngle, setAimAngle] = useState<number>(0); // -62° (left) to +62° (right)
+  const [pulse, setPulse] = useState<{ x: number; y: number; vx: number; vy: number } | null>(null);
+  const [clouds, setClouds] = useState<{ id: number; x: number; y: number; dir: number; speed: number }[]>([
+    { id: 1, x: 24, y: 46, dir: 1, speed: 26 },
+    { id: 2, x: 74, y: 61, dir: -1, speed: 32 },
+  ]);
+  const [beaconPhase, setBeaconPhase] = useState<number>(0);
+  const [shields, setShields] = useState<number>(3);
+  const [timeLeft, setTimeLeft] = useState<number>(45);
   const [started, setStarted] = useState<boolean>(false);
-  const [failed, setFailed] = useState<boolean>(false);
-  const allVisited = artifacts.every((a) => collectedIds.includes(a.id));
+  const [failReason, setFailReason] = useState<string | null>(null);
+  const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
+  const [burstPos, setBurstPos] = useState<{ x: number; y: number; key: number } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string>(
+    '🛰️ ആകാശത്ത് തൊട്ട്/വലിച്ചിട്ട് ലൈറ്റ് ബീം ഉന്നം വെക്കൂ — കാർമേഘങ്ങളെ (⛈️) ഒഴിവാക്കി 3 ആഗോള ബീക്കണുകളും പ്രകാശിപ്പിക്കൂ!'
+  );
+  const [isErr, setIsErr] = useState<boolean>(false);
+  const [localLitIds, setLocalLitIds] = useState<string[]>(() =>
+    artifacts.filter((a) => collectedIds.includes(a.id)).map((a) => a.id)
+  );
 
+  const arenaRef = useRef<HTMLDivElement | null>(null);
+  const pulseRef = useRef(pulse);
+  pulseRef.current = pulse;
+  const cloudsRef = useRef(clouds);
+  cloudsRef.current = clouds;
+  const phaseRef = useRef(beaconPhase);
+  phaseRef.current = beaconPhase;
+  const localLitRef = useRef(localLitIds);
+  localLitRef.current = localLitIds;
+  const shieldsRef = useRef(shields);
+  shieldsRef.current = shields;
+
+  const allVisited = artifacts.length > 0 && artifacts.every((a) => localLitIds.includes(a.id));
+  const failed = Boolean(failReason) && !allVisited;
+
+  const beaconConfigs = [
+    {
+      baseX: 20,
+      baseY: 24,
+      ampX: 8,
+      city: '1993 SKSBV · 1999 വാദിനൂർ',
+      logoSrc: OFFICIAL_WING_LOGOS.ibad.src,
+    },
+    {
+      baseX: 50,
+      baseY: 18,
+      ampX: 9,
+      city: 'മക്ക · മദീന (വിഖായ & SIC)',
+      logoSrc: OFFICIAL_WING_LOGOS.viqaya.src,
+    },
+    {
+      baseX: 80,
+      baseY: 24,
+      ampX: 8,
+      city: 'ലോകമെങ്ങും (E-Learning & SKICR)',
+      logoSrc: OFFICIAL_WING_LOGOS.skicr.src,
+    },
+  ];
+
+  const getBeaconPos = (idx: number, phase: number) => {
+    const cfg = beaconConfigs[idx] || beaconConfigs[0];
+    const x = cfg.baseX + Math.sin(phase * 1.15 + idx * 2.1) * cfg.ampX;
+    const y = cfg.baseY + Math.cos(phase * 1.5 + idx * 1.4) * 3.5;
+    return { x, y };
+  };
+
+  const resetGame = () => {
+    sound.playClick();
+    setAimAngle(0);
+    setPulse(null);
+    setClouds([
+      { id: 1, x: 24, y: 46, dir: 1, speed: 26 },
+      { id: 2, x: 74, y: 61, dir: -1, speed: 32 },
+    ]);
+    setShields(3);
+    setTimeLeft(45);
+    setStarted(false);
+    setFailReason(null);
+    setActiveArt(null);
+    setBurstPos(null);
+    setLocalLitIds([]);
+    setIsErr(false);
+    setStatusMsg('🛰️ ആകാശത്ത് തൊട്ട്/വലിച്ചിട്ട് ലൈറ്റ് ബീം ഉന്നം വെക്കൂ — കാർമേഘങ്ങളെ (⛈️) ഒഴിവാക്കി 3 ആഗോള ബീക്കണുകളും പ്രകാശിപ്പിക്കൂ!');
+  };
+
+  // Countdown timer
   useEffect(() => {
-    if (!started || allVisited || failed) return;
+    if (!started || allVisited || failed || activeArt) return;
     const id = window.setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          setFailed(true);
           sound.playError();
+          setFailReason('⏱️ പ്രകാശ സിഗ്നൽ സമയം കഴിഞ്ഞു! 45 സെക്കൻഡിനുള്ളിൽ 3 ആഗോള ബീക്കണുകളും തെളിയിക്കണം.');
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, allVisited, failed]);
+  }, [started, allVisited, failed, activeArt]);
 
-  const stops = [
-    { x: 18, y: 66, city: 'കേരളം (SKSBV / വാദിനൂർ)' },
-    { x: 50, y: 36, city: 'മക്ക · മദീന (വിഖായ & SIC)' },
-    { x: 82, y: 54, city: 'ലോകമെങ്ങും (E-Learning & SKICR)' },
-  ];
+  // 60fps animation loop for orbiting beacons, patrolling storm clouds, and light-beam pulse collision
+  useEffect(() => {
+    if (allVisited || failed || activeArt) return;
+    let rafId = 0;
+    let lastTs = performance.now();
 
-  const flyToStop = (idx: number) => {
-    if (failed) return;
-    const art = artifacts[idx];
-    if (!art) return;
-    setStarted(true);
-    setPlaneStop(idx);
-    sound.playHoist();
-    window.setTimeout(() => {
-      setActiveArt(art);
-      onCollect(art);
-    }, 320);
+    const step = (now: number) => {
+      const dt = Math.min(0.05, (now - lastTs) / 1000);
+      lastTs = now;
+
+      const nextPhase = phaseRef.current + dt;
+      phaseRef.current = nextPhase;
+      setBeaconPhase(nextPhase);
+
+      const nextClouds = cloudsRef.current.map((c) => {
+        let nx = c.x + c.dir * c.speed * dt;
+        let ndir = c.dir;
+        if (nx > 86) {
+          nx = 86;
+          ndir = -1;
+        } else if (nx < 14) {
+          nx = 14;
+          ndir = 1;
+        }
+        return { ...c, x: nx, dir: ndir };
+      });
+      cloudsRef.current = nextClouds;
+      setClouds(nextClouds);
+
+      const p = pulseRef.current;
+      if (p) {
+        const nx = p.x + p.vx * dt;
+        const ny = p.y + p.vy * dt;
+
+        // Check storm cloud collision
+        const hitCloud = nextClouds.find(
+          (c) => Math.abs(c.x - nx) < 10.5 && Math.abs(c.y - ny) < 8.5
+        );
+        if (hitCloud) {
+          pulseRef.current = null;
+          setPulse(null);
+          sound.playError();
+          setIsErr(true);
+          const nextShields = Math.max(0, shieldsRef.current - 1);
+          shieldsRef.current = nextShields;
+          setShields(nextShields);
+          if (nextShields <= 0) {
+            setFailReason('⛈️ കാർമേഘങ്ങൾ 3 തവണ പ്രകാശ ബീം തടഞ്ഞു — സാറ്റലൈറ്റ് കവചങ്ങൾ തകർന്നു!');
+          } else {
+            setStatusMsg(`⛈️ അയ്യോ! കാർമേഘം പ്രകാശ ബീം തടഞ്ഞു — വിടവ് നോക്കി അയക്കൂ! (ബാക്കി കവചങ്ങൾ: ${nextShields})`);
+          }
+        } else {
+          // Check orbiting milestone beacon hit
+          let hitBeaconIdx = -1;
+          for (let i = 0; i < artifacts.length; i++) {
+            const art = artifacts[i];
+            if (localLitRef.current.includes(art.id)) continue;
+            const pos = getBeaconPos(i, nextPhase);
+            const dist = Math.hypot(pos.x - nx, pos.y - ny);
+            if (dist < 11.5) {
+              hitBeaconIdx = i;
+              break;
+            }
+          }
+
+          if (hitBeaconIdx >= 0) {
+            const art = artifacts[hitBeaconIdx];
+            const pos = getBeaconPos(hitBeaconIdx, nextPhase);
+            pulseRef.current = null;
+            setPulse(null);
+            sound.playHoist();
+            setIsErr(false);
+            setBurstPos({ x: pos.x, y: pos.y, key: Date.now() });
+            const nextLit = [...localLitRef.current, art.id];
+            localLitRef.current = nextLit;
+            setLocalLitIds(nextLit);
+            setActiveArt(art);
+            onCollect(art);
+            setStatusMsg(`✨ മനോഹരം! “${art.label}” ആഗോള ബീക്കൺ പ്രകാശിച്ചു!`);
+          } else if (nx < 0 || nx > 100 || ny < 0 || ny > 100) {
+            pulseRef.current = null;
+            setPulse(null);
+            setStatusMsg('🌟 ലക്ഷ്യം തെറ്റി! ബീക്കൺ കൃത്യമായി ഉന്നം വെച്ച് വീണ്ടും പ്രകാശം അയക്കൂ.');
+          } else {
+            const updated = { ...p, x: nx, y: ny };
+            pulseRef.current = updated;
+            setPulse(updated);
+          }
+        }
+      }
+
+      rafId = window.requestAnimationFrame(step);
+    };
+
+    rafId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(rafId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allVisited, failed, activeArt, artifacts]);
+
+  const fireBeam = (overrideAngle?: number) => {
+    sound.unlockAudio();
+    if (allVisited || failed || activeArt || pulseRef.current) return;
+    if (!started) setStarted(true);
+    const angleDeg = typeof overrideAngle === 'number' ? overrideAngle : aimAngle;
+    const rad = (angleDeg * Math.PI) / 180;
+    const speed = 92; // % per second
+    const newPulse = {
+      x: 50,
+      y: 86,
+      vx: Math.sin(rad) * speed,
+      vy: -Math.cos(rad) * speed,
+    };
+    pulseRef.current = newPulse;
+    setPulse(newPulse);
+    sound.playPop();
   };
 
-  const currentPos = stops[planeStop] || stops[0];
+  const aimFromPointer = (clientX: number, clientY: number, shouldFire: boolean) => {
+    const box = arenaRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const px = ((clientX - box.left) / box.width) * 100;
+    const py = ((clientY - box.top) / box.height) * 100;
+    const dx = px - 50;
+    const dy = Math.max(8, 86 - py);
+    const rawDeg = (Math.atan2(dx, dy) * 180) / Math.PI;
+    const clamped = Math.max(-62, Math.min(62, Math.round(rawDeg)));
+    setAimAngle(clamped);
+    if (shouldFire) {
+      fireBeam(clamped);
+    }
+  };
+
+  // Compute dashed aim guide endpoint
+  const aimRad = (aimAngle * Math.PI) / 180;
+  const guideX2 = 50 + Math.sin(aimRad) * 76;
+  const guideY2 = 86 - Math.cos(aimRad) * 76;
 
   return (
-    <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-950 via-indigo-950 to-emerald-950 text-white space-y-4">
-      <div className="flex items-center justify-between gap-2 bg-white/10 border border-sky-400/35 rounded-xl px-3.5 py-2">
-        <span className="text-xs font-extrabold text-amber-300 tabular-nums">
-          ✈️ {artifacts.filter((a) => collectedIds.includes(a.id)).length}/{artifacts.length}
-        </span>
-        <span className={`text-xs font-extrabold tabular-nums px-2 py-0.5 rounded-lg ${timeLeft <= 5 ? 'bg-rose-600 text-white' : 'bg-sky-400/20 text-sky-200'}`}>
-          ⏱️ {timeLeft}s
-        </span>
+    <div className="p-3.5 sm:p-4 bg-gradient-to-b from-slate-950 via-indigo-950 to-emerald-950 text-white space-y-3 select-none">
+      {/* Top Arcade HUD */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 border border-sky-400/35 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-1.5">
+          <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 text-xs font-extrabold tabular-nums">
+            🌟 {localLitIds.length}/{artifacts.length}
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded-lg text-xs font-extrabold tabular-nums ${
+              timeLeft <= 8 && started && !allVisited
+                ? 'bg-rose-600 text-white animate-pulse'
+                : 'bg-sky-500/20 text-sky-200'
+            }`}
+          >
+            ⏱️ {timeLeft}s
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <GameShatterLives lives={shields} maxLives={3} compact />
+          {(started || localLitIds.length > 0 || failed) && (
+            <button
+              type="button"
+              onClick={resetGame}
+              aria-label="വീണ്ടും കളിക്കാം"
+              title="വീണ്ടും കളിക്കാം"
+              className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {failed && !allVisited && (
-        <div className="p-3 rounded-2xl bg-rose-950/90 border-2 border-rose-400 flex items-center justify-between gap-3">
-          <span className="text-lg font-extrabold text-rose-200">⛽ ⏰</span>
+      {/* Interactive Night-to-Dawn Global Sky Arena */}
+      <div
+        ref={arenaRef}
+        onPointerMove={(e) => {
+          if (e.buttons === 1) aimFromPointer(e.clientX, e.clientY, false);
+        }}
+        onPointerDown={(e) => {
+          aimFromPointer(e.clientX, e.clientY, true);
+        }}
+        className="relative h-64 sm:h-72 rounded-2xl border-2 border-sky-400/50 bg-gradient-to-b from-[#040B1C] via-[#0B2347] to-[#064E3B] overflow-hidden cursor-crosshair touch-none shadow-inner"
+      >
+        {/* Starfield & World Arc + Golden Aim Sightline */}
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none">
+          {/* World latitude arcs */}
+          <ellipse cx="50" cy="96" rx="46" ry="30" fill="none" stroke="#34D399" strokeWidth="0.5" opacity="0.3" />
+          <ellipse cx="50" cy="96" rx="34" ry="20" fill="none" stroke="#38BDF8" strokeWidth="0.45" opacity="0.25" />
+
+          {/* Glowing network lines once beacons are lit */}
+          {artifacts.map((art, i) => {
+            if (!localLitIds.includes(art.id)) return null;
+            const pos = getBeaconPos(i, beaconPhase);
+            return (
+              <line
+                key={`net-${art.id}`}
+                x1="50"
+                y1="86"
+                x2={pos.x}
+                y2={pos.y}
+                stroke="#FDE047"
+                strokeWidth="0.9"
+                strokeDasharray="2 1.5"
+                opacity="0.75"
+              />
+            );
+          })}
+
+          {/* Live Laser Sightline from Wadinoor Lighthouse */}
+          {!allVisited && !failed && (
+            <line
+              x1="50"
+              y1="86"
+              x2={guideX2}
+              y2={guideY2}
+              stroke="#FBBF24"
+              strokeWidth="0.75"
+              strokeDasharray="2.2 2"
+              opacity="0.85"
+            />
+          )}
+        </svg>
+
+        {/* Orbiting Milestone Beacons (SKSBV/Wadinoor, Makkah/Madinah, Global SKICR) */}
+        {artifacts.map((art, idx) => {
+          const pos = getBeaconPos(idx, beaconPhase);
+          const cfg = beaconConfigs[idx] || beaconConfigs[0];
+          const lit = localLitIds.includes(art.id);
+          return (
+            <div
+              key={art.id}
+              style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none flex flex-col items-center"
+            >
+              <div
+                className={`px-2 py-1.5 rounded-2xl border-2 flex items-center gap-1.5 shadow-lg transition-all ${
+                  lit
+                    ? 'bg-emerald-600/95 border-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.75)] scale-105'
+                    : 'bg-slate-900/90 border-sky-300 shadow-[0_0_14px_rgba(56,189,248,0.5)]'
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-white p-0.5 flex items-center justify-center shrink-0">
+                  <img src={cfg.logoSrc} alt={cfg.city} className="max-h-6 w-full object-contain" />
+                </div>
+                <span className="text-base leading-none">{art.emoji}</span>
+                {lit && <CheckCircle2 className="w-4 h-4 text-amber-300 shrink-0" />}
+              </div>
+              <span className="mt-1 px-1.5 py-0.5 rounded-md bg-slate-950/85 text-[9px] font-extrabold text-amber-200 whitespace-nowrap border border-white/15">
+                {cfg.city}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Patrolling Storm Clouds / Signal Jammers */}
+        {!allVisited &&
+          clouds.map((c) => (
+            <div
+              key={c.id}
+              style={{ left: `${c.x}%`, top: `${c.y}%` }}
+              className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+            >
+              <div className="px-2.5 py-1 rounded-full bg-slate-800/95 border-2 border-rose-400/80 shadow-lg flex items-center gap-1">
+                <span className="text-lg leading-none">⛈️</span>
+                <span className="text-[9px] font-black text-rose-200">തടസ്സം</span>
+              </div>
+            </div>
+          ))}
+
+        {/* Flying Golden Light Pulse */}
+        {pulse && (
+          <div
+            style={{ left: `${pulse.x}%`, top: `${pulse.y}%` }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none"
+          >
+            <div className="w-6 h-6 rounded-full bg-amber-300 border-2 border-white shadow-[0_0_20px_#FDE047] flex items-center justify-center text-xs">
+              ⚡
+            </div>
+          </div>
+        )}
+
+        {/* Golden Starburst on Hit */}
+        {burstPos && (
+          <motion.div
+            key={burstPos.key}
+            initial={{ scale: 0.4, opacity: 1 }}
+            animate={{ scale: 2.4, opacity: 0 }}
+            transition={{ duration: 0.65 }}
+            style={{ left: `${burstPos.x}%`, top: `${burstPos.y}%` }}
+            className="absolute -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none text-3xl"
+          >
+            ✨
+          </motion.div>
+        )}
+
+        {/* Bottom-Center Rotating Wadinoor 1999 Lighthouse Satellite Turret */}
+        <div
+          style={{ left: '50%', top: '88%' }}
+          className="absolute -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center"
+        >
+          <div
+            style={{ transform: `rotate(${aimAngle}deg)` }}
+            className="w-11 h-11 rounded-2xl bg-gradient-to-t from-amber-500 to-yellow-300 border-2 border-white shadow-[0_0_18px_rgba(251,191,36,0.85)] flex items-center justify-center text-slate-950 font-black text-lg transition-transform duration-75"
+          >
+            📡
+          </div>
+          <span className="mt-0.5 px-2 py-0.5 rounded-md bg-emerald-900/95 border border-amber-300/60 text-[9px] font-black text-amber-200 whitespace-nowrap">
+            1999 വാദിനൂർ · പ്രകാശ ഗോപുരം
+          </span>
+        </div>
+
+        {/* Defeat Burst Overlay */}
+        {failed && (
+          <GameDefeatBurstOverlay
+            title="⛈️ പ്രകാശ റിലേ തടസ്സപ്പെട്ടു!"
+            reason={failReason || 'വീണ്ടും ശ്രമിക്കാം!'}
+            scoreText={`തെളിയിച്ച ബീക്കണുകൾ: ${localLitIds.length}/${artifacts.length}`}
+            onRetry={resetGame}
+          />
+        )}
+      </div>
+
+      {/* Tactile Aim & Fire Controls (Works alongside direct sky tap/drag!) */}
+      {!allVisited && !failed ? (
+        <div className="flex items-center justify-center gap-2">
           <button
             type="button"
             onClick={() => {
               sound.playClick();
-              setTimeLeft(20);
-              setFailed(false);
-              setStarted(false);
+              setAimAngle((a) => Math.max(-62, a - 12));
             }}
-            aria-label="വീണ്ടും ശ്രമിക്കാം"
-            className="px-5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-base font-extrabold border-b-4 border-amber-700"
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-sky-400/50 text-white text-sm font-black active:scale-95 cursor-pointer"
           >
-            🔄
+            ◀ ഇടത്
+          </button>
+          <button
+            type="button"
+            onClick={() => fireBeam()}
+            disabled={Boolean(pulse)}
+            className="flex-1 max-w-xs px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 disabled:opacity-60 text-slate-950 border-b-4 border-amber-700 text-xs sm:text-sm font-black shadow-md active:scale-95 cursor-pointer"
+          >
+            ⚡ പ്രകാശം അയക്കൂ!
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setAimAngle((a) => Math.min(62, a + 12));
+            }}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-sky-400/50 text-white text-sm font-black active:scale-95 cursor-pointer"
+          >
+            വലത് ▶
           </button>
         </div>
-      )}
-
-      {/* Global Radar & Animated Flight Path */}
-      <div className="relative h-60 sm:h-64 rounded-2xl border-2 border-sky-400/40 bg-slate-950/90 overflow-hidden">
-        <svg viewBox="0 0 600 240" className="absolute inset-0 w-full h-full" aria-hidden="true">
-          <ellipse cx="300" cy="120" rx="250" ry="95" fill="none" stroke="#38BDF8" strokeWidth="1" opacity="0.22" />
-          <ellipse cx="300" cy="120" rx="140" ry="95" fill="none" stroke="#34D399" strokeWidth="1" opacity="0.22" />
-          <line x1="30" y1="120" x2="570" y2="120" stroke="#38BDF8" strokeWidth="1" strokeDasharray="4 4" opacity="0.25" />
-          <path
-            d="M 108 158 Q 200 60 300 86 Q 410 45 492 130"
-            fill="none"
-            stroke="#FBBF24"
-            strokeWidth="3.5"
-            strokeDasharray="8 6"
-          />
-        </svg>
-
-        <motion.div
-          animate={{ left: `${currentPos.x}%`, top: `${currentPos.y}%` }}
-          transition={{ type: 'spring', stiffness: 90, damping: 16 }}
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 z-30 text-3xl drop-shadow-[0_0_14px_rgba(56,189,248,0.9)]"
-        >
-          ✈️
-        </motion.div>
-
-        {artifacts.map((art, idx) => {
-          const st = stops[idx] || stops[0];
-          const visited = collectedIds.includes(art.id);
-          return (
-            <button
-              key={art.id}
-              type="button"
-              onClick={() => flyToStop(idx)}
-              aria-label={art.label}
-              title={art.label}
-              style={{ left: `${st.x}%`, top: `${st.y}%` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 z-20 px-3 py-2 rounded-2xl border-2 flex items-center gap-1.5 transition-all ${
-                visited
-                  ? 'bg-emerald-600 text-white border-emerald-200 shadow-lg'
-                  : 'bg-sky-900/95 hover:bg-sky-800 text-white border-amber-400 shadow-md'
-              }`}
+      ) : allVisited ? (
+        <div className="rounded-xl bg-emerald-900/90 border border-amber-300 p-3 text-center space-y-2">
+          <p className="text-xs sm:text-sm font-extrabold text-amber-300">
+            🎉 മാഷാ അല്ലാഹ്! 1993 SKSBV, 1999 വാദിനൂർ, മക്ക-മദീന &amp; ആഗോള SKICR പ്രകാശ ശൃംഖല പൂർത്തിയായി!
+          </p>
+          <div className="flex flex-wrap justify-center gap-1.5">
+            <a
+              href="https://www.sksbv.in/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded-lg bg-white text-emerald-950 text-[11px] font-extrabold hover:bg-amber-200"
             >
-              <span className="text-2xl">{art.emoji}</span>
-              {visited ? <CheckCircle2 className="w-4 h-4 text-amber-300" /> : <span className="text-sm">✈️</span>}
-            </button>
-          );
-        })}
-      </div>
+              🔗 sksbv.in
+            </a>
+            <a
+              href="https://www.samasthaelearning.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded-lg bg-white text-emerald-950 text-[11px] font-extrabold hover:bg-amber-200"
+            >
+              🔗 samasthaelearning.com
+            </a>
+            <a
+              href="https://www.youtube.com/@SKICROfficial"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[11px] font-extrabold hover:bg-rose-500"
+            >
+              ▶ @SKICROfficial
+            </a>
+          </div>
+        </div>
+      ) : null}
+
+      <p
+        className={`rounded-xl px-3 py-2 text-xs font-extrabold border text-center ${
+          isErr
+            ? 'bg-rose-950/80 border-rose-400 text-rose-200'
+            : 'bg-white/10 border-sky-400/35 text-sky-100'
+        }`}
+      >
+        {statusMsg}
+      </p>
 
       <InStageStoryModal
         artifact={activeArt}

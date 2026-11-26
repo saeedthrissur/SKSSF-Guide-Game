@@ -6,6 +6,7 @@ import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { getOfficialLogosForLesson } from '../data/officialLogos';
 import {
   AirplaneSicFlightConfig,
   AirplaneSicFlightGame,
@@ -4287,6 +4288,8 @@ const SceneGameRunner: React.FC<{
     setResetSignal((k) => k + 1);
   };
 
+  const wingLogos = getOfficialLogosForLesson(lessonKey);
+
   return (
     <GameFullscreenShell
       title={config.title}
@@ -4300,9 +4303,9 @@ const SceneGameRunner: React.FC<{
             : 'border-amber-400 bg-gradient-to-br from-amber-50/95 via-white to-sky-50/70'
         }`}
       >
-        {/* Minimal Icon-Only Game Strip (Tap ℹ️ or 🎮 for text) */}
+        {/* Minimal Icon-Only Game Strip + Official Wing Logo */}
         <div className="px-3 py-1.5 bg-gradient-to-r from-emerald-900 via-teal-900 to-emerald-950 text-white flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             <button
               type="button"
               onClick={() => {
@@ -4327,8 +4330,21 @@ const SceneGameRunner: React.FC<{
             >
               <Info className="w-4 h-4" />
             </button>
+            {wingLogos.slice(0, 2).map((logo) => (
+              <div
+                key={logo.id}
+                className="h-7 px-1.5 rounded-lg bg-white border border-emerald-200 flex items-center justify-center shrink-0 shadow-xs"
+                title={logo.label}
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.label}
+                  className="h-5 w-auto max-w-[68px] object-contain"
+                />
+              </div>
+            ))}
             {completed && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600/80 text-white text-xs font-extrabold">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600/80 text-white text-xs font-extrabold shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" /> +25
               </span>
             )}

@@ -17,6 +17,9 @@ import {
   SubWingInfo,
   WingCategory,
 } from '../data/level2Data';
+import { OFFICIAL_WING_LOGOS, SUBWING_OFFICIAL_LOGO_MAP } from '../data/officialLogos';
+import { getLinksForSubWing, getLinksForVault } from '../data/officialLinks';
+import { InlineOfficialLinksStrip } from './OfficialResourceHubModal';
 import {
   OfficialSamasthaFlagImg,
   OfficialSkimvbLogoImg,
@@ -446,7 +449,7 @@ const SHORT_WING_CUES: Record<string, string> = {
 
 const OFFICIAL_LOGOS_VAULT = [
   { id: 'skju', title: '📰 SKJU · അൽ ബയാൻ · സുപ്രഭാതം', img: './assets/official/logo_samastha.png' },
-  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: './assets/official/logo_skimvb.png' },
+  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: './assets/aistudio/image_e03981e1.png' },
   { id: 'sys_smf', title: '🕌 SMF & SYS · സുന്നി അഫ്കാർ', img: './assets/official/logo_smf.png' },
   { id: 'sksbv', title: '🌟 SKSBV · മജ്‌ലിസുൽ മആരിഫ്', img: './assets/official/logo_sksbv.png' },
   { id: 'special_cells', title: '🌍 SKJQ · SEA · SLC · SPC · SIC', img: './assets/official/logo_sic.png' },
@@ -1109,6 +1112,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
               const isSolvedTarget =
                 solvedCases.includes(activeCase.id) &&
                 wing.id === activeCase.correctWingId;
+              const officialLogo = SUBWING_OFFICIAL_LOGO_MAP[wing.id];
               return (
                 <div
                   key={wing.id}
@@ -1124,12 +1128,21 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRouteMissionToWing(wing.id)}
-                      className="text-left flex-1"
+                      className="text-left flex-1 space-y-1.5"
                     >
+                      {officialLogo && (
+                        <div className="h-10 w-full rounded-lg bg-slate-50 border border-slate-100 px-1.5 py-1 flex items-center justify-center">
+                          <img
+                            src={officialLogo.src}
+                            alt={officialLogo.label}
+                            className="max-h-8 w-auto max-w-full object-contain"
+                          />
+                        </div>
+                      )}
                       <p className="text-xs sm:text-sm font-extrabold text-slate-900">
-                        {WING_EMOJIS[wing.id] || '✨'} {wing.name}
+                        {!officialLogo && `${WING_EMOJIS[wing.id] || '✨'} `}{wing.name}
                       </p>
-                      <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
+                      <p className="text-[11px] font-semibold text-emerald-800">
                         {SHORT_WING_CUES[wing.id]}
                       </p>
                     </button>
@@ -1198,18 +1211,49 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             )
           }
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
-              <p className="text-xs sm:text-sm font-extrabold text-emerald-950">📚 ഏകീകൃത പാഠ്യപദ്ധതിയും പൊതുപരീക്ഷയും</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                1 മുതൽ 12 വരെ ക്ലാസുകളിലേക്കുള്ള കൃത്യമായ പാഠപുസ്തകങ്ങളും പൊതുപരീക്ഷകളും പരിശീലനം നേടിയ മുഅല്ലിമീങ്ങളുടെ സേവനവും SKIMVB-യെ ലോകോത്തര മാതൃകയാക്കുന്നു.
+          <div className="space-y-3">
+            <div className="p-3 rounded-2xl bg-white border border-emerald-200 shadow-xs space-y-2">
+              <p className="text-[11px] font-black text-emerald-900">
+                🏫 സമസ്ത വിദ്യാഭ്യാസ ശൃംഖല · ഔദ്യോഗിക ലോഗോകൾ
               </p>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  OFFICIAL_WING_LOGOS.skimvb,
+                  OFFICIAL_WING_LOGOS.skjmcc,
+                  OFFICIAL_WING_LOGOS.snec,
+                  OFFICIAL_WING_LOGOS.albirr_preschool,
+                  OFFICIAL_WING_LOGOS.albirr_emblem,
+                ].map((logo) => (
+                  <div
+                    key={logo.id}
+                    className="rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                    title={logo.label}
+                  >
+                    <img
+                      src={logo.src}
+                      alt={logo.label}
+                      className="h-10 sm:h-12 w-full object-contain"
+                    />
+                    <span className="text-[9px] font-extrabold text-slate-700 text-center leading-tight truncate w-full">
+                      {logo.shortLabel}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
-              <p className="text-xs sm:text-sm font-extrabold text-sky-950">🌱 അൽബിർ · SNEC · സമസ്ത ആഗോള മദ്രസകൾ</p>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                കേരളത്തിന് പുറമേ ഇന്ത്യയിലെ വിവിധ സംസ്ഥാനങ്ങളിലും ഗൾഫ്-വിദേശ രാജ്യങ്ങളിലും സമസ്ത മദ്രസകളും അൽബിർ പ്രീ-സ്കൂളുകളും ഉന്നത വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളും പ്രവർത്തിക്കുന്നു.
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+                <p className="text-xs sm:text-sm font-extrabold text-emerald-950">📚 ഏകീകൃത പാഠ്യപദ്ധതിയും പൊതുപരീക്ഷയും</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  1 മുതൽ 12 വരെ ക്ലാസുകളിലേക്കുള്ള കൃത്യമായ പാഠപുസ്തകങ്ങളും പൊതുപരീക്ഷകളും പരിശീലനം നേടിയ മുഅല്ലിമീങ്ങളുടെ (SKJMCC) സേവനവും SKIMVB-യെ ലോകോത്തര മാതൃകയാക്കുന്നു.
+                </p>
+              </div>
+              <div className="p-3.5 rounded-xl bg-sky-50 border border-sky-200 space-y-1">
+                <p className="text-xs sm:text-sm font-extrabold text-sky-950">🌱 അൽബിർ · SNEC · സമസ്ത ആഗോള മദ്രസകൾ</p>
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  കേരളത്തിന് പുറമേ ഇന്ത്യയിലെ വിവിധ സംസ്ഥാനങ്ങളിലും ഗൾഫ്-വിദേശ രാജ്യങ്ങളിലും സമസ്ത മദ്രസകളും അൽബിർ (Al-Birr) പ്രീ-സ്കൂളുകളും SNEC സമന്വയ വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളും പ്രവർത്തിക്കുന്നു.
+                </p>
+              </div>
             </div>
           </div>
         </CollapsibleLessonDrawer>
@@ -1669,6 +1713,48 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                               </div>
                             ))}
                           </div>
+                          {item.id === 'skimvb' && (
+                            <div className="grid grid-cols-4 gap-2 pt-1">
+                              {[
+                                OFFICIAL_WING_LOGOS.snec,
+                                OFFICIAL_WING_LOGOS.skjmcc,
+                                OFFICIAL_WING_LOGOS.albirr_preschool,
+                                OFFICIAL_WING_LOGOS.albirr_emblem,
+                              ].map((logo) => (
+                                <div
+                                  key={logo.id}
+                                  className="rounded-xl bg-emerald-50/50 border border-emerald-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                                  title={logo.label}
+                                >
+                                  <img
+                                    src={logo.src}
+                                    alt={logo.label}
+                                    className="h-9 w-full object-contain"
+                                  />
+                                  <span className="text-[9px] font-extrabold text-emerald-950 text-center leading-tight truncate w-full">
+                                    {logo.shortLabel}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {item.id === 'special_cells' && (
+                            <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-200 flex items-center gap-3">
+                              <img
+                                src={OFFICIAL_WING_LOGOS.skicr.src}
+                                alt={OFFICIAL_WING_LOGOS.skicr.label}
+                                className="h-11 w-auto rounded-lg bg-white p-1 border border-sky-200 object-contain shrink-0"
+                              />
+                              <p className="text-xs font-bold text-sky-950">
+                                SKICR (സമസ്ത കേരള ഇസ്‌ലാമിക് ക്ലാസ് റൂം) ലോകമെമ്പാടുമുള്ള പഠിതാക്കൾക്ക് തത്സമയ ഇസ്‌ലാമിക പഠനം എത്തിക്കുന്നു.
+                              </p>
+                            </div>
+                          )}
+                          <InlineOfficialLinksStrip
+                            links={getLinksForVault(item.id)}
+                            heading="🔗 ഔദ്യോഗിക പോർട്ടലുകളും യൂട്യൂബ് ചാനലുകളും (തുറക്കാം / കോപ്പി ചെയ്യാം)"
+                            compact
+                          />
                         </div>
                       </motion.div>
                     )}
@@ -1921,22 +2007,57 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-xs font-bold text-emerald-700">
-                  {wingPopup.englishName}
-                </p>
-                <h4 className="text-lg font-extrabold text-slate-900">
-                  {WING_EMOJIS[wingPopup.id] || '✨'} {wingPopup.name}
-                </h4>
+              <div className="flex items-center gap-3 min-w-0">
+                {SUBWING_OFFICIAL_LOGO_MAP[wingPopup.id] && (
+                  <div className="h-12 px-2 py-1 rounded-xl bg-slate-50 border border-emerald-200 flex items-center justify-center shrink-0">
+                    <img
+                      src={SUBWING_OFFICIAL_LOGO_MAP[wingPopup.id]!.src}
+                      alt={SUBWING_OFFICIAL_LOGO_MAP[wingPopup.id]!.label}
+                      className="max-h-10 w-auto max-w-[96px] object-contain"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-emerald-700">
+                    {wingPopup.englishName}
+                  </p>
+                  <h4 className="text-lg font-extrabold text-slate-900">
+                    {WING_EMOJIS[wingPopup.id] || '✨'} {wingPopup.name}
+                  </h4>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setWingPopup(null)}
-                className="p-1.5 rounded-lg hover:bg-slate-100"
+                className="p-1.5 rounded-lg hover:bg-slate-100 shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
+            {wingPopup.id === 'ibad' && (
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
+                <img
+                  src={OFFICIAL_WING_LOGOS.majlisunnoor.src}
+                  alt={OFFICIAL_WING_LOGOS.majlisunnoor.label}
+                  className="h-12 w-auto rounded-lg bg-white p-1 border border-amber-200 object-contain shrink-0"
+                />
+                <p className="text-xs font-bold text-amber-950">
+                  മജ്‌ലിസുന്നൂർ ആത്മീയ സംഗമങ്ങൾക്ക് ഇബാദ് നേതൃത്വം നൽകുന്നു.
+                </p>
+              </div>
+            )}
+            {wingPopup.id === 'cyber' && (
+              <div className="p-2.5 rounded-xl bg-sky-50 border border-sky-200 flex items-center gap-3">
+                <img
+                  src={OFFICIAL_WING_LOGOS.skicr.src}
+                  alt={OFFICIAL_WING_LOGOS.skicr.label}
+                  className="h-12 w-auto rounded-lg bg-white p-1 border border-sky-200 object-contain shrink-0"
+                />
+                <p className="text-xs font-bold text-sky-950">
+                  SKICR (@SKICRTV) ഓൺലൈൻ ഇസ്‌ലാമിക് ക്ലാസ് റൂം ലോകമെമ്പാടും തത്സമയ പഠന ക്ലാസുകൾ എത്തിക്കുന്നു.
+                </p>
+              </div>
+            )}
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
               <p className="font-arabic text-xl font-bold text-emerald-950">
                 {wingPopup.arabicRoot}
@@ -1970,6 +2091,11 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                 ))}
               </ul>
             </div>
+            <InlineOfficialLinksStrip
+              links={getLinksForSubWing(wingPopup.id)}
+              heading="🔗 ഈ വിംഗിന്റെ ഔദ്യോഗിക പോർട്ടലും യൂട്യൂബ് ചാനലും"
+              compact
+            />
             <div className="flex items-center justify-between pt-1">
               <button
                 type="button"

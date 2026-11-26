@@ -36,6 +36,7 @@ import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { LessonCheckQuiz, scrollToActiveQuiz } from './LessonCheckQuiz';
 import { OptionalLessonMiniGame } from './OptionalLessonMiniGames';
 import { QuizAnswerMap } from '../utils/gameStorage';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 
@@ -981,24 +982,58 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                 {board.artifacts.map((art) => (
                   <div
                     key={art.id}
-                    className="bg-white rounded-xl border border-emerald-200 p-3.5 space-y-1"
+                    className="bg-white rounded-xl border border-emerald-200 p-3.5 flex items-start gap-3"
                   >
-                    <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
-                      {art.emoji} {art.label}
-                    </p>
-                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                      {art.discovery}
-                    </p>
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
+                        {art.emoji} {art.label}
+                      </p>
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                        {art.discovery}
+                      </p>
+                    </div>
+                    {art.label.includes('SKICR') && (
+                      <img
+                        src={OFFICIAL_WING_LOGOS.skicr.src}
+                        alt={OFFICIAL_WING_LOGOS.skicr.label}
+                        className="h-12 w-12 object-contain rounded-lg bg-slate-50 p-1 border border-slate-200 shrink-0"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
 
               {board.id === 3 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-3.5 flex items-center gap-3">
-                  <OfficialSkimvbLogoImg className="w-12 h-12 shrink-0" />
-                  <p className="text-xs sm:text-sm text-slate-700">
-                    <strong>🏫 SKIMVB (1951):</strong> നമ്മുടെ കുട്ടികൾക്ക് നല്ല മതപഠനം നൽകാൻ തുടങ്ങിയ ബോർഡ് — ഇന്ന് 11,000+ മദ്രസകളും ജാമിഅ നൂരിയ്യയും SNEC/CSWC/Albirr ഉം നയിക്കുന്നു!
-                  </p>
+                <div className="bg-white rounded-xl border border-slate-200 p-3.5 space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <OfficialSkimvbLogoImg className="w-12 h-12 shrink-0" />
+                    <p className="text-xs sm:text-sm text-slate-700">
+                      <strong>🏫 SKIMVB (1951):</strong> നമ്മുടെ കുട്ടികൾക്ക് നല്ല മതപഠനം നൽകാൻ തുടങ്ങിയ ബോർഡ് — ഇന്ന് 11,000+ മദ്രസകളും ജാമിഅ നൂരിയ്യയും SNEC/CSWC/Albirr ഉം മുഅല്ലിമീൻ (SKJMCC) സേവനവും നയിക്കുന്നു!
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      OFFICIAL_WING_LOGOS.snec,
+                      OFFICIAL_WING_LOGOS.skjmcc,
+                      OFFICIAL_WING_LOGOS.albirr_preschool,
+                      OFFICIAL_WING_LOGOS.albirr_emblem,
+                    ].map((logo) => (
+                      <div
+                        key={logo.id}
+                        className="rounded-lg bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-0.5"
+                        title={logo.label}
+                      >
+                        <img
+                          src={logo.src}
+                          alt={logo.label}
+                          className="h-9 w-full object-contain"
+                        />
+                        <span className="text-[9px] font-extrabold text-slate-700 truncate w-full text-center">
+                          {logo.shortLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

@@ -5,6 +5,7 @@ import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 /* ============================================================================
  * 1. OPENING INTERACTIVE ACTIVITY: SKSSF ANNOUNCEMENT VEHICLE (പ്രചാരണ വാഹനം)
@@ -1074,6 +1075,23 @@ export const MadrasaBoardActivity: React.FC<{
     <div className="bg-white rounded-2xl border-2 border-emerald-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 bg-slate-50 border border-emerald-200 rounded-lg px-1.5 py-0.5 shrink-0">
+            <img
+              src={OFFICIAL_WING_LOGOS.skimvb.src}
+              alt={OFFICIAL_WING_LOGOS.skimvb.label}
+              className="h-6 w-auto object-contain"
+            />
+            <img
+              src={OFFICIAL_WING_LOGOS.skjmcc.src}
+              alt={OFFICIAL_WING_LOGOS.skjmcc.label}
+              className="h-6 w-auto object-contain"
+            />
+            <img
+              src={OFFICIAL_WING_LOGOS.snec.src}
+              alt={OFFICIAL_WING_LOGOS.snec.label}
+              className="h-6 w-auto object-contain"
+            />
+          </div>
           <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-950 text-xs font-extrabold tabular-nums">
             🏫 {count}/4
           </span>
@@ -1595,13 +1613,22 @@ export const ViqayaRescueVehicleActivity: React.FC<{
       <div className="bg-white rounded-2xl border-2 border-sky-200 p-3.5 sm:p-4 space-y-3 shadow-sm">
         {/* Top Mission HUD */}
         <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-900 text-white rounded-xl px-3 py-2">
-          <div className="min-w-0">
-            <p className="text-[11px] font-extrabold text-amber-300">
-              {currentMission.title} ({missionIdx + 1}/3)
-            </p>
-            <p className="text-xs font-bold text-sky-100">
-              ലക്ഷ്യം: {currentMission.needIcon} {collected}/{currentMission.goalCount} → {currentMission.targetName}
-            </p>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-10 px-2 py-1 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <img
+                src={OFFICIAL_WING_LOGOS.viqaya.src}
+                alt={OFFICIAL_WING_LOGOS.viqaya.label}
+                className="h-8 w-auto object-contain"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-extrabold text-amber-300">
+                {currentMission.title} ({missionIdx + 1}/3)
+              </p>
+              <p className="text-xs font-bold text-sky-100">
+                ലക്ഷ്യം: {currentMission.needIcon} {collected}/{currentMission.goalCount} → {currentMission.targetName}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <GameShatterLives lives={lives} maxLives={3} dark compact />

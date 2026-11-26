@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Compass,
   Gift,
+  Link2,
   Settings,
   Volume2,
   VolumeX,
@@ -62,6 +63,7 @@ import {
   LessonFlowProvider,
 } from './utils/lessonFlowContext';
 import { GuideGameAboutModal, GuideGameBrandLogo } from './components/GameLivesHud';
+import { OfficialResourceHubModal } from './components/OfficialResourceHubModal';
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -174,6 +176,7 @@ export default function App() {
 
   const [devUnlocked, setDevUnlocked] = useState<boolean>(false);
   const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
+  const [resourceHubOpen, setResourceHubOpen] = useState<boolean>(false);
 
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() =>
     savedInit?.completedLessonIds?.length ? savedInit.completedLessonIds : loadCompletedLessonIds()
@@ -680,6 +683,21 @@ export default function App() {
               </button>
             )}
 
+            {/* OFFICIAL LINKS & PDF STUDY LIBRARY BUTTON */}
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setResourceHubOpen(true);
+              }}
+              aria-label="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
+              title="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100 cursor-pointer"
+            >
+              <Link2 className="w-4 h-4" />
+            </button>
+
             {/* SINGLE SETTINGS BUTTON AT THE TOP */}
             <button
               type="button"
@@ -1144,9 +1162,16 @@ export default function App() {
           setLessonsMapOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onOpenResourceHub={() => setResourceHubOpen(true)}
         completedCount={completedLessonIds.length}
         totalLessons={ALL_LESSONS.length}
         xp={xp}
+      />
+
+      <OfficialResourceHubModal
+        isOpen={resourceHubOpen}
+        onClose={() => setResourceHubOpen(false)}
+        onAwardXp={handleAwardXp}
       />
 
       <footer className="border-t border-slate-200 bg-white py-4 px-4 sm:px-6 text-center text-xs text-slate-500">

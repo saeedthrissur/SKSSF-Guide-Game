@@ -6,6 +6,7 @@ import { narrator } from '../utils/narrator';
 import { useGameFullscreen } from './GameFullscreenShell';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 export interface HandsOnGameProps {
   xpKey: string;
@@ -95,7 +96,8 @@ const GameShellHeader: React.FC<{
   progressText: string;
   lives?: number;
   maxLives?: number;
-}> = ({ badge, title, subtitle, done, progressText, lives, maxLives = 3 }) => {
+  logos?: { src: string; alt: string }[];
+}> = ({ badge, title, subtitle, done, progressText, lives, maxLives = 3, logos }) => {
   const [showInfo, setShowInfo] = useState(false);
   const iconOnly = badge.trim().split(/\s+/)[0] || '🎮';
   return (
@@ -114,6 +116,18 @@ const GameShellHeader: React.FC<{
             <span>{iconOnly}</span>
             <Info className="w-3.5 h-3.5 text-emerald-700" />
           </button>
+          {logos && logos.length > 0 && (
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-0.5 shrink-0">
+              {logos.map((lg) => (
+                <img
+                  key={lg.src}
+                  src={lg.src}
+                  alt={lg.alt}
+                  className="h-6 w-auto max-w-[64px] object-contain"
+                />
+              ))}
+            </div>
+          )}
           {done && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-200 text-amber-950 text-xs font-extrabold">
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -539,6 +553,11 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
         done={won}
         lives={shields}
         progressText={`🧽 ${wipedIds.length}/${DUST_SPOTS.length} · ⏱️ ${timeLeft}s`}
+        logos={[
+          { src: OFFICIAL_WING_LOGOS.skimvb.src, alt: OFFICIAL_WING_LOGOS.skimvb.label },
+          { src: OFFICIAL_WING_LOGOS.snec.src, alt: OFFICIAL_WING_LOGOS.snec.label },
+          { src: OFFICIAL_WING_LOGOS.skjmcc.src, alt: OFFICIAL_WING_LOGOS.skjmcc.label },
+        ]}
       />
 
       <p className="text-[11px] sm:text-xs font-extrabold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5 text-center">
@@ -547,13 +566,27 @@ export const ScratchCleanBoardGame: React.FC<HandsOnGameProps> = ({
 
       <div className="relative rounded-2xl border-4 border-amber-700 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 overflow-hidden min-h-[225px] sm:min-h-[245px] select-none shadow-inner">
         {/* Sparkling Clean Revealed Madrasa Board Facts */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center text-white space-y-1.5 pointer-events-none">
-          <div className="text-xl sm:text-2xl">🏫 ✨ 🚩</div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center text-white space-y-2 pointer-events-none">
+          <div className="flex items-center justify-center gap-2">
+            {[
+              OFFICIAL_WING_LOGOS.skimvb,
+              OFFICIAL_WING_LOGOS.snec,
+              OFFICIAL_WING_LOGOS.albirr_preschool,
+              OFFICIAL_WING_LOGOS.skjmcc,
+            ].map((lg) => (
+              <div
+                key={lg.id}
+                className="bg-white/95 rounded-lg px-1.5 py-1 shadow-sm flex items-center justify-center"
+              >
+                <img src={lg.src} alt={lg.label} className="h-7 sm:h-8 w-auto object-contain" />
+              </div>
+            ))}
+          </div>
           <p className="text-sm sm:text-lg font-extrabold text-amber-300">
             1951 SKIMVB · സമസ്ത വിദ്യാഭ്യാസ ബോർഡ്
           </p>
           <p className="text-xs sm:text-sm font-bold text-emerald-100">
-            1989 SKSSF · 1993 SKSBV ബാലവേദി · 11,000+ മദ്രസകൾ
+            1989 SKSSF · 1993 SKSBV · അൽബിർ · SNEC · 11,000+ മദ്രസകൾ
           </p>
           <p className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-white/15 text-amber-200">
             “വിജ്ഞാനം · വിനയം · സേവനം”
@@ -1336,6 +1369,7 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
         done={won}
         lives={Math.max(0, 3 - mistakes)}
         progressText={`${placed.length}/${STAGE_PARTS.length}`}
+        logos={[{ src: OFFICIAL_WING_LOGOS.sargalayam.src, alt: OFFICIAL_WING_LOGOS.sargalayam.label }]}
       />
 
       {wrongFlash && !won && !failed && (
@@ -1368,9 +1402,18 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
           }`}
         >
           {placed.includes('banner') ? (
-            <p className="text-xs sm:text-sm font-extrabold text-amber-200">
-              🚩 SKSSF 🚩
-            </p>
+            <div className="flex items-center justify-center gap-2.5">
+              <div className="bg-white rounded-md px-1.5 py-0.5 flex items-center shrink-0">
+                <img
+                  src={OFFICIAL_WING_LOGOS.sargalayam.src}
+                  alt={OFFICIAL_WING_LOGOS.sargalayam.label}
+                  className="h-7 w-auto object-contain"
+                />
+              </div>
+              <p className="text-xs sm:text-sm font-extrabold text-amber-200">
+                🚩 SKSSF · സർഗലയ വേദി 🚩
+              </p>
+            </div>
           ) : (
             <p className="text-2xl">🏳️</p>
           )}
@@ -2331,9 +2374,25 @@ const MetallicScratchCard: React.FC<{
   return (
     <div className="space-y-2">
       <div className="relative rounded-2xl overflow-hidden border-2 border-amber-500 shadow-md bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-900 min-h-[110px] flex items-center justify-center p-4 select-none touch-none">
-        <div className="text-center text-white space-y-1 pointer-events-none">
-          <p className="text-xs font-extrabold text-amber-300">🌟 അൽബിർ & മജ്‌ലിസുൽ മആരിഫ് സമ്മാനം</p>
-          <p className="text-base sm:text-lg font-extrabold">🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം! ✨</p>
+        <div className="flex items-center justify-center gap-3 text-white pointer-events-none">
+          <div className="bg-white rounded-lg p-1 shrink-0 shadow-sm">
+            <img
+              src={OFFICIAL_WING_LOGOS.albirr_preschool.src}
+              alt={OFFICIAL_WING_LOGOS.albirr_preschool.label}
+              className="h-9 w-auto object-contain"
+            />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-xs font-extrabold text-amber-300">🌟 അൽബിർ &amp; മജ്‌ലിസുൽ മആരിഫ് സമ്മാനം</p>
+            <p className="text-sm sm:text-base font-extrabold">🏆 മികച്ച വിദ്യാർത്ഥി പ്രതിഭ പുരസ്കാരം! ✨</p>
+          </div>
+          <div className="bg-white rounded-lg p-1 shrink-0 shadow-sm">
+            <img
+              src={OFFICIAL_WING_LOGOS.albirr_emblem.src}
+              alt={OFFICIAL_WING_LOGOS.albirr_emblem.label}
+              className="h-9 w-auto object-contain"
+            />
+          </div>
         </div>
         <canvas
           ref={canvasRef}
@@ -2466,6 +2525,10 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
         done={won}
         lives={lives}
         progressText={`⏱️ ${timeLeft}s · ${doneIds.length + (scratched ? 1 : 0)}/4`}
+        logos={[
+          { src: OFFICIAL_WING_LOGOS.albirr_preschool.src, alt: OFFICIAL_WING_LOGOS.albirr_preschool.label },
+          { src: OFFICIAL_WING_LOGOS.albirr_emblem.src, alt: OFFICIAL_WING_LOGOS.albirr_emblem.label },
+        ]}
       />
 
       {/* Illustrated Gift & Trophy Stage */}

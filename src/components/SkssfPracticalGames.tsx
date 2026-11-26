@@ -13,6 +13,7 @@ import { narrator } from '../utils/narrator';
 import { scrollToActiveQuiz } from './LessonCheckQuiz';
 import { OfficialSkssfFlagImg } from './SvgArtwork';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 export interface PracticalGameProps {
   xpKey: string;
@@ -28,8 +29,10 @@ const CompactGameBar: React.FC<{
   subtitle: string;
   done: boolean;
   shields?: number;
+  logoSrc?: string;
+  logoAlt?: string;
   onReset: () => void;
-}> = ({ icon, progress, title, subtitle, done, shields, onReset }) => {
+}> = ({ icon, progress, title, subtitle, done, shields, logoSrc, logoAlt, onReset }) => {
   const [infoOpen, setInfoOpen] = useState(false);
   return (
     <div className="space-y-1.5">
@@ -59,6 +62,15 @@ const CompactGameBar: React.FC<{
           >
             <Info className="w-3.5 h-3.5" />
           </button>
+          {logoSrc && (
+            <div className="h-7 px-1.5 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <img
+                src={logoSrc}
+                alt={logoAlt || title}
+                className="h-5 w-auto max-w-[74px] object-contain"
+              />
+            </div>
+          )}
           <span className="px-2 py-0.5 rounded-md bg-white/15 text-amber-200 text-xs font-extrabold tabular-nums">
             {progress}
           </span>
@@ -692,6 +704,8 @@ export const StadiumCleanupViqayaGame: React.FC<PracticalGameProps> = ({
         subtitle="25 സെക്കൻഡിനുള്ളിൽ മാലിന്യങ്ങൾ മാത്രം വിഖായ വാഹനത്തിലേക്ക് ശേഖരിച്ച് ഡിസ്പോസ് ചെയ്യൂ! 🎙️ മൈക്കും 🚩 കൊടിയും കളയരുത്!"
         done={disposed}
         shields={shields}
+        logoSrc={OFFICIAL_WING_LOGOS.viqaya.src}
+        logoAlt={OFFICIAL_WING_LOGOS.viqaya.label}
         onReset={reset}
       />
 
@@ -1203,6 +1217,8 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
         subtitle="ഘട്ടം 1: ഓരോ പരിപാടിക്കും അനുയോജ്യരായവരെ ചുമതലപ്പെടുത്തൂ (3 തവണ തെറ്റിയാൽ ഷീൽഡുകൾ പൊട്ടും). ഘട്ടം 2: നോട്ടീസ് തയ്യാറാക്കൂ!"
         done={won}
         shields={shields}
+        logoSrc={OFFICIAL_WING_LOGOS.majlisunnoor.src}
+        logoAlt={OFFICIAL_WING_LOGOS.majlisunnoor.label}
         onReset={reset}
       />
 
@@ -1280,9 +1296,18 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
                   🚩
                 </span>
               )}
-              <span className="px-2.5 py-1 rounded-full bg-amber-400 text-slate-950 text-[11px] font-extrabold">
-                🌙 മജ്‌ലിസുന്നൂർ · ഇബാദ്
-              </span>
+              <div className="flex items-center gap-1.5">
+                <img
+                  src={OFFICIAL_WING_LOGOS.majlisunnoor.src}
+                  alt={OFFICIAL_WING_LOGOS.majlisunnoor.label}
+                  className="h-9 w-auto rounded-lg bg-white p-0.5 border border-amber-300 object-contain"
+                />
+                <img
+                  src={OFFICIAL_WING_LOGOS.ibad.src}
+                  alt={OFFICIAL_WING_LOGOS.ibad.label}
+                  className="h-7 w-auto rounded-lg bg-white px-1.5 py-0.5 border border-amber-300 object-contain"
+                />
+              </div>
             </div>
 
             <h4 className="text-base sm:text-lg font-extrabold text-amber-300">

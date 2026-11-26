@@ -4,6 +4,7 @@ import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
 import { useGameFullscreen } from './GameFullscreenShell';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
+import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
 /* ============================================================================
  * CONFIG INTERFACES FOR THE 3 NEW INTERACTIVE ARCADE ENGINES
@@ -1515,7 +1516,14 @@ export const TrendCareerCompassGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-400 bg-gradient-to-b from-indigo-50 via-white to-amber-50 shadow-inner select-none">
         {/* Top HUD */}
         <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-indigo-500/40">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="h-8 px-1.5 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <img
+                src={OFFICIAL_WING_LOGOS.trend.src}
+                alt={OFFICIAL_WING_LOGOS.trend.label}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
             <span className="px-2 py-0.5 rounded-lg bg-indigo-500/25 text-indigo-200 text-xs font-extrabold tabular-nums">
               🎓 {Math.min(idx + (done ? 1 : 0), config.students.length)}/{config.students.length}
             </span>
@@ -1701,7 +1709,14 @@ export const GreenCampusSortGame: React.FC<{
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-gradient-to-b from-emerald-50 via-white to-lime-50 shadow-inner select-none">
         <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-emerald-500/40">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="h-8 px-1.5 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <img
+                src={OFFICIAL_WING_LOGOS.campus.src}
+                alt={OFFICIAL_WING_LOGOS.campus.label}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
             <span className="px-2 py-0.5 rounded-lg bg-emerald-500/25 text-emerald-200 text-xs font-extrabold tabular-nums">
               ♻️ {Math.min(idx + (done ? 1 : 0), config.items.length)}/{config.items.length}
             </span>
@@ -1905,7 +1920,14 @@ export const OrganetChainGame: React.FC<{
     <div className="space-y-2.5">
       <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-400 bg-gradient-to-b from-slate-900 via-slate-950 to-teal-950 text-white shadow-inner select-none">
         <div className="bg-slate-950 px-3 py-2 flex items-center justify-between gap-2 border-b border-cyan-500/30">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="h-8 px-2 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <img
+                src={OFFICIAL_WING_LOGOS.organet.src}
+                alt={OFFICIAL_WING_LOGOS.organet.label}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
             <span className="px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-200 text-xs font-extrabold tabular-nums">
               🔗 {step}/{config.nodes.length}
             </span>
@@ -2115,6 +2137,13 @@ export const SargalayamSpotlightGame: React.FC<{
       <div className="relative rounded-2xl overflow-hidden border-2 border-fuchsia-400 bg-gradient-to-b from-purple-950 via-fuchsia-950 to-slate-950 text-white shadow-inner select-none">
         <div className="bg-slate-950/92 px-3 py-2 flex items-center justify-between gap-2 border-b border-fuchsia-500/30">
           <div className="flex items-center gap-1.5">
+            <div className="bg-white rounded-md px-1.5 py-0.5 flex items-center shrink-0">
+              <img
+                src={OFFICIAL_WING_LOGOS.sargalayam.src}
+                alt={OFFICIAL_WING_LOGOS.sargalayam.label}
+                className="h-6 w-auto object-contain"
+              />
+            </div>
             <span className="px-2 py-0.5 rounded-lg bg-fuchsia-500/25 text-fuchsia-200 text-xs font-extrabold tabular-nums">
               🎨 {Math.min(idx + (done ? 1 : 0), config.acts.length)}/{config.acts.length}
             </span>

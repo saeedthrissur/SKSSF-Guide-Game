@@ -1,5 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { getOfficialLogosForLesson } from '../data/officialLogos';
+import { getLinksForLesson } from '../data/officialLinks';
+import { InlineOfficialLinksStrip } from './OfficialResourceHubModal';
 
 type BannerTheme =
   | 'mosque_heritage'
@@ -370,6 +373,20 @@ const LESSON_QUICK_GUIDES: Record<string, LessonQuickGuide> = {
       'മദ്‌റസയും ക്യാമ്പസും ഹരിതാഭമാക്കൽ നമ്മുടെ ഓരോരുത്തരുടെയും ഉത്തരവാദിത്തമാണ്.',
     ],
   },
+  l4_samastha_portals: {
+    theme: 'madrasa_book',
+    points: [
+      'SKIMVB (1951), SKJMCC (1959 · 1 ലക്ഷം അധ്യാപകർ), SNEC (ശരീഅഃ/ഷീ/ലൈഫ്), CSWC (114 വനിതാ കോളേജുകൾ), Al-Birr (350+ ശാഖകൾ) എന്നിവ സമസ്തയുടെ വിദ്യാഭ്യാസ നാവുകളാണ്.',
+      'Samastha E-Learning (26+ രാജ്യങ്ങൾ), ASMI, ജാമിഅ നൂരിയ്യ (1963), ജാമിഅ ജലാലിയ്യ, MEAEC എന്നിവയുടെ ഔദ്യോഗിക സൈറ്റുകൾ നേരിട്ട് ഉപയോഗിക്കാം.',
+    ],
+  },
+  l4_media_youtube_hub: {
+    theme: 'cyber_media',
+    points: [
+      'സുപ്രഭാതം ദിനപത്രം & ഇ-പേപ്പർ, അൽ-മുഅല്ലിം (1959), സന്തുഷ്ട കുടുംബം, കുരുന്നുകൾ, സത്യധാര (1997) എന്നിവ സമസ്തയുടെ പ്രമുഖ പ്രസിദ്ധീകരണങ്ങളാണ്.',
+      '@SAMASTHAONLINEOFFICAL, @SKICROfficial, @balavedhi, @trendkerala, @skssfsargalaya തുടങ്ങിയ യൂട്യൂബ് ചാനലുകൾ വിദ്യാർത്ഥികൾക്ക് പഠനത്തിനായി ഉപയോഗിക്കാം.',
+    ],
+  },
 };
 
 function resolveQuickGuide(lessonId: string): LessonQuickGuide {
@@ -711,12 +728,31 @@ export const LessonAnimatedBanner: React.FC<{
   emoji?: string;
 }> = ({ lessonId, title, emoji = '📖' }) => {
   const guide = resolveQuickGuide(lessonId);
+  const wingLogos = getOfficialLogosForLesson(lessonId);
+  const lessonLinks = getLinksForLesson(lessonId);
 
   return (
     <div className="space-y-3">
       {/* Animated Lesson-Relevant Visual Header */}
       <div className="relative rounded-xl overflow-hidden border border-emerald-200 shadow-xs">
         <AnimatedSceneArt theme={guide.theme} />
+        {wingLogos.length > 0 && wingLogos.length <= 2 && (
+          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+            {wingLogos.map((logo) => (
+              <div
+                key={logo.id}
+                className="bg-white/95 backdrop-blur-xs rounded-xl px-2 py-1 border border-emerald-200 shadow-md flex items-center justify-center"
+                title={logo.label}
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.label}
+                  className="h-8 sm:h-10 w-auto max-w-[92px] object-contain"
+                />
+              </div>
+            ))}
+          </div>
+        )}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent px-3.5 py-2 flex items-center gap-2">
           <span className="text-base shrink-0" aria-hidden="true">
             {emoji}
@@ -726,6 +762,33 @@ export const LessonAnimatedBanner: React.FC<{
           </p>
         </div>
       </div>
+
+      {/* Multi-wing Official Logo Showcase Strip (for 17-wings & overview lessons) */}
+      {wingLogos.length > 2 && (
+        <div className="rounded-xl bg-white border border-emerald-200 p-2.5 shadow-xs space-y-1.5">
+          <p className="text-[11px] font-extrabold text-emerald-900">
+            🏅 ഔദ്യോഗിക വിംഗ് ലോഗോകൾ:
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {wingLogos.map((logo) => (
+              <div
+                key={logo.id}
+                className="rounded-xl bg-slate-50 border border-slate-200 p-1.5 flex flex-col items-center justify-center gap-1"
+                title={logo.label}
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.label}
+                  className="h-9 sm:h-11 w-full object-contain"
+                />
+                <span className="text-[9px] font-extrabold text-slate-700 text-center leading-tight truncate w-full">
+                  {logo.shortLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Crisp, Concise Quick-Read Key Points (Everything needed for Quiz in 10 seconds!) */}
       <div className="rounded-xl bg-emerald-50/90 border border-emerald-200 p-3.5 space-y-2">
@@ -744,6 +807,9 @@ export const LessonAnimatedBanner: React.FC<{
           ))}
         </ul>
       </div>
+
+      {/* Clickable Official Portals & YouTube Channels for this Lesson */}
+      {lessonLinks.length > 0 && <InlineOfficialLinksStrip links={lessonLinks} compact />}
     </div>
   );
 };
