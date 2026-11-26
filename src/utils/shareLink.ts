@@ -22,11 +22,16 @@ export async function generateAppQrDataUrl(size = 240): Promise<string | null> {
   }
 }
 
-export async function copyAppShareLink(): Promise<boolean> {
-  const url = getAppShareUrl();
+export function getLessonShareUrl(lessonId: string): string {
+  const base = getAppShareUrl();
+  if (!lessonId) return base;
+  return `${base}?lesson=${encodeURIComponent(lessonId)}`;
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(text);
       return true;
     }
   } catch {
@@ -34,7 +39,7 @@ export async function copyAppShareLink(): Promise<boolean> {
   }
   try {
     const input = document.createElement('input');
-    input.value = url;
+    input.value = text;
     document.body.appendChild(input);
     input.select();
     document.execCommand('copy');
@@ -43,4 +48,12 @@ export async function copyAppShareLink(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function copyAppShareLink(): Promise<boolean> {
+  return copyTextToClipboard(getAppShareUrl());
+}
+
+export async function copyLessonShareLink(lessonId: string): Promise<boolean> {
+  return copyTextToClipboard(getLessonShareUrl(lessonId));
 }

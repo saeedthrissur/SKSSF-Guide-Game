@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   Award,
   BarChart3,
   BookOpen,
+  Check,
   CheckCircle2,
   Compass,
   Gamepad2,
@@ -16,17 +17,43 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
-import { L1Tab, Level1Story } from './components/Level1Story';
-import { L2GameTab, Level2Ecosystem } from './components/Level2Ecosystem';
-import { L3Tab, Level3Organizer } from './components/Level3Organizer';
-import { L4Tab, Level4Strategy } from './components/Level4Strategy';
-import {
-  StoryPrologueTheater,
-  VisualStoryboardArena,
-} from './components/StoryIntroAndBoard';
-import { SkssfPovJourneyGame } from './components/SkssfPovJourneyGame';
-import { AllLessonsMapPage } from './components/AllLessonsMapPage';
-import { ShareableBadgeStudio } from './components/ShareableBadgeStudio';
+import type { L1Tab } from './components/Level1Story';
+import type { L2GameTab } from './components/Level2Ecosystem';
+import type { L3Tab } from './components/Level3Organizer';
+import type { L4Tab } from './components/Level4Strategy';
+
+const Level1Story = lazy(() =>
+  import('./components/Level1Story').then((m) => ({ default: m.Level1Story }))
+);
+const Level2Ecosystem = lazy(() =>
+  import('./components/Level2Ecosystem').then((m) => ({ default: m.Level2Ecosystem }))
+);
+const Level3Organizer = lazy(() =>
+  import('./components/Level3Organizer').then((m) => ({ default: m.Level3Organizer }))
+);
+const Level4Strategy = lazy(() =>
+  import('./components/Level4Strategy').then((m) => ({ default: m.Level4Strategy }))
+);
+const StoryPrologueTheater = lazy(() =>
+  import('./components/StoryIntroAndBoard').then((m) => ({ default: m.StoryPrologueTheater }))
+);
+const VisualStoryboardArena = lazy(() =>
+  import('./components/StoryIntroAndBoard').then((m) => ({ default: m.VisualStoryboardArena }))
+);
+const SkssfPovJourneyGame = lazy(() =>
+  import('./components/SkssfPovJourneyGame').then((m) => ({ default: m.SkssfPovJourneyGame }))
+);
+const AllLessonsMapPage = lazy(() =>
+  import('./components/AllLessonsMapPage').then((m) => ({ default: m.AllLessonsMapPage }))
+);
+const ShareableBadgeStudio = lazy(() =>
+  import('./components/ShareableBadgeStudio').then((m) => ({ default: m.ShareableBadgeStudio }))
+);
+const OfficialResourceHubModal = lazy(() =>
+  import('./components/OfficialResourceHubModal').then((m) => ({
+    default: m.OfficialResourceHubModal,
+  }))
+);
 import {
   AudioLoadingFloatBadge,
   EASTER_EGG_ITEMS,
@@ -69,10 +96,23 @@ import {
   useLessonFlow,
 } from './utils/lessonFlowContext';
 import { GuideGameAboutModal, GuideGameBrandLogo } from './components/GameLivesHud';
-import { OfficialResourceHubModal } from './components/OfficialResourceHubModal';
 import { LessonStorylineCard } from './data/lessonStorylines';
-import { copyAppShareLink, getAppShareUrl } from './utils/shareLink';
-import heroBannerImg from './assets/images/skssf_guide_og_banner_1795723645643.jpg';
+import {
+  copyAppShareLink,
+  copyLessonShareLink,
+  getAppShareUrl,
+  getLessonShareUrl,
+} from './utils/shareLink';
+import { AppErrorBoundary } from './components/AppErrorBoundary';
+
+const StageLoadingFallback: React.FC = () => (
+  <div className="rounded-3xl border border-emerald-200 bg-white p-8 sm:p-10 text-center shadow-2xs space-y-3">
+    <div className="w-9 h-9 rounded-full border-3 border-emerald-200 border-t-emerald-700 animate-spin mx-auto" />
+    <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
+      പാഠവും ഗെയിമും തയ്യാറാക്കുന്നു...
+    </p>
+  </div>
+);
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -175,7 +215,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
         <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 px-5 sm:px-8 py-6 sm:py-8 text-white border-b-4 border-amber-400 overflow-hidden">
           {!heroImgFailed && (
             <img
-              src={heroBannerImg}
+              src="./assets/og-guide-game.jpg"
               alt="SKSSF ഗൈഡ് ഗെയിം പഠന ബാനർ"
               referrerPolicy="no-referrer"
               onError={() => setHeroImgFailed(true)}
@@ -322,9 +362,34 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
     isGameDone,
   } = useLessonFlow();
   const currentGameDone = isGameDone(activeLessonId);
+  const [lessonCopied, setLessonCopied] = useState(false);
   const lessonIdx = ALL_LESSONS.findIndex((l) => l.id === activeLessonId);
   const activeLesson = lessonIdx >= 0 ? ALL_LESSONS[lessonIdx] : null;
   const progressPct = Math.round((completedCount / Math.max(1, totalLessons)) * 100);
+
+  const handleShareLesson = async () => {
+    if (!activeLesson) return;
+    sound.unlockAudio();
+    sound.playClick();
+    const url = getLessonShareUrl(activeLesson.id);
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: `SKSSF ഗൈഡ് ഗെയിം — ${activeLesson.title}`,
+          text: `പാഠം ${lessonIdx + 1}: ${activeLesson.title} — SKSSF ഗൈഡ് ഗെയിമിൽ കളിച്ചു പഠിക്കൂ!`,
+          url,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard copy
+      }
+    }
+    const ok = await copyLessonShareLink(activeLesson.id);
+    if (ok) {
+      setLessonCopied(true);
+      window.setTimeout(() => setLessonCopied(false), 2200);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -332,14 +397,33 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
       {activeLesson && hasGameOnPage && (
         <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-2xs space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 tabular-nums">
-                <span className="font-extrabold text-emerald-700">
+            <div className="min-w-0 flex-1 flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 tabular-nums min-w-0">
+                <span className="font-extrabold text-emerald-700 shrink-0">
                   പാഠം {lessonIdx + 1}/{totalLessons}
                 </span>
                 <span aria-hidden="true">·</span>
                 <span className="truncate">{activeLesson.title}</span>
               </div>
+              <button
+                type="button"
+                onClick={handleShareLesson}
+                aria-label="ഈ പാഠത്തിന്റെ ലിങ്ക് ഷെയർ ചെയ്യാം"
+                title={lessonCopied ? 'ലിങ്ക് കോപ്പി ചെയ്തു!' : 'ഈ പാഠം ഷെയർ ചെയ്യാം'}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 text-[10px] font-extrabold text-slate-600 hover:text-emerald-800 transition-colors shrink-0 cursor-pointer"
+              >
+                {lessonCopied ? (
+                  <>
+                    <Check className="w-3 h-3 text-emerald-700" />
+                    <span className="text-emerald-800">കോപ്പി ചെയ്തു</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3 h-3" />
+                    <span className="hidden sm:inline">ഷെയർ</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Interactive 2-Step Segmented Switcher */}
@@ -678,6 +762,43 @@ export default function App() {
     setLessonsMapOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Support URL deep-links (?lesson=<lessonId>) for WhatsApp/mentor sharing
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const linkedLesson = params.get('lesson');
+    if (linkedLesson && ALL_LESSONS.some((l) => l.id === linkedLesson)) {
+      handleJumpToLesson(linkedLesson);
+      try {
+        const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+        window.history.replaceState({}, '', cleanUrl);
+      } catch {
+        // Ignore history API restrictions in sandboxed iframes
+      }
+    }
+  }, [handleJumpToLesson]);
+
+  // Gently prefetch the active stage chunk while the user reads the Welcome Intro screen
+  useEffect(() => {
+    if (!showIntro) return;
+    const timer = window.setTimeout(() => {
+      if (stage === 'prologue' || stage === 'storyboard') {
+        void import('./components/StoryIntroAndBoard');
+      } else if (stage === 'pov') {
+        void import('./components/SkssfPovJourneyGame');
+      } else if (currentLevel === 1) {
+        void import('./components/Level1Story');
+      } else if (currentLevel === 2) {
+        void import('./components/Level2Ecosystem');
+      } else if (currentLevel === 3) {
+        void import('./components/Level3Organizer');
+      } else {
+        void import('./components/Level4Strategy');
+      }
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [showIntro, stage, currentLevel]);
 
   const currentRank = useMemo(() => {
     if (xp >= 550 || completedLevels.includes(4)) return '🏆 SKSSF ഗൈഡ് താരം';
@@ -1133,14 +1254,18 @@ export default function App() {
         )}
 
         {lessonsMapOpen ? (
-          <AllLessonsMapPage
-            activeLessonId={activeLessonId}
-            completedLessonIds={completedLessonIds}
-            devUnlocked={devUnlocked}
-            onSetDevUnlocked={setDevUnlocked}
-            onSelectLesson={handleJumpToLesson}
-            onClose={() => setLessonsMapOpen(false)}
-          />
+          <AppErrorBoundary onReset={() => setLessonsMapOpen(false)}>
+            <Suspense fallback={<StageLoadingFallback />}>
+              <AllLessonsMapPage
+                activeLessonId={activeLessonId}
+                completedLessonIds={completedLessonIds}
+                devUnlocked={devUnlocked}
+                onSetDevUnlocked={setDevUnlocked}
+                onSelectLesson={handleJumpToLesson}
+                onClose={() => setLessonsMapOpen(false)}
+              />
+            </Suspense>
+          </AppErrorBoundary>
         ) : showIntro ? (
           <WelcomeIntroScreen
             xp={xp}
@@ -1232,6 +1357,8 @@ export default function App() {
               completedCount={canonicalCompletedCount}
               totalLessons={ALL_LESSONS.length}
             >
+            <AppErrorBoundary onReset={() => setAttemptKey((k) => k + 1)}>
+            <Suspense fallback={<StageLoadingFallback />}>
             {stage === 'prologue' && (
               <StoryPrologueTheater
                 key={`prologue_${attemptKey}`}
@@ -1395,6 +1522,8 @@ export default function App() {
                 )}
               </>
             )}
+            </Suspense>
+            </AppErrorBoundary>
             </LessonWorkspaceFrame>
 
             {/* Narration Bar (Default Collapsed, No Duplicate Settings!) — Below Game */}
@@ -1575,16 +1704,20 @@ export default function App() {
         runHistory={runHistory}
         onStartNewAttempt={handleStartNewAttempt}
       />
-      <ShareableBadgeStudio
-        isOpen={badgeStudioOpen}
-        onClose={() => setBadgeStudioOpen(false)}
-        xp={xp}
-        rank={currentRank}
-        initialBadgeId={badgeStudioPreset}
-        completedLessonIds={completedLessonIds}
-        completedLevels={completedLevels}
-        awardedActions={awardedActions}
-      />
+      {badgeStudioOpen && (
+        <Suspense fallback={null}>
+          <ShareableBadgeStudio
+            isOpen={badgeStudioOpen}
+            onClose={() => setBadgeStudioOpen(false)}
+            xp={xp}
+            rank={currentRank}
+            initialBadgeId={badgeStudioPreset}
+            completedLessonIds={completedLessonIds}
+            completedLevels={completedLevels}
+            awardedActions={awardedActions}
+          />
+        </Suspense>
+      )}
       <SurpriseGiftChestModal
         isOpen={giftChestOpen}
         onClose={() => setGiftChestOpen(false)}
@@ -1623,11 +1756,15 @@ export default function App() {
         xp={xp}
       />
 
-      <OfficialResourceHubModal
-        isOpen={resourceHubOpen}
-        onClose={() => setResourceHubOpen(false)}
-        onAwardXp={handleAwardXp}
-      />
+      {resourceHubOpen && (
+        <Suspense fallback={null}>
+          <OfficialResourceHubModal
+            isOpen={resourceHubOpen}
+            onClose={() => setResourceHubOpen(false)}
+            onAwardXp={handleAwardXp}
+          />
+        </Suspense>
+      )}
 
       <footer className="border-t border-slate-200 bg-white py-4 px-4 sm:px-6 text-center text-xs text-slate-500">
         <p>
