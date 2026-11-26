@@ -191,19 +191,19 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
 
   // Determine the single clearest NEXT action for the user
   let nextTarget: 'game' | 'lesson' | 'quiz' | 'next' = 'lesson';
-  let nextLabel = 'അടുത്തത്: 📖 Open Lesson തുറന്ന് ഉറപ്പിക്കാം';
+  let nextLabel = 'അടുത്തത്: 📖 പാഠം വായിച്ച് മനസ്സിലാക്കാം';
   if (quizDone) {
     nextTarget = 'next';
     nextLabel = 'പൂർത്തിയായി! 🚀 അടുത്ത പാഠത്തിലേക്ക് പോകാം';
   } else if (lessonDone) {
     nextTarget = 'quiz';
-    nextLabel = 'അടുത്തത്: ❓ Open Quiz തുറന്ന് ഉത്തരം നൽകാം';
+    nextLabel = 'അടുത്തത്: ❓ ക്വിസ് തുറന്ന് ഉത്തരം നൽകാം';
   } else if (gameDone) {
     nextTarget = 'lesson';
-    nextLabel = 'ഗെയിം കഴിഞ്ഞു! 📖 ഇനി Open Lesson ഉറപ്പിക്കാം';
+    nextLabel = 'ഗെയിം കഴിഞ്ഞു! 📖 ഇനി പാഠം വായിച്ച് മനസ്സിലാക്കാം';
   } else {
     nextTarget = 'lesson';
-    nextLabel = 'ആദ്യം 🎮 Open Game അല്ലെങ്കിൽ 📖 Open Lesson തുറക്കാം';
+    nextLabel = 'ആദ്യം 🎮 ഗെയിം കളിക്കാം, അല്ലെങ്കിൽ 📖 പാഠം വായിക്കാം';
   }
 
   const jumpTo = (selector: string, openEvent?: string) => {

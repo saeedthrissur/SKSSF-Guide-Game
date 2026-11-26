@@ -1111,7 +1111,7 @@ export const CollapsibleLessonDrawer: React.FC<{
             </h3>
             {!confirmed && (
               <p className="text-xs font-bold text-amber-800 leading-snug">
-                പാഠം തുറന്ന് താഴെ ഉറപ്പിച്ചാൽ ക്വിസ് തുറക്കും
+                പാഠം മനസ്സിലാക്കി കഴിഞ്ഞാൽ ക്വിസിലേക്ക് കടക്കാം
               </p>
             )}
           </div>
@@ -1239,7 +1239,7 @@ export const CollapsibleLessonDrawer: React.FC<{
                   <div className="w-full flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50 border-2 border-emerald-300 px-3.5 py-2.5">
                     <span className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-900">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      പാഠം ഉറപ്പിച്ചു — ക്വിസ് തുറന്നു!
+                      പാഠം വായിച്ചു കഴിഞ്ഞു — ഇനി ക്വിസിലേക്ക് കടക്കാം!
                     </span>
                     <button
                       type="button"

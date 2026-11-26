@@ -196,7 +196,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
               </h3>
               {!lessonUnlocked && (
                 <p className="text-xs font-bold text-amber-800 leading-snug">
-                  പാഠം തുറന്ന് ഉറപ്പിച്ച ശേഷം ക്വിസ് തുറക്കും
+                  പാഠം മനസ്സിലാക്കി കഴിഞ്ഞാൽ ക്വിസിലേക്ക് കടക്കാം
                 </p>
               )}
             </div>

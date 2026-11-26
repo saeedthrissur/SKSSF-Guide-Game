@@ -567,65 +567,100 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     </div>
   );
 
-  // COLLAPSED LAUNCHER CARD (Default State — Unified 2-Row Layout)
+  // COLLAPSED LAUNCHER CARD (Kid-Friendly, Unmistakable Playful Game Card)
   if (!isExpanded && !isFullscreen) {
+    const openGameCard = () => {
+      sound.unlockAudio();
+      sound.playPop();
+      lastActiveGameShellId = shellId;
+      setShowWinOverlay(false);
+      setPortalOverlayActive(false);
+      setBriefingOpen(true);
+      setIsExpanded(true);
+    };
+
     return (
       <div
         ref={containerRef}
         data-lesson-game="true"
-        className={`rounded-2xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50/90 via-white to-teal-50/50 p-3.5 sm:p-4 shadow-sm scroll-mt-20 space-y-3 ${className}`}
+        className={`relative overflow-hidden rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-emerald-950 via-teal-900 to-sky-950 p-4 sm:p-4.5 shadow-lg scroll-mt-20 space-y-3.5 text-white ${className}`}
       >
-        {/* Row 1: Full-width Icon + Section Tag + Complete Readable Title */}
-        <div className="flex items-start gap-3 w-full">
-          <span className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Gamepad2 className="w-5 h-5" />
-          </span>
-          <div className="min-w-0 flex-1 space-y-0.5">
+        {/* Subtle Decorative Arcade Glow & Floating Sparkles */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-10 -right-10 w-36 h-36 rounded-full bg-amber-400/20 blur-2xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-10 -left-8 w-32 h-32 rounded-full bg-emerald-400/20 blur-2xl"
+        />
+
+        {/* Row 1: Playful Animated Game Controller Emblem + Clear Kid-Friendly Game Tag & Title */}
+        <div className="relative z-10 flex items-start gap-3.5 w-full">
+          <motion.button
+            type="button"
+            onClick={openGameCard}
+            aria-label="ഗെയിം തുറക്കാം"
+            animate={{ rotate: [-3, 3, -3], y: [0, -2, 0] }}
+            transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 text-slate-950 border-2 border-amber-100 border-b-4 border-b-amber-700 flex items-center justify-center shrink-0 shadow-lg cursor-pointer"
+          >
+            <Gamepad2 className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.3]" />
+          </motion.button>
+
+          <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] font-black tracking-wider uppercase text-emerald-700">
-                GAME
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] sm:text-[11px] font-black tracking-wide shadow-2xs">
+                <Sparkles className="w-3 h-3" />
+                <span>രസകരമായ ഗെയിം · GAME</span>
               </span>
-              {isGameDone && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  <CheckCircle2 className="w-3 h-3" /> പൂർത്തിയാക്കി
+              {isGameDone ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-400/25 text-emerald-200 border border-emerald-300/60">
+                  <CheckCircle2 className="w-3 h-3 text-amber-300" /> ജയിച്ച ഗെയിം 🏆
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/15 text-amber-200 border border-white/20">
+                  ⭐ കളിച്ചു പഠിക്കാം!
                 </span>
               )}
             </div>
-            <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
+            <h3 className="text-sm sm:text-base font-black text-white leading-snug drop-shadow-xs">
               {title}
             </h3>
-            {subtitle && (
-              <p className="text-xs font-semibold text-slate-600 leading-snug">
-                {subtitle}
-              </p>
-            )}
+            <p className="text-xs font-semibold text-emerald-100/90 leading-snug">
+              {subtitle || 'തൊട്ട് കളിച്ച് പോയിന്റും ബാഡ്ജും നേടാം!'}
+            </p>
           </div>
         </div>
 
-        {/* Row 2: Uniform Action Bar Below Title */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-emerald-200/70">
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playPop();
-                lastActiveGameShellId = shellId;
-                setShowWinOverlay(false);
-                setPortalOverlayActive(false);
-                setBriefingOpen(true);
-                setIsExpanded(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-2 border-emerald-950 shadow-xs transition-transform active:scale-95 cursor-pointer"
-            >
-              {isGameDone ? (
-                <RotateCcw className="w-3.5 h-3.5" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
-              )}
-              <span>{isGameDone ? 'Open Game (Replay)' : 'Open Game'}</span>
-            </button>
-          </div>
+        {/* Row 2: Big Tactile 3D Golden Play Button + Fullscreen & Info */}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-white/15">
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96, y: 2 }}
+            onClick={openGameCard}
+            className="relative overflow-hidden flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 hover:from-amber-200 hover:via-amber-300 hover:to-amber-400 text-slate-950 text-sm font-black border-2 border-amber-100 border-b-[5px] border-b-amber-700 shadow-lg cursor-pointer"
+          >
+            {/* Animated Shine Sweep */}
+            <motion.span
+              aria-hidden="true"
+              animate={{ x: ['-130%', '230%'] }}
+              transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', repeatDelay: 1.5 }}
+              className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/50 to-transparent -skew-x-12"
+            />
+            {isGameDone ? (
+              <RotateCcw className="w-4 h-4 relative z-10 stroke-[2.6]" />
+            ) : (
+              <Play className="w-4 h-4 fill-current relative z-10" />
+            )}
+            <span className="relative z-10">
+              {isGameDone ? 'വീണ്ടും കളിക്കാം!' : 'ഗെയിം കളിക്കാം!'}
+            </span>
+            <span className="relative z-10 px-1.5 py-0.5 rounded-md bg-slate-950/90 text-amber-300 text-[10px] font-black tracking-wider">
+              PLAY
+            </span>
+          </motion.button>
 
           <div className="flex items-center gap-1.5 shrink-0">
             <button
@@ -636,7 +671,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
               }}
               aria-label="ഗെയിം വിവരണം"
               title="വിവരണം"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-800 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-colors cursor-pointer"
             >
               <Info className="w-4 h-4" />
             </button>
@@ -644,18 +679,19 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
             <button
               type="button"
               onClick={enterFullscreen}
-              title="ഫുൾ സ്ക്രീൻ"
+              title="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
               aria-label="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1 px-2.5 h-9 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-amber-400/50 text-amber-300 text-xs font-extrabold transition-colors cursor-pointer"
             >
               <VideoFullscreenEnterIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">വലിയ സ്ക്രീൻ</span>
             </button>
           </div>
         </div>
 
         {showInfo && (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3.5 py-2.5 text-xs font-bold text-emerald-950 leading-relaxed">
-            ℹ️ ഈ പാഠം രസകരമായി കളിച്ചു പഠിക്കാൻ <strong>“Open Game”</strong> അമർത്തുക. ഗെയിം ഒഴിവാക്കി നേരിട്ട് താഴത്തെ <strong>“Open Lesson”</strong> തുറന്ന് വായിക്കാനും കഴിയും. ജയിച്ച ഗെയിമുകൾ എപ്പോൾ വേണമെങ്കിലും വീണ്ടും കളിക്കാം (അധിക XP ചേരില്ല).
+          <div className="relative z-10 rounded-xl bg-slate-950/75 border border-amber-400/40 px-3.5 py-2.5 text-xs font-bold text-emerald-100 leading-relaxed">
+            ℹ️ ഈ പാഠം രസകരമായി കളിച്ചു പഠിക്കാൻ മഞ്ഞ <strong>“ഗെയിം കളിക്കാം! PLAY”</strong> ബട്ടൺ അമർത്തുക. ഗെയിമിന് പകരം നേരിട്ട് താഴത്തെ <strong>“Open Lesson”</strong> തുറന്ന് വായിക്കാനും കഴിയും.
           </div>
         )}
       </div>
