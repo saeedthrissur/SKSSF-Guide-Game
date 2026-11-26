@@ -2,6 +2,7 @@ import { sound } from './sound';
 import {
   hashSpeechKey,
   normalizeSpeechKeyText,
+  VOICE_GEMINI_MANIFEST,
 } from '../data/voiceManifest';
 
 export interface NarratorState {
@@ -19,7 +20,7 @@ interface CachedAudioBlob {
   mimeType: string;
 }
 
-const IDB_NAME = 'mission_samastha_midhun_male_v2';
+const IDB_NAME = 'skssf_gemini_charon_v3';
 const IDB_STORE = 'audio_clips';
 
 function openVoiceDb(): Promise<IDBDatabase | null> {
@@ -52,7 +53,7 @@ async function readIdbClip(keyHash: string): Promise<CachedAudioBlob | null> {
       req.onsuccess = () => {
         const val = req.result as { blob?: Blob; mimeType?: string } | undefined;
         if (val?.blob instanceof Blob && val.blob.size > 500) {
-          resolve({ blob: val.blob, mimeType: val.mimeType || val.blob.type || 'audio/mpeg' });
+          resolve({ blob: val.blob, mimeType: val.mimeType || val.blob.type || 'audio/wav' });
         } else {
           resolve(null);
         }
@@ -108,11 +109,9 @@ class MaleStoryNarrator {
   private pendingSpeech: { text: string; caption?: string } | null = null;
   private gestureListenerAttached: boolean = false;
   private serverTtsUnavailable: boolean = false;
-  private activeUtterance: SpeechSynthesisUtterance | null = null;
 
   constructor() {
     sound.registerNarratorHooks({
-      // Do NOT stop narrator when background Quran/Adhan starts — they coexist cleanly with soft ducking
       onNarratorVolChange: (vol) => {
         if (this.currentAudio) {
           this.currentAudio.volume = vol;
@@ -124,13 +123,6 @@ class MaleStoryNarrator {
       },
     });
     this.attachGestureUnlocker();
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.getVoices();
-      } catch {
-        // Ignore
-      }
-    }
   }
 
   private attachGestureUnlocker() {
@@ -191,6 +183,9 @@ class MaleStoryNarrator {
   }
 
   public replayLast() {
+    if (sound.isMuted()) {
+      sound.setMuted(false);
+    }
     this.setEnabled(true);
     void this.speak(this.lastSpeechText || this.currentText, this.currentText);
   }
@@ -210,14 +205,6 @@ class MaleStoryNarrator {
       URL.revokeObjectURL(this.currentObjectUrl);
       this.currentObjectUrl = null;
     }
-    this.activeUtterance = null;
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Ignore speechSynthesis cancel errors
-      }
-    }
     this.speaking = false;
     this.loading = false;
     sound.setAmbienceDucked(false);
@@ -232,7 +219,6 @@ class MaleStoryNarrator {
 
     if (!this.enabled || sound.isMuted() || !cleanText) return;
 
-    // Keep background Quran/Adhan gently ducked instead of stopping it!
     this.stop();
     const mySeq = this.requestSeq;
     this.lastSpeechText = text;
@@ -243,7 +229,7 @@ class MaleStoryNarrator {
 
     const keyHash = hashSpeechKey(cleanText);
 
-    // 1. In-memory or IndexedDB cache of verified strictly-male Malayalam TTS (0ms)
+    // 1. In-memory or IndexedDB cache of verified Gemini Charon male Malayalam audio (0ms)
     const memCached = this.clientCache.get(keyHash);
     if (memCached) {
       await this.playBlob(memCached, cleanText, captionDisplay, mySeq);
@@ -258,7 +244,35 @@ class MaleStoryNarrator {
       return;
     }
 
-    // 2. Live strictly-male native Malayalam TTS via server /api/tts (ml-IN-MidhunNeural)
+    // 2. Pre-generated static Gemini audio clip ONLY inside ./assets/voice-gemini/
+    const staticGeminiUrl = VOICE_GEMINI_MANIFEST[keyHash];
+    if (staticGeminiUrl) {
+      const controller = new AbortController();
+      this.abortController = controller;
+      try {
+        const res = await fetch(staticGeminiUrl, { signal: controller.signal });
+        if (mySeq !== this.requestSeq || controller.signal.aborted) return;
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && !ct.includes('text/html')) {
+          const blob = await res.blob();
+          if (mySeq !== this.requestSeq || controller.signal.aborted) return;
+          if (blob.size > 500) {
+            const entry: CachedAudioBlob = {
+              blob,
+              mimeType: blob.type || 'audio/mpeg',
+            };
+            this.storeInMemory(keyHash, entry);
+            void writeIdbClip(keyHash, entry);
+            await this.playBlob(entry, cleanText, captionDisplay, mySeq);
+            return;
+          }
+        }
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError' || mySeq !== this.requestSeq) return;
+      }
+    }
+
+    // 3. Live Google Gemini TTS Male ('Charon') via server /api/tts
     if (!this.serverTtsUnavailable) {
       const controller = new AbortController();
       this.abortController = controller;
@@ -287,7 +301,7 @@ class MaleStoryNarrator {
           if (mySeq !== this.requestSeq || controller.signal.aborted) return;
 
           if (data.audioBase64) {
-            const mimeType = data.mimeType || 'audio/mpeg';
+            const mimeType = data.mimeType || 'audio/wav';
             const blob = base64ToBlob(data.audioBase64, mimeType);
             const entry: CachedAudioBlob = { blob, mimeType };
 
@@ -298,7 +312,7 @@ class MaleStoryNarrator {
             return;
           }
         } else if (res.status === 404 || res.status === 405 || contentType.includes('text/html')) {
-          // Static host (e.g., GitHub Pages) has no /api/tts backend — switch smoothly to Google/Browser TTS
+          // Static host without /api/tts backend — fail silently (never use browser/robotic voice)
           this.serverTtsUnavailable = true;
         }
       } catch (err) {
@@ -306,13 +320,8 @@ class MaleStoryNarrator {
       }
     }
 
-    if (mySeq !== this.requestSeq) return;
-
-    // 3. Static-host / GitHub Pages fallback: Google / Browser SpeechSynthesis Malayalam TTS
-    const spokeViaGoogleTts = this.speakWithBrowserGoogleTts(cleanText, mySeq);
-    if (!spokeViaGoogleTts) {
-      this.finishSilentOnFailure(mySeq);
-    }
+    // 4. Fail silently immediately — NEVER fall back to browser/female/robotic speechSynthesis
+    this.finishSilentOnFailure(mySeq);
   }
 
   private storeInMemory(keyHash: string, entry: CachedAudioBlob) {
@@ -329,117 +338,6 @@ class MaleStoryNarrator {
     this.loading = false;
     sound.setAmbienceDucked(false);
     this.emit();
-  }
-
-  private pickBestMalayalamVoice(): { voice: SpeechSynthesisVoice | null; isExplicitMale: boolean } {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      return { voice: null, isExplicitMale: false };
-    }
-    const voices = window.speechSynthesis.getVoices() || [];
-    const mlVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('ml'));
-    if (mlVoices.length === 0) return { voice: null, isExplicitMale: false };
-
-    // Prefer explicitly male Malayalam voices (e.g., Google Android ml-in-x-mlm / Midhun / Male)
-    const maleVoice = mlVoices.find((v) =>
-      /(midhun|male|man|mlm|ml-in-x-mlm)/i.test(`${v.name} ${v.voiceURI}`)
-    );
-    if (maleVoice) return { voice: maleVoice, isExplicitMale: true };
-
-    // Next prefer Google Malayalam TTS voice
-    const googleMl = mlVoices.find((v) => /google/i.test(`${v.name} ${v.voiceURI}`));
-    if (googleMl) return { voice: googleMl, isExplicitMale: false };
-
-    return { voice: mlVoices[0], isExplicitMale: false };
-  }
-
-  private splitSpeechChunks(text: string): string[] {
-    const parts = text
-      .split(/(?<=[.!?।,\n])\s+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const chunks: string[] = [];
-    let buf = '';
-    for (const part of parts) {
-      if ((buf + ' ' + part).trim().length <= 165) {
-        buf = (buf ? `${buf} ` : '') + part;
-      } else {
-        if (buf) chunks.push(buf);
-        buf = part.slice(0, 180);
-      }
-    }
-    if (buf) chunks.push(buf);
-    return chunks.length > 0 ? chunks : [text.slice(0, 180)];
-  }
-
-  private speakWithBrowserGoogleTts(cleanText: string, seq: number): boolean {
-    if (
-      typeof window === 'undefined' ||
-      !('speechSynthesis' in window) ||
-      typeof SpeechSynthesisUtterance === 'undefined'
-    ) {
-      return false;
-    }
-
-    try {
-      const synth = window.speechSynthesis;
-      synth.cancel();
-
-      const chunks = this.splitSpeechChunks(cleanText);
-      const { voice, isExplicitMale } = this.pickBestMalayalamVoice();
-      const gain = sound.getNarratorGain();
-
-      let idx = 0;
-      const speakNextChunk = () => {
-        if (seq !== this.requestSeq) return;
-        if (idx >= chunks.length) {
-          this.activeUtterance = null;
-          this.speaking = false;
-          this.loading = false;
-          sound.setAmbienceDucked(false);
-          this.emit();
-          return;
-        }
-
-        const utter = new SpeechSynthesisUtterance(chunks[idx]);
-        utter.lang = voice?.lang || 'ml-IN';
-        if (voice) utter.voice = voice;
-        utter.rate = 0.96;
-        utter.pitch = isExplicitMale ? 1.0 : 0.88;
-        utter.volume = Math.max(0, Math.min(1, gain));
-        this.activeUtterance = utter;
-
-        utter.onstart = () => {
-          if (seq !== this.requestSeq) return;
-          this.loading = false;
-          this.speaking = true;
-          sound.setAmbienceDucked(true);
-          this.emit();
-        };
-
-        utter.onend = () => {
-          if (seq !== this.requestSeq) return;
-          idx += 1;
-          speakNextChunk();
-        };
-
-        utter.onerror = () => {
-          if (seq !== this.requestSeq) return;
-          this.activeUtterance = null;
-          this.finishSilentOnFailure(seq);
-        };
-
-        synth.speak(utter);
-      };
-
-      this.loading = false;
-      this.speaking = true;
-      sound.setAmbienceDucked(true);
-      this.emit();
-      speakNextChunk();
-      return true;
-    } catch {
-      return false;
-    }
   }
 
   private async playBlob(

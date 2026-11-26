@@ -490,34 +490,36 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
   const [open, setOpen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
+  React.useEffect(() => {
+    setOpen(false);
+    setShowInfo(false);
+  }, [lessonId]);
+
   if (!story) return null;
 
   return (
     <section
       data-lesson-storyline="true"
-      className="rounded-2xl border-2 border-purple-200/90 bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/60 shadow-sm overflow-hidden scroll-mt-20"
+      className="rounded-2xl border border-emerald-200 bg-white shadow-2xs overflow-hidden scroll-mt-20"
     >
-      <div className="p-3.5 sm:p-4 space-y-3">
-        {/* Row 1: Full-width Icon + Section Tag + Complete Readable Title */}
-        <div className="flex items-start gap-3 w-full">
-          <span className="w-10 h-10 rounded-xl bg-purple-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Sparkles className="w-5 h-5" />
+      <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-gradient-to-r from-emerald-50/90 via-white to-amber-50/60">
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+          <span className="w-9 h-9 rounded-xl bg-emerald-700 text-amber-300 flex items-center justify-center shrink-0 shadow-2xs">
+            <Sparkles className="w-4 h-4" />
           </span>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <span className="text-[10px] font-black tracking-wider uppercase text-purple-700 block">
-              STORYLINE
-            </span>
-            <h3 className="text-sm sm:text-base font-extrabold text-purple-950 leading-snug">
-              ✨ സ്റ്റോറി ലൈൻ മനസ്സിലാക്കാം
-            </h3>
-            <p className="text-xs font-semibold text-purple-700 leading-snug">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+              <span>സ്റ്റോറി ലൈൻ</span>
+              <span aria-hidden="true" className="text-slate-300">·</span>
+              <span className="text-amber-700">ഘട്ടം 1</span>
+            </div>
+            <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
               {story.heading}
-            </p>
+            </h3>
           </div>
         </div>
 
-        {/* Row 2: Uniform Action Bar Below Title */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-purple-200/70">
+        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
           <button
             type="button"
             onClick={() => {
@@ -526,36 +528,34 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
               setOpen((v) => !v);
             }}
             aria-expanded={open}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-colors active:scale-95 cursor-pointer whitespace-nowrap ${
               open
-                ? 'bg-white hover:bg-purple-50 text-purple-900 border-purple-300 border'
-                : 'bg-purple-700 hover:bg-purple-800 text-white border-purple-950'
+                ? 'bg-white hover:bg-slate-50 text-emerald-900 border border-emerald-300'
+                : 'bg-emerald-700 hover:bg-emerald-800 text-white shadow-2xs'
             }`}
           >
-            {open ? <ChevronUp className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-            <span>{open ? 'Close Storyline' : 'Open Storyline'}</span>
+            {open ? <ChevronUp className="w-3.5 h-3.5" /> : <Play className="w-3 h-3 fill-current" />}
+            <span>{open ? 'ചുരുക്കാം' : 'കഥ വായിക്കാം'}</span>
           </button>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                sound.playClick();
-                setShowInfo((v) => !v);
-              }}
-              aria-label="സ്റ്റോറി ലൈൻ വിവരണം"
-              title="എന്താണ് സ്റ്റോറി ലൈൻ?"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-800 cursor-pointer transition-colors"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              setShowInfo((v) => !v);
+            }}
+            aria-label="സ്റ്റോറി ലൈൻ വിവരണം"
+            title="എന്താണ് സ്റ്റോറി ലൈൻ?"
+            className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 cursor-pointer transition-colors"
+          >
+            <Info className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       {showInfo && (
-        <div className="px-4 py-2.5 bg-purple-100/70 border-t border-purple-200 text-xs font-bold text-purple-950 leading-relaxed">
-          ℹ️ ഈ ഭാഗത്ത് ഒരു സാങ്കൽപ്പിക ഉദാഹരണത്തിലൂടെ (“സങ്കൽപ്പിച്ചു നോക്കൂ...”) ഈ ഗെയിമും പാഠവും അടുത്ത പാഠവുമായി എങ്ങനെ ബന്ധപ്പെട്ടിരിക്കുന്നു എന്ന് ലളിതമായി മനസ്സിലാക്കാം. ഇതിൽ തെറ്റായ ചരിത്രമോ കള്ളക്കഥകളോ ഇല്ല.
+        <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-semibold text-amber-950 leading-relaxed">
+          ഈ ഗെയിമും പാഠവും തമ്മിലുള്ള ബന്ധം ലളിതമായ ഒരു ഉദാഹരണത്തിലൂടെ മനസ്സിലാക്കാൻ “കഥ വായിക്കാം” തൊടുക.
         </div>
       )}
 
@@ -565,19 +565,18 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-hidden border-t border-purple-200/80"
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-emerald-100 bg-white"
           >
-            <div className="p-4 space-y-3 text-xs sm:text-sm leading-relaxed text-slate-800">
-              <p className="font-extrabold text-purple-900">{story.heading}</p>
-              <div className="rounded-xl bg-white/90 border border-purple-100 p-3 font-medium">
-                💭 {story.imagineScene}
+            <div className="p-3.5 sm:p-4 space-y-2.5 text-xs sm:text-sm leading-relaxed text-slate-800">
+              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 font-medium">
+                {story.imagineScene}
               </div>
-              <div className="rounded-xl bg-emerald-50/80 border border-emerald-200/80 p-3 font-semibold text-emerald-950">
-                🎮 <span className="font-extrabold">ഗെയിമുമായുള്ള ബന്ധം:</span> {story.gameLink}
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 font-semibold text-emerald-950">
+                <span className="font-extrabold">ഗെയിമുമായുള്ള ബന്ധം:</span> {story.gameLink}
               </div>
-              <div className="rounded-xl bg-amber-50/90 border border-amber-200 p-3 font-bold text-amber-950">
-                ➡️ <span className="font-extrabold">അടുത്ത പാഠത്തിലേക്ക്:</span> {story.nextBridge}
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 font-semibold text-amber-950">
+                <span className="font-extrabold">അടുത്ത പാഠത്തിലേക്ക്:</span> {story.nextBridge}
               </div>
             </div>
           </motion.div>
@@ -586,3 +585,4 @@ export const LessonStorylineCard: React.FC<{ lessonId: string }> = ({ lessonId }
     </section>
   );
 };
+

@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { config as loadDotenv } from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
-import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { createServer as createViteServer } from 'vite';
 
 loadDotenv();
@@ -37,7 +36,7 @@ const ai = process.env.GEMINI_API_KEY
 interface CachedAudio {
   audioBase64: string;
   mimeType: string;
-  provider: 'gemini-charon' | 'edge-midhun-male';
+  provider: 'gemini-charon';
 }
 
 // Bounded in-memory + disk cache so repeated phrases play instantaneously with 0 latency
@@ -49,16 +48,7 @@ const MAX_CACHE_ENTRIES = 300;
 const modelCooldownUntil: Record<string, number> = {};
 
 function makeCacheKey(text: string): string {
-  return crypto.createHash('sha256').update(`v4_midhun_male:${text}`).digest('hex').slice(0, 24);
-}
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+  return crypto.createHash('sha256').update(`v5_gemini_charon_male:${text}`).digest('hex').slice(0, 24);
 }
 
 function normalizeMalayalamSpeechText(raw: string): string {
@@ -80,8 +70,8 @@ function readDiskCache(key: string): CachedAudio | null {
     if (!fs.existsSync(file)) return null;
     const raw = fs.readFileSync(file, 'utf8');
     const parsed = JSON.parse(raw) as CachedAudio;
-    // Only reuse strictly verified native male Malayalam TTS entries
-    if (parsed?.audioBase64 && parsed?.mimeType && parsed.provider === 'edge-midhun-male') {
+    // Only reuse strictly verified Gemini Charon male Malayalam TTS entries
+    if (parsed?.audioBase64 && parsed?.mimeType && parsed.provider === 'gemini-charon') {
       return parsed;
     }
   } catch {
@@ -91,7 +81,7 @@ function readDiskCache(key: string): CachedAudio | null {
 }
 
 function writeDiskCache(key: string, entry: CachedAudio): void {
-  if (entry.provider !== 'edge-midhun-male') return;
+  if (entry.provider !== 'gemini-charon') return;
   try {
     const file = path.join(CACHE_DIR, `${key}.json`);
     fs.writeFileSync(file, JSON.stringify(entry));
@@ -100,11 +90,10 @@ function writeDiskCache(key: string, entry: CachedAudio): void {
   }
 }
 
-type GeminiTtsModel =
-  | 'gemini-3.8-flash-lite-tts'
-  | 'gemini-3.8-flash-tts'
-  | 'gemini-2.5-flash-preview-tts'
-  | 'gemini-2.5-pro-preview-tts';
+type GeminiTtsModel = 'gemini-3.8-flash-lite-tts' | 'gemini-3.8-flash-tts';
+
+const MALAYALAM_MALE_STYLE =
+  'Speak in a warm, deep, natural, fluent native Malayalam male conversational voice — relaxed, expressive, friendly storytelling style just like Gemini Live natural Malayalam voice, with clear native Kerala pronunciation.';
 
 async function callGeminiTtsModel(
   modelName: GeminiTtsModel,
@@ -126,7 +115,7 @@ async function callGeminiTtsModel(
               {
                 text: cleanText,
                 speechMetadata: {
-                  style: 'Warm, friendly, clear native Malayalam male storyteller speaking naturally to children and students',
+                  style: MALAYALAM_MALE_STYLE,
                 },
               },
             ],
@@ -136,7 +125,7 @@ async function callGeminiTtsModel(
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              // Strictly Male Voice ('Charon')
+              // Strictly deep natural Male voice ('Charon')
               prebuiltVoiceConfig: { voiceName: 'Charon' },
             },
           },
@@ -146,7 +135,6 @@ async function callGeminiTtsModel(
       const msg = innerErr instanceof Error ? innerErr.message : '';
       if (
         msg.includes('Unknown name') ||
-        msg.includes('speechConfig') ||
         msg.includes('speechMetadata') ||
         msg.includes('INVALID_ARGUMENT') ||
         msg.includes('400')
@@ -156,7 +144,11 @@ async function callGeminiTtsModel(
           contents: [
             {
               role: 'user',
-              parts: [{ text: cleanText }],
+              parts: [
+                {
+                  text: `Speak the following Malayalam text naturally in a warm, fluent native Malayalam male conversational tone (do not read this instruction aloud):\n${cleanText}`,
+                },
+              ],
             },
           ],
           config: {
@@ -186,6 +178,7 @@ async function callGeminiTtsModel(
       rawBuf.length >= 12 &&
       rawBuf.toString('ascii', 0, 4) === 'RIFF' &&
       rawBuf.toString('ascii', 8, 12) === 'WAVE';
+
     if (!isAlreadyWav && (inlineMime.toLowerCase().includes('l16') || inlineMime.toLowerCase().includes('pcm'))) {
       const rateMatch = inlineMime.match(/rate=(\d+)/i);
       const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000;
@@ -234,13 +227,8 @@ async function callGeminiTtsModel(
   }
 }
 
-async function generateWithGeminiMale(cleanText: string): Promise<CachedAudio | null> {
-  const models: GeminiTtsModel[] = [
-    'gemini-3.8-flash-lite-tts',
-    'gemini-3.8-flash-tts',
-    'gemini-2.5-flash-preview-tts',
-    'gemini-2.5-pro-preview-tts',
-  ];
+async function generateWithGeminiCharonMale(cleanText: string): Promise<CachedAudio | null> {
+  const models: GeminiTtsModel[] = ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
   for (const model of models) {
     const res = await callGeminiTtsModel(model, cleanText);
     if (res) return res;
@@ -248,68 +236,7 @@ async function generateWithGeminiMale(cleanText: string): Promise<CachedAudio | 
   return null;
 }
 
-async function synthesizeEdgeMalayalamMaleOnce(cleanText: string): Promise<CachedAudio> {
-  const tts = new MsEdgeTTS({
-    connectionTimeoutMs: 9000,
-    synthesisTimeoutMs: 25000,
-  });
-
-  try {
-    // Strictly Native Malayalam MALE Neural Voice (ml-IN-MidhunNeural)
-    await tts.setMetadata(
-      'ml-IN-MidhunNeural',
-      OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3
-    );
-
-    const safeInput = escapeXml(cleanText);
-    const { audioStream } = tts.toStream(safeInput);
-
-    const audioBase64 = await new Promise<string>((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      audioStream.on('data', (chunk: Buffer | Uint8Array) => {
-        chunks.push(Buffer.from(chunk));
-      });
-      audioStream.on('error', (streamErr: unknown) => {
-        reject(streamErr);
-      });
-      audioStream.on('close', () => {
-        const merged = Buffer.concat(chunks);
-        if (merged.length === 0) {
-          reject(new Error('Empty audio stream from MidhunNeural'));
-          return;
-        }
-        resolve(merged.toString('base64'));
-      });
-    });
-
-    return {
-      audioBase64,
-      mimeType: 'audio/mpeg',
-      provider: 'edge-midhun-male',
-    };
-  } finally {
-    try {
-      tts.close();
-    } catch {
-      // Ignore close cleanup errors
-    }
-  }
-}
-
-async function generateWithEdgeMalayalamMale(cleanText: string): Promise<CachedAudio | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      return await synthesizeEdgeMalayalamMaleOnce(cleanText);
-    } catch {
-      if (attempt === 0) {
-        await new Promise((r) => setTimeout(r, 250));
-      }
-    }
-  }
-  return null;
-}
-
-async function resolveMalayalamMaleTts(cleanText: string): Promise<CachedAudio | null> {
+async function resolveGeminiMalayalamMaleTts(cleanText: string): Promise<CachedAudio | null> {
   const key = makeCacheKey(cleanText);
 
   const memHit = ttsCache.get(key);
@@ -326,13 +253,7 @@ async function resolveMalayalamMaleTts(cleanText: string): Promise<CachedAudio |
 
   const task = (async () => {
     try {
-      // 1) Primary: Strictly Native Malayalam MALE Neural ('ml-IN-MidhunNeural') — 100% consistent male voice
-      let result = await generateWithEdgeMalayalamMale(cleanText);
-
-      // 2) Secondary Fallback ONLY if Edge TTS fails: Gemini AI Male ('Charon')
-      if (!result) {
-        result = await generateWithGeminiMale(cleanText);
-      }
+      const result = await generateWithGeminiCharonMale(cleanText);
 
       if (result) {
         if (ttsCache.size >= MAX_CACHE_ENTRIES) {
@@ -340,9 +261,7 @@ async function resolveMalayalamMaleTts(cleanText: string): Promise<CachedAudio |
           if (oldestKey) ttsCache.delete(oldestKey);
         }
         ttsCache.set(key, result);
-        if (result.provider === 'edge-midhun-male') {
-          writeDiskCache(key, result);
-        }
+        writeDiskCache(key, result);
       }
 
       return result;
@@ -359,7 +278,7 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '256kb' }));
 
-  // Server-side Strictly Male Malayalam TTS (Gemini Charon + Native Malayalam MidhunNeural)
+  // Server-side Strictly Natural Google Gemini Male Malayalam TTS (Charon ONLY)
   app.post('/api/tts', async (req, res) => {
     const rawText = typeof req.body?.text === 'string' ? req.body.text : '';
     const cleanText = normalizeMalayalamSpeechText(rawText);
@@ -369,11 +288,10 @@ async function startServer() {
     }
 
     try {
-      const audio = await resolveMalayalamMaleTts(cleanText);
+      const audio = await resolveGeminiMalayalamMaleTts(cleanText);
       if (!audio) {
         res.status(502).json({
-          fallback: true,
-          error: 'Unable to synthesize Malayalam speech at the moment',
+          error: 'Gemini Malayalam male TTS is unavailable at the moment',
         });
         return;
       }
@@ -387,7 +305,6 @@ async function startServer() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'TTS generation failed';
       res.status(502).json({
-        fallback: true,
         error: message,
       });
     }

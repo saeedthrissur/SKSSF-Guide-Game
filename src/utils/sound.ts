@@ -60,7 +60,7 @@ type SoundListener = (snap: SoundStateSnapshot) => void;
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
-  private muted: boolean = false;
+  private muted: boolean = true;
   private autoNarrate: boolean = true;
 
   // Ambient background audio: OFF by default (only starts softly if user manually turns it on)
@@ -162,7 +162,7 @@ class SoundEngine {
   }
 
   public resetToDefaults() {
-    this.muted = false;
+    this.muted = true;
     this.narratorPct = 76;
     this.ambiencePct = 5;
     this.spiritualPct = 60;

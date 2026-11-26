@@ -1585,28 +1585,28 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           }
         >
           <div className="space-y-3">
-            <div className="p-3 rounded-2xl bg-white border border-indigo-200 flex items-center gap-3 shadow-xs">
+            <div className="p-3 rounded-2xl bg-white border border-emerald-200 flex items-center gap-3 shadow-xs">
               <img
                 src={OFFICIAL_WING_LOGOS.trend.src}
                 alt={OFFICIAL_WING_LOGOS.trend.label}
                 className="h-14 w-auto object-contain shrink-0"
               />
               <div className="min-w-0">
-                <p className="text-xs font-black text-indigo-900">SKSSF TREND</p>
+                <p className="text-xs font-black text-emerald-900">SKSSF TREND</p>
                 <p className="text-[11px] font-bold text-slate-600">
                   Team Resource for Education and National Development
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
-                <p className="text-sm font-extrabold text-sky-950">🧭 ശാസ്ത്രീയ കരിയർ ഗൈഡൻസ്</p>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">🧭 ശാസ്ത്രീയ കരിയർ ഗൈഡൻസ്</p>
                 <p className="text-xs text-slate-700 leading-relaxed">
                   ഓരോ വിദ്യാർത്ഥിയുടെയും അഭിരുചിയും കഴിവും തിരിച്ചറിഞ്ഞ് പ്ലസ് ടുവിനും ബിരുദത്തിനും ശേഷം അനുയോജ്യമായ കോഴ്സുകൾ തിരഞ്ഞെടുക്കാൻ TREND വഴികാട്ടുന്നു.
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1.5">
-                <p className="text-sm font-extrabold text-indigo-950">🏛️ സിവിൽ സർവീസ് & ഉന്നത പഠനം</p>
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-amber-950">🏛️ സിവിൽ സർവീസ് & ഉന്നത പഠനം</p>
                 <p className="text-xs text-slate-700 leading-relaxed">
                   IAS, IPS, കേന്ദ്ര സർവകലാശാലകൾ, IIT, IIM, സ്കോളർഷിപ്പ് പരീക്ഷകൾ എന്നിവയ്ക്കായി TASTE, Educare തുടങ്ങിയ പദ്ധതികളിലൂടെ മികച്ച പരിശീലനം നൽകുന്നു.
                 </p>
@@ -1637,22 +1637,22 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           }
         >
           <div className="space-y-3">
-            <div className="p-3 rounded-2xl bg-white border border-purple-200 flex items-center gap-3 shadow-xs">
+            <div className="p-3 rounded-2xl bg-white border border-emerald-200 flex items-center gap-3 shadow-xs">
               <img
                 src={OFFICIAL_WING_LOGOS.sargalayam.src}
                 alt={OFFICIAL_WING_LOGOS.sargalayam.label}
                 className="h-14 sm:h-16 w-auto object-contain shrink-0"
               />
               <div className="min-w-0">
-                <p className="text-xs font-black text-purple-900">സർഗലയ (SARGALAYAM) · SKSSF STATE COMMITTEE</p>
+                <p className="text-xs font-black text-emerald-900">സർഗലയ (SARGALAYAM) · SKSSF STATE COMMITTEE</p>
                 <p className="text-[11px] font-bold text-slate-600">
                   വിദ്യാർത്ഥികളുടെ കലാ-സാഹിത്യ-പ്രഭാഷണ പ്രതിഭകളെ വളർത്തുന്ന ഇസ്‌ലാമിക കലാവേദി
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5">
-                <p className="text-sm font-extrabold text-purple-950">🎤 പ്രസംഗം, ഖിറാഅത്ത് & സാഹിത്യം</p>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                <p className="text-sm font-extrabold text-emerald-950">🎤 പ്രസംഗം, ഖിറാഅത്ത് & സാഹിത്യം</p>
                 <p className="text-xs text-slate-700 leading-relaxed">
                   ഖുർആൻ പാരായണം, അറബി-മലയാളം-ഇംഗ്ലീഷ്-ഉറുദു പ്രസംഗങ്ങൾ, കഥ, കവിത, പ്രബന്ധ രചന എന്നിവയിലൂടെ മികച്ച പ്രഭാഷകരെയും എഴുത്തുകാരെയും വളർത്തുന്നു.
                 </p>
@@ -1842,20 +1842,20 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
           >
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
-                  <p className="text-sm font-extrabold text-sky-950">📰 സുപ്രഭാതം &amp; സത്യധാര</p>
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">📰 സുപ്രഭാതം &amp; സത്യധാര</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     കേരളം, ഇന്ത്യ, ഗൾഫ് (2024 ദുബായ് എഡിഷൻ) വാർത്തകളുമായി സുപ്രഭാതം ദിനപത്രവും ഇ-പേപ്പറും. 1997 മുതൽ SKSSF മുഖപത്രമായ സത്യധാര ദ്വൈവാരികയും പുറത്തിറങ്ങുന്നു.
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-1.5">
-                  <p className="text-sm font-extrabold text-purple-950">📖 അൽ-മുഅല്ലിം · സന്തുഷ്ട കുടുംബം · കുരുന്നുകൾ</p>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📖 അൽ-മുഅല്ലിം · സന്തുഷ്ട കുടുംബം · കുരുന്നുകൾ</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     SKJMCC പുറത്തിറക്കുന്ന അൽ-മുഅല്ലിം (1959) അധ്യാപകർക്കും, സന്തുഷ്ട കുടുംബം രക്ഷിതാക്കൾക്കും, കുരുന്നുകൾ മദ്രസാ കൂട്ടുകാർക്കും വിജ്ഞാനവും കഥകളും പകരുന്നു.
                   </p>
                 </div>
-                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-1.5">
-                  <p className="text-sm font-extrabold text-rose-950">▶ ഔദ്യോഗിക യൂട്യൂബ് ചാനലുകൾ</p>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-slate-900">▶ ഔദ്യോഗിക യൂട്യൂബ് ചാനലുകൾ</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     ഖുർആൻ പാരായണത്തിനും ഥിലാവയ്ക്കും @SAMASTHAONLINEOFFICAL, ലൈവ് ക്ലാസുകൾക്ക് @SKICROfficial, കുട്ടികൾക്ക് @balavedhi, കരിയറിന് @trendkerala, കലയ്ക്ക് @skssfsargalaya!
                   </p>

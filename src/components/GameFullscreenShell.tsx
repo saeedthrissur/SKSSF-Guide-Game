@@ -14,7 +14,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { sound } from '../utils/sound';
-import { smoothScrollToSelector, useLessonFlow } from '../utils/lessonFlowContext';
+import { useLessonFlow } from '../utils/lessonFlowContext';
 import { getLessonThemeBrief } from './LessonAnimatedBanner';
 
 const GameFullscreenContext = createContext<boolean>(false);
@@ -136,11 +136,20 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const {
     activeLessonId,
+    lessonViewStep,
+    goToStudyStep,
     markGameDone,
     registerFullscreen,
+    registerGameShell,
     hasLessonDrawerOnPage,
     isLessonConfirmed,
   } = useLessonFlow();
+
+  // Register presence of a game shell on this lesson so App.tsx knows whether to show the Storyline + Skip bar
+  useEffect(() => {
+    registerGameShell(true);
+    return () => registerGameShell(false);
+  }, [registerGameShell]);
 
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -353,16 +362,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     if (!isGameDone && allowSkip) {
       onSkipGame?.();
     }
-    window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
-    window.setTimeout(() => {
-      const el = document.querySelector<HTMLElement>('[data-lesson-drawer="true"]');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        smoothScrollToSelector('[data-lesson-drawer="true"]');
-      }
-    }, 120);
-  }, [isFullscreen, isGameDone, allowSkip, onSkipGame]);
+    goToStudyStep();
+  }, [isFullscreen, isGameDone, allowSkip, onSkipGame, goToStudyStep]);
 
   const handleReplay = () => {
     sound.unlockAudio();
@@ -567,6 +568,11 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     </div>
   );
 
+  // Hide Game entirely on Screen 2 ('study': Lesson + Quiz) so max 2 focused items render per screen
+  if (lessonViewStep !== 'play') {
+    return null;
+  }
+
   // COLLAPSED LAUNCHER CARD (Kid-Friendly, Unmistakable Playful Game Card)
   if (!isExpanded && !isFullscreen) {
     const openGameCard = () => {
@@ -583,7 +589,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
       <div
         ref={containerRef}
         data-lesson-game="true"
-        className={`relative overflow-hidden rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-emerald-950 via-teal-900 to-sky-950 p-4 sm:p-4.5 shadow-lg scroll-mt-20 space-y-3.5 text-white ${className}`}
+        className={`relative overflow-hidden rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 p-4 sm:p-5 shadow-md scroll-mt-20 space-y-3.5 text-white ${className}`}
       >
         {/* Subtle Decorative Arcade Glow & Floating Sparkles */}
         <div
@@ -739,8 +745,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                       title="പാഠം തുറക്കാം"
                       className={`inline-flex items-center gap-1 px-2.5 h-8 rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer ${
                         isGameDone && !lessonAlreadyRead
-                          ? 'bg-emerald-400 hover:bg-emerald-300 text-slate-950 border border-amber-300 shadow-sm'
-                          : 'bg-teal-600/90 hover:bg-teal-500 border border-teal-300/60 text-white'
+                          ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-200 shadow-sm'
+                          : 'bg-emerald-700 hover:bg-emerald-600 border border-emerald-400/60 text-white'
                       }`}
                     >
                       <BookOpen className="w-3.5 h-3.5 shrink-0" />
@@ -836,8 +842,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     aria-label="പാഠം തുറക്കാം"
                     className={`inline-flex items-center gap-1 px-3 h-8 rounded-lg text-xs font-extrabold transition-all cursor-pointer active:scale-95 ${
                       isGameDone && !lessonAlreadyRead
-                        ? 'bg-teal-700 hover:bg-teal-800 text-white border-b-2 border-teal-950 ring-2 ring-amber-300 shadow-xs'
-                        : 'bg-teal-700 hover:bg-teal-800 text-white border-b-2 border-teal-950 shadow-2xs'
+                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 ring-2 ring-amber-300 shadow-xs'
+                        : 'bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 shadow-2xs'
                     }`}
                   >
                     <BookOpen className="w-3.5 h-3.5 shrink-0" />

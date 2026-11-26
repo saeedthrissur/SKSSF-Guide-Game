@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ArrowRight,
   Award,
   BarChart3,
   BookOpen,
   CheckCircle2,
   Compass,
+  Gamepad2,
   Gift,
   Link2,
   Settings,
@@ -61,9 +63,11 @@ import {
 import {
   FloatingPageNavigator,
   LessonFlowProvider,
+  useLessonFlow,
 } from './utils/lessonFlowContext';
 import { GuideGameAboutModal, GuideGameBrandLogo } from './components/GameLivesHud';
 import { OfficialResourceHubModal } from './components/OfficialResourceHubModal';
+import { LessonStorylineCard } from './data/lessonStorylines';
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -110,6 +114,186 @@ function getInitialTabForLesson<T extends string>(
   if (level && match.level !== level) return undefined;
   return match.tab as T | undefined;
 }
+
+interface WelcomeIntroScreenProps {
+  xp: number;
+  completedCount: number;
+  totalLessons: number;
+  onStartJourney: () => void;
+  onOpenAllLessons: () => void;
+  onOpenBadgeStudio: () => void;
+}
+
+const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
+  xp,
+  completedCount,
+  totalLessons,
+  onStartJourney,
+  onOpenAllLessons,
+  onOpenBadgeStudio,
+}) => {
+  const hasSavedProgress = xp > 0 || completedCount > 0;
+
+  return (
+    <section className="max-w-3xl mx-auto py-3 sm:py-6">
+      <div className="rounded-3xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
+        {/* Top Hero Band — Unified Emerald Green + Warm Amber */}
+        <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 px-5 sm:px-8 py-6 sm:py-8 text-white border-b-4 border-amber-400">
+          <p className="text-xs font-extrabold tracking-wide text-amber-300 mb-2">
+            വിജ്ഞാനം · വിനയം · സേവനം
+          </p>
+          <h1
+            className="text-xl sm:text-3xl font-black leading-snug text-white"
+            style={{ textWrap: 'balance' }}
+          >
+            SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
+          </h1>
+          <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
+            സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള 52 പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
+          </p>
+        </div>
+
+        {/* Visual 2-Step Flow Preview + Primary CTA */}
+        <div className="p-5 sm:p-8 space-y-6">
+          <div className="space-y-3">
+            <p className="text-xs font-extrabold text-slate-500 tracking-wide">
+              ഓരോ പാഠത്തിന്റെയും പഠനരീതി
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-3">
+              {/* Step 1 Preview */}
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 flex items-start gap-3">
+                <span className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Gamepad2 className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-emerald-950">
+                    1. സ്റ്റോറി ലൈൻ + ഗെയിം
+                  </p>
+                  <p className="text-xs text-slate-700 leading-relaxed mt-0.5">
+                    പാഠത്തിന്റെ ചെറു കഥ മനസ്സിലാക്കി രസകരമായ ഗെയിം കളിക്കാം.
+                  </p>
+                </div>
+              </div>
+
+              {/* Connector Arrow */}
+              <div className="flex items-center justify-center text-emerald-700">
+                <ArrowRight className="w-5 h-5 rotate-90 sm:rotate-0" />
+              </div>
+
+              {/* Step 2 Preview */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 flex items-start gap-3">
+                <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+                  <BookOpen className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-slate-900">
+                    2. പാഠം + ക്വിസ്
+                  </p>
+                  <p className="text-xs text-slate-700 leading-relaxed mt-0.5">
+                    പാഠക്കുറിപ്പ് വായിച്ച് ക്വിസ്സിൽ ഉത്തരം നൽകി അടുത്ത പാഠം തുറക്കാം.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Returning User Progress Notice */}
+          {hasSavedProgress && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 flex items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 tabular-nums">
+              <span>
+                നിലവിലെ പുരോഗതി: {completedCount}/{totalLessons} പാഠങ്ങൾ പൂർത്തിയായി
+              </span>
+              <span className="text-emerald-700">{xp} XP</span>
+            </div>
+          )}
+
+          {/* Primary CTA */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={onStartJourney}
+              className="w-full min-h-[54px] px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+            >
+              <span>പഠനം തുടങ്ങാം (Start Journey)</span>
+              <ArrowRight className="w-5 h-5 shrink-0" />
+            </button>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
+              <span>{totalLessons} പാഠങ്ങൾ · 3 ഹൃദയങ്ങൾ · 17 ഉപവിഭാഗങ്ങൾ · സാക്ഷ്യപത്രം</span>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={onOpenAllLessons}
+                  className="text-emerald-800 hover:text-emerald-950 underline underline-offset-4 font-extrabold cursor-pointer"
+                >
+                  എല്ലാ പാഠങ്ങളും കാണാം
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenBadgeStudio}
+                  className="text-amber-700 hover:text-amber-900 underline underline-offset-4 font-extrabold cursor-pointer"
+                >
+                  ഫോട്ടോ ബാഡ്ജ്
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+interface LessonWorkspaceFrameProps {
+  children: React.ReactNode;
+}
+
+const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({ children }) => {
+  const { activeLessonId, lessonViewStep, goToStudyStep, hasGameOnPage, isGameDone } =
+    useLessonFlow();
+  const currentGameDone = isGameDone(activeLessonId);
+
+  return (
+    <div className="space-y-4">
+      {/* Screen 1 ('play'): Item 1 — Compact Storyline Card at the top */}
+      {lessonViewStep === 'play' && hasGameOnPage && (
+        <LessonStorylineCard lessonId={activeLessonId} />
+      )}
+
+      {/* Active View Content:
+          - On 'play': Renders ONLY the Game (Item 2)
+          - On 'study': Renders ONLY Lesson (Item 1) + Quiz (Item 2) */}
+      {children}
+
+      {/* Screen 1 ('play'): Clean Bottom Bar strictly OUTSIDE the Game container */}
+      {lessonViewStep === 'play' && hasGameOnPage && (
+        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-2xs">
+          <p className="text-xs font-bold text-slate-600 text-center sm:text-left">
+            {currentGameDone
+              ? 'ഗെയിം പൂർത്തിയായി! ഇനി പാഠവും ക്വിസ്സും വായിച്ച് മുന്നോട്ട് പോകാം.'
+              : 'കളി കഴിഞ്ഞോ, അല്ലെങ്കിൽ നേരിട്ട് പാഠവും ക്വിസ്സും വായിക്കണോ?'}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              goToStudyStep();
+            }}
+            className={`w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shrink-0 ${
+              currentGameDone
+                ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-500 shadow-xs'
+                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span>ഗെയിം ഒഴിവാക്കി പാഠത്തിലേക്ക് പോകാം (Skip Game → Lesson)</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function App() {
   const [savedInit] = useState(() => loadSavedGameState());
@@ -174,6 +358,7 @@ export default function App() {
     )
   );
 
+  const [showIntro, setShowIntro] = useState<boolean>(true);
   const [devUnlocked, setDevUnlocked] = useState<boolean>(false);
   const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
   const [resourceHubOpen, setResourceHubOpen] = useState<boolean>(false);
@@ -318,6 +503,7 @@ export default function App() {
       setCurrentLevel(lvl);
     }
     setActiveLessonId(target.id);
+    setShowIntro(false);
     setLessonsMapOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -607,7 +793,9 @@ export default function App() {
       activeLessonId={activeLessonId}
       quizDoneLessons={quizDoneMap}
       devUnlocked={devUnlocked}
+      resetSignal={attemptKey}
       onOpenAllLessons={() => {
+        setShowIntro(false);
         setLessonsMapOpen(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }}
@@ -643,9 +831,9 @@ export default function App() {
               }}
               aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
               title="സ്കോർ"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-950 text-[11px] sm:text-xs font-extrabold hover:bg-sky-100 tabular-nums whitespace-nowrap"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap"
             >
-              <BarChart3 className="w-3.5 h-3.5 text-sky-700 shrink-0" />
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>{xp}</span>
             </button>
 
@@ -693,7 +881,7 @@ export default function App() {
               }}
               aria-label="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
               title="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-sky-300 bg-sky-50 text-sky-900 hover:bg-sky-100 cursor-pointer"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 cursor-pointer"
             >
               <Link2 className="w-4 h-4" />
             </button>
@@ -733,10 +921,10 @@ export default function App() {
       {/* Non-blocking Floating Top-Right Audio Loader */}
       <AudioLoadingFloatBadge />
 
-      {/* Main Game Workspace — GAME STARTS IMMEDIATELY AT TOP! */}
+      {/* Main Game Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-5">
-        {showResumeToast && (
-          <div className="mb-2.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
+        {!showIntro && showResumeToast && (
+          <div className="mb-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
             <span className="tabular-nums">
               💾 #{runNumber} · {xp} XP · {completedLessonIds.length}/{ALL_LESSONS.length}
             </span>
@@ -745,7 +933,7 @@ export default function App() {
                 type="button"
                 onClick={() => setScoreModalOpen(true)}
                 aria-label="സ്കോർ കാണാം"
-                className="px-2 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-900 hover:bg-emerald-100 font-extrabold"
+                className="px-2 py-1 rounded-lg bg-white border border-emerald-200 text-emerald-900 hover:bg-emerald-100 font-extrabold"
               >
                 📊
               </button>
@@ -770,6 +958,31 @@ export default function App() {
             onSelectLesson={handleJumpToLesson}
             onClose={() => setLessonsMapOpen(false)}
           />
+        ) : showIntro ? (
+          <WelcomeIntroScreen
+            xp={xp}
+            completedCount={completedLessonIds.filter((id) => ALL_LESSONS.some((l) => l.id === id)).length}
+            totalLessons={ALL_LESSONS.length}
+            onStartJourney={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setShowIntro(false);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenAllLessons={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setShowIntro(false);
+              setLessonsMapOpen(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenBadgeStudio={() => {
+              sound.unlockAudio();
+              sound.playPop();
+              setBadgeStudioPreset('starter_member');
+              setBadgeStudioOpen(true);
+            }}
+          />
         ) : (
           <>
             <UnseenLessonBanner
@@ -777,6 +990,7 @@ export default function App() {
               onJumpToLesson={handleJumpToLesson}
             />
 
+            <LessonWorkspaceFrame>
             {stage === 'prologue' && (
               <StoryPrologueTheater
                 key={`prologue_${attemptKey}`}
@@ -940,6 +1154,7 @@ export default function App() {
                 )}
               </>
             )}
+            </LessonWorkspaceFrame>
 
             {/* Narration Bar (Default Collapsed, No Duplicate Settings!) — Below Game */}
             <StoryNarrationStrip
@@ -1153,12 +1368,11 @@ export default function App() {
         onClose={() => setAboutModalOpen(false)}
         onGoHome={() => {
           setLessonsMapOpen(false);
-          setPrologueInitialLessonId('prologue_curiosity');
-          setStage('prologue');
-          setActiveLessonId('prologue_curiosity');
+          setShowIntro(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenAllLessons={() => {
+          setShowIntro(false);
           setLessonsMapOpen(true);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
@@ -1179,7 +1393,7 @@ export default function App() {
           ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”
         </p>
       </footer>
-      <FloatingPageNavigator visible={!lessonsMapOpen} />
+      <FloatingPageNavigator visible={!lessonsMapOpen && !showIntro} />
     </div>
     </LessonFlowProvider>
     </GameLivesProvider>

@@ -1022,11 +1022,14 @@ export const CollapsibleLessonDrawer: React.FC<{
 }) => {
   const {
     activeLessonId,
+    lessonViewStep,
+    goToPlayStep,
+    hasGameOnPage,
     confirmLesson,
     isLessonConfirmed,
     registerLessonDrawer,
   } = useLessonFlow();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [showFullNotes, setShowFullNotes] = useState(false);
 
@@ -1036,12 +1039,12 @@ export const CollapsibleLessonDrawer: React.FC<{
     return () => registerLessonDrawer(false);
   }, [registerLessonDrawer]);
 
-  // Reset closed whenever navigating to a new lesson
+  // Auto-open Lesson cleanly whenever switching to Screen 2 ('study') or a new lesson
   useEffect(() => {
-    setOpen(defaultOpen);
+    setOpen(lessonViewStep === 'study' ? true : defaultOpen);
     setShowInfo(false);
     setShowFullNotes(false);
-  }, [activeLessonId, defaultOpen]);
+  }, [activeLessonId, lessonViewStep, defaultOpen]);
 
   // Allow other cards (e.g., locked Quiz or Skip Game) to automatically open this Lesson drawer
   useEffect(() => {
@@ -1051,6 +1054,11 @@ export const CollapsibleLessonDrawer: React.FC<{
     window.addEventListener('skssf:open-lesson', handleOpenLesson);
     return () => window.removeEventListener('skssf:open-lesson', handleOpenLesson);
   }, []);
+
+  // Show Lesson strictly on Screen 2 ('study': Lesson + Quiz)
+  if (lessonViewStep !== 'study') {
+    return null;
+  }
 
   const confirmed = isLessonConfirmed(activeLessonId);
 
@@ -1068,39 +1076,55 @@ export const CollapsibleLessonDrawer: React.FC<{
     <div
       data-lesson-drawer="true"
       data-lesson-drawer-confirmed={confirmed ? 'true' : 'false'}
-      className={`rounded-2xl border-2 bg-gradient-to-br from-emerald-50/90 via-white to-amber-50/60 shadow-sm overflow-hidden scroll-mt-20 transition-colors ${
-        confirmed ? 'border-emerald-300' : 'border-amber-400 ring-2 ring-amber-100'
+      className={`rounded-2xl border-2 bg-white shadow-2xs overflow-hidden scroll-mt-20 transition-colors ${
+        confirmed ? 'border-emerald-300' : 'border-amber-400'
       }`}
     >
+      {/* Top Return Link back to Screen 1 ('play': Storyline + Game) */}
+      {hasGameOnPage && (
+        <div className="px-3.5 sm:px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              sound.playClick();
+              goToPlayStep();
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-800 hover:text-emerald-950 hover:underline cursor-pointer transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+            <span>ഗെയിമിലേക്ക് തിരികെ പോകാം</span>
+          </button>
+          <span className="text-[11px] font-bold text-slate-500">
+            ഘട്ടം 2 · പാഠം + ക്വിസ്
+          </span>
+        </div>
+      )}
+
       {/* Unified 2-Row Lesson Header */}
-      <div className="p-3.5 sm:p-4 space-y-3">
+      <div className="p-3.5 sm:p-4 space-y-3 bg-gradient-to-r from-emerald-50/80 via-white to-amber-50/40">
         {/* Row 1: Full-width Icon + Section Tag + Status + Complete Readable Title */}
         <div className="flex items-start gap-3 w-full">
-          <span className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <span className="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
             <BookOpen className="w-5 h-5" />
           </span>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] font-black tracking-wider uppercase text-teal-700">
-                LESSON
-              </span>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+              <span className="text-emerald-700 font-extrabold">പാഠം</span>
               {badgeText && (
-                <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full tabular-nums">
-                  {badgeText}
-                </span>
+                <>
+                  <span aria-hidden="true" className="text-slate-300">·</span>
+                  <span className="text-slate-600 tabular-nums">{badgeText}</span>
+                </>
               )}
+              <span aria-hidden="true" className="text-slate-300">·</span>
               {confirmed ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-full">
-                  <CheckCircle2 className="w-3 h-3" /> വായിച്ചു
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-extrabold">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> വായിച്ചു കഴിഞ്ഞു
                 </span>
               ) : (
-                <motion.span
-                  animate={{ x: [0, 3, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.0 }}
-                  className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full"
-                >
-                  👉 വായിക്കാം
-                </motion.span>
+                <span className="text-amber-800 font-extrabold">
+                  വായിച്ചു മനസ്സിലാക്കാം
+                </span>
               )}
             </div>
             <h3 className="text-sm sm:text-base font-extrabold text-slate-900 leading-snug">
@@ -1110,7 +1134,7 @@ export const CollapsibleLessonDrawer: React.FC<{
               {title}
             </h3>
             {!confirmed && (
-              <p className="text-xs font-bold text-amber-800 leading-snug">
+              <p className="text-xs font-semibold text-amber-800 leading-snug">
                 പാഠം മനസ്സിലാക്കി കഴിഞ്ഞാൽ ക്വിസിലേക്ക് കടക്കാം
               </p>
             )}
@@ -1127,10 +1151,10 @@ export const CollapsibleLessonDrawer: React.FC<{
               setOpen((v) => !v);
             }}
             aria-expanded={open}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-xs transition-transform active:scale-95 cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold border-b-2 shadow-2xs transition-transform active:scale-95 cursor-pointer ${
               open
-                ? 'bg-white hover:bg-slate-50 text-teal-950 border-teal-300 border'
-                : 'bg-teal-700 hover:bg-teal-800 text-white border-teal-950'
+                ? 'bg-white hover:bg-slate-50 text-emerald-950 border-emerald-300 border'
+                : 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-950'
             }`}
           >
             {open ? (
@@ -1138,7 +1162,7 @@ export const CollapsibleLessonDrawer: React.FC<{
             ) : (
               <Play className="w-3.5 h-3.5 fill-current" />
             )}
-            <span>{open ? 'Close Lesson' : 'Open Lesson'}</span>
+            <span>{open ? 'പാഠം ചുരുക്കാം' : 'പാഠം തുറക്കാം'}</span>
           </button>
 
           <div className="flex items-center gap-1.5 shrink-0">
@@ -1146,6 +1170,9 @@ export const CollapsibleLessonDrawer: React.FC<{
               <button
                 type="button"
                 onClick={() => {
+                  if (sound.isMuted()) {
+                    sound.setMuted(false);
+                  }
                   sound.unlockAudio();
                   onSpeak();
                 }}
@@ -2107,9 +2134,9 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
             </p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200">
-            <p className="text-[11px] font-bold text-purple-800">ബാഡ്ജുകൾ &amp; സമ്മാനം</p>
-            <p className="text-2xl font-extrabold text-purple-950 tabular-nums mt-0.5">
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+            <p className="text-[11px] font-bold text-amber-800">ബാഡ്ജുകൾ &amp; സമ്മാനം</p>
+            <p className="text-2xl font-extrabold text-amber-950 tabular-nums mt-0.5">
               {badgesCount}
             </p>
             <p className="text-[11px] font-bold text-slate-600 mt-0.5 tabular-nums">

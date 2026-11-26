@@ -12,7 +12,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LESSON_QUIZZES } from '../data/lessonQuizzes';
-import { LessonStorylineCard } from '../data/lessonStorylines';
 import { QuizAnswerRecord } from '../utils/gameStorage';
 import { useGameLives } from '../utils/gameLivesContext';
 import { useLessonFlow } from '../utils/lessonFlowContext';
@@ -76,13 +75,13 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
 }) => {
   const quiz = LESSON_QUIZZES[lessonId];
   const { lives, maxLives } = useGameLives();
-  const { isLessonConfirmed, hasLessonDrawerOnPage } = useLessonFlow();
+  const { lessonViewStep, isLessonConfirmed, hasLessonDrawerOnPage } = useLessonFlow();
   const [shakeTick, setShakeTick] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
 
   useEffect(() => {
-    setIsOpen(false);
+    setIsOpen(true);
     setShowInfo(false);
   }, [lessonId]);
 
@@ -95,12 +94,16 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
     return () => window.removeEventListener('skssf:open-quiz', onAutoOpenQuiz);
   }, []);
 
-  if (!quiz) return null;
+  // Show Quiz strictly on Screen 2 ('study': Lesson + Quiz)
+  if (!quiz || lessonViewStep !== 'study') return null;
 
   const isAnswered = Boolean(savedAnswer);
   const isPassed = Boolean(savedAnswer?.isCorrect);
   const isWrongAnswered = isAnswered && !isPassed;
   const correctOptionText = quiz.options[quiz.correctIdx] ?? '';
+  const finalNextLabel = nextLessonLabel.includes('സാക്ഷ്യപത്രം')
+    ? nextLessonLabel
+    : 'അടുത്ത പാഠം (Next Storyline & Game)';
 
   // Mandatory lesson check: quiz stays locked until user confirms the lesson drawer (unless already answered or no drawer exists)
   const lessonUnlocked = isAnswered || !hasLessonDrawerOnPage || isLessonConfirmed(lessonId);
@@ -132,30 +135,26 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      {/* Truthful Imaginative Storyline Card (Collapsed by default) */}
-      <LessonStorylineCard lessonId={lessonId} />
-
-      <motion.section
-        key={`quiz_box_${lessonId}_${shakeTick}`}
-        data-lesson-quiz="true"
-        initial={{ opacity: 0, y: 10 }}
-        animate={
-          isWrongAnswered && shakeTick > 0
-            ? { opacity: 1, y: 0, x: [0, -8, 8, -6, 6, -3, 0] }
-            : { opacity: 1, y: 0, x: 0 }
-        }
-        transition={{ duration: isWrongAnswered && shakeTick > 0 ? 0.45 : 0.25 }}
-        className={`rounded-2xl border-2 shadow-sm overflow-hidden transition-colors scroll-mt-20 ${
-          !lessonUnlocked
-            ? 'bg-slate-50 border-amber-300'
-            : isPassed
-            ? 'bg-emerald-50/95 border-emerald-400'
-            : isWrongAnswered
-            ? 'bg-rose-50/95 border-rose-400'
-            : 'bg-gradient-to-br from-emerald-50/90 via-white to-amber-50/60 border-emerald-300'
-        }`}
-      >
+    <motion.section
+      key={`quiz_box_${lessonId}_${shakeTick}`}
+      data-lesson-quiz="true"
+      initial={{ opacity: 0, y: 10 }}
+      animate={
+        isWrongAnswered && shakeTick > 0
+          ? { opacity: 1, y: 0, x: [0, -8, 8, -6, 6, -3, 0] }
+          : { opacity: 1, y: 0, x: 0 }
+      }
+      transition={{ duration: isWrongAnswered && shakeTick > 0 ? 0.45 : 0.25 }}
+      className={`rounded-2xl border-2 shadow-2xs overflow-hidden transition-colors scroll-mt-20 ${
+        !lessonUnlocked
+          ? 'bg-white border-amber-300'
+          : isPassed
+          ? 'bg-emerald-50 border-emerald-400'
+          : isWrongAnswered
+          ? 'bg-rose-50/95 border-rose-400'
+          : 'bg-white border-emerald-300'
+      }`}
+    >
         {/* Unified 2-Row Quiz Header */}
         <div className="p-3.5 sm:p-4 space-y-3">
           {/* Row 1: Full-width Icon + Section Tag + Status + Complete Readable Title */}
@@ -421,7 +420,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                           }}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm transition-transform active:scale-98 cursor-pointer"
                         >
-                          <span>{nextLessonLabel}</span>
+                          <span>{finalNextLabel}</span>
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       )}
@@ -457,7 +456,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                           }}
                           className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm cursor-pointer"
                         >
-                          <span>{nextLessonLabel}</span>
+                          <span>{finalNextLabel}</span>
                           <ArrowRight className="w-4 h-4" />
                         </button>
                       )}
@@ -469,6 +468,5 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
           )}
         </AnimatePresence>
       </motion.section>
-    </div>
   );
 };
