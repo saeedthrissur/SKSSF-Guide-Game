@@ -656,7 +656,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-950 text-xs font-extrabold"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-extrabold cursor-pointer"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span>🔗 ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യാം</span>

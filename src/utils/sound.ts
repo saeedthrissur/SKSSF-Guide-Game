@@ -95,6 +95,7 @@ class SoundEngine {
   private onBeforeSpiritualPlay?: () => void;
   private onNarratorVolChange?: (vol: number) => void;
   private onAutoNarrateChange?: (enabled: boolean) => void;
+  private onMuteChange?: (muted: boolean) => void;
 
   constructor() {
     this.loadSavedPrefs();
@@ -182,6 +183,7 @@ class SoundEngine {
         // Ignore
       }
     }
+    this.onMuteChange?.(this.muted);
     this.onAutoNarrateChange?.(this.autoNarrate);
     this.syncActiveVolumes();
     this.emit();
@@ -191,10 +193,12 @@ class SoundEngine {
     onBeforeSpiritualPlay?: () => void;
     onNarratorVolChange?: (vol: number) => void;
     onAutoNarrateChange?: (enabled: boolean) => void;
+    onMuteChange?: (muted: boolean) => void;
   }) {
     this.onBeforeSpiritualPlay = hooks.onBeforeSpiritualPlay;
     this.onNarratorVolChange = hooks.onNarratorVolChange;
     this.onAutoNarrateChange = hooks.onAutoNarrateChange;
+    this.onMuteChange = hooks.onMuteChange;
     this.onAutoNarrateChange?.(this.autoNarrate);
     this.onNarratorVolChange?.(this.getNarratorGain());
   }
@@ -423,6 +427,7 @@ class SoundEngine {
       });
       this.sfxAudioPool.clear();
     }
+    this.onMuteChange?.(muted);
     this.syncActiveVolumes();
     this.emit();
   }

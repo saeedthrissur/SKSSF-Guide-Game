@@ -355,7 +355,7 @@ export const GuideGameAboutModal: React.FC<{
             className="max-w-md w-full rounded-3xl bg-white border-2 border-emerald-300 shadow-2xl overflow-hidden"
           >
             {/* Brand Header Banner */}
-            <div className="relative bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-white p-5 text-center space-y-3">
+            <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 text-white p-5 text-center space-y-3">
               <button
                 type="button"
                 onClick={() => {
@@ -432,7 +432,7 @@ export const GuideGameAboutModal: React.FC<{
                     onClose();
                     onOpenResourceHub();
                   }}
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-sky-950 shadow-sm cursor-pointer transition-transform active:scale-95"
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 text-xs sm:text-sm font-extrabold border-2 border-emerald-300 shadow-2xs cursor-pointer transition-transform active:scale-95"
                 >
                   <span>🔗 സമസ്ത &amp; SKSSF ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും</span>
                 </button>
@@ -453,8 +453,8 @@ export const GuideGameAboutModal: React.FC<{
                     {totalLessons} സംവേദനാത്മക പാഠങ്ങൾ
                   </span>
                   <span className="inline-flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5 text-teal-700" />
-                    ഗെയിം → പാഠം → ക്വിസ്
+                    <BookOpen className="w-3.5 h-3.5 text-emerald-700" />
+                    സ്റ്റോറി ലൈൻ + ഗെയിം → പാഠം + ക്വിസ്
                   </span>
                 </div>
               </div>

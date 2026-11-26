@@ -1201,7 +1201,7 @@ export const CollapsibleLessonDrawer: React.FC<{
 
       {showInfo && (
         <div className="px-4 py-2.5 bg-amber-50 border-t border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
-          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ <strong>“Open Lesson”</strong> അമർത്തി ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള മഞ്ഞ <strong>“🔓 ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!”</strong> ബട്ടൺ ഞെക്കിയാൽ അടുത്ത ക്വിസ് തുറക്കും!
+          ℹ️ ഗെയിം കളിച്ച് കഴിഞ്ഞാലോ നേരിട്ടോ <strong>“പാഠം തുറക്കാം”</strong> അമർത്തി ഈ പാഠം ശ്രദ്ധയോടെ വായിക്കുകയോ കേൾക്കുകയോ ചെയ്യുക. എന്നിട്ട് താഴെയുള്ള മഞ്ഞ <strong>“🔓 ഇവിടെ അമർത്തൂ — ക്വിസ് തുറക്കാം!”</strong> ബട്ടൺ ഞെക്കിയാൽ അടുത്ത ക്വിസ് തുറക്കും!
         </div>
       )}
 
@@ -1356,18 +1356,23 @@ export const StoryNarrationStrip: React.FC<{
   onOpenSettings?: () => void;
 }> = () => {
   const [state, setState] = useState<NarratorState>(narrator.getState());
+  const [isMuted, setIsMuted] = useState<boolean>(() => sound.isMuted());
   const [minimized, setMinimized] = useState(true);
 
   useEffect(() => {
     const unsubNav = narrator.subscribe(setState);
+    const unsubSound = sound.subscribe((snap) => setIsMuted(snap.muted));
     return () => {
       unsubNav();
+      unsubSound();
     };
   }, []);
 
+  const isAudible = state.enabled && !isMuted;
+
   if (minimized) {
     return (
-      <div className="mt-3 flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-950 text-white shadow-2xs">
+      <div className="mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-950 text-white shadow-2xs">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
@@ -1379,15 +1384,21 @@ export const StoryNarrationStrip: React.FC<{
                 narrator.replayLast();
               }
             }}
-            aria-label={state.speaking ? 'നിർത്താം' : 'കേൾക്കാം'}
-            className={`px-2.5 py-1 rounded-lg flex items-center gap-1 shrink-0 text-xs font-extrabold ${
+            aria-label={state.speaking ? 'ശബ്ദ വിവരണം നിർത്താം' : 'ശബ്ദ വിവരണം കേൾക്കാം'}
+            className={`px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 shrink-0 text-xs font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
               state.speaking
                 ? 'bg-amber-400 text-slate-950'
                 : 'bg-emerald-700 text-white hover:bg-emerald-600'
             }`}
           >
-            {state.enabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            <span>{state.speaking ? '⏹️' : '🎙️'}</span>
+            {isAudible ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5 text-amber-300" />}
+            <span>
+              {state.speaking
+                ? 'നിർത്താം'
+                : isMuted
+                ? 'ശബ്ദം കേൾക്കാം (മ്യൂട്ട്)'
+                : 'ശബ്ദ വിവരണം കേൾക്കാം'}
+            </span>
           </button>
         </div>
         <button
@@ -1397,16 +1408,16 @@ export const StoryNarrationStrip: React.FC<{
             setMinimized(false);
           }}
           aria-label="ശബ്ദ വാചകം തുറക്കാം"
-          className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white cursor-pointer shrink-0"
         >
-          <ChevronDown className="w-3.5 h-3.5" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-900 text-white shadow-xs overflow-hidden">
+    <div className="mt-3 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white shadow-xs overflow-hidden">
       <div className="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <button
@@ -1419,14 +1430,14 @@ export const StoryNarrationStrip: React.FC<{
                 narrator.replayLast();
               }
             }}
-            aria-label={state.speaking ? 'നിർത്താം' : 'കേൾക്കാം'}
-            className={`p-2 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95 ${
+            aria-label={state.speaking ? 'ശബ്ദ വിവരണം നിർത്താം' : 'ശബ്ദ വിവരണം കേൾക്കാം'}
+            className={`p-2 rounded-xl flex items-center justify-center shrink-0 transition-transform active:scale-95 cursor-pointer ${
               state.speaking || state.awaitingUnlock
                 ? 'bg-amber-400 text-slate-950 shadow-xs'
                 : 'bg-emerald-700 text-white hover:bg-emerald-600'
             }`}
           >
-            {state.enabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {isAudible ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-amber-300" />}
           </button>
 
           <p className="text-xs sm:text-sm font-semibold text-emerald-50 leading-snug break-words min-w-0 flex-1">
@@ -1441,7 +1452,7 @@ export const StoryNarrationStrip: React.FC<{
             setMinimized(true);
           }}
           aria-label="ചുരുക്കാം"
-          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-amber-200 shrink-0"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-amber-200 shrink-0 cursor-pointer"
         >
           <ChevronUp className="w-4 h-4" />
         </button>

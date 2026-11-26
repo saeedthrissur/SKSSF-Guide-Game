@@ -145,6 +145,8 @@ export function clearAllAppStorage(): void {
     localStorage.removeItem(SAVE_KEY);
     localStorage.removeItem(HISTORY_KEY);
     localStorage.removeItem('skssf_guide_completed_lessons_v1');
+    localStorage.removeItem('skssf_confirmed_lessons_v1');
+    localStorage.removeItem('skssf_guide_audio_v3');
     localStorage.removeItem('skssf_guide_audio_v2');
     localStorage.removeItem('skssf_guide_audio_v1');
     const keysToRemove: string[] = [];

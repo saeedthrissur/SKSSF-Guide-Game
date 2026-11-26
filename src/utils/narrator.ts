@@ -121,6 +121,13 @@ class MaleStoryNarrator {
       onAutoNarrateChange: (enabled) => {
         this.setEnabled(enabled);
       },
+      onMuteChange: (isMuted) => {
+        if (isMuted) {
+          this.pendingSpeech = null;
+          this.awaitingUnlock = false;
+          this.stop();
+        }
+      },
     });
     this.attachGestureUnlocker();
   }
@@ -281,6 +288,10 @@ class MaleStoryNarrator {
       sound.setAmbienceDucked(true);
       this.emit();
 
+      const timeoutId = window.setTimeout(() => {
+        controller.abort();
+      }, 8500);
+
       try {
         const res = await fetch('./api/tts', {
           method: 'POST',
@@ -288,8 +299,12 @@ class MaleStoryNarrator {
           body: JSON.stringify({ text: cleanText }),
           signal: controller.signal,
         });
+        window.clearTimeout(timeoutId);
 
-        if (mySeq !== this.requestSeq || controller.signal.aborted) return;
+        if (mySeq !== this.requestSeq || controller.signal.aborted) {
+          this.finishSilentOnFailure(mySeq);
+          return;
+        }
 
         const contentType = res.headers.get('content-type') || '';
         if (res.ok && contentType.includes('application/json')) {
@@ -298,7 +313,10 @@ class MaleStoryNarrator {
             mimeType?: string;
             provider?: string;
           };
-          if (mySeq !== this.requestSeq || controller.signal.aborted) return;
+          if (mySeq !== this.requestSeq || controller.signal.aborted) {
+            this.finishSilentOnFailure(mySeq);
+            return;
+          }
 
           if (data.audioBase64) {
             const mimeType = data.mimeType || 'audio/wav';
@@ -316,7 +334,12 @@ class MaleStoryNarrator {
           this.serverTtsUnavailable = true;
         }
       } catch (err) {
-        if ((err as Error)?.name === 'AbortError' || mySeq !== this.requestSeq) return;
+        window.clearTimeout(timeoutId);
+        if (mySeq !== this.requestSeq) return;
+        if ((err as Error)?.name === 'AbortError') {
+          this.finishSilentOnFailure(mySeq);
+          return;
+        }
       }
     }
 

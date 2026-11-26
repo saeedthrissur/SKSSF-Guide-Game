@@ -167,27 +167,34 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
               {lessonUnlocked ? <HelpCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
             </span>
             <div className="min-w-0 flex-1 space-y-0.5">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-black tracking-wider uppercase text-emerald-700">
-                  QUIZ
-                </span>
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                <span className="font-extrabold text-emerald-700">ക്വിസ്</span>
                 {isPassed ? (
-                  <motion.span
-                    initial={{ scale: 0.7 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 260 }}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-700 text-white"
-                  >
-                    <CheckCircle2 className="w-3 h-3" /> +15 XP
-                  </motion.span>
+                  <>
+                    <span aria-hidden="true" className="text-slate-300">·</span>
+                    <motion.span
+                      initial={{ scale: 0.85 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 260 }}
+                      className="inline-flex items-center gap-1 text-emerald-700 font-extrabold tabular-nums"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> ശരിയുത്തരം (+15 XP)
+                    </motion.span>
+                  </>
                 ) : isWrongAnswered ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white">
-                    പൂർത്തിയായി 💔
-                  </span>
+                  <>
+                    <span aria-hidden="true" className="text-slate-300">·</span>
+                    <span className="text-rose-700 font-extrabold">
+                      പൂർത്തിയായി 💔
+                    </span>
+                  </>
                 ) : !lessonUnlocked ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
-                    🔒 പാഠം ആദ്യം
-                  </span>
+                  <>
+                    <span aria-hidden="true" className="text-slate-300">·</span>
+                    <span className="text-amber-800 font-extrabold">
+                      🔒 ആദ്യം പാഠം വായിക്കാം
+                    </span>
+                  </>
                 ) : null}
               </div>
               <h3 className="text-sm sm:text-base font-extrabold text-emerald-950 leading-snug">
@@ -226,7 +233,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
               ) : (
                 <Lock className="w-3.5 h-3.5" />
               )}
-              <span>{isOpen ? 'Close Quiz' : 'Open Quiz'}</span>
+              <span>{isOpen ? 'ക്വിസ് ചുരുക്കാം' : 'ക്വിസ് തുറക്കാം'}</span>
             </button>
 
             <div className="flex items-center gap-1.5 shrink-0">
@@ -305,7 +312,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                       👆
                     </motion.span>
                     <BookOpen className="w-4 h-4" />
-                    <span>Open Lesson</span>
+                    <span>പാഠം തുറക്കാം</span>
                   </button>
                 </div>
               ) : (

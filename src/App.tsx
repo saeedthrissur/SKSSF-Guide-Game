@@ -10,6 +10,7 @@ import {
   Gift,
   Link2,
   Settings,
+  Share2,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -68,6 +69,8 @@ import {
 import { GuideGameAboutModal, GuideGameBrandLogo } from './components/GameLivesHud';
 import { OfficialResourceHubModal } from './components/OfficialResourceHubModal';
 import { LessonStorylineCard } from './data/lessonStorylines';
+import { copyAppShareLink, getAppShareUrl } from './utils/shareLink';
+import heroBannerImg from './assets/images/skssf_guide_og_banner_1795723645643.jpg';
 
 type LevelNumber = 1 | 2 | 3 | 4;
 type AppStage = 'prologue' | 'storyboard' | 'world' | 'pov';
@@ -119,6 +122,7 @@ interface WelcomeIntroScreenProps {
   xp: number;
   completedCount: number;
   totalLessons: number;
+  activeLessonTitle?: string;
   onStartJourney: () => void;
   onOpenAllLessons: () => void;
   onOpenBadgeStudio: () => void;
@@ -128,29 +132,72 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
   xp,
   completedCount,
   totalLessons,
+  activeLessonTitle,
   onStartJourney,
   onOpenAllLessons,
   onOpenBadgeStudio,
 }) => {
   const hasSavedProgress = xp > 0 || completedCount > 0;
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleQuickShare = async () => {
+    sound.unlockAudio();
+    sound.playClick();
+    const shareUrl = getAppShareUrl();
+    const shareText =
+      'SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? 52 പാഠങ്ങളും ഗെയിമുകളും കളിച്ച് സാക്ഷ്യപത്രം നേടാം!';
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: 'SKSSF ഗൈഡ് ഗെയിം',
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        // User cancelled or native share unsupported — fall back to clipboard copy
+      }
+    }
+    const ok = await copyAppShareLink();
+    if (ok) {
+      setShareCopied(true);
+      window.setTimeout(() => setShareCopied(false), 2600);
+    }
+  };
 
   return (
     <section className="max-w-3xl mx-auto py-3 sm:py-6">
       <div className="rounded-3xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
-        {/* Top Hero Band — Unified Emerald Green + Warm Amber */}
-        <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 px-5 sm:px-8 py-6 sm:py-8 text-white border-b-4 border-amber-400">
-          <p className="text-xs font-extrabold tracking-wide text-amber-300 mb-2">
-            വിജ്ഞാനം · വിനയം · സേവനം
-          </p>
-          <h1
-            className="text-xl sm:text-3xl font-black leading-snug text-white"
-            style={{ textWrap: 'balance' }}
-          >
-            SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
-          </h1>
-          <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
-            സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള 52 പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
-          </p>
+        {/* Top Hero Band — Unified Emerald Green + Warm Amber with Measured Scrim */}
+        <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 px-5 sm:px-8 py-6 sm:py-8 text-white border-b-4 border-amber-400 overflow-hidden">
+          {!heroImgFailed && (
+            <img
+              src={heroBannerImg}
+              alt="SKSSF ഗൈഡ് ഗെയിം പഠന ബാനർ"
+              referrerPolicy="no-referrer"
+              onError={() => setHeroImgFailed(true)}
+              className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-28 mix-blend-luminosity"
+            />
+          )}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-950/92 via-emerald-950/82 to-emerald-900/75"
+          />
+          <div className="relative z-10">
+            <p className="text-xs font-extrabold tracking-wide text-amber-300 mb-2">
+              വിജ്ഞാനം · വിനയം · സേവനം
+            </p>
+            <h1
+              className="text-xl sm:text-3xl font-black leading-snug text-white"
+              style={{ textWrap: 'balance' }}
+            >
+              SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
+            </h1>
+            <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
+              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള 52 പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
+            </p>
+          </div>
         </div>
 
         {/* Visual 2-Step Flow Preview + Primary CTA */}
@@ -199,9 +246,10 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
 
           {/* Returning User Progress Notice */}
           {hasSavedProgress && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 flex items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 tabular-nums">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 tabular-nums">
               <span>
-                നിലവിലെ പുരോഗതി: {completedCount}/{totalLessons} പാഠങ്ങൾ പൂർത്തിയായി
+                നിലവിലെ പുരോഗതി: {completedCount}/{totalLessons} പാഠങ്ങൾ
+                {activeLessonTitle ? ` · അടുത്തത്: ${activeLessonTitle}` : ''}
               </span>
               <span className="text-emerald-700">{xp} XP</span>
             </div>
@@ -212,7 +260,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
             <button
               type="button"
               onClick={onStartJourney}
-              className="w-full min-h-[54px] px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+              className="w-full min-h-[54px] px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               <span>പഠനം തുടങ്ങാം (Start Journey)</span>
               <ArrowRight className="w-5 h-5 shrink-0" />
@@ -220,7 +268,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
               <span>{totalLessons} പാഠങ്ങൾ · 3 ഹൃദയങ്ങൾ · 17 ഉപവിഭാഗങ്ങൾ · സാക്ഷ്യപത്രം</span>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <button
                   type="button"
                   onClick={onOpenAllLessons}
@@ -234,6 +282,14 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
                   className="text-amber-700 hover:text-amber-900 underline underline-offset-4 font-extrabold cursor-pointer"
                 >
                   ഫോട്ടോ ബാഡ്ജ്
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickShare}
+                  className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-900 underline underline-offset-4 font-extrabold cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>{shareCopied ? 'ലിങ്ക് കോപ്പി ചെയ്തു!' : 'ലിങ്ക് ഷെയർ ചെയ്യാം'}</span>
                 </button>
               </div>
             </div>
@@ -442,6 +498,16 @@ export default function App() {
   const allUnseenLessons = useMemo(
     () => getAllUnseenLessons(completedLessonIds),
     [completedLessonIds]
+  );
+
+  const canonicalCompletedCount = useMemo(
+    () => completedLessonIds.filter((id) => ALL_LESSONS.some((l) => l.id === id)).length,
+    [completedLessonIds]
+  );
+
+  const activeLessonTitle = useMemo(
+    () => ALL_LESSONS.find((l) => l.id === activeLessonId)?.title,
+    [activeLessonId]
   );
 
   const quizStats = useMemo(() => {
@@ -831,7 +897,7 @@ export default function App() {
               }}
               aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
               title="സ്കോർ"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap"
+              className="inline-flex items-center gap-1 h-9 px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               <BarChart3 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>{xp}</span>
@@ -847,7 +913,7 @@ export default function App() {
               }}
               aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ്"
               title="ബാഡ്ജ്"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-xs"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
               <Award className="w-4 h-4 shrink-0" />
             </button>
@@ -864,7 +930,7 @@ export default function App() {
                 }}
                 aria-label="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
                 title="സമ്മാനങ്ങൾ"
-                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap"
+                className="inline-flex items-center gap-1 h-9 px-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               >
                 <Gift className="w-3.5 h-3.5 text-amber-600" />
                 <span>{collectedEggs.length}</span>
@@ -881,7 +947,7 @@ export default function App() {
               }}
               aria-label="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
               title="ഔദ്യോഗിക ലിങ്കുകളും PDF ഗൈഡുകളും"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 cursor-pointer"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               <Link2 className="w-4 h-4" />
             </button>
@@ -896,7 +962,7 @@ export default function App() {
               }}
               aria-label="സെറ്റിംഗ്സ്"
               title="സെറ്റിംഗ്സ്"
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -906,7 +972,7 @@ export default function App() {
               onClick={toggleSound}
               aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
               title={muted ? 'ശബ്ദം ഓൺ' : 'മ്യൂട്ട്'}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               {muted ? (
                 <VolumeX className="w-4 h-4 text-slate-500" />
@@ -926,7 +992,7 @@ export default function App() {
         {!showIntro && showResumeToast && (
           <div className="mb-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
             <span className="tabular-nums">
-              💾 #{runNumber} · {xp} XP · {completedLessonIds.length}/{ALL_LESSONS.length}
+              💾 #{runNumber} · {xp} XP · {canonicalCompletedCount}/{ALL_LESSONS.length}
             </span>
             <div className="flex items-center gap-1.5">
               <button
@@ -961,8 +1027,9 @@ export default function App() {
         ) : showIntro ? (
           <WelcomeIntroScreen
             xp={xp}
-            completedCount={completedLessonIds.filter((id) => ALL_LESSONS.some((l) => l.id === id)).length}
+            completedCount={canonicalCompletedCount}
             totalLessons={ALL_LESSONS.length}
+            activeLessonTitle={activeLessonTitle}
             onStartJourney={() => {
               sound.unlockAudio();
               sound.playClick();
@@ -1182,7 +1249,7 @@ export default function App() {
                 >
                   <span>🗺️</span>
                   <span>
-                    പാഠങ്ങൾ ({completedLessonIds.filter((id) => ALL_LESSONS.some((l) => l.id === id)).length}/{ALL_LESSONS.length})
+                    പാഠങ്ങൾ ({canonicalCompletedCount}/{ALL_LESSONS.length})
                   </span>
                 </button>
 
@@ -1325,7 +1392,7 @@ export default function App() {
         runNumber={runNumber}
         xp={xp}
         rank={currentRank}
-        completedLessonsCount={completedLessonIds.length}
+        completedLessonsCount={canonicalCompletedCount}
         totalLessonsCount={ALL_LESSONS.length}
         quizzesAnswered={quizStats.answered}
         quizzesCorrect={quizStats.correct}
@@ -1377,7 +1444,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenResourceHub={() => setResourceHubOpen(true)}
-        completedCount={completedLessonIds.length}
+        completedCount={canonicalCompletedCount}
         totalLessons={ALL_LESSONS.length}
         xp={xp}
       />
