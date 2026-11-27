@@ -268,32 +268,100 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     const ctx = canvas.getContext('2d')!;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // Rich festive background gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1350);
+    const drawShieldPath = (
+      c: CanvasRenderingContext2D,
+      inset = 0
+    ) => {
+      const topPeakY = 58 + inset;
+      const shoulderY = 122 + inset * 0.9;
+      const leftX = 96 + inset;
+      const rightX = 1080 - 96 - inset;
+      const sideEndY = 768 - inset * 0.3;
+      const tipY = 1290 - inset * 1.15;
+      const cp1Y = 1020 - inset * 0.5;
+      const cp2XLeft = 286 + inset * 0.7;
+      const cp2XRight = 1080 - 286 - inset * 0.7;
+      const cp2Y = 1190 - inset * 0.8;
+
+      c.beginPath();
+      c.moveTo(540, topPeakY);
+      c.quadraticCurveTo(320, shoulderY - 22, leftX, shoulderY);
+      c.lineTo(leftX, sideEndY);
+      c.bezierCurveTo(leftX, cp1Y, cp2XLeft, cp2Y, 540, tipY);
+      c.bezierCurveTo(cp2XRight, cp2Y, rightX, cp1Y, rightX, sideEndY);
+      c.lineTo(rightX, shoulderY);
+      c.quadraticCurveTo(760, shoulderY - 22, 540, topPeakY);
+      c.closePath();
+    };
+
+    // Deep jewel-toned ambient backdrop (distinct from the ivory rectangular certificate)
+    const bgGrad = ctx.createRadialGradient(540, 420, 80, 540, 675, 920);
     bgGrad.addColorStop(0, badge.accentFrom);
-    bgGrad.addColorStop(1, badge.accentTo);
+    bgGrad.addColorStop(0.6, '#052E25');
+    bgGrad.addColorStop(1, '#021A15');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 1080, 1350);
 
-    // Warm ivory inner card
-    ctx.fillStyle = '#FCFBF7';
-    ctx.beginPath();
-    ctx.roundRect(54, 54, 972, 1242, 42);
-    ctx.fill();
+    // Subtle geometric 8-point starburst rings behind shield
+    ctx.save();
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.12)';
+    ctx.lineWidth = 2;
+    for (const r of [340, 440, 540]) {
+      ctx.beginPath();
+      ctx.arc(540, 560, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
 
-    // Inner gold border
-    ctx.strokeStyle = '#D97706';
+    // Soft drop shadow behind outer gold shield
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 42;
+    ctx.shadowOffsetY = 18;
+    const goldGrad = ctx.createLinearGradient(96, 60, 984, 1290);
+    goldGrad.addColorStop(0, '#FDE68A');
+    goldGrad.addColorStop(0.45, '#D97706');
+    goldGrad.addColorStop(1, '#B45309');
+    drawShieldPath(ctx, 0);
+    ctx.fillStyle = goldGrad;
+    ctx.fill();
+    ctx.restore();
+
+    // Inner Shield Face (clipped so crown header & ivory body follow shield contour cleanly)
+    ctx.save();
+    drawShieldPath(ctx, 18);
+    ctx.fillStyle = '#FCFBF7';
+    ctx.fill();
+    ctx.clip();
+
+    // Rich top crown band inside the upper shield
+    const crownGrad = ctx.createLinearGradient(0, 60, 0, 460);
+    crownGrad.addColorStop(0, badge.accentFrom);
+    crownGrad.addColorStop(1, badge.accentTo);
+    ctx.fillStyle = crownGrad;
+    ctx.fillRect(80, 50, 920, 415);
+
+    // Subtle gold arch separator below crown
+    ctx.strokeStyle = '#F59E0B';
     ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.roundRect(78, 78, 924, 1194, 30);
+    ctx.moveTo(80, 465);
+    ctx.lineTo(1000, 465);
+    ctx.stroke();
+    ctx.restore();
+
+    // Fine inner gold hairline border inside the shield
+    drawShieldPath(ctx, 30);
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.55)';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Top Official Flags Row (Aspect-ratio preserved — zero stretch!)
+    // Top Official Flags inside the dark shield crown
     if (samasthaFlag) {
-      drawImageContain(ctx, samasthaFlag, 118, 112, 148, 128);
+      drawImageContain(ctx, samasthaFlag, 152, 134, 128, 108);
     }
     if (skssfFlag) {
-      drawImageContain(ctx, skssfFlag, 814, 112, 148, 128);
+      drawImageContain(ctx, skssfFlag, 800, 134, 128, 108);
     }
 
     const drawOpticalCenteredFit = (
@@ -336,23 +404,26 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.restore();
     };
 
-    ctx.fillStyle = '#065F46';
-    drawOpticalCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 166, 500, 32, 20, 800);
-    ctx.fillStyle = '#92400E';
-    drawOpticalCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 208, 500, 22, 15, 700);
+    ctx.fillStyle = '#FDE68A';
+    drawOpticalCenteredFit(badge.tierLabel, 540, 146, 360, 22, 15, 800);
+    ctx.fillStyle = '#FFFFFF';
+    drawOpticalCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 192, 460, 32, 20, 800);
+    ctx.fillStyle = '#FEF3C7';
+    drawOpticalCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 230, 440, 20, 14, 700);
 
-    // Golden Circular User Photo Frame (or Emblem if no photo uploaded)
+    // Golden Circular User Photo Medallion bridging the crown and ivory shield body
     const cx = 540;
-    const cy = 434;
-    const radius = 152;
+    const cy = 446;
+    const radius = 148;
 
+    // Outer double gold crest ring
     ctx.beginPath();
-    ctx.arc(cx, cy, radius + 12, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius + 16, 0, Math.PI * 2);
     ctx.fillStyle = '#F59E0B';
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius + 6, 0, Math.PI * 2);
     ctx.fillStyle = '#FFFFFF';
     ctx.fill();
 
@@ -386,72 +457,101 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.restore();
     }
 
-    // Ribbon Badge Title (dead centered — formal, zero emoji)
+    // Heraldic Ribbon Banner with Folded Swallowtail Ends for Badge Title
+    ctx.save();
+    // Left & right ribbon tails
+    ctx.fillStyle = '#92400E';
+    ctx.beginPath();
+    ctx.moveTo(155, 648);
+    ctx.lineTo(220, 648);
+    ctx.lineTo(220, 720);
+    ctx.lineTo(155, 720);
+    ctx.lineTo(182, 684);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(925, 648);
+    ctx.lineTo(860, 648);
+    ctx.lineTo(860, 720);
+    ctx.lineTo(925, 720);
+    ctx.lineTo(898, 684);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main center ribbon bar
     ctx.fillStyle = badge.accentFrom;
     ctx.beginPath();
-    ctx.roundRect(140, 626, 800, 86, 24);
+    ctx.roundRect(198, 632, 684, 82, 18);
     ctx.fill();
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.restore();
 
     ctx.fillStyle = '#FEF3C7';
-    drawOpticalCenteredFit(badge.title, 540, 682, 740, 34, 20, 800);
+    drawOpticalCenteredFit(badge.title, 540, 686, 620, 36, 20, 800);
 
-    // User Name & Place (dead centered)
+    // User Name & Place
     ctx.fillStyle = '#0F172A';
-    drawOpticalCenteredFit(displayName, 540, 790, 840, 46, 24, 800);
+    drawOpticalCenteredFit(displayName, 540, 788, 720, 44, 24, 800);
 
     ctx.fillStyle = '#047857';
-    drawOpticalCenteredFit(displayPlace, 540, 838, 820, 28, 17, 700);
+    drawOpticalCenteredFit(displayPlace, 540, 834, 680, 26, 17, 700);
 
-    // Subtitle (dead centered)
+    // Subtitle
     ctx.fillStyle = '#334155';
-    drawOpticalCenteredFit(badge.subtitle, 540, 896, 840, 23, 15, 600);
+    drawOpticalCenteredFit(badge.subtitle, 540, 882, 680, 21, 14, 600);
 
-    // XP & Rank Strip (dead centered — zero emoji)
-    ctx.fillStyle = '#F1F5F9';
+    // Compact XP & Rank Strip fitted cleanly inside the shield taper
+    ctx.fillStyle = '#ECFDF5';
     ctx.beginPath();
-    ctx.roundRect(120, 926, 840, 68, 18);
+    ctx.roundRect(245, 906, 590, 58, 16);
     ctx.fill();
-    ctx.strokeStyle = '#CBD5E1';
+    ctx.strokeStyle = '#6EE7B7';
     ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawOpticalCenteredFit(`${xp} XP  ·  ${cleanRank}`, 540, 969, 780, 25, 16, 800);
+    drawOpticalCenteredFit(`${xp} XP  ·  ${cleanRank}`, 540, 944, 540, 24, 15, 800);
 
-    // Symmetrically Centered Scannable QR Code + App Link Invite Strip
-    ctx.fillStyle = '#ECFDF5';
-    ctx.beginPath();
-    ctx.roundRect(120, 1014, 840, 232, 22);
-    ctx.fill();
-    ctx.strokeStyle = '#6EE7B7';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
+    // Centered Scannable QR Code nestled in the lower shield crest
     if (qrImg) {
-      const qrSize = 112;
+      const qrSize = 114;
       const qrX = 540 - qrSize / 2;
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.roundRect(qrX - 6, 1028, qrSize + 12, qrSize + 12, 12);
+      ctx.roundRect(qrX - 8, 988, qrSize + 16, qrSize + 16, 14);
       ctx.fill();
-      ctx.drawImage(qrImg, qrX, 1034, qrSize, qrSize);
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.drawImage(qrImg, qrX, 996, qrSize, qrSize);
     }
 
-    ctx.fillStyle = '#064E3B';
-    drawOpticalCenteredFit('നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ', 540, 1178, 780, 23, 15, 800);
-    ctx.fillStyle = '#047857';
-    drawOpticalCenteredFit('QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ', 540, 1206, 780, 17, 13, 700);
-    ctx.fillStyle = '#0F172A';
+    ctx.fillStyle = '#065F46';
+    drawOpticalCenteredFit('നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ', 540, 1146, 440, 20, 14, 800);
+    ctx.fillStyle = '#334155';
     drawOpticalCenteredFit(
       appUrl.replace(/^https?:\/\//, ''),
       540,
-      1232,
-      780,
-      16,
-      12,
+      1178,
+      360,
+      15,
+      11,
       700,
       '"Noto Serif", Georgia, serif'
     );
+
+    // Small golden star accent near the shield tip
+    ctx.fillStyle = '#D97706';
+    ctx.beginPath();
+    ctx.moveTo(540, 1206);
+    ctx.lineTo(548, 1220);
+    ctx.lineTo(540, 1234);
+    ctx.lineTo(532, 1220);
+    ctx.closePath();
+    ctx.fill();
 
     return canvas;
   };
@@ -488,7 +588,6 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
           await navigator.share({
             title: `${badge.title} — SKSSF ഗൈഡ് ഗെയിം`,
             text: shareCaption,
-            url: appUrl,
             files: [file],
           });
           setStatusMsg('ബാഡ്ജും ഗെയിം ലിങ്കും ഷെയർ ചെയ്തു!');
@@ -497,7 +596,6 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
         await navigator.share({
           title: `${badge.title} — SKSSF ഗൈഡ് ഗെയിം`,
           text: shareCaption,
-          url: appUrl,
         });
         setStatusMsg('ഗെയിം ലിങ്ക് ഷെയർ ചെയ്തു!');
         return;
@@ -726,102 +824,131 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             )}
           </div>
 
-          {/* Right: Live High-Fidelity Card Preview WITH Official SKSSF & Samastha Flags */}
-          <div className="lg:col-span-6 flex justify-center">
+          {/* Right: Live Heraldic Shield Badge Preview */}
+          <div className="lg:col-span-6 flex justify-center items-start">
             <div
-              className="w-full max-w-[360px] rounded-3xl p-3.5 shadow-xl"
+              className="w-full max-w-[360px] rounded-3xl p-4 shadow-xl relative overflow-hidden"
               style={{
-                background: `linear-gradient(135deg, ${badge.accentFrom}, ${badge.accentTo})`,
+                background: `radial-gradient(circle at 50% 30%, ${badge.accentFrom}, #052E25 65%, #021A15 100%)`,
               }}
             >
-              <div className="bg-[#FCFBF7] rounded-2xl border-2 border-amber-500/80 p-4 text-center space-y-3">
-                {/* Official Flags Row */}
-                <div className="flex items-center justify-between gap-2">
-                  <img
-                    src={OFFICIAL_FLAG_ASSETS.samastha}
-                    alt="സമസ്ത പതാക"
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-12 object-contain rounded-lg bg-white p-0.5"
-                  />
-                  <div className="leading-tight">
-                    <p className="text-xs font-extrabold text-emerald-900">SKSSF ഗൈഡ് ഗെയിം</p>
-                    <p className="text-[10px] font-bold text-amber-800">
-                      “വിജ്ഞാനം · വിനയം · സേവനം”
+              {/* Shield Silhouette Container */}
+              <div
+                className="relative mx-auto p-[4px] drop-shadow-xl"
+                style={{
+                  clipPath:
+                    'polygon(50% 0%, 100% 5.5%, 100% 58%, 82% 81%, 50% 100%, 18% 81%, 0% 58%, 0% 5.5%)',
+                  background: 'linear-gradient(155deg, #FDE68A 0%, #D97706 48%, #B45309 100%)',
+                }}
+              >
+                <div
+                  className="bg-[#FCFBF7] overflow-hidden text-center flex flex-col items-center pb-9"
+                  style={{
+                    clipPath:
+                      'polygon(50% 0%, 100% 5.5%, 100% 58%, 82% 81%, 50% 100%, 18% 81%, 0% 58%, 0% 5.5%)',
+                  }}
+                >
+                  {/* Shield Top Crown Band */}
+                  <div
+                    className="w-full pt-5 pb-12 px-3.5 border-b-2 border-amber-400"
+                    style={{
+                      background: `linear-gradient(180deg, ${badge.accentFrom}, ${badge.accentTo})`,
+                    }}
+                  >
+                    <p className="text-[10px] font-extrabold text-amber-200 tracking-wider uppercase">
+                      {badge.tierLabel}
                     </p>
-                  </div>
-                  <img
-                    src={OFFICIAL_FLAG_ASSETS.skssf}
-                    alt="SKSSF ഔദ്യോഗിക പതാക"
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-12 object-contain rounded-lg bg-white p-0.5"
-                  />
-                </div>
-
-                {/* Circular Photo Portrait */}
-                <div className="flex justify-center py-1">
-                  <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-md">
-                    <div className="w-full h-full rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center border-2 border-white">
-                      {photoDataUrl ? (
-                        <img
-                          src={photoDataUrl}
-                          alt={displayName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div
-                          className="w-full h-full flex flex-col items-center justify-center text-amber-100"
-                          style={{ backgroundColor: badge.accentFrom }}
-                        >
-                          <span className="text-base font-black tracking-wider">SKSSF</span>
-                          <span className="text-[10px] font-bold text-amber-200 tracking-widest mt-0.5">
-                            EST. 1989
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex items-center justify-between gap-1.5 mt-1">
+                      <img
+                        src={OFFICIAL_FLAG_ASSETS.samastha}
+                        alt="സമസ്ത പതാക"
+                        referrerPolicy="no-referrer"
+                        className="w-11 h-9 object-contain rounded-md bg-white/95 p-0.5 shrink-0"
+                      />
+                      <div className="leading-tight min-w-0">
+                        <p className="text-xs font-extrabold text-white">SKSSF ഗൈഡ് ഗെയിം</p>
+                        <p className="text-[10px] font-bold text-amber-100">
+                          “വിജ്ഞാനം · വിനയം · സേവനം”
+                        </p>
+                      </div>
+                      <img
+                        src={OFFICIAL_FLAG_ASSETS.skssf}
+                        alt="SKSSF ഔദ്യോഗിക പതാക"
+                        referrerPolicy="no-referrer"
+                        className="w-11 h-9 object-contain rounded-md bg-white/95 p-0.5 shrink-0"
+                      />
                     </div>
                   </div>
-                </div>
 
-                {/* Ribbon Title */}
-                <div
-                  className="py-2 px-3 rounded-xl text-amber-100 text-xs sm:text-sm font-extrabold"
-                  style={{ backgroundColor: badge.accentFrom }}
-                >
-                  {badge.title}
-                </div>
+                  {/* Overlapping Circular Medallion Portrait */}
+                  <div className="-mt-11 mb-2.5 flex justify-center relative z-10">
+                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-lg">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center border-2 border-white">
+                        {photoDataUrl ? (
+                          <img
+                            src={photoDataUrl}
+                            alt={displayName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex flex-col items-center justify-center text-amber-100"
+                            style={{ backgroundColor: badge.accentFrom }}
+                          >
+                            <span className="text-sm font-black tracking-wider">SKSSF</span>
+                            <span className="text-[9px] font-bold text-amber-200 tracking-widest mt-0.5">
+                              EST. 1989
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                <div>
-                  <p className="text-lg font-extrabold text-slate-900 break-words">
-                    {displayName}
-                  </p>
-                  <p className="text-xs font-bold text-emerald-800">{displayPlace}</p>
-                </div>
+                  {/* Heraldic Ribbon Title */}
+                  <div className="w-full px-5 space-y-2">
+                    <div
+                      className="py-1.5 px-3 rounded-xl text-amber-100 text-xs sm:text-sm font-extrabold border border-amber-400 shadow-xs"
+                      style={{ backgroundColor: badge.accentFrom }}
+                    >
+                      {badge.title}
+                    </div>
 
-                <p className="text-[11px] font-semibold text-slate-600 leading-relaxed">
-                  {badge.subtitle}
-                </p>
+                    <div>
+                      <p className="text-base font-extrabold text-slate-900 break-words leading-snug">
+                        {displayName}
+                      </p>
+                      <p className="text-[11px] font-bold text-emerald-800">{displayPlace}</p>
+                    </div>
 
-                <div className="py-2 px-3 rounded-xl bg-slate-100 border border-slate-200 text-xs font-extrabold text-emerald-950 tabular-nums">
-                  <Award className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
-                  {xp} XP · {cleanRank}
-                </div>
-
-                {/* Live Scannable QR Code + App Link Preview (Dead Centered) */}
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col items-center gap-2 text-center">
-                  {qrDataUrl && (
-                    <img
-                      src={qrDataUrl}
-                      alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
-                      className="w-16 h-16 rounded-lg bg-white p-1 border border-emerald-200 shrink-0"
-                    />
-                  )}
-                  <div className="min-w-0 w-full text-center">
-                    <p className="text-[11px] font-extrabold text-emerald-950 leading-snug">
-                      നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ
+                    <p className="text-[10px] font-semibold text-slate-600 leading-relaxed px-2">
+                      {badge.subtitle}
                     </p>
-                    <p className="text-[10px] font-semibold text-emerald-800 leading-snug mt-0.5 break-all">
-                      {appUrl.replace(/^https?:\/\//, '')}
-                    </p>
+
+                    <div className="mx-auto max-w-[215px] py-1.5 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-extrabold text-emerald-950 tabular-nums">
+                      <Award className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
+                      {xp} XP · {cleanRank}
+                    </div>
+
+                    {/* Centered Compact QR inside Lower Shield Taper */}
+                    <div className="pt-1 flex flex-col items-center gap-1 text-center">
+                      {qrDataUrl && (
+                        <img
+                          src={qrDataUrl}
+                          alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
+                          className="w-14 h-14 rounded-lg bg-white p-1 border border-amber-400 shadow-2xs shrink-0"
+                        />
+                      )}
+                      <p className="text-[10px] font-extrabold text-emerald-950 leading-tight">
+                        നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ
+                      </p>
+                      <p className="text-[9px] font-semibold text-slate-600 leading-tight max-w-[160px] truncate">
+                        {appUrl.replace(/^https?:\/\//, '')}
+                      </p>
+                      <span aria-hidden="true" className="text-amber-500 text-xs leading-none pt-0.5">
+                        ◆
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

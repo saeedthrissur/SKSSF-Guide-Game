@@ -481,7 +481,6 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           await navigator.share({
             title: `SKSSF ഗൈഡ് ഗെയിം — ${CERTIFICATE_TITLE}`,
             text: shareCaption,
-            url: appUrl,
             files: [file],
           });
           setShareNote('പ്രശംസാപത്രവും ലിങ്കും ഷെയർ ചെയ്തു!');
@@ -490,7 +489,6 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         await navigator.share({
           title: `SKSSF ഗൈഡ് ഗെയിം — ${CERTIFICATE_TITLE}`,
           text: shareCaption,
-          url: appUrl,
         });
         setShareNote('ഗെയിം ലിങ്ക് ഷെയർ ചെയ്തു!');
         return;
