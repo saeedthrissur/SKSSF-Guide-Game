@@ -1,11 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Check, Copy, X } from 'lucide-react';
+import { Check, Copy, QrCode, X } from 'lucide-react';
+import QRCode from 'qrcode';
 import { sound } from '../utils/sound';
 
 const DEVELOPER_UPI_ID = 'Saeed.anchangadi@okicici';
-const DEVELOPER_UPI_LINK =
-  'upi://pay?pa=Saeed.anchangadi@okicici&pn=Developer&cu=INR';
+const DEFAULT_UPI_NOTE = 'SKSSF Guide Game Hadiya';
+
+function detectIsAndroid(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const uaPlatform = (
+    navigator as Navigator & { userAgentData?: { platform?: string } }
+  ).userAgentData?.platform;
+  if (uaPlatform && /android/i.test(uaPlatform)) return true;
+  return /Android/i.test(navigator.userAgent || '');
+}
+
+function buildUpiAppLinks(note: string) {
+  const cleanNote = note.trim() || DEFAULT_UPI_NOTE;
+  const upiQuery = `pa=${DEVELOPER_UPI_ID}&pn=Developer&cu=INR&tn=${encodeURIComponent(cleanNote)}`;
+  const genericUpiLink = `upi://pay?${upiQuery}`;
+  const isAndroid = detectIsAndroid();
+
+  if (isAndroid) {
+    return {
+      gpay: `intent://pay?${upiQuery}#Intent;scheme=upi;action=android.intent.action.VIEW;package=com.google.android.apps.nbu.paisa.user;end;`,
+      phonepe: `intent://pay?${upiQuery}#Intent;scheme=upi;action=android.intent.action.VIEW;package=com.phonepe.app;end;`,
+      paytm: `intent://pay?${upiQuery}#Intent;scheme=upi;action=android.intent.action.VIEW;package=net.one97.paytm;end;`,
+      other: genericUpiLink,
+      qrPayload: genericUpiLink,
+    };
+  }
+
+  return {
+    gpay: `gpay://upi/pay?${upiQuery}`,
+    phonepe: `phonepe://pay?${upiQuery}`,
+    paytm: `paytmmp://pay?${upiQuery}`,
+    other: genericUpiLink,
+    qrPayload: genericUpiLink,
+  };
+}
 
 async function copyTextToClipboard(text: string): Promise<boolean> {
   if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
@@ -37,7 +71,10 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
   return false;
 }
 
-const GPayMark: React.FC<{ className?: string }> = ({ className = 'h-4 w-auto' }) => (
+const GPayMark: React.FC<{ className?: string; light?: boolean }> = ({
+  className = 'h-4 w-auto',
+  light = false,
+}) => (
   <svg viewBox="0 0 64 24" className={className} aria-hidden="true">
     <path
       d="M19.8 12.2c0-.6-.1-1.2-.2-1.8H11v3.4h4.9c-.2 1.1-.9 2.1-1.8 2.7v2.2h3c1.7-1.6 2.7-3.9 2.7-6.5z"
@@ -58,7 +95,7 @@ const GPayMark: React.FC<{ className?: string }> = ({ className = 'h-4 w-auto' }
     <text
       x="24"
       y="16.5"
-      fill="#3C4043"
+      fill={light ? '#FFFFFF' : '#3C4043'}
       fontSize="13.5"
       fontWeight="700"
       fontFamily="system-ui, -apple-system, sans-serif"
@@ -68,7 +105,49 @@ const GPayMark: React.FC<{ className?: string }> = ({ className = 'h-4 w-auto' }
   </svg>
 );
 
-const UpiMark: React.FC<{ className?: string }> = ({ className = 'h-4 w-auto' }) => (
+const PhonePeMark: React.FC<{ className?: string }> = ({ className = 'h-4 w-4' }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <circle cx="12" cy="12" r="11" fill="#5F259F" />
+    <text
+      x="12"
+      y="16.2"
+      textAnchor="middle"
+      fill="#FFFFFF"
+      fontSize="13"
+      fontWeight="800"
+      fontFamily="system-ui, -apple-system, sans-serif"
+    >
+      Pe
+    </text>
+  </svg>
+);
+
+const PaytmMark: React.FC<{ className?: string }> = ({ className = 'h-3.5 w-auto' }) => (
+  <svg viewBox="0 0 60 20" className={className} aria-hidden="true">
+    <text
+      x="1"
+      y="15"
+      fill="#002970"
+      fontSize="13"
+      fontWeight="800"
+      fontFamily="system-ui, -apple-system, sans-serif"
+    >
+      Pay
+    </text>
+    <text
+      x="26"
+      y="15"
+      fill="#00BAF2"
+      fontSize="13"
+      fontWeight="800"
+      fontFamily="system-ui, -apple-system, sans-serif"
+    >
+      tm
+    </text>
+  </svg>
+);
+
+const UpiMark: React.FC<{ className?: string }> = ({ className = 'h-3.5 w-auto' }) => (
   <svg viewBox="0 0 58 22" className={className} aria-hidden="true">
     <text
       x="1"
@@ -97,10 +176,16 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
   onClose,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [paymentNote, setPaymentNote] = useState(DEFAULT_UPI_NOTE);
+  const [showQr, setShowQr] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const upiLinks = useMemo(() => buildUpiAppLinks(paymentNote), [paymentNote]);
 
   useEffect(() => {
     if (!isOpen) {
       setCopied(false);
+      setShowQr(false);
+      setPaymentNote(DEFAULT_UPI_NOTE);
       return;
     }
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,6 +196,25 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen || !showQr) return;
+    let cancelled = false;
+    void QRCode.toDataURL(upiLinks.qrPayload, {
+      width: 200,
+      margin: 1,
+      color: { dark: '#064E3B', light: '#FFFFFF' },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, showQr, upiLinks.qrPayload]);
 
   const handleCopyUpi = async () => {
     sound.unlockAudio();
@@ -141,7 +245,7 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
             exit={{ scale: 0.95, y: 8, opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 space-y-4"
+            className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 space-y-3.5"
           >
             {/* Compact Header */}
             <div className="flex items-start justify-between gap-3">
@@ -210,31 +314,109 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
               </button>
             </div>
 
-            {/* Direct GPay / UPI Action */}
+            {/* Compact Pre-filled Receipt Note (passed as UPI tn= parameter) */}
+            <div className="space-y-1">
+              <label
+                htmlFor="hadiya-upi-note"
+                className="block text-[11px] font-bold text-slate-600"
+              >
+                നോട്ട് (GPay / UPI രസീതിൽ കാണാൻ)
+              </label>
+              <input
+                id="hadiya-upi-note"
+                type="text"
+                maxLength={50}
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder={DEFAULT_UPI_NOTE}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 transition-colors"
+              />
+            </div>
+
+            {/* Direct App-Specific Payment Buttons (Google Pay First, PhonePe & Paytm Next, Generic UPI Last) */}
             <div className="space-y-2">
               <a
-                href={DEVELOPER_UPI_LINK}
+                href={upiLinks.gpay}
+                target="_top"
                 onClick={() => {
                   sound.unlockAudio();
                   sound.playClick();
                 }}
                 className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-extrabold text-sm shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <span>GPay / UPI വഴി അയക്കാം</span>
-              </a>
-
-              {/* Subtle Payment Logos Row */}
-              <div className="flex items-center justify-center gap-3 pt-0.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
+                <span className="bg-white rounded-md px-1.5 py-0.5 inline-flex items-center">
                   <GPayMark className="h-3.5 w-auto" />
                 </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
-                  <UpiMark className="h-3.5 w-auto" />
-                </span>
-                <span className="text-[11px] font-medium text-slate-400">
-                  PhonePe · Paytm
-                </span>
+                <span>GPay വഴി അയക്കാം</span>
+              </a>
+
+              <div className="grid grid-cols-3 gap-1.5">
+                <a
+                  href={upiLinks.phonepe}
+                  target="_top"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                  }}
+                  className="py-2 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <PhonePeMark className="h-4 w-4 shrink-0" />
+                  <span>PhonePe</span>
+                </a>
+                <a
+                  href={upiLinks.paytm}
+                  target="_top"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                  }}
+                  className="py-2 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Paytm വഴി അയക്കാം"
+                >
+                  <PaytmMark className="h-3.5 w-auto" />
+                </a>
+                <a
+                  href={upiLinks.other}
+                  target="_top"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                  }}
+                  className="py-2 px-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                >
+                  <UpiMark className="h-3 w-auto shrink-0" />
+                  <span>മറ്റുള്ളവ</span>
+                </a>
               </div>
+
+              {/* Optional Scannable QR Toggle */}
+              <div className="pt-0.5 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    setShowQr((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 hover:text-emerald-950 underline underline-offset-4 cursor-pointer"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>{showQr ? 'QR കോഡ് മറയ്ക്കുക' : 'QR കോഡ് സ്കാൻ ചെയ്യാൻ കാണിക്കുക'}</span>
+                </button>
+              </div>
+
+              {showQr && qrDataUrl && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-3 flex flex-col items-center gap-1.5">
+                  <img
+                    src={qrDataUrl}
+                    alt="UPI QR കോഡ്"
+                    className="w-36 h-36 rounded-lg bg-white p-1.5 border border-emerald-200"
+                  />
+                  <p className="text-[11px] font-semibold text-slate-600 text-center">
+                    GPay / PhonePe / Paytm ഉപയോഗിച്ച് സ്കാൻ ചെയ്യാം
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </motion.div>

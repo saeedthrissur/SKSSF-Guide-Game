@@ -2118,18 +2118,22 @@ export default function App() {
       <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500">
         <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <span>ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”</span>
-          <span aria-hidden="true">·</span>
-          <button
-            type="button"
-            onClick={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              setSupportModalOpen(true);
-            }}
-            className="text-amber-800 hover:text-emerald-900 font-bold underline underline-offset-4 transition-colors cursor-pointer"
-          >
-            🎁 ഒരു ഹദിയ നൽകാം
-          </button>
+          {!(showIntro && !lessonsMapOpen) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  setSupportModalOpen(true);
+                }}
+                className="text-amber-800 hover:text-emerald-900 font-bold underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                🎁 ഒരു ഹദിയ നൽകാം
+              </button>
+            </>
+          )}
         </p>
       </footer>
       <FloatingPageNavigator visible={!lessonsMapOpen && !showIntro} />
