@@ -241,7 +241,8 @@ export const HeartBreakFlightOverlay: React.FC<{
 export const GameOverResetModal: React.FC<{
   isOpen: boolean;
   onRestartFromStart: () => void;
-}> = ({ isOpen, onRestartFromStart }) => {
+  onOpenSupport?: () => void;
+}> = ({ isOpen, onRestartFromStart, onOpenSupport }) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -287,20 +288,38 @@ export const GameOverResetModal: React.FC<{
               </p>
             </div>
 
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playPop();
-                onRestartFromStart();
-              }}
-              className="w-full py-3.5 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-sm sm:text-base font-extrabold shadow-xl inline-flex items-center justify-center gap-2"
-            >
-              <RotateCcw className="w-5 h-5" />
-              <span>🔄 ഒന്നാമത്തെ പാഠം മുതൽ വീണ്ടും തുടങ്ങാം (❤️❤️❤️)</span>
-            </motion.button>
+            <div className="space-y-2.5">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playPop();
+                  onRestartFromStart();
+                }}
+                className="w-full py-3.5 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-sm sm:text-base font-extrabold shadow-xl inline-flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <RotateCcw className="w-5 h-5" />
+                <span>🔄 ഒന്നാമത്തെ പാഠം മുതൽ വീണ്ടും തുടങ്ങാം (❤️❤️❤️)</span>
+              </motion.button>
+
+              {onOpenSupport && (
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    onOpenSupport();
+                  }}
+                  className="w-full py-3 px-5 rounded-2xl bg-emerald-800/80 hover:bg-emerald-700 text-amber-200 border border-emerald-500/50 text-sm font-extrabold shadow-md inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                </motion.button>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}

@@ -63,6 +63,7 @@ import {
   SurpriseGiftChestModal,
   UnseenLessonBanner,
 } from './components/GameEffects';
+import { SupportDeveloperModal } from './components/SupportDeveloperModal';
 import {
   ALL_LESSONS,
   getAllUnseenLessons,
@@ -177,6 +178,7 @@ interface WelcomeIntroScreenProps {
   onStartJourney: () => void;
   onOpenAllLessons: () => void;
   onOpenBadgeStudio: () => void;
+  onOpenSupport: () => void;
 }
 
 const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
@@ -187,6 +189,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
   onStartJourney,
   onOpenAllLessons,
   onOpenBadgeStudio,
+  onOpenSupport,
 }) => {
   const hasSavedProgress = xp > 0 || completedCount > 0;
   const [heroImgFailed, setHeroImgFailed] = useState(false);
@@ -314,6 +317,14 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
             >
               <span>പഠനം തുടങ്ങാം (Start Journey)</span>
               <ArrowRight className="w-5 h-5 shrink-0" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenSupport}
+              className="w-full min-h-[46px] px-5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 active:scale-[0.99] text-amber-950 font-extrabold text-sm sm:text-base border border-amber-300 shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            >
+              <span>🎁 ഒരു ഹദിയ നൽകാം</span>
             </button>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
@@ -689,6 +700,7 @@ export default function App() {
   const [devUnlocked, setDevUnlocked] = useState<boolean>(false);
   const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
   const [resourceHubOpen, setResourceHubOpen] = useState<boolean>(false);
+  const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
 
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() => initialCompleted);
   const [activeLessonId, setActiveLessonId] = useState<string>(
@@ -1587,6 +1599,11 @@ export default function App() {
               setBadgeStudioPreset('starter_member');
               setBadgeStudioOpen(true);
             }}
+            onOpenSupport={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setSupportModalOpen(true);
+            }}
           />
         ) : (
           <>
@@ -2058,6 +2075,12 @@ export default function App() {
       <GameOverResetModal
         isOpen={gameOverOpen}
         onRestartFromStart={handleResetCurrentGame}
+        onOpenSupport={() => setSupportModalOpen(true)}
+      />
+
+      <SupportDeveloperModal
+        isOpen={supportModalOpen}
+        onClose={() => setSupportModalOpen(false)}
       />
 
       <GuideGameAboutModal
