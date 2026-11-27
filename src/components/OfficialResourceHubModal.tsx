@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import {
   BookOpen,
   Check,
+  Compass,
   Copy,
   Download,
   ExternalLink,
@@ -30,6 +31,7 @@ import {
   OfficialLogoGuideEntry,
 } from '../data/officialLogos';
 import { sound } from '../utils/sound';
+import { WingsScenarioChallenge } from './WingsScenarioChallenge';
 
 const KIND_BADGE: Record<OfficialLinkItem['kind'], { label: string; cls: string; cta: string; btnCls: string }> = {
   website: {
@@ -188,7 +190,7 @@ export const OfficialResourceHubModal: React.FC<{
   onClose: () => void;
   onAwardXp?: (amount: number, actionId: string) => void;
 }> = ({ isOpen, onClose, onAwardXp }) => {
-  const [hubTab, setHubTab] = useState<'logos' | 'links'>('logos');
+  const [hubTab, setHubTab] = useState<'logos' | 'links' | 'scenarios'>('logos');
 
   // Logos & Wings tab state
   const [logoQuery, setLogoQuery] = useState('');
@@ -300,23 +302,38 @@ export const OfficialResourceHubModal: React.FC<{
               </button>
             </div>
 
-            {/* Clean 2-Tab Segmented Switcher */}
+            {/* Clean 3-Tab Segmented Switcher */}
             <div className="px-3.5 sm:px-5 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0">
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-200/70">
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-200/70">
                 <button
                   type="button"
                   onClick={() => {
                     sound.playClick();
                     setHubTab('logos');
                   }}
-                  className={`min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
+                  className={`min-w-0 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
                     hubTab === 'logos'
                       ? 'bg-emerald-700 text-white shadow-xs'
                       : 'text-slate-700 hover:text-emerald-950'
                   }`}
                 >
                   <Shield className="w-3.5 h-3.5 shrink-0" />
-                  <span className="break-words">ലോഗോകൾ ({OFFICIAL_LOGO_GUIDE_ITEMS.length})</span>
+                  <span className="truncate">ലോഗോകൾ ({OFFICIAL_LOGO_GUIDE_ITEMS.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.playClick();
+                    setHubTab('scenarios');
+                  }}
+                  className={`min-w-0 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
+                    hubTab === 'scenarios'
+                      ? 'bg-emerald-700 text-white shadow-xs'
+                      : 'text-slate-700 hover:text-emerald-950'
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">സാഹചര്യങ്ങളും ഉപസമിതികളും</span>
                 </button>
                 <button
                   type="button"
@@ -324,21 +341,23 @@ export const OfficialResourceHubModal: React.FC<{
                     sound.playClick();
                     setHubTab('links');
                   }}
-                  className={`min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
+                  className={`min-w-0 inline-flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
                     hubTab === 'links'
                       ? 'bg-emerald-700 text-white shadow-xs'
                       : 'text-slate-700 hover:text-emerald-950'
                   }`}
                 >
                   <Link2 className="w-3.5 h-3.5 shrink-0" />
-                  <span className="break-words">ലിങ്കുകളും PDF-ഉം ({OFFICIAL_LINKS_CATALOG.length})</span>
+                  <span className="truncate">ലിങ്കുകളും PDF-ഉം</span>
                 </button>
               </div>
             </div>
 
             {/* Body */}
             <div className="overflow-y-auto p-4 sm:p-5 space-y-4">
-              {hubTab === 'logos' ? (
+              {hubTab === 'scenarios' ? (
+                <WingsScenarioChallenge onAwardXp={onAwardXp} />
+              ) : hubTab === 'logos' ? (
                 <>
                   {/* Search & Category Filter for Logos */}
                   <div className="space-y-2.5">

@@ -2425,6 +2425,14 @@ export const UnseenLessonBanner: React.FC<{
  * EASTER EGG SURPRISE GIFTS & MYSTERY BADGE CHEST
  * ========================================================================== */
 
+export interface HistoricalMilestoneCard {
+  year: string;
+  cardTitle: string;
+  sealCode: string;
+  eventSummary: string;
+  quote: string;
+}
+
 export interface EasterEggItem {
   id: string;
   emoji: string;
@@ -2433,6 +2441,7 @@ export interface EasterEggItem {
   giftNote: string;
   speech: string;
   locationHint: string;
+  historicalCard: HistoricalMilestoneCard;
 }
 
 export const EASTER_EGG_ITEMS: EasterEggItem[] = [
@@ -2441,54 +2450,102 @@ export const EASTER_EGG_ITEMS: EasterEggItem[] = [
     emoji: '🌙',
     badge: '🌙 ചന്ദ്രക്കല സമ്മാന ബാഡ്ജ്',
     title: 'രഹസ്യ ചന്ദ്രക്കല സമ്മാനം!',
-    giftNote: 'കപ്പൽ തീരത്തെ തിളങ്ങുന്ന ചന്ദ്രക്കല കണ്ടെത്തിയതിനാൽ +25 XP ബോണസും രഹസ്യ ബാഡ്ജും ലഭിച്ചു!',
+    giftNote: 'കപ്പൽ തീരത്തെ തിളങ്ങുന്ന ചന്ദ്രക്കല കണ്ടെത്തിയതിനാൽ +25 XP ബോണസും ചരിത്ര മുദ്രയും ലഭിച്ചു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! കപ്പൽ തീരത്തെ തിളങ്ങുന്ന ചന്ദ്രക്കല കണ്ടെത്തിയതിന് രഹസ്യ സമ്മാനവും ഇരുപത്തിയഞ്ച് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'തുടക്കം: ചരിത്ര കപ്പൽ തീരം',
+    historicalCard: {
+      year: '1926 ജൂൺ 26',
+      cardTitle: 'സമസ്തയുടെ പിറവി',
+      sealCode: 'SAMASTHA · 1926',
+      eventSummary:
+        'കോഴിക്കോട് ടൗൺഹാളിൽ വെച്ച് വരക്കൽ മുല്ലക്കോയ തങ്ങൾ സ്ഥാപക പ്രസിഡന്റായും പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്‌ലിയാർ അധ്യക്ഷനായും സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ രൂപീകൃതമായി.',
+      quote: '“പാരമ്പര്യ വിജ്ഞാനവും സത്യവിശ്വാസവും തലമുറകളിലേക്ക് കൈമാറുന്ന മഹത്തായ പ്രസ്ഥാനം.”',
+    },
   },
   {
     id: 'egg_story_lantern',
     emoji: '🏮',
     badge: '🏮 വെളിച്ച വിളക്ക് ബാഡ്ജ്',
     title: 'കഥാപുരയിലെ പ്രകാശ വിളക്ക്!',
-    giftNote: 'കഥാ-ചിത്ര ബോർഡിലെ സ്വർണ്ണ വിളക്ക് തൊട്ടതിന് +25 XP സന്തോഷ സമ്മാനം ലഭിച്ചു!',
+    giftNote: 'കഥാ-ചിത്ര ബോർഡിലെ സ്വർണ്ണ വിളക്ക് തൊട്ടതിന് +25 XP ബോണസും ചരിത്ര മുദ്രയും ലഭിച്ചു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! കഥാ ചിത്ര ബോർഡിലെ പ്രകാശ വിളക്ക് കണ്ടെത്തിയതിന് രഹസ്യ ബാഡ്ജും ഇരുപത്തിയഞ്ച് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'കഥാ-ചിത്ര ബോർഡ്',
+    historicalCard: {
+      year: '1934 നവംബർ 14',
+      cardTitle: 'സമസ്ത ഔദ്യോഗിക രജിസ്ട്രേഷൻ',
+      sealCode: 'SKJU · REG 1934',
+      eventSummary:
+        'വ്യവസ്ഥാപിതമായ ഭരണഘടനയോടും 40 അംഗ കേന്ദ്ര മുശാവറയോടും കൂടി സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ ഔദ്യോഗികമായി രജിസ്റ്റർ ചെയ്യപ്പെട്ടു.',
+      quote: '“അച്ചടക്കവും കൂടിയാലോചനയും (ശൂറ) ആണ് സംഘടനാ കരുത്തിന്റെ അടിത്തറ.”',
+    },
   },
   {
     id: 'egg_captain_compass',
     emoji: '🧭',
     badge: '🧭 ക്യാപ്റ്റൻ കോമ്പസ് ബാഡ്ജ്',
     title: 'കപ്പൽ ക്യാപ്റ്റന്റെ രഹസ്യ കോമ്പസ്!',
-    giftNote: 'ചരിത്ര കപ്പലിന്റെ ചക്രവാളത്തിൽ ഒളിഞ്ഞിരുന്ന കോമ്പസ് കണ്ടെത്തി — മികച്ച കണ്ടെത്തൽ!',
+    giftNote: 'ചരിത്ര കപ്പലിന്റെ ചക്രവാളത്തിൽ ഒളിഞ്ഞിരുന്ന കോമ്പസ് കണ്ടെത്തി — ചരിത്ര മുദ്ര തുറന്നു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! ചരിത്ര കപ്പൽ ക്യാപ്റ്റന്റെ രഹസ്യ കോമ്പസ് കണ്ടെത്തിയതിന് രഹസ്യ ബാഡ്ജും ബോണസ് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'യൂണിറ്റ് തലം: ചരിത്ര യാത്ര',
+    historicalCard: {
+      year: '1951 സെപ്റ്റംബർ 17',
+      cardTitle: 'മദ്രസാ വിദ്യാഭ്യാസ വിപ്ലവം',
+      sealCode: 'SKIMVB · 1951',
+      eventSummary:
+        'വളാഞ്ചേരിയിൽ ചേർന്ന യോഗത്തിൽ സമസ്ത കേരള ഇസ്‌ലാം മത വിദ്യാഭ്യാസ ബോർഡ് രൂപംകൊണ്ടു. വെറും 7 മദ്രസകളിൽ തുടങ്ങിയ സംവിധാനം ഇന്ന് 11,000-ത്തിലധികം മദ്രസകളായി വളർന്നു.',
+      quote: '“ഏകീകൃത സിലബസിലൂടെ ലോകത്തിന് മാതൃകയായ മതവിദ്യാഭ്യാസ പ്രസ്ഥാനം.”',
+    },
   },
   {
     id: 'egg_dawa_dove',
     emoji: '🌿',
     badge: '🌿 സമാധാന ദീപം സമ്മാനം',
     title: 'ദഅ്‌വത്ത് ഗ്രാമത്തിലെ സമാധാന ദീപം!',
-    giftNote: 'ദീനീ ദഅ്‌വത്തിന്റെ സന്ദേശവുമായി തിളങ്ങുന്ന സമാധാന ദീപം കണ്ടെത്തിയതിനാൽ പ്രത്യേക സമ്മാനം!',
+    giftNote: 'ദീനീ ദഅ്‌വത്തിന്റെ സന്ദേശവുമായി തിളങ്ങുന്ന സമാധാന ദീപം കണ്ടെത്തി — ചരിത്ര മുദ്ര തുറന്നു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! ദഅ് വത്ത് ഗ്രാമത്തിലെ സമാധാന ദീപം കണ്ടെത്തിയതിന് പ്രത്യേക സമ്മാനവും ബോണസ് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'ക്ലസ്റ്റർ & മേഖല: സേവന ദൗത്യം',
+    historicalCard: {
+      year: '1989 ഫെബ്രുവരി 19',
+      cardTitle: 'SKSSF രൂപീകരണ മുദ്ര',
+      sealCode: 'SKSSF · 1989',
+      eventSummary:
+        'കോഴിക്കോട് സാമൂതിരി ഹൈസ്കൂളിൽ വെച്ച് വിദ്യാർത്ഥികൾക്കും യുവാക്കൾക്കുമായി സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്സ് ഫെഡറേഷൻ (SKSSF) പിറവിയെടുത്തു.',
+      quote: '“വിജ്ഞാനം · വിനയം · സേവനം — യുവതലമുറയുടെ ആദർശ വഴികാട്ടി.”',
+    },
   },
   {
     id: 'egg_garden_flower',
     emoji: '🌺',
     badge: '🌺 ഹൃദയ തോട്ടം പുഷ്പം ബാഡ്ജ്',
     title: 'ഹൃദയ തോട്ടത്തിലെ സുവർണ്ണ പൂവ്!',
-    giftNote: 'ഹൃദയ തോട്ടത്തിലെ സുവർണ്ണ പുഷ്പം തൊട്ടതിന് ഇഖ്‌ലാസിന്റെ സൗരഭ്യം സമ്മാനമായി കിട്ടി!',
+    giftNote: 'ഹൃദയ തോട്ടത്തിലെ സുവർണ്ണ പുഷ്പം കണ്ടെത്തിയതിനാൽ ഇഖ്‌ലാസിന്റെ ചരിത്ര മുദ്ര തുറന്നു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! ഹൃദയ തോട്ടത്തിലെ സുവർണ്ണ പൂവ് കണ്ടെത്തിയതിന് പ്രത്യേക പുഷ്പ സമ്മാനവും ഇരുപത്തിയഞ്ച് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'ജില്ലാ തലം: പ്രവാചക മാതൃക',
+    historicalCard: {
+      year: '1993 ഡിസംബർ 26',
+      cardTitle: 'ബാലവേദിയുടെ ഉദയം (SKSBV)',
+      sealCode: 'SKSBV · 1993',
+      eventSummary:
+        'മദ്രസാ വിദ്യാർത്ഥികളിൽ ചെറുപ്രായത്തിൽ തന്നെ ധാർമ്മിക ബോധവും കലാ-സാഹിത്യ കഴിവുകളും വളർത്താൻ സമസ്ത കേരള സുന്നി ബാല വേദി രൂപീകൃതമായി.',
+      quote: '“കുട്ടികളിൽ വിതയ്ക്കുന്ന മൂല്യങ്ങളാണ് നാളത്തെ സമൂഹത്തിന്റെ വെളിച്ചം.”',
+    },
   },
   {
     id: 'egg_giraffe_star',
     emoji: '🗼',
     badge: '🗼 സുവർണ്ണ ഗോപുര നക്ഷത്രം',
     title: 'ഗോപുരത്തിലെ സുവർണ്ണ ദൂരക്കാഴ്ച സമ്മാനം!',
-    giftNote: 'ഉയരമുള്ള ദൂരക്കാഴ്ചയുടെ ഗോപുര നക്ഷത്രം നേടിയതിനാൽ എല്ലാ ഘട്ടങ്ങളിലും തിളങ്ങാം!',
+    giftNote: 'ഉയരമുള്ള ദൂരക്കാഴ്ചയുടെ ഗോപുര നക്ഷത്രം നേടി — ആഗോള വിജ്ഞാന ചരിത്ര മുദ്ര തുറന്നു!',
     speech: 'സർപ്രൈസ് സമ്മാനം! ആഗോള ഗോപുരത്തിലെ സുവർണ്ണ നക്ഷത്ര സമ്മാനം കണ്ടെത്തിയതിന് പ്രത്യേക ബാഡ്ജും ബോണസ് പോയിന്റും ലഭിച്ചു!',
     locationHint: 'സ്റ്റേറ്റ് & ഗ്ലോബൽ തലം',
+    historicalCard: {
+      year: '1997 മുതൽ',
+      cardTitle: 'സത്യധാര & 17 സബ് വിങ്ങുകൾ',
+      sealCode: 'SKSSF · GLOBAL',
+      eventSummary:
+        'സത്യധാര ദൈ്വവാരികയിലൂടെ അക്ഷര വെളിച്ചം പകർന്നും വിഖായ, സഹചാരി, ട്രെൻഡ്, ഇബാദ്, സൈബർ വിംഗ് തുടങ്ങിയ 17 ഉപസമിതികളിലൂടെ ആഗോള സേവനം നയിച്ചും SKSSF മുന്നേറുന്നു.',
+      quote: '“അറിവ് വിനയത്തിലേക്കും വിനയം നിസ്വാർത്ഥ സേവനത്തിലേക്കും നയിക്കട്ടെ.”',
+    },
   },
 ];
 
@@ -2539,7 +2596,27 @@ export const SurpriseGiftChestModal: React.FC<SurpriseGiftModalProps> = ({
   collectedEggIds,
   activeCelebrationEgg,
 }) => {
+  const [selectedCardEggId, setSelectedCardEggId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (activeCelebrationEgg) {
+      setSelectedCardEggId(activeCelebrationEgg.id);
+    } else if (collectedEggIds.length > 0) {
+      setSelectedCardEggId((prev) =>
+        prev && collectedEggIds.includes(prev) ? prev : collectedEggIds[0]
+      );
+    } else {
+      setSelectedCardEggId(null);
+    }
+  }, [isOpen, activeCelebrationEgg, collectedEggIds]);
+
   if (!isOpen) return null;
+
+  const activeHistoricalEgg =
+    selectedCardEggId && collectedEggIds.includes(selectedCardEggId)
+      ? EASTER_EGG_ITEMS.find((e) => e.id === selectedCardEggId) || null
+      : activeCelebrationEgg;
 
   return (
     <div
@@ -2549,72 +2626,122 @@ export const SurpriseGiftChestModal: React.FC<SurpriseGiftModalProps> = ({
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl border-2 border-amber-400 max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl"
+        className="bg-white rounded-3xl border-2 border-amber-400 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <Gift className="w-6 h-6 text-amber-600" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <Gift className="w-5 h-5" />
+            </div>
             <div>
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
-                🎁 രഹസ്യ സർപ്രൈസ് സമ്മാനപ്പെട്ടി ({collectedEggIds.length}/{EASTER_EGG_ITEMS.length})
+                🎁 സമ്മാനപ്പെട്ടിയും ചരിത്ര മുദ്രകളും ({collectedEggIds.length}/{EASTER_EGG_ITEMS.length})
               </h3>
               <p className="text-xs text-slate-600">
-                ഓരോ ഘട്ടത്തിലും ഒളിഞ്ഞിരിക്കുന്ന 🎁 ചിഹ്നങ്ങൾ കണ്ടെത്തി രഹസ്യ ബാഡ്ജുകൾ നേടാം
+                ഓരോ 🎁 സമ്മാനവും സമസ്ത–SKSSF ചരിത്രത്തിലെ അപൂർവ്വ ‘ചരിത്ര മുദ്ര’ (Historical Card) തുറക്കും
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
             aria-label="അടയ്ക്കുക"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {activeCelebrationEgg && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-100 via-yellow-50 to-emerald-50 border-2 border-amber-400 space-y-1.5">
-            <p className="text-xs font-extrabold text-amber-900">🎉 പുതിയ സർപ്രൈസ് തുറന്നു!</p>
-            <h4 className="text-base font-extrabold text-slate-900">
-              {activeCelebrationEgg.emoji} {activeCelebrationEgg.title}
-            </h4>
-            <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {activeCelebrationEgg.giftNote}
-            </p>
+        {/* Collectible Archival Geometric Historical Milestone Card Viewer */}
+        {activeHistoricalEgg && (
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-950 p-1 shadow-md">
+            <div className="rounded-[14px] border border-amber-400/70 bg-[#FCFBF7] p-4 sm:p-5 space-y-3 relative overflow-hidden">
+              {/* Clean Geometric Corner Accents */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute top-2 right-2 w-12 h-12 border-t-2 border-r-2 border-amber-400/50 rounded-tr-lg"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-2 left-2 w-12 h-12 border-b-2 border-l-2 border-amber-400/50 rounded-bl-lg"
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-black tracking-wide text-amber-800">
+                  📜 ചരിത്ര മുദ്ര (HISTORICAL MILESTONE CARD) · {activeHistoricalEgg.historicalCard.year}
+                </span>
+                <span className="text-[10px] font-black tracking-widest text-emerald-900 border border-emerald-300 bg-emerald-50 px-2 py-0.5 rounded-md tabular-nums">
+                  {activeHistoricalEgg.historicalCard.sealCode}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <h4 className="text-base sm:text-lg font-black text-emerald-950 leading-snug">
+                  {activeHistoricalEgg.emoji} {activeHistoricalEgg.historicalCard.cardTitle}
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  {activeHistoricalEgg.historicalCard.eventSummary}
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-amber-50/80 border border-amber-200 px-3.5 py-2.5">
+                <p className="text-xs font-extrabold text-amber-950 leading-relaxed">
+                  {activeHistoricalEgg.historicalCard.quote}
+                </p>
+              </div>
+
+              {activeCelebrationEgg && activeCelebrationEgg.id === activeHistoricalEgg.id && (
+                <p className="text-[11px] font-extrabold text-emerald-800">
+                  🎉 പുതിയ സർപ്രൈസ് തുറന്നു — {activeCelebrationEgg.giftNote}
+                </p>
+              )}
+            </div>
           </div>
         )}
 
+        {/* Collectible Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {EASTER_EGG_ITEMS.map((egg) => {
             const found = collectedEggIds.includes(egg.id);
+            const selected = activeHistoricalEgg?.id === egg.id;
             return (
-              <div
+              <button
                 key={egg.id}
-                className={`p-3 rounded-2xl border-2 space-y-1 ${
-                  found
-                    ? 'bg-emerald-50 border-emerald-400'
-                    : 'bg-slate-50 border-dashed border-slate-300 opacity-80'
+                type="button"
+                disabled={!found}
+                onClick={() => {
+                  if (!found) return;
+                  sound.playClick();
+                  setSelectedCardEggId(egg.id);
+                }}
+                className={`p-3 rounded-2xl border-2 text-left space-y-1 transition-all ${
+                  selected
+                    ? 'bg-amber-50 border-amber-500 shadow-xs cursor-pointer'
+                    : found
+                    ? 'bg-emerald-50/70 border-emerald-300 hover:border-emerald-500 cursor-pointer'
+                    : 'bg-slate-50 border-dashed border-slate-300 opacity-80 cursor-not-allowed'
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xl">{found ? egg.emoji : '❓'}</span>
                   <span
                     className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
                       found ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-600'
                     }`}
                   >
-                    {found ? 'ലഭിച്ചു ✓' : 'കണ്ടെത്തൂ'}
+                    {found ? `${egg.historicalCard.year} ✓` : 'കണ്ടെത്തൂ'}
                   </span>
                 </div>
                 <p className="text-xs font-extrabold text-slate-900">
-                  {found ? egg.badge : `📍 ${egg.locationHint}`}
+                  {found ? egg.historicalCard.cardTitle : `📍 ${egg.locationHint}`}
                 </p>
                 <p className="text-[11px] text-slate-600 leading-snug">
-                  {found ? egg.giftNote : 'ഈ സ്ക്രീനിൽ ഒളിഞ്ഞിരിക്കുന്ന 🎁 സമ്മാനം തിരയൂ!'}
+                  {found
+                    ? `📜 ചരിത്ര മുദ്ര തുറന്നു — വായിക്കാൻ തൊടുക`
+                    : 'ഈ സ്ക്രീനിൽ ഒളിഞ്ഞിരിക്കുന്ന 🎁 സമ്മാനം കണ്ടെത്തുമ്പോൾ ചരിത്ര മുദ്ര തുറക്കും!'}
                 </p>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -2623,7 +2750,7 @@ export const SurpriseGiftChestModal: React.FC<SurpriseGiftModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-emerald-700 text-white text-xs sm:text-sm font-extrabold"
+            className="px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold cursor-pointer"
           >
             ശരി ✓
           </button>
@@ -2684,14 +2811,16 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
   const bestLessons = Math.max(completedLessonsCount, ...runHistory.map((r) => r.completedLessons));
 
   const profile = dailyState?.profile ?? { playerName: '', unitName: '', mekhalaName: '' };
+  const cleanBadgeName =
+    rank.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '').trim() || 'വിജ്ഞാനാന്വേഷി';
   const unitLine = [profile.unitName.trim(), profile.mekhalaName.trim()].filter(Boolean).join(' · ');
   const challengeShareText = [
-    `🏆 SKSSF ഗൈഡ് ഗെയിം — യൂണിറ്റ് & മേഖലാ സ്കോർ കാർഡ്`,
+    unitLine
+      ? `🏆 ഞാൻ ${unitLine} യൂണിറ്റിൽ നിന്ന് SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanBadgeName}" പദവി നേടി!`
+      : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanBadgeName}" പദവി നേടി!`,
     profile.playerName.trim() ? `👤 പേര്: ${profile.playerName.trim()}` : null,
-    unitLine ? `🏛️ യൂണിറ്റ് / മേഖല: ${unitLine}` : null,
-    `📚 പാഠങ്ങൾ: ${completedLessonsCount}/${totalLessonsCount} · ⭐ ${xp} XP (${rank})`,
-    dailyState ? `🔥 തുടർച്ച: ${dailyState.streakDays} ദിവസം` : null,
-    `നിങ്ങളുടെ യൂണിറ്റിലെ സ്കോറും ഇവിടെ കളിച്ചു നോക്കൂ 👉`,
+    `📚 പാഠങ്ങൾ: ${completedLessonsCount}/${totalLessonsCount} · ⭐ ${xp} XP${dailyState ? ` · 🔥 ${dailyState.streakDays} ദിവസം` : ''}`,
+    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -2893,10 +3022,11 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
                 href={challengeWhatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs"
+                onClick={() => sound.playPop()}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs cursor-pointer"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>വാട്‌സ്ആപ്പിൽ യൂണിറ്റ്/മേഖലാ സ്കോർ ഷെയർ ചെയ്യാം</span>
+                <span>യൂണിറ്റ് ചലഞ്ച് ഷെയർ ചെയ്യാം (Challenge Your Unit)</span>
               </a>
             </div>
           </div>

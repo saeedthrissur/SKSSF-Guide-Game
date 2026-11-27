@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Award, Camera, Copy, Download, Lock, Printer, Share2, ShieldAlert, Trash2 } from 'lucide-react';
+import { Award, Camera, Copy, Download, Lock, Printer, Share2, ShieldAlert, Trash2, Trophy } from 'lucide-react';
 import { sound } from '../utils/sound';
-import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
+import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
 import { loadDailyAndProfileState } from '../utils/gameStorage';
 import { ALL_LESSONS } from '../utils/lessonTracker';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
@@ -169,6 +169,18 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const effectiveName = lockedName || recipientName.trim();
   const displayName = effectiveName || 'നിങ്ങളുടെ പേര്';
   const displayUnit = unitName.trim() || 'യൂണിറ്റ് / നാട്';
+  const savedMekhala = initialDaily.profile.mekhalaName?.trim() || '';
+  const unitChallengeOrigin = [unitName.trim(), savedMekhala].filter(Boolean).join(' · ');
+  const unitChallengeText = [
+    unitChallengeOrigin
+      ? `🏆 ഞാൻ ${unitChallengeOrigin} യൂണിറ്റിൽ നിന്ന് SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`
+      : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`,
+    effectiveName ? `👤 ${effectiveName}` : null,
+    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const unitChallengeWhatsappHref = getWhatsAppShareHref(unitChallengeText, appUrl);
   const issueDate = new Date().toLocaleDateString('ml-IN', {
     year: 'numeric',
     month: 'long',
@@ -759,6 +771,16 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
       {/* Action Buttons */}
       <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <a
+          href={unitChallengeWhatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => sound.playPop()}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 text-xs sm:text-sm font-extrabold hover:bg-amber-100 whitespace-nowrap shrink-0 cursor-pointer"
+        >
+          <Trophy className="w-4 h-4 text-amber-700" />
+          യൂണിറ്റ് ചലഞ്ച് ഷെയർ ചെയ്യാം
+        </a>
         <button
           type="button"
           onClick={handleCopyAppLink}
