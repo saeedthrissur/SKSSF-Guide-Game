@@ -1,76 +1,224 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Award, Camera, Check, Copy, Download, Lock, Share2, Trash2, X } from 'lucide-react';
+import { Award, Camera, Check, Copy, Download, Flame, Lock, Share2, Trash2, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
 import { ALL_LESSONS } from '../utils/lessonTracker';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
+export type BadgeMetalTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'emerald' | 'royal';
+
 export interface ShareableBadgeMeta {
   id: string;
   tierLabel: string;
+  metalTier: BadgeMetalTier;
+  metalNameMl: string;
+  metalNameEn: string;
+  stars: number;
   title: string;
   subtitle: string;
   unlockHint: string;
+  /** Rich outer metallic sheen gradient (3 stops for real brushed metal look) */
+  frameStops: [string, string, string];
+  /** Inner metallic border line */
+  trimColor: string;
+  /** Main ribbon & medallion fill gradient */
   accentFrom: string;
   accentTo: string;
+  /** Clean readable text color for accent highlights */
+  accentText: string;
+  /** Ribbon text color */
+  ribbonText: string;
+  /** Clean crisp card surface */
+  cardBg: string;
+  /** Soft tinted strip bg for XP & QR footer */
+  stripBg: string;
+  stripBorder: string;
+  /** Translucent background shield watermark color */
+  watermarkColor: string;
 }
 
 export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'starter_member',
     tierLabel: 'ഘട്ടം 1',
+    metalTier: 'bronze',
+    metalNameMl: 'വെങ്കല ബാഡ്ജ്',
+    metalNameEn: 'BRONZE',
+    stars: 1,
     title: 'വിജ്ഞാനാന്വേഷി',
     subtitle: 'വിജ്ഞാനം · വിനയം · സേവനം — പഠന യാത്ര തുടങ്ങി',
     unlockHint: 'തുടക്കത്തിൽ തന്നെ ലഭിക്കും',
-    accentFrom: '#065F46',
-    accentTo: '#0F766E',
+    frameStops: ['#6B2D0C', '#C26A27', '#8C3F14'],
+    trimColor: '#D97706',
+    accentFrom: '#7C2D12',
+    accentTo: '#B45309',
+    accentText: '#9A3412',
+    ribbonText: '#FEF3C7',
+    cardBg: '#FFFDF9',
+    stripBg: '#FFF7ED',
+    stripBorder: '#FDBA74',
+    watermarkColor: '#9A3412',
   },
   {
     id: 'jeep_starter',
     tierLabel: 'ഘട്ടം 2',
+    metalTier: 'silver',
+    metalNameMl: 'സിൽവർ ബാഡ്ജ്',
+    metalNameEn: 'SILVER',
+    stars: 2,
     title: 'ആശയാഭിലാഷി',
     subtitle: 'ആദർശത്തിന്റെ അടിസ്ഥാന പാഠങ്ങളും പ്രചാരണ ഗെയിമും പൂർത്തിയാക്കി',
     unlockHint: 'ജീപ്പ് ഗെയിം പൂർത്തിയാക്കൂ',
-    accentFrom: '#0369A1',
-    accentTo: '#065F46',
+    frameStops: ['#334155', '#CBD5E1', '#475569'],
+    trimColor: '#94A3B8',
+    accentFrom: '#1E293B',
+    accentTo: '#475569',
+    accentText: '#334155',
+    ribbonText: '#F8FAFC',
+    cardBg: '#FAFCFF',
+    stripBg: '#F1F5F9',
+    stripBorder: '#CBD5E1',
+    watermarkColor: '#475569',
   },
   {
     id: 'flag_keeper',
     tierLabel: 'ഘട്ടം 3',
+    metalTier: 'gold',
+    metalNameMl: 'ഗോൾഡ് ബാഡ്ജ്',
+    metalNameEn: 'GOLD',
+    stars: 3,
     title: 'ആദർശാനുഭാവി',
     subtitle: 'സമസ്തയുടെയും SKSSF-ന്റെയും പതാകയും ചരിത്രവും പഠിച്ചു',
     unlockHint: 'പതാക പാഠം പൂർത്തിയാക്കൂ',
+    frameStops: ['#78350F', '#FACC15', '#A16207'],
+    trimColor: '#EAB308',
     accentFrom: '#7F1D1D',
-    accentTo: '#065F46',
+    accentTo: '#B45309',
+    accentText: '#92400E',
+    ribbonText: '#FEF9C3',
+    cardBg: '#FFFDF6',
+    stripBg: '#FEFCE8',
+    stripBorder: '#FDE047',
+    watermarkColor: '#A16207',
   },
   {
     id: 'madrasa_guardian',
     tierLabel: 'ഘട്ടം 4',
+    metalTier: 'platinum',
+    metalNameMl: 'പ്ലാറ്റിനം ബാഡ്ജ്',
+    metalNameEn: 'PLATINUM',
+    stars: 4,
     title: 'ചരിത്രാന്വേഷി',
     subtitle: 'സമസ്ത മദ്രസാ ബോർഡും സംഘടനാ സംവിധാനങ്ങളും പഠിച്ചു',
     unlockHint: 'മദ്രസ ബോർഡ് പൂർത്തിയാക്കൂ',
-    accentFrom: '#047857',
-    accentTo: '#115E59',
+    frameStops: ['#1E3A8A', '#93C5FD', '#1D4ED8'],
+    trimColor: '#60A5FA',
+    accentFrom: '#172554',
+    accentTo: '#1D4ED8',
+    accentText: '#1E40AF',
+    ribbonText: '#EFF6FF',
+    cardBg: '#F8FBFF',
+    stripBg: '#EFF6FF',
+    stripBorder: '#93C5FD',
+    watermarkColor: '#1D4ED8',
   },
   {
     id: 'viqaya_hero',
     tierLabel: 'ഘട്ടം 5',
+    metalTier: 'emerald',
+    metalNameMl: 'എമറാൾഡ് ബാഡ്ജ്',
+    metalNameEn: 'EMERALD',
+    stars: 5,
     title: 'ആദർശരക്ഷാധികാരി',
     subtitle: 'സേവനത്തിന്റെയും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങളുടെയും പാഠങ്ങൾ പഠിച്ചു',
     unlockHint: 'വിഖായ വാഹനം പൂർത്തിയാക്കൂ',
-    accentFrom: '#0E7490',
-    accentTo: '#065F46',
+    frameStops: ['#022C22', '#10B981', '#065F46'],
+    trimColor: '#D97706',
+    accentFrom: '#064E3B',
+    accentTo: '#047857',
+    accentText: '#065F46',
+    ribbonText: '#FEF3C7',
+    cardBg: '#F9FEFB',
+    stripBg: '#ECFDF5',
+    stripBorder: '#6EE7B7',
+    watermarkColor: '#065F46',
   },
   {
     id: 'master_guide',
     tierLabel: 'പൂർണ്ണ വിജയം',
+    metalTier: 'royal',
+    metalNameMl: 'റോയൽ ഗോൾഡ് ബാഡ്ജ്',
+    metalNameEn: 'ROYAL GOLD',
+    stars: 6,
     title: 'വിജ്ഞാനസാരഥി',
     subtitle: 'എല്ലാ പാഠങ്ങളും ക്വിസ് ദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി',
     unlockHint: 'എല്ലാ ഘട്ടവും പൂർത്തിയാക്കൂ',
-    accentFrom: '#92400E',
-    accentTo: '#064E3B',
+    frameStops: ['#581010', '#D97706', '#7F1D1D'],
+    trimColor: '#F59E0B',
+    accentFrom: '#7F1D1D',
+    accentTo: '#991B1B',
+    accentText: '#7F1D1D',
+    ribbonText: '#FEF08A',
+    cardBg: '#FFFDF7',
+    stripBg: '#FEF2F2',
+    stripBorder: '#FCA5A5',
+    watermarkColor: '#881337',
   },
 ];
+
+/** Clean sculpted mini metallic shield icon used in picker & watermark */
+const MetallicShieldSvg: React.FC<{
+  badge: ShareableBadgeMeta;
+  className?: string;
+  watermark?: boolean;
+}> = ({ badge, className = 'w-8 h-8', watermark = false }) => {
+  const gradId = `shield_grad_${badge.id}_${watermark ? 'wm' : 'ic'}`;
+  return (
+    <svg
+      viewBox="0 0 120 136"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradId} x1="12" y1="8" x2="108" y2="128" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={badge.frameStops[0]} />
+          <stop offset="48%" stopColor={badge.frameStops[1]} />
+          <stop offset="100%" stopColor={badge.frameStops[2]} />
+        </linearGradient>
+      </defs>
+      {/* Outer Heraldic Shield */}
+      <path
+        d="M60 6L108 22V66C108 98 86 119 60 130C34 119 12 98 12 66V22L60 6Z"
+        fill={watermark ? badge.watermarkColor : `url(#${gradId})`}
+        stroke={watermark ? badge.watermarkColor : badge.trimColor}
+        strokeWidth="4"
+      />
+      {/* Inner Bevel Shield */}
+      <path
+        d="M60 16L98 29V65C98 91 80 109 60 118C40 109 22 91 22 65V29L60 16Z"
+        fill="none"
+        stroke={watermark ? '#FFFFFF' : 'rgba(255,255,255,0.55)'}
+        strokeWidth="2.5"
+      />
+      {/* Center 5-point Star */}
+      <path
+        d="M60 36L66.2 50.6L82 52L70 62.4L73.6 78L60 69.8L46.4 78L50 62.4L38 52L53.8 50.6L60 36Z"
+        fill={watermark ? '#FFFFFF' : badge.ribbonText}
+        opacity={watermark ? 0.55 : 0.95}
+      />
+      {/* Royal Crown accent for top tiers */}
+      {badge.stars >= 5 && (
+        <path
+          d="M42 29L48 21L60 27L72 21L78 29H42Z"
+          fill={watermark ? '#FFFFFF' : '#FDE047'}
+          opacity={watermark ? 0.6 : 1}
+        />
+      )}
+    </svg>
+  );
+};
 
 function loadImg(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -118,11 +266,34 @@ function drawCircularCoverImage(
   ctx.restore();
 }
 
+function drawCanvasShield(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  topY: number,
+  w: number,
+  h: number
+) {
+  const half = w / 2;
+  const shoulderY = topY + h * 0.14;
+  const bodyEndY = topY + h * 0.52;
+  const bottomY = topY + h;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, topY);
+  ctx.lineTo(cx + half, shoulderY);
+  ctx.lineTo(cx + half, bodyEndY);
+  ctx.bezierCurveTo(cx + half, topY + h * 0.78, cx + half * 0.55, topY + h * 0.92, cx, bottomY);
+  ctx.bezierCurveTo(cx - half * 0.55, topY + h * 0.92, cx - half, topY + h * 0.78, cx - half, bodyEndY);
+  ctx.lineTo(cx - half, shoulderY);
+  ctx.closePath();
+}
+
 export interface ShareableBadgeStudioProps {
   isOpen: boolean;
   onClose: () => void;
   xp: number;
   rank: string;
+  streakDays?: number;
   initialBadgeId?: string;
   completedLessonIds?: string[];
   completedLevels?: number[];
@@ -135,6 +306,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   onClose,
   xp,
   rank,
+  streakDays = 0,
   initialBadgeId = 'starter_member',
   completedLessonIds = [],
   completedLevels = [],
@@ -235,6 +407,11 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     SHAREABLE_BADGES[0];
   const displayName = userName.trim() || 'നിങ്ങളുടെ പേര്';
   const displayPlace = unitPlace.trim() || 'യൂണിറ്റ് / നാട്';
+  const starGlyphs = '★'.repeat(badge.stars);
+  const statsSummary =
+    streakDays > 0
+      ? `${xp} XP · ${cleanRank} · 🔥 ${streakDays} ദിവസം`
+      : `${xp} XP · ${cleanRank}`;
 
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -268,100 +445,57 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     const ctx = canvas.getContext('2d')!;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    const drawShieldPath = (
-      c: CanvasRenderingContext2D,
-      inset = 0
-    ) => {
-      const topPeakY = 58 + inset;
-      const shoulderY = 122 + inset * 0.9;
-      const leftX = 96 + inset;
-      const rightX = 1080 - 96 - inset;
-      const sideEndY = 768 - inset * 0.3;
-      const tipY = 1290 - inset * 1.15;
-      const cp1Y = 1020 - inset * 0.5;
-      const cp2XLeft = 286 + inset * 0.7;
-      const cp2XRight = 1080 - 286 - inset * 0.7;
-      const cp2Y = 1190 - inset * 0.8;
-
-      c.beginPath();
-      c.moveTo(540, topPeakY);
-      c.quadraticCurveTo(320, shoulderY - 22, leftX, shoulderY);
-      c.lineTo(leftX, sideEndY);
-      c.bezierCurveTo(leftX, cp1Y, cp2XLeft, cp2Y, 540, tipY);
-      c.bezierCurveTo(cp2XRight, cp2Y, rightX, cp1Y, rightX, sideEndY);
-      c.lineTo(rightX, shoulderY);
-      c.quadraticCurveTo(760, shoulderY - 22, 540, topPeakY);
-      c.closePath();
-    };
-
-    // Deep jewel-toned ambient backdrop (distinct from the ivory rectangular certificate)
-    const bgGrad = ctx.createRadialGradient(540, 420, 80, 540, 675, 920);
-    bgGrad.addColorStop(0, badge.accentFrom);
-    bgGrad.addColorStop(0.6, '#052E25');
-    bgGrad.addColorStop(1, '#021A15');
-    ctx.fillStyle = bgGrad;
+    // 1. Rich Metallic Outer Background Frame (Bronze / Silver / Gold / Platinum / Emerald / Royal)
+    const frameGrad = ctx.createLinearGradient(0, 0, 1080, 1350);
+    frameGrad.addColorStop(0, badge.frameStops[0]);
+    frameGrad.addColorStop(0.5, badge.frameStops[1]);
+    frameGrad.addColorStop(1, badge.frameStops[2]);
+    ctx.fillStyle = frameGrad;
     ctx.fillRect(0, 0, 1080, 1350);
 
-    // Subtle geometric 8-point starburst rings behind shield
-    ctx.save();
-    ctx.strokeStyle = 'rgba(251, 191, 36, 0.12)';
-    ctx.lineWidth = 2;
-    for (const r of [340, 440, 540]) {
-      ctx.beginPath();
-      ctx.arc(540, 560, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // Subtle diagonal metallic sheen overlay
+    const sheenGrad = ctx.createLinearGradient(0, 0, 1080, 620);
+    sheenGrad.addColorStop(0, 'rgba(255,255,255,0.16)');
+    sheenGrad.addColorStop(0.45, 'rgba(255,255,255,0.03)');
+    sheenGrad.addColorStop(1, 'rgba(0,0,0,0.18)');
+    ctx.fillStyle = sheenGrad;
+    ctx.fillRect(0, 0, 1080, 1350);
 
-    // Soft drop shadow behind outer gold shield
+    // 2. Crisp Rounded Inner Card (Zero Clipping!)
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 42;
-    ctx.shadowOffsetY = 18;
-    const goldGrad = ctx.createLinearGradient(96, 60, 984, 1290);
-    goldGrad.addColorStop(0, '#FDE68A');
-    goldGrad.addColorStop(0.45, '#D97706');
-    goldGrad.addColorStop(1, '#B45309');
-    drawShieldPath(ctx, 0);
-    ctx.fillStyle = goldGrad;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+    ctx.shadowBlur = 34;
+    ctx.shadowOffsetY = 14;
+    ctx.fillStyle = badge.cardBg;
+    ctx.beginPath();
+    ctx.roundRect(48, 48, 984, 1254, 42);
     ctx.fill();
     ctx.restore();
 
-    // Inner Shield Face (clipped so crown header & ivory body follow shield contour cleanly)
-    ctx.save();
-    drawShieldPath(ctx, 18);
-    ctx.fillStyle = '#FCFBF7';
-    ctx.fill();
-    ctx.clip();
-
-    // Rich top crown band inside the upper shield
-    const crownGrad = ctx.createLinearGradient(0, 60, 0, 460);
-    crownGrad.addColorStop(0, badge.accentFrom);
-    crownGrad.addColorStop(1, badge.accentTo);
-    ctx.fillStyle = crownGrad;
-    ctx.fillRect(80, 50, 920, 415);
-
-    // Subtle gold arch separator below crown
-    ctx.strokeStyle = '#F59E0B';
+    // Inner metallic border trim
+    ctx.strokeStyle = badge.trimColor;
     ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.moveTo(80, 465);
-    ctx.lineTo(1000, 465);
+    ctx.roundRect(68, 68, 944, 1214, 30);
+    ctx.stroke();
+
+    // 3. Subtle Low-Opacity Shield Crest Watermark behind the card center (never obscures text)
+    ctx.save();
+    ctx.globalAlpha = 0.065;
+    drawCanvasShield(ctx, 540, 260, 560, 640);
+    ctx.fillStyle = badge.watermarkColor;
+    ctx.fill();
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = badge.watermarkColor;
     ctx.stroke();
     ctx.restore();
 
-    // Fine inner gold hairline border inside the shield
-    drawShieldPath(ctx, 30);
-    ctx.strokeStyle = 'rgba(217, 119, 6, 0.55)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Top Official Flags inside the dark shield crown
+    // 4. Top Official Flags (cleanly framed, never touching text)
     if (samasthaFlag) {
-      drawImageContain(ctx, samasthaFlag, 152, 134, 128, 108);
+      drawImageContain(ctx, samasthaFlag, 102, 102, 128, 104);
     }
     if (skssfFlag) {
-      drawImageContain(ctx, skssfFlag, 800, 134, 128, 108);
+      drawImageContain(ctx, skssfFlag, 850, 102, 128, 104);
     }
 
     const drawOpticalCenteredFit = (
@@ -404,26 +538,52 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.restore();
     };
 
-    ctx.fillStyle = '#FDE68A';
-    drawOpticalCenteredFit(badge.tierLabel, 540, 146, 360, 22, 15, 800);
-    ctx.fillStyle = '#FFFFFF';
-    drawOpticalCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 192, 460, 32, 20, 800);
-    ctx.fillStyle = '#FEF3C7';
-    drawOpticalCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 230, 440, 20, 14, 700);
+    // Header Titles
+    ctx.fillStyle = badge.accentText;
+    drawOpticalCenteredFit(
+      `${starGlyphs}  ${badge.metalNameEn} BADGE  ·  ${badge.tierLabel}`,
+      540,
+      126,
+      560,
+      20,
+      14,
+      800
+    );
+    ctx.fillStyle = '#0F172A';
+    drawOpticalCenteredFit('SKSSF ഗൈഡ് ഗെയിം', 540, 174, 560, 34, 22, 800);
+    ctx.fillStyle = badge.accentText;
+    drawOpticalCenteredFit('“വിജ്ഞാനം · വിനയം · സേവനം”', 540, 212, 540, 21, 15, 700);
 
-    // Golden Circular User Photo Medallion bridging the crown and ivory shield body
-    const cx = 540;
-    const cy = 446;
-    const radius = 148;
-
-    // Outer double gold crest ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius + 16, 0, Math.PI * 2);
-    ctx.fillStyle = '#F59E0B';
+    // 5. Sculpted Metallic Shield Crest behind the Circular User Photo / Seal
+    ctx.save();
+    ctx.shadowColor = 'rgba(15, 23, 42, 0.22)';
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 10;
+    const shieldGrad = ctx.createLinearGradient(370, 245, 710, 625);
+    shieldGrad.addColorStop(0, badge.frameStops[0]);
+    shieldGrad.addColorStop(0.5, badge.frameStops[1]);
+    shieldGrad.addColorStop(1, badge.frameStops[2]);
+    drawCanvasShield(ctx, 540, 244, 340, 382);
+    ctx.fillStyle = shieldGrad;
     ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = badge.trimColor;
+    ctx.stroke();
+    ctx.restore();
+
+    // Inner bevel line on sculpted shield
+    drawCanvasShield(ctx, 540, 260, 308, 348);
+    ctx.strokeStyle = 'rgba(255,255,255,0.48)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // User Photo or Official Metallic Emblem inside the Shield Crest
+    const cx = 540;
+    const cy = 418;
+    const radius = 122;
 
     ctx.beginPath();
-    ctx.arc(cx, cy, radius + 6, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius + 10, 0, Math.PI * 2);
     ctx.fillStyle = '#FFFFFF';
     ctx.fill();
 
@@ -431,127 +591,115 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       drawCircularCoverImage(ctx, userImg, cx, cy, radius);
     } else {
       ctx.save();
+      const sealGrad = ctx.createRadialGradient(cx - 24, cy - 28, 18, cx, cy, radius);
+      sealGrad.addColorStop(0, badge.accentTo);
+      sealGrad.addColorStop(1, badge.accentFrom);
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fillStyle = badge.accentFrom;
+      ctx.fillStyle = sealGrad;
       ctx.fill();
-      ctx.strokeStyle = '#F59E0B';
+      ctx.strokeStyle = badge.trimColor;
       ctx.lineWidth = 4;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius - 16, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(254, 243, 199, 0.45)';
-      ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.direction = 'ltr';
-      ctx.fillStyle = '#FEF3C7';
-      ctx.font = '800 44px "Noto Serif", Georgia, serif';
+      ctx.fillStyle = badge.ribbonText;
+      ctx.font = '800 42px "Noto Serif", Georgia, serif';
       ctx.fillText('SKSSF', cx, cy - 12);
-      ctx.fillStyle = '#FDE68A';
-      ctx.font = '700 22px "Noto Serif", Georgia, serif';
-      ctx.fillText('EST. 1989', cx, cy + 32);
+      ctx.font = '700 20px "Noto Serif", Georgia, serif';
+      ctx.fillText('EST. 1989', cx, cy + 28);
       ctx.restore();
     }
 
-    // Heraldic Ribbon Banner with Folded Swallowtail Ends for Badge Title
-    ctx.save();
-    // Left & right ribbon tails
-    ctx.fillStyle = '#92400E';
-    ctx.beginPath();
-    ctx.moveTo(155, 648);
-    ctx.lineTo(220, 648);
-    ctx.lineTo(220, 720);
-    ctx.lineTo(155, 720);
-    ctx.lineTo(182, 684);
-    ctx.closePath();
-    ctx.fill();
+    // Metallic tier stars on bottom point of shield
+    ctx.fillStyle = badge.ribbonText;
+    drawOpticalCenteredFit(starGlyphs, 540, 582, 220, 24, 16, 800);
 
+    // 6. Metallic Ribbon Banner for Badge Title
+    const ribbonGrad = ctx.createLinearGradient(124, 650, 956, 734);
+    ribbonGrad.addColorStop(0, badge.accentFrom);
+    ribbonGrad.addColorStop(0.5, badge.accentTo);
+    ribbonGrad.addColorStop(1, badge.accentFrom);
+    ctx.fillStyle = ribbonGrad;
     ctx.beginPath();
-    ctx.moveTo(925, 648);
-    ctx.lineTo(860, 648);
-    ctx.lineTo(860, 720);
-    ctx.lineTo(925, 720);
-    ctx.lineTo(898, 684);
-    ctx.closePath();
+    ctx.roundRect(124, 650, 832, 82, 24);
     ctx.fill();
-
-    // Main center ribbon bar
-    ctx.fillStyle = badge.accentFrom;
-    ctx.beginPath();
-    ctx.roundRect(198, 632, 684, 82, 18);
-    ctx.fill();
-    ctx.strokeStyle = '#F59E0B';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = badge.trimColor;
+    ctx.lineWidth = 3;
     ctx.stroke();
-    ctx.restore();
 
-    ctx.fillStyle = '#FEF3C7';
-    drawOpticalCenteredFit(badge.title, 540, 686, 620, 36, 20, 800);
+    ctx.fillStyle = badge.ribbonText;
+    drawOpticalCenteredFit(`${badge.title} · ${badge.metalNameMl}`, 540, 704, 760, 34, 20, 800);
 
-    // User Name & Place
+    // 7. User Name, Unit/Place & Subtitle (Crisp, Unclipped, High-Contrast)
     ctx.fillStyle = '#0F172A';
-    drawOpticalCenteredFit(displayName, 540, 788, 720, 44, 24, 800);
+    drawOpticalCenteredFit(displayName, 540, 806, 840, 48, 26, 800);
 
-    ctx.fillStyle = '#047857';
-    drawOpticalCenteredFit(displayPlace, 540, 834, 680, 26, 17, 700);
+    ctx.fillStyle = badge.accentText;
+    drawOpticalCenteredFit(displayPlace, 540, 856, 800, 28, 18, 700);
 
-    // Subtitle
     ctx.fillStyle = '#334155';
-    drawOpticalCenteredFit(badge.subtitle, 540, 882, 680, 21, 14, 600);
+    drawOpticalCenteredFit(badge.subtitle, 540, 906, 860, 22, 15, 600);
 
-    // Compact XP & Rank Strip fitted cleanly inside the shield taper
-    ctx.fillStyle = '#ECFDF5';
+    // 8. XP, Rank & Daily Streak Strip
+    ctx.fillStyle = badge.stripBg;
     ctx.beginPath();
-    ctx.roundRect(245, 906, 590, 58, 16);
+    ctx.roundRect(124, 934, 832, 64, 18);
     ctx.fill();
-    ctx.strokeStyle = '#6EE7B7';
+    ctx.strokeStyle = badge.stripBorder;
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    ctx.fillStyle = '#064E3B';
-    drawOpticalCenteredFit(`${xp} XP  ·  ${cleanRank}`, 540, 944, 540, 24, 15, 800);
+    ctx.fillStyle = '#0F172A';
+    drawOpticalCenteredFit(statsSummary, 540, 976, 790, 25, 16, 800);
 
-    // Centered Scannable QR Code nestled in the lower shield crest
+    // 9. Clean Bottom QR Invite Footer Box (Full Width, 100% Readable, Zero Clipping!)
+    ctx.fillStyle = badge.stripBg;
+    ctx.beginPath();
+    ctx.roundRect(108, 1024, 864, 224, 24);
+    ctx.fill();
+    ctx.strokeStyle = badge.stripBorder;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
     if (qrImg) {
-      const qrSize = 114;
-      const qrX = 540 - qrSize / 2;
+      const qrSize = 152;
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
-      ctx.roundRect(qrX - 8, 988, qrSize + 16, qrSize + 16, 14);
+      ctx.roundRect(142, 1060, qrSize + 16, qrSize + 16, 16);
       ctx.fill();
-      ctx.strokeStyle = '#D97706';
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = badge.trimColor;
+      ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.drawImage(qrImg, qrX, 996, qrSize, qrSize);
+      ctx.drawImage(qrImg, 150, 1068, qrSize, qrSize);
     }
 
-    ctx.fillStyle = '#065F46';
-    drawOpticalCenteredFit('നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ', 540, 1146, 440, 20, 14, 800);
+    const textCenterX = 626;
+    ctx.fillStyle = '#0F172A';
+    drawOpticalCenteredFit('നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ', textCenterX, 1110, 560, 28, 18, 800);
     ctx.fillStyle = '#334155';
     drawOpticalCenteredFit(
-      appUrl.replace(/^https?:\/\//, ''),
-      540,
-      1178,
-      360,
+      'QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ',
+      textCenterX,
+      1154,
+      560,
+      21,
       15,
-      11,
+      600
+    );
+    ctx.fillStyle = badge.accentText;
+    drawOpticalCenteredFit(
+      appUrl.replace(/^https?:\/\//, ''),
+      textCenterX,
+      1198,
+      560,
+      21,
+      14,
       700,
       '"Noto Serif", Georgia, serif'
     );
-
-    // Small golden star accent near the shield tip
-    ctx.fillStyle = '#D97706';
-    ctx.beginPath();
-    ctx.moveTo(540, 1206);
-    ctx.lineTo(548, 1220);
-    ctx.lineTo(540, 1234);
-    ctx.lineTo(532, 1220);
-    ctx.closePath();
-    ctx.fill();
 
     return canvas;
   };
@@ -563,7 +711,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     try {
       const canvas = await renderBadgeCanvas();
       const link = document.createElement('a');
-      link.download = `SKSSF-Badge-${displayName.replace(/\s+/g, '-')}.png`;
+      link.download = `SKSSF-${badge.metalNameEn}-Badge-${displayName.replace(/\s+/g, '-')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
       setStatusMsg('ബാഡ്ജ് സേവ് ചെയ്തു! ഇനി വാട്‌സ്ആപ്പിലോ സ്റ്റാറ്റസിലോ ഇടാം.');
@@ -576,14 +724,16 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     setBusy(true);
     setStatusMsg(null);
     sound.playSuccess();
-    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${badge.title}" ബാഡ്ജ് നേടി! (${xp} XP)\nനിങ്ങളും കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
+    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${badge.title}" (${badge.metalNameMl}) നേടി! (${xp} XP)\nനിങ്ങളും കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
     try {
       const canvas = await renderBadgeCanvas();
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob((b) => resolve(b), 'image/png')
       );
       if (blob && navigator.share) {
-        const file = new File([blob], `SKSSF-Badge-${badge.id}.png`, { type: 'image/png' });
+        const file = new File([blob], `SKSSF-${badge.metalNameEn}-Badge.png`, {
+          type: 'image/png',
+        });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: `${badge.title} — SKSSF ഗൈഡ് ഗെയിം`,
@@ -601,7 +751,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
         return;
       }
       const link = document.createElement('a');
-      link.download = `SKSSF-Badge-${displayName.replace(/\s+/g, '-')}.png`;
+      link.download = `SKSSF-${badge.metalNameEn}-Badge-${displayName.replace(/\s+/g, '-')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
       await copyAppShareLink();
@@ -634,7 +784,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
             <p className="text-xs font-extrabold text-emerald-700">
-              🏅 ഓരോ കളി ജയിക്കുമ്പോഴും പുതിയ ബാഡ്ജ് തുറക്കും ({unlockedCount}/{SHAREABLE_BADGES.length} തുറന്നു)
+              🏅 വെങ്കലം → സിൽവർ → ഗോൾഡ് → പ്ലാറ്റിനം → എമറാൾഡ് → റോയൽ ഗോൾഡ് ({unlockedCount}/{SHAREABLE_BADGES.length} തുറന്നു)
             </p>
             <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
               📷 എന്റെ ഫോട്ടോ ബാഡ്ജ്
@@ -644,14 +794,14 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700"
+            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left: Form + Photo Picker + Progressive Badge Selector */}
+          {/* Left: Form + Photo Picker + Metallic Progressive Badge Selector */}
           <div className="lg:col-span-6 space-y-4">
             {/* Photo Upload Box */}
             <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2.5">
@@ -672,7 +822,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   <span>{photoDataUrl ? 'വേറെ ഫോട്ടോ വെക്കാം' : '📷 ഫോട്ടോ എടുക്കാം / ചേർക്കാം'}</span>
@@ -681,7 +831,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   <button
                     type="button"
                     onClick={() => setPhotoDataUrl(null)}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold hover:bg-rose-50"
+                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold hover:bg-rose-50 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> നീക്കാം
                   </button>
@@ -717,10 +867,10 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               </div>
             </div>
 
-            {/* Progressive Badge Picker (Only unlocked badges selectable) */}
+            {/* Metallic Progressive Badge Picker */}
             <div className="space-y-2">
               <p className="text-xs font-extrabold text-slate-700">
-                4. നിങ്ങൾക്ക് തുറന്ന ബാഡ്ജ് തിരഞ്ഞെടുക്കാം:
+                4. നിങ്ങൾക്ക് തുറന്ന മെറ്റാലിക് ബാഡ്ജ് തിരഞ്ഞെടുക്കാം:
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {SHAREABLE_BADGES.map((item) => {
@@ -735,36 +885,38 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                         sound.playPop();
                         setSelectedId(item.id);
                       }}
-                      className={`p-2.5 rounded-xl border-2 text-left transition-all ${
+                      className={`p-2.5 rounded-xl border-2 text-left transition-all flex items-start gap-2.5 ${
                         active
-                          ? 'bg-emerald-50 border-emerald-600 text-emerald-950 shadow-xs'
+                          ? 'bg-emerald-50 border-emerald-600 text-slate-950 shadow-xs cursor-pointer'
                           : locked
                           ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-75 cursor-not-allowed'
-                          : 'bg-white border-slate-200 text-slate-800 hover:border-emerald-400'
+                          : 'bg-white border-slate-200 text-slate-800 hover:border-amber-400 cursor-pointer'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <span
-                          className={`text-[10px] font-extrabold uppercase tracking-wider ${
-                            locked ? 'text-slate-400' : 'text-emerald-700'
-                          }`}
-                        >
-                          {item.tierLabel}
-                        </span>
-                        {locked ? (
-                          <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        ) : (
-                          active && <Check className="w-4 h-4 text-emerald-700 shrink-0" />
-                        )}
+                      <div className={`shrink-0 mt-0.5 ${locked ? 'grayscale opacity-50' : ''}`}>
+                        <MetallicShieldSvg badge={item} className="w-8 h-9" />
                       </div>
-                      <p className="text-xs font-extrabold mt-1 leading-snug break-words">
-                        {item.title}
-                      </p>
-                      {locked && (
-                        <p className="text-[10px] font-bold text-slate-500 mt-0.5 leading-snug break-words">
-                          {item.unlockHint}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className="text-[10px] font-black tracking-wide truncate"
+                            style={{ color: locked ? '#94A3B8' : item.accentText }}
+                          >
+                            {item.metalNameEn}
+                          </span>
+                          {locked ? (
+                            <Lock className="w-3 h-3 text-slate-400 shrink-0" />
+                          ) : (
+                            active && <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs font-extrabold leading-snug break-words mt-0.5">
+                          {item.title}
                         </p>
-                      )}
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5 leading-snug break-words">
+                          {locked ? item.unlockHint : `${'★'.repeat(item.stars)} ${item.metalNameMl}`}
+                        </p>
+                      </div>
                     </button>
                   );
                 })}
@@ -777,7 +929,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 type="button"
                 disabled={busy}
                 onClick={handleSocialShare}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
                 <span>{busy ? 'തയ്യാറാക്കുന്നു...' : 'ഷെയർ ചെയ്യാം'}</span>
@@ -786,7 +938,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 type="button"
                 disabled={busy}
                 onClick={handleDownload}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>ഡൗൺലോഡ്</span>
@@ -824,66 +976,66 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             )}
           </div>
 
-          {/* Right: Live Heraldic Shield Badge Preview */}
+          {/* Right: Crisp Zero-Clipping Metallic Game Badge Card Preview */}
           <div className="lg:col-span-6 flex justify-center items-start">
             <div
-              className="w-full max-w-[360px] rounded-3xl p-4 shadow-xl relative overflow-hidden"
+              className="w-full max-w-[368px] rounded-[28px] p-3 shadow-xl relative overflow-hidden"
               style={{
-                background: `radial-gradient(circle at 50% 30%, ${badge.accentFrom}, #052E25 65%, #021A15 100%)`,
+                background: `linear-gradient(145deg, ${badge.frameStops[0]} 0%, ${badge.frameStops[1]} 50%, ${badge.frameStops[2]} 100%)`,
               }}
             >
-              {/* Shield Silhouette Container */}
+              {/* Crisp Inner Card (Never Clipped!) */}
               <div
-                className="relative mx-auto p-[4px] drop-shadow-xl"
+                className="rounded-[20px] p-4 text-center relative overflow-hidden space-y-3"
                 style={{
-                  clipPath:
-                    'polygon(50% 0%, 100% 5.5%, 100% 58%, 82% 81%, 50% 100%, 18% 81%, 0% 58%, 0% 5.5%)',
-                  background: 'linear-gradient(155deg, #FDE68A 0%, #D97706 48%, #B45309 100%)',
+                  backgroundColor: badge.cardBg,
+                  border: `2px solid ${badge.trimColor}`,
                 }}
               >
+                {/* Translucent Metallic Shield Crest Watermark Behind Content */}
                 <div
-                  className="bg-[#FCFBF7] overflow-hidden text-center flex flex-col items-center pb-9"
-                  style={{
-                    clipPath:
-                      'polygon(50% 0%, 100% 5.5%, 100% 58%, 82% 81%, 50% 100%, 18% 81%, 0% 58%, 0% 5.5%)',
-                  }}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]"
                 >
-                  {/* Shield Top Crown Band */}
-                  <div
-                    className="w-full pt-5 pb-12 px-3.5 border-b-2 border-amber-400"
-                    style={{
-                      background: `linear-gradient(180deg, ${badge.accentFrom}, ${badge.accentTo})`,
-                    }}
-                  >
-                    <p className="text-[10px] font-extrabold text-amber-200 tracking-wider uppercase">
-                      {badge.tierLabel}
-                    </p>
-                    <div className="flex items-center justify-between gap-1.5 mt-1">
-                      <img
-                        src={OFFICIAL_FLAG_ASSETS.samastha}
-                        alt="സമസ്ത പതാക"
-                        referrerPolicy="no-referrer"
-                        className="w-11 h-9 object-contain rounded-md bg-white/95 p-0.5 shrink-0"
-                      />
-                      <div className="leading-tight min-w-0">
-                        <p className="text-xs font-extrabold text-white">SKSSF ഗൈഡ് ഗെയിം</p>
-                        <p className="text-[10px] font-bold text-amber-100">
-                          “വിജ്ഞാനം · വിനയം · സേവനം”
-                        </p>
-                      </div>
-                      <img
-                        src={OFFICIAL_FLAG_ASSETS.skssf}
-                        alt="SKSSF ഔദ്യോഗിക പതാക"
-                        referrerPolicy="no-referrer"
-                        className="w-11 h-9 object-contain rounded-md bg-white/95 p-0.5 shrink-0"
-                      />
-                    </div>
-                  </div>
+                  <MetallicShieldSvg badge={badge} watermark className="w-60 h-68" />
+                </div>
 
-                  {/* Overlapping Circular Medallion Portrait */}
-                  <div className="-mt-11 mb-2.5 flex justify-center relative z-10">
-                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-lg">
-                      <div className="w-full h-full rounded-full overflow-hidden bg-emerald-50 flex items-center justify-center border-2 border-white">
+                {/* Top Header Row: Flags + Metallic Tier + Title */}
+                <div className="relative z-10 flex items-center justify-between gap-2">
+                  <img
+                    src={OFFICIAL_FLAG_ASSETS.samastha}
+                    alt="സമസ്ത പതാക"
+                    referrerPolicy="no-referrer"
+                    className="w-10 h-9 object-contain shrink-0"
+                  />
+                  <div className="leading-tight min-w-0">
+                    <p
+                      className="text-[10px] font-black tracking-wider"
+                      style={{ color: badge.accentText }}
+                    >
+                      {starGlyphs} {badge.metalNameEn} · {badge.tierLabel}
+                    </p>
+                    <p className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5">
+                      SKSSF ഗൈഡ് ഗെയിം
+                    </p>
+                    <p className="text-[10px] font-bold" style={{ color: badge.accentText }}>
+                      “വിജ്ഞാനം · വിനയം · സേവനം”
+                    </p>
+                  </div>
+                  <img
+                    src={OFFICIAL_FLAG_ASSETS.skssf}
+                    alt="SKSSF ഔദ്യോഗിക പതാക"
+                    referrerPolicy="no-referrer"
+                    className="w-10 h-9 object-contain shrink-0"
+                  />
+                </div>
+
+                {/* Sculpted Metallic Shield-Medallion Centerpiece */}
+                <div className="relative z-10 flex justify-center py-0.5">
+                  <div className="relative w-[132px] h-[146px] flex items-center justify-center">
+                    <MetallicShieldSvg badge={badge} className="absolute inset-0 w-full h-full drop-shadow-md" />
+                    <div className="relative z-10 -mt-3 w-[82px] h-[82px] rounded-full p-[3px] bg-white shadow-sm">
+                      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
                         {photoDataUrl ? (
                           <img
                             src={photoDataUrl}
@@ -892,63 +1044,104 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                           />
                         ) : (
                           <div
-                            className="w-full h-full flex flex-col items-center justify-center text-amber-100"
-                            style={{ backgroundColor: badge.accentFrom }}
+                            className="w-full h-full flex flex-col items-center justify-center"
+                            style={{
+                              background: `radial-gradient(circle at 35% 30%, ${badge.accentTo}, ${badge.accentFrom})`,
+                              color: badge.ribbonText,
+                            }}
                           >
-                            <span className="text-sm font-black tracking-wider">SKSSF</span>
-                            <span className="text-[9px] font-bold text-amber-200 tracking-widest mt-0.5">
+                            <span className="text-xs font-black tracking-wider">SKSSF</span>
+                            <span className="text-[8px] font-bold tracking-widest opacity-90">
                               EST. 1989
                             </span>
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  {/* Heraldic Ribbon Title */}
-                  <div className="w-full px-5 space-y-2">
-                    <div
-                      className="py-1.5 px-3 rounded-xl text-amber-100 text-xs sm:text-sm font-extrabold border border-amber-400 shadow-xs"
-                      style={{ backgroundColor: badge.accentFrom }}
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-2.5 left-1/2 -translate-x-1/2 text-[10px] font-black tracking-wider drop-shadow-2xs whitespace-nowrap"
+                      style={{ color: badge.ribbonText }}
                     >
-                      {badge.title}
-                    </div>
+                      {starGlyphs}
+                    </span>
+                  </div>
+                </div>
 
-                    <div>
-                      <p className="text-base font-extrabold text-slate-900 break-words leading-snug">
-                        {displayName}
-                      </p>
-                      <p className="text-[11px] font-bold text-emerald-800">{displayPlace}</p>
-                    </div>
+                {/* Metallic Ribbon Title */}
+                <div
+                  className="relative z-10 py-2 px-3 rounded-xl text-xs sm:text-sm font-extrabold shadow-xs"
+                  style={{
+                    background: `linear-gradient(90deg, ${badge.accentFrom}, ${badge.accentTo}, ${badge.accentFrom})`,
+                    color: badge.ribbonText,
+                    border: `1.5px solid ${badge.trimColor}`,
+                  }}
+                >
+                  {badge.title} · {badge.metalNameMl}
+                </div>
 
-                    <p className="text-[10px] font-semibold text-slate-600 leading-relaxed px-2">
-                      {badge.subtitle}
+                {/* User Name, Place & Description */}
+                <div className="relative z-10 space-y-1">
+                  <p className="text-lg font-extrabold text-slate-900 break-words leading-snug">
+                    {displayName}
+                  </p>
+                  <p className="text-xs font-bold" style={{ color: badge.accentText }}>
+                    {displayPlace}
+                  </p>
+                  <p className="text-[11px] font-semibold text-slate-600 leading-relaxed px-1">
+                    {badge.subtitle}
+                  </p>
+                </div>
+
+                {/* XP, Rank & Daily Streak Strip */}
+                <div
+                  className="relative z-10 py-1.5 px-3 rounded-xl text-[11px] font-extrabold text-slate-900 tabular-nums flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5"
+                  style={{
+                    backgroundColor: badge.stripBg,
+                    border: `1px solid ${badge.stripBorder}`,
+                  }}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5 shrink-0" style={{ color: badge.accentText }} />
+                    {xp} XP · {cleanRank}
+                  </span>
+                  {streakDays > 0 && (
+                    <span className="inline-flex items-center gap-0.5 text-amber-700">
+                      <Flame className="w-3.5 h-3.5 shrink-0" />
+                      {streakDays} ദിവസം
+                    </span>
+                  )}
+                </div>
+
+                {/* Clean Full-Width QR Invite Box (Zero Clipping!) */}
+                <div
+                  className="relative z-10 rounded-xl p-2.5 flex items-center gap-3 text-left"
+                  style={{
+                    backgroundColor: badge.stripBg,
+                    border: `1.5px solid ${badge.stripBorder}`,
+                  }}
+                >
+                  {qrDataUrl && (
+                    <img
+                      src={qrDataUrl}
+                      alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
+                      className="w-14 h-14 rounded-lg bg-white p-1 shrink-0"
+                      style={{ border: `1px solid ${badge.trimColor}` }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p className="text-[11px] font-extrabold text-slate-900 leading-snug">
+                      നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ
                     </p>
-
-                    <div className="mx-auto max-w-[215px] py-1.5 px-3 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-extrabold text-emerald-950 tabular-nums">
-                      <Award className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
-                      {xp} XP · {cleanRank}
-                    </div>
-
-                    {/* Centered Compact QR inside Lower Shield Taper */}
-                    <div className="pt-1 flex flex-col items-center gap-1 text-center">
-                      {qrDataUrl && (
-                        <img
-                          src={qrDataUrl}
-                          alt="SKSSF ഗൈഡ് ഗെയിം QR കോഡ്"
-                          className="w-14 h-14 rounded-lg bg-white p-1 border border-amber-400 shadow-2xs shrink-0"
-                        />
-                      )}
-                      <p className="text-[10px] font-extrabold text-emerald-950 leading-tight">
-                        നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ
-                      </p>
-                      <p className="text-[9px] font-semibold text-slate-600 leading-tight max-w-[160px] truncate">
-                        {appUrl.replace(/^https?:\/\//, '')}
-                      </p>
-                      <span aria-hidden="true" className="text-amber-500 text-xs leading-none pt-0.5">
-                        ◆
-                      </span>
-                    </div>
+                    <p className="text-[10px] font-semibold text-slate-600 leading-snug">
+                      QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ
+                    </p>
+                    <p
+                      className="text-[10px] font-bold truncate"
+                      style={{ color: badge.accentText }}
+                    >
+                      {appUrl.replace(/^https?:\/\//, '')}
+                    </p>
                   </div>
                 </div>
               </div>

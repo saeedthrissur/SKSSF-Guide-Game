@@ -7,6 +7,7 @@ import {
   Check,
   CheckCircle2,
   Compass,
+  Flame,
   Gamepad2,
   Gift,
   Settings,
@@ -53,6 +54,12 @@ const OfficialResourceHubModal = lazy(() =>
     default: m.OfficialResourceHubModal,
   }))
 );
+const DailyChallengeModal = lazy(() =>
+  import('./components/DailyChallengeModal').then((m) => ({
+    default: m.DailyChallengeModal,
+  }))
+);
+import { getTodaySpecialGame } from './components/DailyChallengeModal';
 import {
   AudioLoadingFloatBadge,
   EASTER_EGG_ITEMS,
@@ -175,9 +182,12 @@ interface WelcomeIntroScreenProps {
   completedCount: number;
   totalLessons: number;
   activeLessonTitle?: string;
+  streakDays: number;
+  todaySpecialGameDone: boolean;
   onStartJourney: () => void;
   onOpenAllLessons: () => void;
   onOpenBadgeStudio: () => void;
+  onOpenDailyChallenge: () => void;
   onOpenSupport: () => void;
 }
 
@@ -186,14 +196,18 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
   completedCount,
   totalLessons,
   activeLessonTitle,
+  streakDays,
+  todaySpecialGameDone,
   onStartJourney,
   onOpenAllLessons,
   onOpenBadgeStudio,
+  onOpenDailyChallenge,
   onOpenSupport,
 }) => {
   const hasSavedProgress = xp > 0 || completedCount > 0;
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const todaySpecial = getTodaySpecialGame();
 
   const handleQuickShare = async () => {
     sound.unlockAudio();
@@ -318,6 +332,32 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               <span>പഠനം തുടങ്ങാം (Start Journey)</span>
               <ArrowRight className="w-5 h-5 shrink-0" />
             </button>
+
+            {/* Daily Streak & Today's Special Game Strip */}
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50/60 to-white px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                  <Flame className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-black text-slate-900 leading-snug">
+                    🔥 {streakDays} ദിവസം സ്ട്രീക്ക് · {todaySpecial.dayName} സ്പെഷ്യൽ: {todaySpecial.emoji} {todaySpecial.title}
+                  </p>
+                  <p className="text-[11px] font-semibold text-slate-600 leading-snug">
+                    {todaySpecialGameDone
+                      ? '✅ ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിം പൂർത്തിയാക്കി · മറ്റു ദിവസത്തെ ഗെയിമുകളും പരിശീലിക്കാം'
+                      : 'ഓരോ ദിവസവും പുതിയ സ്പെഷ്യൽ ഗെയിം കളിച്ച് +35 ബോണസ് XP നേടാം!'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenDailyChallenge}
+                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shrink-0 cursor-pointer transition-colors"
+              >
+                {todaySpecialGameDone ? 'സ്ട്രീക്ക് കാണാം' : 'ഇന്നത്തെ ഗെയിം കളിക്കാം'}
+              </button>
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
               <span>{totalLessons} പാഠങ്ങൾ · 3 ഹൃദയങ്ങൾ · 17 ഉപവിഭാഗങ്ങൾ · സാക്ഷ്യപത്രം</span>
@@ -659,6 +699,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [aboutModalOpen, setAboutModalOpen] = useState<boolean>(false);
   const [scoreModalOpen, setScoreModalOpen] = useState<boolean>(false);
+  const [dailyModalOpen, setDailyModalOpen] = useState<boolean>(false);
   const [badgeStudioOpen, setBadgeStudioOpen] = useState<boolean>(false);
   const [badgeStudioPreset, setBadgeStudioPreset] = useState<string>('starter_member');
   const [collectedEggs, setCollectedEggs] = useState<string[]>(
@@ -1262,6 +1303,37 @@ export default function App() {
     [handleAwardXp]
   );
 
+  const handleCompleteDailySpecialGame = useCallback(
+    (gameScore: number, _maxScore: number, isTodayOfficial: boolean) => {
+      setDailyState((prev) => {
+        const bestScore = Math.max(prev.dailyGameBestScore ?? 0, gameScore);
+        if (!isTodayOfficial) {
+          return { ...prev, dailyGameBestScore: bestScore };
+        }
+        const alreadyDone = Boolean(
+          prev.todaySpecialGameDone || prev.completedDailyGameDates?.includes(prev.todayDate)
+        );
+        if (!alreadyDone) {
+          handleAwardXp(35, `daily_special_game_${prev.todayDate}`);
+        }
+        const nextHistory = prev.streakHistoryDates?.includes(prev.todayDate)
+          ? prev.streakHistoryDates
+          : [...(prev.streakHistoryDates || []), prev.todayDate].slice(-60);
+        const nextCompletedDates = prev.completedDailyGameDates?.includes(prev.todayDate)
+          ? prev.completedDailyGameDates
+          : [...(prev.completedDailyGameDates || []), prev.todayDate].slice(-60);
+        return {
+          ...prev,
+          todaySpecialGameDone: true,
+          streakHistoryDates: nextHistory,
+          completedDailyGameDates: nextCompletedDates,
+          dailyGameBestScore: bestScore,
+        };
+      });
+    },
+    [handleAwardXp]
+  );
+
   const handleUpdateUnitProfile = useCallback((patch: Partial<UnitProfile>) => {
     setDailyState((prev) => {
       const lockedCert = prev.profile.lockedCertificateName?.trim();
@@ -1437,6 +1509,25 @@ export default function App() {
               type="button"
               onClick={() => {
                 sound.unlockAudio();
+                sound.playPop();
+                setDailyModalOpen(true);
+              }}
+              aria-label="ദിന സ്ട്രീക്കും ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിമും"
+              title="ദിന സ്ട്രീക്കും സ്പെഷ്യൽ ഗെയിമും"
+              className={`inline-flex items-center gap-1 h-[34px] sm:h-9 px-2 sm:px-2.5 rounded-lg border text-[11px] sm:text-xs font-extrabold tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 notranslate ${
+                dailyState.todaySpecialGameDone
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-950 hover:bg-emerald-100'
+                  : 'border-amber-400 bg-amber-50 text-amber-950 hover:bg-amber-100'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+              <span>{dailyState.streakDays}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
                 sound.playClick();
                 setScoreModalOpen(true);
               }}
@@ -1579,6 +1670,8 @@ export default function App() {
             completedCount={canonicalCompletedCount}
             totalLessons={ALL_LESSONS.length}
             activeLessonTitle={activeLessonTitle}
+            streakDays={dailyState.streakDays}
+            todaySpecialGameDone={Boolean(dailyState.todaySpecialGameDone)}
             onStartJourney={() => {
               sound.unlockAudio();
               sound.playClick();
@@ -1597,6 +1690,11 @@ export default function App() {
               sound.playPop();
               setBadgeStudioPreset('starter_member');
               setBadgeStudioOpen(true);
+            }}
+            onOpenDailyChallenge={() => {
+              sound.unlockAudio();
+              sound.playPop();
+              setDailyModalOpen(true);
             }}
             onOpenSupport={() => {
               sound.unlockAudio();
@@ -2045,6 +2143,17 @@ export default function App() {
         onClaimMission={handleClaimDailyMission}
         onUpdateUnitProfile={handleUpdateUnitProfile}
       />
+      {dailyModalOpen && (
+        <Suspense fallback={null}>
+          <DailyChallengeModal
+            isOpen={dailyModalOpen}
+            onClose={() => setDailyModalOpen(false)}
+            dailyState={dailyState}
+            onCompleteSpecialGame={handleCompleteDailySpecialGame}
+            onClaimMission={handleClaimDailyMission}
+          />
+        </Suspense>
+      )}
       {badgeStudioOpen && (
         <Suspense fallback={null}>
           <ShareableBadgeStudio
@@ -2052,6 +2161,7 @@ export default function App() {
             onClose={() => setBadgeStudioOpen(false)}
             xp={xp}
             rank={currentRank}
+            streakDays={dailyState.streakDays}
             initialBadgeId={badgeStudioPreset}
             completedLessonIds={completedLessonIds}
             completedLevels={completedLevels}

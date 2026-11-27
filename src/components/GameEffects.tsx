@@ -362,6 +362,94 @@ export const AnimatedVisionTowerEmblem: React.FC<{ className?: string }> = ({
 
 export const AnimatedGiraffeMascot = AnimatedVisionTowerEmblem;
 
+type SettingsSectionId = 'display' | 'sound' | 'share' | 'backup' | 'reset' | 'about';
+
+const SettingsAccordionSection: React.FC<{
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  accent?: 'slate' | 'emerald' | 'sky' | 'rose';
+  children: React.ReactNode;
+}> = ({ title, subtitle, icon, isOpen, onToggle, accent = 'slate', children }) => {
+  const tone =
+    accent === 'emerald'
+      ? {
+          shell: isOpen
+            ? 'border-emerald-300 bg-emerald-50/40'
+            : 'border-slate-200 bg-white hover:border-emerald-300',
+          iconWrap: 'bg-emerald-100 text-emerald-800',
+        }
+      : accent === 'sky'
+      ? {
+          shell: isOpen
+            ? 'border-sky-300 bg-sky-50/40'
+            : 'border-slate-200 bg-white hover:border-sky-300',
+          iconWrap: 'bg-sky-100 text-sky-800',
+        }
+      : accent === 'rose'
+      ? {
+          shell: isOpen
+            ? 'border-rose-300 bg-rose-50/40'
+            : 'border-slate-200 bg-white hover:border-rose-300',
+          iconWrap: 'bg-rose-100 text-rose-800',
+        }
+      : {
+          shell: isOpen
+            ? 'border-emerald-300 bg-slate-50/80'
+            : 'border-slate-200 bg-white hover:border-emerald-300',
+          iconWrap: 'bg-slate-100 text-slate-800',
+        };
+
+  return (
+    <div className={`rounded-2xl border transition-colors overflow-hidden ${tone.shell}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        className="w-full px-3.5 py-3 flex items-center justify-between gap-3 text-left cursor-pointer"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${tone.iconWrap}`}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+              {title}
+            </p>
+            <p className="text-[11px] font-medium text-slate-600 leading-snug truncate mt-0.5">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-emerald-700' : ''
+          }`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-3.5 pb-3.5 pt-2.5 border-t border-slate-200/80 space-y-3">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 /* Dedicated Interactive Audio, Volume Verification & Share/Embed Settings Modal */
 export const SettingsModal: React.FC<{
   isOpen: boolean;
@@ -383,6 +471,7 @@ export const SettingsModal: React.FC<{
   const [snd, setSnd] = useState<SoundStateSnapshot>(sound.getSnapshot());
   const [nav, setNav] = useState<NarratorState>(narrator.getState());
   const [disp, setDisp] = useState<DisplayPrefsSnapshot>(displayPrefs.getSnapshot());
+  const [openSection, setOpenSection] = useState<SettingsSectionId | null>(null);
   const [copiedMode, setCopiedMode] = useState<'link' | 'embed' | 'backup' | null>(null);
   const [confirmAction, setConfirmAction] = useState<'reset' | 'clear_all' | null>(null);
   const [actionDoneMsg, setActionDoneMsg] = useState<string | null>(null);
@@ -406,7 +495,12 @@ export const SettingsModal: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setOpenSection(null);
+      setConfirmAction(null);
+      return;
+    }
+    setOpenSection(null);
     const daily = loadDailyAndProfileState();
     const locked = daily.profile.lockedCertificateName?.trim() || '';
     setLockedOwnerName(locked);
@@ -414,6 +508,12 @@ export const SettingsModal: React.FC<{
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const toggleSection = (id: SettingsSectionId) => {
+    sound.unlockAudio();
+    sound.playClick();
+    setOpenSection((prev) => (prev === id ? null : id));
+  };
 
   const shareUrl =
     typeof window !== 'undefined' ? window.location.href.split('#')[0] : '';
@@ -455,6 +555,19 @@ export const SettingsModal: React.FC<{
   };
 
   const fontMeta = FONT_LEVEL_META[disp.fontLevel];
+  const currentLangLabel =
+    TRANSLATE_LANGUAGES.find((l) => l.code === disp.language)?.nativeLabel || 'മലയാളം';
+  const soundSummary = `${snd.muted ? 'മ്യൂട്ട് (OFF)' : 'ശബ്ദം ON'} · കഥാകാരൻ ${
+    nav.enabled ? `${snd.narratorPct}%` : 'OFF'
+  }${
+    snd.quranPlaying
+      ? ' · ഖുർആൻ ON'
+      : snd.adhanPlaying
+      ? ' · ബാങ്ക് ON'
+      : snd.ambiencePlaying && snd.backgroundMode !== 'off'
+      ? ' · പ്രകൃതി ON'
+      : ''
+  }`;
 
   return (
     <div
@@ -462,7 +575,7 @@ export const SettingsModal: React.FC<{
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-5"
+        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-3.5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -472,10 +585,10 @@ export const SettingsModal: React.FC<{
             </div>
             <div className="min-w-0">
               <h2 className="text-base sm:text-xl font-extrabold text-slate-900 leading-tight break-words">
-                ⚙️ സെറ്റിംഗ്സ് · ഡിസ്പ്ലേ, ഭാഷ &amp; ശബ്ദം
+                ⚙️ സെറ്റിംഗ്സ്
               </h2>
               <p className="text-xs text-slate-600 leading-snug">
-                ഡാർക്ക് മോഡ്, അക്ഷരവലുപ്പം (5 ലെവൽ), ഭാഷ, ശബ്ദം എന്നിവ ഇവിടെ ക്രമീകരിക്കാം
+                ആവശ്യമുള്ള വിഭാഗം തൊട്ട് തുറന്ന് ക്രമീകരിക്കാം
               </p>
             </div>
           </div>
@@ -489,942 +602,956 @@ export const SettingsModal: React.FC<{
           </button>
         </div>
 
-        {/* Display, 5-Level Font Size (+ / -) & Language (Google Translate) */}
-        <div className="space-y-3 rounded-2xl bg-slate-50 border border-slate-200 p-3.5 sm:p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Dark Mode Toggle */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2.5">
-              <div className="min-w-0">
-                <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                  {disp.darkMode ? (
-                    <Moon className="w-4 h-4 text-amber-500 shrink-0" />
-                  ) : (
-                    <Sun className="w-4 h-4 text-amber-600 shrink-0" />
-                  )}
-                  <span className="truncate">ഡാർക്ക് മോഡ്</span>
-                </p>
-                <p className="text-[11px] text-slate-600 leading-snug">
-                  {disp.darkMode ? 'രാത്രി വായനയ്ക്ക് സുഖകരം' : 'ലൈറ്റ് തീം സജീവമാണ്'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  displayPrefs.toggleDarkMode();
-                }}
-                aria-pressed={disp.darkMode}
-                className={`px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer transition-colors ${
-                  disp.darkMode
-                    ? 'bg-amber-400 text-slate-950 border border-amber-500'
-                    : 'bg-slate-900 text-white hover:bg-slate-800'
-                }`}
-              >
-                {disp.darkMode ? '🌙 ON' : '☀️ OFF'}
-              </button>
-            </div>
-
-            {/* 5-Level Font Size (- / +) */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5 min-w-0">
-                  <Type className="w-4 h-4 text-emerald-700 shrink-0" />
-                  <span className="truncate">അക്ഷരവലുപ്പം</span>
-                </p>
-                <span className="text-[11px] font-extrabold text-emerald-700 tabular-nums shrink-0">
-                  {fontMeta.label}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
+        <div className="space-y-2.5">
+          {/* 1. Display, 5-Level Font Size & Language */}
+          <SettingsAccordionSection
+            title="ഡിസ്പ്ലേ & ഭാഷ"
+            subtitle={`${disp.darkMode ? 'ഡാർക്ക് മോഡ്' : 'ലൈറ്റ് മോഡ്'} · അക്ഷരം ${fontMeta.label} · ${currentLangLabel}`}
+            icon={
+              disp.darkMode ? (
+                <Moon className="w-4 h-4 text-amber-600" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-600" />
+              )
+            }
+            isOpen={openSection === 'display'}
+            onToggle={() => toggleSection('display')}
+            accent="slate"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Dark Mode Toggle */}
+              <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2.5">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
+                    {disp.darkMode ? (
+                      <Moon className="w-4 h-4 text-amber-500 shrink-0" />
+                    ) : (
+                      <Sun className="w-4 h-4 text-amber-600 shrink-0" />
+                    )}
+                    <span className="truncate">ഡാർക്ക് മോഡ്</span>
+                  </p>
+                  <p className="text-[11px] text-slate-600 leading-snug">
+                    {disp.darkMode ? 'രാത്രി വായനയ്ക്ക് സുഖകരം' : 'ലൈറ്റ് തീം സജീവമാണ്'}
+                  </p>
+                </div>
                 <button
                   type="button"
-                  disabled={disp.fontLevel <= 1}
                   onClick={() => {
                     sound.unlockAudio();
                     sound.playClick();
-                    displayPrefs.stepFontLevel(-1);
+                    displayPrefs.toggleDarkMode();
                   }}
-                  aria-label="അക്ഷരവലുപ്പം കുറയ്ക്കുക"
-                  className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-slate-900 flex items-center justify-center shrink-0 cursor-pointer notranslate"
+                  aria-pressed={disp.darkMode}
+                  className={`px-3 py-2 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer transition-colors ${
+                    disp.darkMode
+                      ? 'bg-amber-400 text-slate-950 border border-amber-500'
+                      : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`}
                 >
-                  A−
+                  {disp.darkMode ? '🌙 ON' : '☀️ OFF'}
                 </button>
-                <div className="flex-1 flex items-center gap-1" aria-label="അക്ഷരവലുപ്പം ലെവൽ">
-                  {([1, 2, 3, 4, 5] as const).map((lvl) => (
+              </div>
+
+              {/* 5-Level Font Size (- / +) */}
+              <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-900 flex items-center gap-1.5 min-w-0">
+                    <Type className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span className="truncate">അക്ഷരവലുപ്പം</span>
+                  </p>
+                  <span className="text-[11px] font-extrabold text-emerald-700 tabular-nums shrink-0">
+                    {fontMeta.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={disp.fontLevel <= 1}
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playClick();
+                      displayPrefs.stepFontLevel(-1);
+                    }}
+                    aria-label="അക്ഷരവലുപ്പം കുറയ്ക്കുക"
+                    className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-slate-900 flex items-center justify-center shrink-0 cursor-pointer notranslate"
+                  >
+                    A−
+                  </button>
+                  <div className="flex-1 flex items-center gap-1" aria-label="അക്ഷരവലുപ്പം ലെവൽ">
+                    {([1, 2, 3, 4, 5] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => {
+                          sound.unlockAudio();
+                          sound.playClick();
+                          displayPrefs.setFontLevel(lvl);
+                        }}
+                        aria-label={`ലെവൽ ${lvl}`}
+                        className={`flex-1 h-2.5 rounded-full transition-colors cursor-pointer ${
+                          lvl <= disp.fontLevel ? 'bg-emerald-600' : 'bg-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={disp.fontLevel >= 5}
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playClick();
+                      displayPrefs.stepFontLevel(1);
+                    }}
+                    aria-label="അക്ഷരവലുപ്പം കൂട്ടുക"
+                    className="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-white flex items-center justify-center shrink-0 cursor-pointer notranslate"
+                  >
+                    A+
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Language Change (Google Translate) */}
+            <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-slate-900">
+                  <Languages className="w-4 h-4 text-emerald-700 shrink-0" />
+                  <span>ഭാഷ മാറ്റാം (Google Translate)</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500">
+                  ഇഷ്ട ഭാഷയിൽ വായിക്കാം
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 notranslate">
+                {TRANSLATE_LANGUAGES.map((lang) => {
+                  const active = disp.language === lang.code;
+                  return (
                     <button
-                      key={lvl}
+                      key={lang.code}
                       type="button"
                       onClick={() => {
                         sound.unlockAudio();
                         sound.playClick();
-                        displayPrefs.setFontLevel(lvl);
+                        displayPrefs.setLanguage(lang.code);
                       }}
-                      aria-label={`ലെവൽ ${lvl}`}
-                      className={`flex-1 h-2.5 rounded-full transition-colors cursor-pointer ${
-                        lvl <= disp.fontLevel ? 'bg-emerald-600' : 'bg-slate-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  disabled={disp.fontLevel >= 5}
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    displayPrefs.stepFontLevel(1);
-                  }}
-                  aria-label="അക്ഷരവലുപ്പം കൂട്ടുക"
-                  className="w-9 h-9 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed font-black text-base text-white flex items-center justify-center shrink-0 cursor-pointer notranslate"
-                >
-                  A+
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Language Change (Google Translate) */}
-          <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-slate-900">
-                <Languages className="w-4 h-4 text-emerald-700 shrink-0" />
-                <span>ഭാഷ മാറ്റാം (Google Translate)</span>
-              </div>
-              <span className="text-[10px] font-bold text-slate-500">
-                ഇഷ്ട ഭാഷയിൽ വായിക്കാം
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1.5 notranslate">
-              {TRANSLATE_LANGUAGES.map((lang) => {
-                const active = disp.language === lang.code;
-                return (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      sound.playClick();
-                      displayPrefs.setLanguage(lang.code);
-                    }}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition-colors cursor-pointer ${
-                      active
-                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs'
-                        : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'
-                    }`}
-                  >
-                    {lang.nativeLabel}
-                  </button>
-                );
-              })}
-            </div>
-            {disp.language !== 'ml' && (
-              <p className="text-[11px] font-semibold text-emerald-800 leading-snug">
-                Google Translate വഴി പേജ് വിവർത്തനം ചെയ്യുന്നു. പഴയ മലയാളത്തിലേക്ക് മടങ്ങാൻ ‘മലയാളം (Original)’ തൊടുക.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Master Audio & Auto Voice */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-extrabold text-slate-900">🔊 ആകെ ശബ്ദം (Master)</p>
-              <p className="text-[11px] text-slate-600">എല്ലാ ശബ്ദങ്ങളും ഒരുമിച്ച് ഓൺ / മ്യൂട്ട്</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const nextMuted = !snd.muted;
-                sound.setMuted(nextMuted);
-                if (nextMuted) narrator.stop();
-                else sound.playClick();
-              }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold ${
-                snd.muted
-                  ? 'bg-red-100 text-red-900 border border-red-300'
-                  : 'bg-emerald-700 text-white'
-              }`}
-            >
-              {snd.muted ? '🔇 മ്യൂട്ട്' : '🔊 ON'}
-            </button>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-extrabold text-slate-900">🎙️ ഓട്ടോ കഥാകാരൻ</p>
-              <p className="text-[11px] text-slate-600">ഓരോ പാഠത്തിലും തനിയെ വായിക്കാൻ</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                const next = !nav.enabled;
-                sound.setAutoNarrate(next);
-                if (next) narrator.replayLast();
-              }}
-              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold ${
-                nav.enabled
-                  ? 'bg-emerald-700 text-white'
-                  : 'bg-slate-200 text-slate-700'
-              }`}
-            >
-              {nav.enabled ? '✅ ON' : '⏸️ OFF'}
-            </button>
-          </div>
-        </div>
-
-        {/* Live Volume Sliders with - / + Steppers & Live Test Buttons */}
-        <div className="space-y-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Narrator Volume */}
-            <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
-                <span>🎙️ കഥാകാരൻ</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-emerald-800 tabular-nums">
-                    {snd.narratorPct === 0 ? '0% (നിശബ്ദം)' : `${snd.narratorPct}%`}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      narrator.replayLast();
-                    }}
-                    className="px-2 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[10px] font-extrabold"
-                  >
-                    🔊 ടെസ്റ്റ്
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustPct('narratorPct', snd.narratorPct, -10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കുറയ്ക്കുക"
-                >
-                  −
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={snd.narratorPct}
-                  onChange={(e) => sound.setBalance({ narratorPct: Number(e.target.value) })}
-                  className="w-full accent-emerald-700 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustPct('narratorPct', snd.narratorPct, 10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കൂട്ടുക"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Background Ambience Volume */}
-            <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
-                <span>🌿 പശ്ചാത്തല ശബ്ദം</span>
-                <span className="text-emerald-800 tabular-nums">
-                  {snd.ambiencePct === 0 ? '0% (നിശബ്ദം)' : `${snd.ambiencePct}%`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustPct('ambiencePct', snd.ambiencePct, -10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കുറയ്ക്കുക"
-                >
-                  −
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={snd.ambiencePct}
-                  onChange={(e) => sound.setBalance({ ambiencePct: Number(e.target.value) })}
-                  className="w-full accent-emerald-700 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustPct('ambiencePct', snd.ambiencePct, 10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കൂട്ടുക"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Quran & Adhan Volume */}
-            <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
-                <span>📖 ഖുർആൻ &amp; 🕌 ബാങ്ക്</span>
-                <span className="text-amber-700 tabular-nums">
-                  {snd.spiritualPct === 0 ? '0% (നിശബ്ദം)' : `${snd.spiritualPct}%`}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustPct('spiritualPct', snd.spiritualPct, -10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കുറയ്ക്കുക"
-                >
-                  −
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={snd.spiritualPct}
-                  onChange={(e) => sound.setBalance({ spiritualPct: Number(e.target.value) })}
-                  className="w-full accent-amber-600 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustPct('spiritualPct', snd.spiritualPct, 10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കൂട്ടുക"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Game SFX Volume */}
-            <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
-                <span>✨ ഗെയിം SFX</span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => sound.setBalance({ sfxEnabled: !snd.sfxEnabled })}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
-                      snd.sfxEnabled && snd.sfxPct > 0
-                        ? 'bg-emerald-700 text-white'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {snd.sfxEnabled && snd.sfxPct > 0 ? `${snd.sfxPct}% ON` : 'OFF'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      sound.playSuccess(2);
-                    }}
-                    className="px-2 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[10px] font-extrabold"
-                  >
-                    🔊 ടെസ്റ്റ്
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => adjustPct('sfxPct', snd.sfxPct, -10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കുറയ്ക്കുക"
-                >
-                  −
-                </button>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={snd.sfxPct}
-                  onChange={(e) => sound.setBalance({ sfxPct: Number(e.target.value) })}
-                  className="w-full accent-emerald-700 cursor-pointer"
-                />
-                <button
-                  type="button"
-                  onClick={() => adjustPct('sfxPct', snd.sfxPct, 10)}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0"
-                  aria-label="കൂട്ടുക"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* XP-Unlocked Synthesized Web Audio Sound Packs (0 KB extra assets) */}
-          <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-extrabold text-slate-900">
-                🎵 ഗെയിം ടോൺ പാക്കുകൾ (XP അൺലോക്ക്)
-              </span>
-              <span className="text-[10px] font-bold text-emerald-800 tabular-nums notranslate">
-                നിങ്ങളുടെ XP: {xp}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {SOUND_PACKS.map((pack) => {
-                const unlocked = xp >= pack.minXp;
-                const active = snd.soundPack === pack.id;
-                return (
-                  <button
-                    key={pack.id}
-                    type="button"
-                    disabled={!unlocked}
-                    onClick={() => {
-                      if (!unlocked) return;
-                      sound.unlockAudio();
-                      sound.setSoundPack(pack.id);
-                      sound.playSuccess(2);
-                    }}
-                    className={`p-2.5 rounded-xl border text-left transition-colors ${
-                      active
-                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs cursor-pointer'
-                        : unlocked
-                        ? 'bg-slate-50 hover:bg-emerald-50 text-slate-900 border-slate-200 hover:border-emerald-400 cursor-pointer'
-                        : 'bg-slate-50 text-slate-400 border-slate-200 opacity-75 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-xs font-extrabold leading-tight">{pack.label}</span>
-                      {!unlocked && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md shrink-0 notranslate">
-                          <Lock className="w-2.5 h-2.5" /> {pack.minXp} XP
-                        </span>
-                      )}
-                    </div>
-                    <p
-                      className={`text-[10px] leading-snug mt-1 ${
-                        active ? 'text-emerald-100' : 'text-slate-500'
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'
                       }`}
                     >
-                      {pack.desc}
-                    </p>
-                  </button>
-                );
-              })}
+                      {lang.nativeLabel}
+                    </button>
+                  );
+                })}
+              </div>
+              {disp.language !== 'ml' && (
+                <p className="text-[11px] font-semibold text-emerald-800 leading-snug">
+                  Google Translate വഴി പേജ് വിവർത്തനം ചെയ്യുന്നു. പഴയ മലയാളത്തിലേക്ക് മടങ്ങാൻ ‘മലയാളം (Original)’ തൊടുക.
+                </p>
+              )}
             </div>
-          </div>
+          </SettingsAccordionSection>
 
-          {/* Background Sound Mode */}
-          <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-extrabold text-emerald-950">🌿 പശ്ചാത്തല മോഡ്:</span>
-            <div className="flex flex-wrap gap-1.5">
-              {bgModes.map((m) => {
-                const active =
-                  m.id === 'off'
-                    ? !snd.ambiencePlaying || snd.backgroundMode === 'off'
-                    : snd.ambiencePlaying && snd.backgroundMode === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      sound.playClick();
-                      sound.setBackgroundMode(m.id);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border-2 transition-colors ${
-                      active
-                        ? 'bg-emerald-700 text-white border-emerald-900'
-                        : 'bg-white text-slate-800 border-slate-200 hover:border-emerald-400'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Background Quran & Adhan Controls (Settings Only — Plays Continuously in Background!) */}
-        <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-xs font-extrabold text-amber-950">
-                📖 ബാക്ക്ഗ്രൗണ്ട് ഖുർആൻ &amp; 🕌 ബാങ്ക് വിളി
-              </p>
-              <p className="text-[11px] font-semibold text-amber-900/80">
-                ഗെയിം കളിക്കുമ്പോഴും പാഠം വായിക്കുമ്പോഴും പശ്ചാത്തലത്തിൽ മൃദുവായി കേൾക്കാം.
-              </p>
-            </div>
-            {(snd.quranPlaying || snd.adhanPlaying) && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.playClick();
-                  sound.stopSpiritualAudio();
-                }}
-                className="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 text-[11px] font-extrabold"
-              >
-                ⏹️ നിർത്തുക
-              </button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {QURAN_TRACKS.map((tr) => {
-              const active = snd.quranPlaying && snd.quranTrack === tr.id;
-              return (
+          {/* 2. All Sound & Background Audio Controls Together */}
+          <SettingsAccordionSection
+            title="ശബ്ദ ക്രമീകരണങ്ങൾ (Sound & Audio)"
+            subtitle={soundSummary}
+            icon={snd.muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            isOpen={openSection === 'sound'}
+            onToggle={() => toggleSection('sound')}
+            accent="emerald"
+          >
+            {/* Master Audio & Auto Voice */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-900">
+                    🔊 ആകെ ശബ്ദം (Master)
+                  </p>
+                  <p className="text-[11px] text-slate-600">എല്ലാ ശബ്ദങ്ങളും ഓൺ / മ്യൂട്ട്</p>
+                </div>
                 <button
-                  key={tr.id}
+                  type="button"
+                  onClick={() => {
+                    const nextMuted = !snd.muted;
+                    sound.setMuted(nextMuted);
+                    if (nextMuted) narrator.stop();
+                    else sound.playClick();
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer ${
+                    snd.muted
+                      ? 'bg-red-100 text-red-900 border border-red-300'
+                      : 'bg-emerald-700 text-white'
+                  }`}
+                >
+                  {snd.muted ? '🔇 മ്യൂട്ട്' : '🔊 ON'}
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-900">
+                    🎙️ ഓട്ടോ കഥാകാരൻ
+                  </p>
+                  <p className="text-[11px] text-slate-600">ഓരോ പാഠത്തിലും തനിയെ വായിക്കാൻ</p>
+                </div>
+                <button
                   type="button"
                   onClick={() => {
                     sound.unlockAudio();
-                    if (active) sound.stopQuran();
-                    else sound.selectQuranTrack(tr.id, true);
+                    const next = !nav.enabled;
+                    sound.setAutoNarrate(next);
+                    if (next) narrator.replayLast();
                   }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border ${
-                    active
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold shrink-0 cursor-pointer ${
+                    nav.enabled
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {nav.enabled ? '✅ ON' : '⏸️ OFF'}
+                </button>
+              </div>
+            </div>
+
+            {/* Live Volume Sliders with - / + Steppers & Live Test Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Narrator Volume */}
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
+                  <span>🎙️ കഥാകാരൻ</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-800 tabular-nums">
+                      {snd.narratorPct === 0 ? '0% (നിശബ്ദം)' : `${snd.narratorPct}%`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        narrator.replayLast();
+                      }}
+                      className="px-2 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[10px] font-extrabold cursor-pointer"
+                    >
+                      🔊 ടെസ്റ്റ്
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('narratorPct', snd.narratorPct, -10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കുറയ്ക്കുക"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={snd.narratorPct}
+                    onChange={(e) => sound.setBalance({ narratorPct: Number(e.target.value) })}
+                    className="w-full accent-emerald-700 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('narratorPct', snd.narratorPct, 10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കൂട്ടുക"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Background Ambience Volume */}
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
+                  <span>🌿 പശ്ചാത്തല ശബ്ദം</span>
+                  <span className="text-emerald-800 tabular-nums">
+                    {snd.ambiencePct === 0 ? '0% (നിശബ്ദം)' : `${snd.ambiencePct}%`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('ambiencePct', snd.ambiencePct, -10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കുറയ്ക്കുക"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={snd.ambiencePct}
+                    onChange={(e) => sound.setBalance({ ambiencePct: Number(e.target.value) })}
+                    className="w-full accent-emerald-700 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('ambiencePct', snd.ambiencePct, 10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കൂട്ടുക"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Quran & Adhan Volume */}
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
+                  <span>📖 ഖുർആൻ &amp; 🕌 ബാങ്ക്</span>
+                  <span className="text-amber-700 tabular-nums">
+                    {snd.spiritualPct === 0 ? '0% (നിശബ്ദം)' : `${snd.spiritualPct}%`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('spiritualPct', snd.spiritualPct, -10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കുറയ്ക്കുക"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={snd.spiritualPct}
+                    onChange={(e) => sound.setBalance({ spiritualPct: Number(e.target.value) })}
+                    className="w-full accent-amber-600 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('spiritualPct', snd.spiritualPct, 10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കൂട്ടുക"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Game SFX Volume */}
+              <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+                <div className="flex items-center justify-between gap-2 text-xs font-extrabold text-slate-900">
+                  <span>✨ ഗെയിം SFX</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => sound.setBalance({ sfxEnabled: !snd.sfxEnabled })}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold cursor-pointer ${
+                        snd.sfxEnabled && snd.sfxPct > 0
+                          ? 'bg-emerald-700 text-white'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {snd.sfxEnabled && snd.sfxPct > 0 ? `${snd.sfxPct}% ON` : 'OFF'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playSuccess(2);
+                      }}
+                      className="px-2 py-0.5 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[10px] font-extrabold cursor-pointer"
+                    >
+                      🔊 ടെസ്റ്റ്
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('sfxPct', snd.sfxPct, -10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കുറയ്ക്കുക"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={snd.sfxPct}
+                    onChange={(e) => sound.setBalance({ sfxPct: Number(e.target.value) })}
+                    className="w-full accent-emerald-700 cursor-pointer"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => adjustPct('sfxPct', snd.sfxPct, 10)}
+                    className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-extrabold text-slate-800 shrink-0 cursor-pointer"
+                    aria-label="കൂട്ടുക"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* XP-Unlocked Synthesized Web Audio Sound Packs (0 KB extra assets) */}
+            <div className="p-3 rounded-xl bg-white border border-emerald-200 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-extrabold text-slate-900">
+                  🎵 ഗെയിം ടോൺ പാക്കുകൾ (XP അൺലോക്ക്)
+                </span>
+                <span className="text-[10px] font-bold text-emerald-800 tabular-nums notranslate">
+                  നിങ്ങളുടെ XP: {xp}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {SOUND_PACKS.map((pack) => {
+                  const unlocked = xp >= pack.minXp;
+                  const active = snd.soundPack === pack.id;
+                  return (
+                    <button
+                      key={pack.id}
+                      type="button"
+                      disabled={!unlocked}
+                      onClick={() => {
+                        if (!unlocked) return;
+                        sound.unlockAudio();
+                        sound.setSoundPack(pack.id);
+                        sound.playSuccess(2);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-colors ${
+                        active
+                          ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs cursor-pointer'
+                          : unlocked
+                          ? 'bg-slate-50 hover:bg-emerald-50 text-slate-900 border-slate-200 hover:border-emerald-400 cursor-pointer'
+                          : 'bg-slate-50 text-slate-400 border-slate-200 opacity-75 cursor-not-allowed'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-extrabold leading-tight">{pack.label}</span>
+                        {!unlocked && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-black text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-md shrink-0 notranslate">
+                            <Lock className="w-2.5 h-2.5" /> {pack.minXp} XP
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className={`text-[10px] leading-snug mt-1 ${
+                          active ? 'text-emerald-100' : 'text-slate-500'
+                        }`}
+                      >
+                        {pack.desc}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Background Sound Mode */}
+            <div className="p-3 rounded-xl bg-white border border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-extrabold text-emerald-950">🌿 പശ്ചാത്തല മോഡ്:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {bgModes.map((m) => {
+                  const active =
+                    m.id === 'off'
+                      ? !snd.ambiencePlaying || snd.backgroundMode === 'off'
+                      : snd.ambiencePlaying && snd.backgroundMode === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        sound.setBackgroundMode(m.id);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border-2 transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-emerald-700 text-white border-emerald-900'
+                          : 'bg-white text-slate-800 border-slate-200 hover:border-emerald-400'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Background Quran & Adhan Controls */}
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-extrabold text-amber-950">
+                    📖 ബാക്ക്ഗ്രൗണ്ട് ഖുർആൻ &amp; 🕌 ബാങ്ക് വിളി
+                  </p>
+                  <p className="text-[11px] font-semibold text-amber-900/80">
+                    ഗെയിം കളിക്കുമ്പോഴും പാഠം വായിക്കുമ്പോഴും പശ്ചാത്തലത്തിൽ മൃദുവായി കേൾക്കാം.
+                  </p>
+                </div>
+                {(snd.quranPlaying || snd.adhanPlaying) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      sound.stopSpiritualAudio();
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 text-[11px] font-extrabold cursor-pointer"
+                  >
+                    ⏹️ നിർത്തുക
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {QURAN_TRACKS.map((tr) => {
+                  const active = snd.quranPlaying && snd.quranTrack === tr.id;
+                  return (
+                    <button
+                      key={tr.id}
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        if (active) sound.stopQuran();
+                        else sound.selectQuranTrack(tr.id, true);
+                      }}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${
+                        active
+                          ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
+                          : 'bg-white text-slate-800 border-slate-200 hover:border-emerald-500'
+                      }`}
+                    >
+                      {active ? '⏸️ ' : '▶️ '}
+                      {tr.label}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.toggleAdhan();
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${
+                    snd.adhanPlaying
                       ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
                       : 'bg-white text-slate-800 border-slate-200 hover:border-emerald-500'
                   }`}
                 >
-                  {active ? '⏸️ ' : '▶️ '}
-                  {tr.label}
+                  {snd.adhanPlaying ? '⏸️ ബാങ്ക് നിർത്തുക' : '🕌 ബാങ്ക് വിളി'}
                 </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.toggleAdhan();
-              }}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border ${
-                snd.adhanPlaying
-                  ? 'bg-amber-400 text-slate-950 border-amber-500 shadow-xs'
-                  : 'bg-white text-slate-800 border-slate-200 hover:border-emerald-500'
-              }`}
-            >
-              {snd.adhanPlaying ? '⏸️ ബാങ്ക് നിർത്തുക' : '🕌 ബാങ്ക് വിളി'}
-            </button>
-          </div>
-          <div className="p-2.5 rounded-xl bg-white border border-amber-200 space-y-1">
-            <div className="flex items-center justify-between text-xs font-extrabold text-amber-950">
-              <span>🔊 ഖുർആൻ &amp; ബാങ്ക് വോളിയം</span>
-              <span className="tabular-nums text-amber-800">{snd.spiritualPct}%</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
+          </SettingsAccordionSection>
+
+          {/* 3. Share & Google Sites / GitHub Embed */}
+          <SettingsAccordionSection
+            title="ഷെയർ & എംബെഡ്"
+            subtitle="ഗെയിം ലിങ്ക് · Google Sites / HTML എംബെഡ് കോഡ്"
+            icon={<Share2 className="w-4 h-4" />}
+            isOpen={openSection === 'share'}
+            onToggle={() => toggleSection('share')}
+            accent="sky"
+          >
+            <p className="text-[11px] text-slate-700 leading-relaxed">
+              മൊബൈലിലും കമ്പ്യൂട്ടറിലും എല്ലാവർക്കും കളിക്കാൻ ഈ ലിങ്ക് ഷെയർ ചെയ്യാം; അല്ലെങ്കിൽ Google Sites-ൽ <strong>Embed → Embed code</strong> വഴി താഴെ കൊടുത്ത കോഡ് ഒട്ടിക്കാം.
+            </p>
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => adjustPct('spiritualPct', snd.spiritualPct, -10)}
-                className="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 font-extrabold text-amber-950 shrink-0"
-                aria-label="കുറയ്ക്കുക"
+                onClick={() => copyText(shareUrl, 'link')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-extrabold cursor-pointer"
               >
-                −
+                {copiedMode === 'link' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> ലിങ്ക് കോപ്പി ചെയ്തു!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" /> ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യുക
+                  </>
+                )}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={snd.spiritualPct}
-                onChange={(e) => sound.setBalance({ spiritualPct: Number(e.target.value) })}
-                className="w-full accent-amber-500 cursor-pointer"
-              />
               <button
                 type="button"
-                onClick={() => adjustPct('spiritualPct', snd.spiritualPct, 10)}
-                className="w-7 h-7 rounded-lg bg-amber-100 hover:bg-amber-200 font-extrabold text-amber-950 shrink-0"
-                aria-label="കൂട്ടുക"
+                onClick={() => copyText(embedCode, 'embed')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-sky-100 border border-sky-300 text-sky-950 text-xs font-extrabold cursor-pointer"
               >
-                +
+                {copiedMode === 'embed' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-700" /> Google Sites കോഡ് കോപ്പി ചെയ്തു!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" /> Google Sites / HTML എംബെഡ് കോഡ്
+                  </>
+                )}
               </button>
             </div>
-          </div>
-        </div>
+          </SettingsAccordionSection>
 
-        {/* Share & Google Sites / GitHub Embed Section */}
-        <div className="p-4 rounded-2xl bg-sky-50/80 border border-sky-200 space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-sky-950">
-            <Share2 className="w-4 h-4 text-sky-700" />
-            <span>🔗 ഗെയിം ഷെയർ ചെയ്യാം · Google Sites &amp; GitHub എംബെഡ്</span>
-          </div>
-          <p className="text-[11px] text-slate-700 leading-relaxed">
-            മൊബൈലിലും കമ്പ്യൂട്ടറിലും എല്ലാവർക്കും കളിക്കാൻ ഈ ലിങ്ക് ഷെയർ ചെയ്യാം; അല്ലെങ്കിൽ Google Sites-ൽ <strong>Embed → Embed code</strong> വഴി താഴെ കൊടുത്ത കോഡ് ഒട്ടിക്കാം.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => copyText(shareUrl, 'link')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white text-xs font-extrabold"
-            >
-              {copiedMode === 'link' ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> ലിങ്ക് കോപ്പി ചെയ്തു!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" /> ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യുക
-                </>
+          {/* 4. PIN + Name Protected Progress Backup & Restore */}
+          <SettingsAccordionSection
+            title="ബാക്കപ്പ് & റീസ്റ്റോർ"
+            subtitle="പേരും 4 അക്ക PIN-ഉം ഉപയോഗിച്ച് പ്രോഗ്രസ് സൂക്ഷിക്കാം / തിരിച്ചെടുക്കാം"
+            icon={<ShieldCheck className="w-4 h-4" />}
+            isOpen={openSection === 'backup'}
+            onToggle={() => toggleSection('backup')}
+            accent="emerald"
+          >
+            <p className="text-[11px] text-slate-700 leading-relaxed">
+              ഫോൺ മാറുമ്പോൾ നിങ്ങളുടെ പാഠങ്ങളും സ്കോറും തുടർച്ചയും നഷ്ടപ്പെടാതിരിക്കാൻ <strong>പേരും 4 അക്ക രഹസ്യ PIN-ഉം</strong> നൽകി സ്വകാര്യ ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാം.
+            </p>
+
+            {/* Step 1: Create Protected Backup */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                <div className="sm:col-span-7">
+                  <input
+                    type="text"
+                    value={lockedOwnerName || backupName}
+                    readOnly={Boolean(lockedOwnerName)}
+                    onChange={(e) => {
+                      if (!lockedOwnerName) {
+                        setBackupName(e.target.value);
+                        setBackupFeedback(null);
+                      }
+                    }}
+                    placeholder="നിങ്ങളുടെ പേര് (സർട്ടിഫിക്കറ്റിൽ ലോക്ക് ആകും)"
+                    aria-label="ബാക്കപ്പ് ഉടമയുടെ പേര്"
+                    className={`w-full px-3 py-2 rounded-xl border text-xs font-semibold focus:outline-none ${
+                      lockedOwnerName
+                        ? 'border-emerald-300 bg-emerald-100/70 text-emerald-950 cursor-not-allowed'
+                        : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-600'
+                    }`}
+                  />
+                </div>
+                <div className="sm:col-span-5">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={exportPin}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setExportPin(digits);
+                      setBackupFeedback(null);
+                    }}
+                    placeholder="4 അക്ക PIN (ഉദാ: 4829)"
+                    aria-label="ബാക്കപ്പ് 4 അക്ക പിൻ"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  const res = exportProgressBackupCode(lockedOwnerName || backupName, exportPin);
+                  if (res.ok && res.code) {
+                    setGeneratedBackupCode(res.code);
+                    copyText(res.code, 'backup');
+                    setBackupFeedback({
+                      ok: true,
+                      text: `“${res.ownerName}” എന്ന പേരിൽ PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു! കോഡും 4 അക്ക PIN-ഉം സ്വകാര്യമായി സൂക്ഷിക്കുക.`,
+                    });
+                  } else {
+                    sound.playError();
+                    setGeneratedBackupCode(null);
+                    setBackupFeedback({
+                      ok: false,
+                      text: res.error || 'ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
+                    });
+                  }
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+              >
+                {copiedMode === 'backup' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" /> PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്യുക
+                  </>
+                )}
+              </button>
+              {generatedBackupCode && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-emerald-900">
+                    ഓട്ടോ കോപ്പി ആയില്ലെങ്കിൽ താഴെ തൊട്ട് മുഴുവൻ കോഡും സെലക്ട് ചെയ്ത് കോപ്പി ചെയ്യാം:
+                  </p>
+                  <input
+                    type="text"
+                    readOnly
+                    value={generatedBackupCode}
+                    onFocus={(e) => e.currentTarget.select()}
+                    aria-label="തയ്യാറാക്കിയ ബാക്കപ്പ് കോഡ്"
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-[11px] font-mono text-slate-900 select-all"
+                  />
+                </div>
               )}
-            </button>
-            <button
-              type="button"
-              onClick={() => copyText(embedCode, 'embed')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-sky-100 border border-sky-300 text-sky-950 text-xs font-extrabold"
-            >
-              {copiedMode === 'embed' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-700" /> Google Sites കോഡ് കോപ്പി ചെയ്തു!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" /> Google Sites / HTML എംബെഡ് കോഡ്
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+            </div>
 
-        {/* PIN + Name Protected Progress Backup & Restore Code (SKSSF-BK2) */}
-        <div className="p-4 rounded-2xl bg-emerald-50/75 border border-emerald-200 space-y-3.5">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-950">
-            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0" />
-            <span>🔐 സുരക്ഷിത പ്രോഗ്രസ് ബാക്കപ്പ് (പേര് + 4 അക്ക PIN)</span>
-          </div>
-          <p className="text-[11px] text-slate-700 leading-relaxed">
-            ഫോൺ മാറുമ്പോൾ നിങ്ങളുടെ പാഠങ്ങളും സ്കോറും തുടർച്ചയും നഷ്ടപ്പെടാതിരിക്കാൻ <strong>പേരും 4 അക്ക രഹസ്യ PIN-ഉം</strong> നൽകി സ്വകാര്യ ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാം.
-          </p>
-
-          {/* Step 1: Create Protected Backup */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              <div className="sm:col-span-7">
+            {/* Step 2: Restore Protected Backup */}
+            <div className="pt-2.5 border-t border-emerald-200/80 space-y-2">
+              <label className="block text-[11px] font-extrabold text-slate-800">
+                മുമ്പ് സൂക്ഷിച്ച ബാക്കപ്പ് കോഡും 4 അക്ക PIN-ഉം നൽകി പ്രോഗ്രസ് തിരിച്ചെടുക്കാം:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                 <input
                   type="text"
-                  value={lockedOwnerName || backupName}
-                  readOnly={Boolean(lockedOwnerName)}
+                  value={backupInput}
                   onChange={(e) => {
-                    if (!lockedOwnerName) {
-                      setBackupName(e.target.value);
-                      setBackupFeedback(null);
-                    }
+                    setBackupInput(e.target.value);
+                    setBackupFeedback(null);
                   }}
-                  placeholder="നിങ്ങളുടെ പേര് (സർട്ടിഫിക്കറ്റിൽ ലോക്ക് ആകും)"
-                  aria-label="ബാക്കപ്പ് ഉടമയുടെ പേര്"
-                  className={`w-full px-3 py-2 rounded-xl border text-xs font-semibold focus:outline-none ${
-                    lockedOwnerName
-                      ? 'border-emerald-300 bg-emerald-100/70 text-emerald-950 cursor-not-allowed'
-                      : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-600'
-                  }`}
+                  placeholder="SKSSF-BK2:... കോഡ് ഒട്ടിക്കുക"
+                  aria-label="ബാക്കപ്പ് കോഡ് ഒട്ടിക്കുക"
+                  className="sm:col-span-6 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
                 />
-              </div>
-              <div className="sm:col-span-5">
                 <input
                   type="password"
                   inputMode="numeric"
                   maxLength={4}
-                  value={exportPin}
+                  value={restorePin}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    setExportPin(digits);
+                    setRestorePin(digits);
                     setBackupFeedback(null);
                   }}
-                  placeholder="4 അക്ക PIN (ഉദാ: 4829)"
-                  aria-label="ബാക്കപ്പ് 4 അക്ക പിൻ"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
+                  placeholder="4 അക്ക PIN"
+                  aria-label="തിരിച്ചെടുക്കാനുള്ള 4 അക്ക പിൻ"
+                  className="sm:col-span-3 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
                 />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                const res = exportProgressBackupCode(lockedOwnerName || backupName, exportPin);
-                if (res.ok && res.code) {
-                  setGeneratedBackupCode(res.code);
-                  copyText(res.code, 'backup');
-                  setBackupFeedback({
-                    ok: true,
-                    text: `“${res.ownerName}” എന്ന പേരിൽ PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു! കോഡും 4 അക്ക PIN-ഉം സ്വകാര്യമായി സൂക്ഷിക്കുക.`,
-                  });
-                } else {
-                  sound.playError();
-                  setGeneratedBackupCode(null);
-                  setBackupFeedback({
-                    ok: false,
-                    text: res.error || 'ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
-                  });
-                }
-              }}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
-            >
-              {copiedMode === 'backup' ? (
-                <>
-                  <Check className="w-3.5 h-3.5" /> സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്തു!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" /> PIN സുരക്ഷിത ബാക്കപ്പ് കോഡ് കോപ്പി ചെയ്യുക
-                </>
-              )}
-            </button>
-            {generatedBackupCode && (
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold text-emerald-900">
-                  ഓട്ടോ കോപ്പി ആയില്ലെങ്കിൽ താഴെ തൊട്ട് മുഴുവൻ കോഡും സെലക്ട് ചെയ്ത് കോപ്പി ചെയ്യാം:
-                </p>
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedBackupCode}
-                  onFocus={(e) => e.currentTarget.select()}
-                  aria-label="തയ്യാറാക്കിയ ബാക്കപ്പ് കോഡ്"
-                  className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-[11px] font-mono text-slate-900 select-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Step 2: Restore Protected Backup */}
-          <div className="pt-2.5 border-t border-emerald-200/80 space-y-2">
-            <label className="block text-[11px] font-extrabold text-slate-800">
-              മുമ്പ് സൂക്ഷിച്ച ബാക്കപ്പ് കോഡും 4 അക്ക PIN-ഉം നൽകി പ്രോഗ്രസ് തിരിച്ചെടുക്കാം:
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-              <input
-                type="text"
-                value={backupInput}
-                onChange={(e) => {
-                  setBackupInput(e.target.value);
-                  setBackupFeedback(null);
-                }}
-                placeholder="SKSSF-BK2:... കോഡ് ഒട്ടിക്കുക"
-                aria-label="ബാക്കപ്പ് കോഡ് ഒട്ടിക്കുക"
-                className="sm:col-span-6 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
-              />
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={4}
-                value={restorePin}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setRestorePin(digits);
-                  setBackupFeedback(null);
-                }}
-                placeholder="4 അക്ക PIN"
-                aria-label="തിരിച്ചെടുക്കാനുള്ള 4 അക്ക പിൻ"
-                className="sm:col-span-3 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-extrabold tracking-widest text-slate-900 focus:outline-none focus:border-emerald-600 tabular-nums"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  const res = importProgressBackupCode(backupInput, restorePin);
-                  if (res.ok) {
-                    sound.reloadPrefsFromStorage();
-                    sound.playUnlock();
-                    onRestoreBackup?.();
-                    if (res.restoredName) {
-                      setLockedOwnerName(res.restoredName);
-                      setBackupName(res.restoredName);
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    const res = importProgressBackupCode(backupInput, restorePin);
+                    if (res.ok) {
+                      sound.reloadPrefsFromStorage();
+                      sound.playUnlock();
+                      onRestoreBackup?.();
+                      if (res.restoredName) {
+                        setLockedOwnerName(res.restoredName);
+                        setBackupName(res.restoredName);
+                      }
+                      setBackupInput('');
+                      setRestorePin('');
+                      setBackupFeedback({
+                        ok: true,
+                        text: `“${res.restoredName}” എന്ന പ്രൊഫൈൽ തിരിച്ചെടുത്തു! (${res.restoredLessons ?? 0} പാഠങ്ങൾ · ${res.restoredXp ?? 0} XP · 🔥 ${res.restoredStreak ?? 1} ദിവസം · സർട്ടിഫിക്കറ്റ് പേര് ലോക്ക് ചെയ്തു)`,
+                      });
+                    } else {
+                      sound.playError();
+                      setBackupFeedback({
+                        ok: false,
+                        text: res.error || 'ബാക്കപ്പ് കോഡ് തിരിച്ചെടുക്കാൻ കഴിഞ്ഞില്ല.',
+                      });
                     }
-                    setBackupInput('');
-                    setRestorePin('');
-                    setBackupFeedback({
-                      ok: true,
-                      text: `“${res.restoredName}” എന്ന പ്രൊഫൈൽ തിരിച്ചെടുത്തു! (${res.restoredLessons ?? 0} പാഠങ്ങൾ · ${res.restoredXp ?? 0} XP · 🔥 ${res.restoredStreak ?? 1} ദിവസം · സർട്ടിഫിക്കറ്റ് പേര് ലോക്ക് ചെയ്തു)`,
-                    });
-                  } else {
-                    sound.playError();
-                    setBackupFeedback({
-                      ok: false,
-                      text: res.error || 'ബാക്കപ്പ് കോഡ് തിരിച്ചെടുക്കാൻ കഴിഞ്ഞില്ല.',
-                    });
-                  }
-                }}
-                disabled={!backupInput.trim() || restorePin.length !== 4}
-                className="sm:col-span-3 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 text-xs font-extrabold shrink-0 cursor-pointer"
-              >
-                തിരിച്ചെടുക്കുക
-              </button>
+                  }}
+                  disabled={!backupInput.trim() || restorePin.length !== 4}
+                  className="sm:col-span-3 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 text-xs font-extrabold shrink-0 cursor-pointer"
+                >
+                  തിരിച്ചെടുക്കുക
+                </button>
+              </div>
+              {backupFeedback && (
+                <p
+                  className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg border ${
+                    backupFeedback.ok
+                      ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950'
+                      : 'bg-rose-50 border-rose-300 text-rose-900'
+                  }`}
+                >
+                  {backupFeedback.ok ? '✅ ' : '⚠️ '}
+                  {backupFeedback.text}
+                </p>
+              )}
             </div>
-            {backupFeedback && (
-              <p
-                className={`text-[11px] font-extrabold px-2.5 py-1.5 rounded-lg border ${
-                  backupFeedback.ok
-                    ? 'bg-emerald-100/80 border-emerald-300 text-emerald-950'
-                    : 'bg-rose-50 border-rose-300 text-rose-900'
-                }`}
-              >
-                {backupFeedback.ok ? '✅ ' : '⚠️ '}
-                {backupFeedback.text}
-              </p>
-            )}
-          </div>
 
-          <p className="text-[11px] font-bold text-emerald-900 bg-white/80 border border-emerald-200 rounded-xl px-3 py-2 leading-snug">
-            🔒 സർട്ടിഫിക്കറ്റ് സുരക്ഷ: ബാക്കപ്പ് തിരിച്ചെടുത്താൽ സർട്ടിഫിക്കറ്റിൽ ആ ഉടമയുടെ പേര് ലോക്ക് ആകും — മറ്റൊരാൾക്ക് ആ കോഡ് വെച്ച് സ്വന്തം പേരിൽ സർട്ടിഫിക്കറ്റ് എടുക്കാനാകില്ല. എല്ലാ വിവരങ്ങളും ഫോണിൽ മാത്രം സുരക്ഷിതം.
-          </p>
-        </div>
-
-        {/* Game Reset & Clear Saved Browser Data Section */}
-        {(onResetProgress || onClearAllData) && (
-          <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-extrabold text-rose-950">
-              <RotateCcw className="w-4 h-4 text-rose-700" />
-              <span>🔄 ഗെയിം റീസെറ്റ് &amp; സേവ് ചെയ്ത ഡാറ്റ ക്ലിയർ</span>
-            </div>
-            <p className="text-[11px] text-slate-700 leading-relaxed">
-              തുടക്കം മുതൽ പുതുതായി കളിക്കണമെങ്കിൽ <strong>ഗെയിം റീസെറ്റ്</strong> ചെയ്യാം. മുൻ സ്കോറുകളും ശബ്ദ ക്രമീകരണങ്ങളും ഉൾപ്പെടെ ഈ ബ്രൗസറിൽ സേവ് ചെയ്ത മുഴുവൻ വിവരങ്ങളും മായ്ക്കാൻ <strong>എല്ലാ ഡാറ്റയും ക്ലിയർ ചെയ്യുക</strong> ഉപയോഗിക്കാം.
+            <p className="text-[11px] font-bold text-emerald-900 bg-white/80 border border-emerald-200 rounded-xl px-3 py-2 leading-snug">
+              🔒 സർട്ടിഫിക്കറ്റ് സുരക്ഷ: ബാക്കപ്പ് തിരിച്ചെടുത്താൽ സർട്ടിഫിക്കറ്റിൽ ആ ഉടമയുടെ പേര് ലോക്ക് ആകും — മറ്റൊരാൾക്ക് ആ കോഡ് വെച്ച് സ്വന്തം പേരിൽ സർട്ടിഫിക്കറ്റ് എടുക്കാനാകില്ല. എല്ലാ വിവരങ്ങളും ഫോണിൽ മാത്രം സുരക്ഷിതം.
             </p>
+          </SettingsAccordionSection>
 
-            {actionDoneMsg && (
-              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-xs font-extrabold text-emerald-900">
-                ✅ {actionDoneMsg}
-              </div>
-            )}
-
-            {confirmAction === 'reset' ? (
-              <div className="p-3 rounded-xl bg-white border-2 border-amber-400 space-y-2.5">
-                <p className="text-xs font-extrabold text-amber-950">
-                  ഇതുവരെ കളിച്ച പുരോഗതി (നിലവിലെ പാഠം, XP, ക്വിസ് ഉത്തരങ്ങൾ) മുഴുവൻ റീസെറ്റ് ചെയ്ത് ആദ്യം മുതൽ തുടങ്ങട്ടെ?
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.unlockAudio();
-                      sound.playClick();
-                      onResetProgress?.();
-                      setConfirmAction(null);
-                      setActionDoneMsg('ഗെയിം പുരോഗതി റീസെറ്റ് ചെയ്തു — ആദ്യം മുതൽ കളിക്കാം!');
-                      window.setTimeout(() => {
-                        setActionDoneMsg(null);
-                        onClose();
-                      }, 900);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold"
-                  >
-                    അതെ, റീസെറ്റ് ചെയ്യുക
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold"
-                  >
-                    വേണ്ട, റദ്ദാക്കുക
-                  </button>
-                </div>
-              </div>
-            ) : confirmAction === 'clear_all' ? (
-              <div className="p-3 rounded-xl bg-white border-2 border-rose-400 space-y-2.5">
-                <p className="text-xs font-extrabold text-rose-950">
-                  സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും (ഗെയിം പുരോഗതി, മുൻ ശ്രമങ്ങളുടെ സ്കോറുകൾ, ശബ്ദ സെറ്റിംഗ്സ്, കാഷ് ചെയ്ത വോയിസുകൾ) പൂർണ്ണമായി മായ്ക്കട്ടെ?
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      sound.unlockAudio();
-                      sound.playClick();
-                      await onClearAllData?.();
-                      setConfirmAction(null);
-                      setActionDoneMsg('സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും പൂർണ്ണമായി ക്ലിയർ ചെയ്തു!');
-                      window.setTimeout(() => {
-                        setActionDoneMsg(null);
-                        onClose();
-                      }, 900);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-extrabold"
-                  >
-                    അതെ, എല്ലാം ക്ലിയർ ചെയ്യുക
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmAction(null)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold"
-                  >
-                    വേണ്ട, റദ്ദാക്കുക
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {onResetProgress && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setActionDoneMsg(null);
-                      setConfirmAction('reset');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 text-xs font-extrabold"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>ഇതുവരെ കളിച്ചത് റീസെറ്റ് ചെയ്യുക</span>
-                  </button>
-                )}
-                {onClearAllData && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sound.playClick();
-                      setActionDoneMsg(null);
-                      setConfirmAction('clear_all');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-rose-100 border border-rose-300 text-rose-900 text-xs font-extrabold"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും ക്ലിയർ ചെയ്യുക</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* About This App */}
-        <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
-          <div className="flex items-center gap-3">
-            <GuideGameBrandLogo size="sm" />
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-950">
-                <Info className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                <span>ആപ്പിനെക്കുറിച്ച് (About)</span>
-              </div>
-              <p className="text-sm font-black text-emerald-950">
-                ഗൈഡ് ഗെയിം · Guide Game
+          {/* 5. Game Reset & Clear Saved Browser Data */}
+          {(onResetProgress || onClearAllData) && (
+            <SettingsAccordionSection
+              title="ഗെയിം റീസെറ്റ് & ഡാറ്റ ക്ലിയർ"
+              subtitle="പുരോഗതി റീസെറ്റ് അല്ലെങ്കിൽ സേവ് ചെയ്ത ഡാറ്റ മായ്ക്കാം"
+              icon={<RotateCcw className="w-4 h-4" />}
+              isOpen={openSection === 'reset'}
+              onToggle={() => toggleSection('reset')}
+              accent="rose"
+            >
+              <p className="text-[11px] text-slate-700 leading-relaxed">
+                തുടക്കം മുതൽ പുതുതായി കളിക്കണമെങ്കിൽ <strong>ഗെയിം റീസെറ്റ്</strong> ചെയ്യാം. മുൻ സ്കോറുകളും ശബ്ദ ക്രമീകരണങ്ങളും ഉൾപ്പെടെ ഈ ബ്രൗസറിൽ സേവ് ചെയ്ത മുഴുവൻ വിവരങ്ങളും മായ്ക്കാൻ <strong>എല്ലാ ഡാറ്റയും ക്ലിയർ ചെയ്യുക</strong> ഉപയോഗിക്കാം.
               </p>
-            </div>
-          </div>
-          <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed">
-            കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും കളികളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>ഗൈഡ് ഗെയിം (Guide Game)</strong>.
-          </p>
-          {onOpenSupport && (
-            <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold text-emerald-900/80">
-                ഈ ആപ്പ് ഇഷ്ടമായോ?
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playClick();
-                  onOpenSupport();
-                }}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
-              >
-                <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-              </button>
-            </div>
+
+              {actionDoneMsg && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-xs font-extrabold text-emerald-900">
+                  ✅ {actionDoneMsg}
+                </div>
+              )}
+
+              {confirmAction === 'reset' ? (
+                <div className="p-3 rounded-xl bg-white border-2 border-amber-400 space-y-2.5">
+                  <p className="text-xs font-extrabold text-amber-950">
+                    ഇതുവരെ കളിച്ച പുരോഗതി (നിലവിലെ പാഠം, XP, ക്വിസ് ഉത്തരങ്ങൾ) മുഴുവൻ റീസെറ്റ് ചെയ്ത് ആദ്യം മുതൽ തുടങ്ങട്ടെ?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        onResetProgress?.();
+                        setConfirmAction(null);
+                        setActionDoneMsg('ഗെയിം പുരോഗതി റീസെറ്റ് ചെയ്തു — ആദ്യം മുതൽ കളിക്കാം!');
+                        window.setTimeout(() => {
+                          setActionDoneMsg(null);
+                          onClose();
+                        }, 900);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold cursor-pointer"
+                    >
+                      അതെ, റീസെറ്റ് ചെയ്യുക
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmAction(null)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold cursor-pointer"
+                    >
+                      വേണ്ട, റദ്ദാക്കുക
+                    </button>
+                  </div>
+                </div>
+              ) : confirmAction === 'clear_all' ? (
+                <div className="p-3 rounded-xl bg-white border-2 border-rose-400 space-y-2.5">
+                  <p className="text-xs font-extrabold text-rose-950">
+                    സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും (ഗെയിം പുരോഗതി, മുൻ ശ്രമങ്ങളുടെ സ്കോറുകൾ, ശബ്ദ സെറ്റിംഗ്സ്, കാഷ് ചെയ്ത വോയിസുകൾ) പൂർണ്ണമായി മായ്ക്കട്ടെ?
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        await onClearAllData?.();
+                        setConfirmAction(null);
+                        setActionDoneMsg('സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും പൂർണ്ണമായി ക്ലിയർ ചെയ്തു!');
+                        window.setTimeout(() => {
+                          setActionDoneMsg(null);
+                          onClose();
+                        }, 900);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-rose-700 hover:bg-rose-800 text-white text-xs font-extrabold cursor-pointer"
+                    >
+                      അതെ, എല്ലാം ക്ലിയർ ചെയ്യുക
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmAction(null)}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold cursor-pointer"
+                    >
+                      വേണ്ട, റദ്ദാക്കുക
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {onResetProgress && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        setActionDoneMsg(null);
+                        setConfirmAction('reset');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 text-xs font-extrabold cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>ഇതുവരെ കളിച്ചത് റീസെറ്റ് ചെയ്യുക</span>
+                    </button>
+                  )}
+                  {onClearAllData && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.playClick();
+                        setActionDoneMsg(null);
+                        setConfirmAction('clear_all');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-rose-100 border border-rose-300 text-rose-900 text-xs font-extrabold cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>സേവ് ചെയ്ത എല്ലാ വിവരങ്ങളും ക്ലിയർ ചെയ്യുക</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </SettingsAccordionSection>
           )}
+
+          {/* 6. About This App & Hadiya Support */}
+          <SettingsAccordionSection
+            title={onOpenSupport ? 'ആപ്പിനെക്കുറിച്ച് & ഹദിയ' : 'ആപ്പിനെക്കുറിച്ച് (About)'}
+            subtitle={
+              onOpenSupport
+                ? 'ഗൈഡ് ഗെയിം വിവരണം · 🎁 ഒരു ഹദിയ നൽകാം'
+                : 'ഗൈഡ് ഗെയിം · Guide Game വിവരണം'
+            }
+            icon={<Info className="w-4 h-4" />}
+            isOpen={openSection === 'about'}
+            onToggle={() => toggleSection('about')}
+            accent="emerald"
+          >
+            <div className="flex items-center gap-3">
+              <GuideGameBrandLogo size="sm" />
+              <div>
+                <p className="text-sm font-black text-emerald-950">
+                  ഗൈഡ് ഗെയിം · Guide Game
+                </p>
+                <p className="text-[11px] font-semibold text-emerald-800">
+                  SKSSF · സമസ്ത സംവേദനാത്മക പഠന വേദി
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed">
+              കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും കളികളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>ഗൈഡ് ഗെയിം (Guide Game)</strong>.
+            </p>
+            {onOpenSupport && (
+              <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] font-semibold text-emerald-900/80">
+                  ഈ ആപ്പ് ഇഷ്ടമായോ?
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    onOpenSupport();
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
+                >
+                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                </button>
+              </div>
+            )}
+          </SettingsAccordionSection>
         </div>
 
         <div className="flex justify-end pt-2 border-t border-slate-200">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-extrabold cursor-pointer"
           >
             <CheckCircle2 className="w-4 h-4" /> ശരി, കളിക്കാം!
           </button>
@@ -2670,6 +2797,10 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
                 const progress =
                   mission.id === 'daily_checkin'
                     ? 1
+                    : mission.id === 'daily_special_game'
+                    ? dailyState.todaySpecialGameDone
+                      ? 1
+                      : 0
                     : mission.id === 'daily_lesson'
                     ? Math.min(1, dailyState.todayLessonsCount)
                     : Math.min(1, dailyState.todayQuizzesCorrect);

@@ -52,12 +52,16 @@ export interface DailyAndProfileState {
   todayDate: string;
   todayLessonsCount: number;
   todayQuizzesCorrect: number;
+  todaySpecialGameDone?: boolean;
+  streakHistoryDates?: string[];
+  completedDailyGameDates?: string[];
+  dailyGameBestScore?: number;
   claimedMissionsToday: string[];
   profile: UnitProfile;
 }
 
 export interface DailyMissionDef {
-  id: 'daily_checkin' | 'daily_lesson' | 'daily_quiz';
+  id: 'daily_checkin' | 'daily_lesson' | 'daily_quiz' | 'daily_special_game';
   emoji: string;
   title: string;
   rewardXp: number;
@@ -70,6 +74,13 @@ export const DAILY_MISSIONS: DailyMissionDef[] = [
     emoji: '🌅',
     title: 'ഇന്നത്തെ പഠന യാത്ര തുടങ്ങാം',
     rewardXp: 10,
+    target: 1,
+  },
+  {
+    id: 'daily_special_game',
+    emoji: '🎯',
+    title: 'ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിം പൂർത്തിയാക്കാം',
+    rewardXp: 25,
     target: 1,
   },
   {
@@ -324,6 +335,10 @@ function createDefaultDailyState(): DailyAndProfileState {
     todayDate: today,
     todayLessonsCount: 0,
     todayQuizzesCorrect: 0,
+    todaySpecialGameDone: false,
+    streakHistoryDates: [today],
+    completedDailyGameDates: [],
+    dailyGameBestScore: 0,
     claimedMissionsToday: [],
     profile: {
       playerName: '',
@@ -331,6 +346,19 @@ function createDefaultDailyState(): DailyAndProfileState {
       mekhalaName: '',
     },
   };
+}
+
+function sanitizeDateKeyArray(raw: unknown, maxLen = 60): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item) && !seen.has(item)) {
+      seen.add(item);
+      out.push(item);
+    }
+  }
+  return out.slice(-maxLen);
 }
 
 function sanitizeDailyState(raw: unknown): DailyAndProfileState {
@@ -375,7 +403,14 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
     typeof p.todayQuizzesCorrect === 'number' && Number.isFinite(p.todayQuizzesCorrect)
       ? Math.max(0, Math.round(p.todayQuizzesCorrect))
       : 0;
-  let claimedMissionsToday = sanitizeStringArray(p.claimedMissionsToday, 10);
+  let claimedMissionsToday = sanitizeStringArray(p.claimedMissionsToday, 12);
+
+  const rawHistory = sanitizeDateKeyArray(p.streakHistoryDates, 60);
+  const completedDailyGameDates = sanitizeDateKeyArray(p.completedDailyGameDates, 60);
+  const dailyGameBestScore =
+    typeof p.dailyGameBestScore === 'number' && Number.isFinite(p.dailyGameBestScore)
+      ? Math.max(0, Math.round(p.dailyGameBestScore))
+      : 0;
 
   if (prevLastActive !== today) {
     // New local day: update streak and reset daily mission counters
@@ -390,6 +425,13 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
     claimedMissionsToday = [];
   }
 
+  const streakHistoryDates = rawHistory.includes(today)
+    ? rawHistory
+    : [...rawHistory, today].slice(-60);
+  const todaySpecialGameDone =
+    completedDailyGameDates.includes(today) ||
+    (p.todayDate === today && Boolean(p.todaySpecialGameDone));
+
   return {
     streakDays,
     bestStreak: Math.max(bestStreak, streakDays),
@@ -397,6 +439,10 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
     todayDate: today,
     todayLessonsCount,
     todayQuizzesCorrect,
+    todaySpecialGameDone,
+    streakHistoryDates,
+    completedDailyGameDates,
+    dailyGameBestScore,
     claimedMissionsToday,
     profile: cleanProfile,
   };
