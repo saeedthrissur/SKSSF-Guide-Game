@@ -443,7 +443,7 @@ export const HELPDESK_CASES: HelpdeskCase[] = [
     options: ['meem', 'viqaya', 'sahachari', 'ibad'],
     correctWingId: 'viqaya',
     explanation:
-      'മിടുക്കൻ! "സുരക്ഷ" എന്നർത്ഥമുള്ള വിഖായ (Viqaya) ആക്ടീവ് വിംഗാണ് ALERT ടീമും ആംബുലൻസും രക്തദാനവും ഹജ്ജ് സേവനവും നയിക്കുന്നത്!',
+      'മികച്ച തീരുമാനം! "സുരക്ഷ" എന്നർത്ഥമുള്ള വിഖായ (Viqaya) ആക്ടീവ് വിംഗാണ് ALERT ടീമും ആംബുലൻസും രക്തദാനവും ഹജ്ജ് സേവനവും നയിക്കുന്നത്!',
   },
   {
     id: 'case3',

@@ -6,7 +6,7 @@
   }
 
   body {
-    font-family: 'Noto Sans Malayalam', 'Plus Jakarta Sans', 'Amiri', 'Noto Naskh Arabic', system-ui, -apple-system, sans-serif;
+    font-family: 'Noto Serif Malayalam', 'Noto Serif', 'Amiri', 'Noto Naskh Arabic', Georgia, serif;
     font-feature-settings: "tnum" on;
     overflow-x: clip;
     top: 0 !important;
@@ -20,7 +20,7 @@
   }
 
   .font-display {
-    font-family: 'Plus Jakarta Sans', 'Noto Sans Malayalam', sans-serif;
+    font-family: 'Noto Serif', 'Noto Serif Malayalam', Georgia, serif;
   }
 }
 

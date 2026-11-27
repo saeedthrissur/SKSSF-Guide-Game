@@ -28,7 +28,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'jeep_starter',
     tierLabel: 'ഘട്ടം 2',
-    title: 'SKSSF പ്രവർത്തകൻ',
+    title: 'SKSSF അംഗം',
     subtitle: 'സംഘടനാ പ്രചാരണവും അടിസ്ഥാന പാഠങ്ങളും പൂർത്തിയാക്കി',
     unlockHint: 'ജീപ്പ് ഗെയിം പൂർത്തിയാക്കൂ',
     accentFrom: '#0369A1',
@@ -37,7 +37,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'flag_keeper',
     tierLabel: 'ഘട്ടം 3',
-    title: 'SKSSF സംഘാടകൻ',
+    title: 'SKSSF സംഘാടക പ്രതിനിധി',
     subtitle: 'സമസ്തയുടെയും SKSSF-ന്റെയും പതാകയും ചരിത്രവും പഠിച്ചു',
     unlockHint: 'പതാക പാഠം പൂർത്തിയാക്കൂ',
     accentFrom: '#7F1D1D',
@@ -56,7 +56,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
     id: 'viqaya_hero',
     tierLabel: 'ഘട്ടം 5',
     title: 'SKSSF വിഖായ വളണ്ടിയർ',
-    subtitle: 'സേവനത്തിനും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങൾക്കും സദാസന്നദ്ധൻ',
+    subtitle: 'സേവനത്തിനും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങൾക്കും സദാസന്നദ്ധർ',
     unlockHint: 'വിഖായ വാഹനം പൂർത്തിയാക്കൂ',
     accentFrom: '#0E7490',
     accentTo: '#065F46',
@@ -64,7 +64,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'master_guide',
     tierLabel: 'പൂർണ്ണ വിജയം',
-    title: 'SKSSF നേതാവ്',
+    title: 'SKSSF മാർഗ്ഗദർശി',
     subtitle: 'എല്ലാ പാഠങ്ങളും ദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി',
     unlockHint: 'എല്ലാ ഘട്ടവും പൂർത്തിയാക്കൂ',
     accentFrom: '#92400E',
@@ -216,9 +216,11 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   const cleanRank =
     rank
       .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
-      .replace(/കൂട്ടുകാരൻ/g, 'പ്രവർത്തകൻ')
+      .replace(/കൂട്ടുകാരൻ/g, 'അംഗം')
+      .replace(/പ്രവർത്തകൻ/g, 'അംഗം')
+      .replace(/സംഘാടകൻ/g, 'സംഘാടക പ്രതിനിധി')
       .replace(/\s+/g, ' ')
-      .trim() || 'SKSSF പ്രവർത്തകൻ';
+      .trim() || 'SKSSF അംഗം';
 
   const badge =
     SHAREABLE_BADGES.find((b) => b.id === selectedId && unlockedMap[b.id]) ||
@@ -294,7 +296,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       startSize: number,
       minSize: number,
       weight: number | string = 700,
-      family = '"Noto Sans Malayalam", sans-serif'
+      family = '"Noto Serif Malayalam", "Noto Serif", Georgia, serif'
     ) => {
       ctx.save();
       ctx.textAlign = 'left';
@@ -368,10 +370,10 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.textBaseline = 'middle';
       ctx.direction = 'ltr';
       ctx.fillStyle = '#FEF3C7';
-      ctx.font = '800 44px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 44px "Noto Serif", Georgia, serif';
       ctx.fillText('SKSSF', cx, cy - 12);
       ctx.fillStyle = '#FDE68A';
-      ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '700 22px "Noto Serif", Georgia, serif';
       ctx.fillText('EST. 1989', cx, cy + 32);
       ctx.restore();
     }
@@ -440,7 +442,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       16,
       12,
       700,
-      '"Plus Jakarta Sans", sans-serif'
+      '"Noto Serif", Georgia, serif'
     );
 
     return canvas;

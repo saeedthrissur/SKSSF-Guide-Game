@@ -583,6 +583,9 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
       setPortalOverlayActive(false);
       setBriefingOpen(true);
       setIsExpanded(true);
+      window.setTimeout(() => {
+        containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
     };
 
     return (
@@ -856,7 +859,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   onClick={enterFullscreen}
                   title="ഫുൾ സ്ക്രീൻ"
                   aria-label="ഫുൾ സ്ക്രീൻ"
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-900 hover:bg-emerald-800 text-amber-300 transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-amber-300 transition-colors cursor-pointer"
                 >
                   <VideoFullscreenEnterIcon className="w-3.5 h-3.5" />
                 </button>

@@ -72,7 +72,7 @@ export const smoothScrollToSelector = (selector: string): boolean => {
   if (typeof document === 'undefined') return false;
   const el = document.querySelector(selector);
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return true;
   }
   return false;
@@ -108,9 +108,12 @@ export const LessonFlowProvider: React.FC<{
   const [drawerCount, setDrawerCount] = useState(0);
   const [gameShellCount, setGameShellCount] = useState(0);
 
-  // Always reset back to Screen 1 ('play': Storyline + Game) whenever moving to a new lesson
+  // Always reset back to Screen 1 ('play': Storyline + Game) and start cleanly at the top whenever moving to a new lesson
   useEffect(() => {
     setLessonViewStep('play');
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
   }, [activeLessonId]);
 
   // Clear in-memory and stored confirmation state when the game resets (e.g., 3-Heart Game Over or Reset)
@@ -138,13 +141,23 @@ export const LessonFlowProvider: React.FC<{
     setLessonViewStep('study');
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.setTimeout(() => {
+        const found = smoothScrollToSelector('[data-lesson-drawer="true"]');
+        if (!found) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 60);
     }, 40);
   }, []);
 
   const goToPlayStep = useCallback(() => {
     setLessonViewStep('play');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.setTimeout(() => {
+      const found = smoothScrollToSelector('[data-lesson-game="true"]');
+      if (!found) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 60);
   }, []);
 
   const confirmLesson = useCallback(

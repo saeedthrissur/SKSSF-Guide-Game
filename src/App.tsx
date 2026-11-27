@@ -196,8 +196,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
     sound.unlockAudio();
     sound.playClick();
     const shareUrl = getAppShareUrl();
-    const shareText =
-      'SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? 52 പാഠങ്ങളും ഗെയിമുകളും കളിച്ച് സാക്ഷ്യപത്രം നേടാം!';
+    const shareText = `SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? ${ALL_LESSONS.length} പാഠങ്ങളും ഗെയിമുകളും കളിച്ച് സാക്ഷ്യപത്രം നേടാം!`;
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
@@ -228,7 +227,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               alt="SKSSF ഗൈഡ് ഗെയിം പഠന ബാനർ"
               referrerPolicy="no-referrer"
               onError={() => setHeroImgFailed(true)}
-              className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-28 mix-blend-luminosity"
+              className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-25"
             />
           )}
           <div
@@ -246,7 +245,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
             </h1>
             <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
-              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള 52 പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
+              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള {totalLessons} പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
             </p>
           </div>
         </div>
@@ -829,7 +828,7 @@ export default function App() {
     [activeLessonId]
   );
 
-  // Stage-aligned milestone celebrations (Prologue 6, Practical 18, Unit 26, Cluster/Zone 35, District 40, Full 52)
+  // Stage-aligned milestone celebrations (Prologue 6, Practical 18, Unit 26, Cluster/Zone 35, District 40, Full)
   const [activeMilestone, setActiveMilestone] = useState<number | null>(null);
   const [milestoneShareCopied, setMilestoneShareCopied] = useState(false);
 
@@ -839,7 +838,7 @@ export default function App() {
     26: { title: 'യൂണിറ്റ് തലം പൂർത്തിയാക്കി!', badgePreset: 'flag_keeper' },
     35: { title: 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'wing_hero' },
     40: { title: 'ജില്ലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'cyber_guardian' },
-    [ALL_LESSONS.length]: { title: 'എല്ലാ 52 പാഠങ്ങളും പൂർത്തിയാക്കി!', badgePreset: 'master_guide' },
+    [ALL_LESSONS.length]: { title: `എല്ലാ ${ALL_LESSONS.length} പാഠങ്ങളും പൂർത്തിയാക്കി!`, badgePreset: 'master_guide' },
   };
 
   useEffect(() => {
@@ -954,6 +953,16 @@ export default function App() {
     syncLessonUrl(showIntro ? null : activeLessonId);
   }, [showIntro, activeLessonId]);
 
+  // Always start at the very top of the page whenever navigating between views, stages, levels, or lessons
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const rafId = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [showIntro, lessonsMapOpen, stage, currentLevel, activeLessonId]);
+
   // Listen to browser hash/history changes (?lesson=... or #lesson=...) for instant direct-link jumps
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -994,10 +1003,10 @@ export default function App() {
 
   const currentRank = useMemo(() => {
     if (canonicalCompletedCount >= ALL_LESSONS.length) return 'SKSSF മാർഗ്ഗദർശി';
-    if (canonicalCompletedCount >= 40 || xp >= 450) return 'SKSSF നേതാവ്';
+    if (canonicalCompletedCount >= 40 || xp >= 450) return 'SKSSF നേതൃത്വം';
     if (canonicalCompletedCount >= 30 || xp >= 320) return 'SKSSF ഭാരവാഹി';
-    if (canonicalCompletedCount >= 18 || xp >= 180) return 'SKSSF സംഘാടകൻ';
-    if (canonicalCompletedCount >= 6 || xp >= 60) return 'SKSSF പ്രവർത്തകൻ';
+    if (canonicalCompletedCount >= 18 || xp >= 180) return 'SKSSF സംഘാടക പ്രതിനിധി';
+    if (canonicalCompletedCount >= 6 || xp >= 60) return 'SKSSF അംഗം';
     return 'SKSSF അനുഭാവി';
   }, [xp, canonicalCompletedCount]);
 

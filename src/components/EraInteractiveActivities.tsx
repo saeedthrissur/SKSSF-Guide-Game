@@ -6,6 +6,7 @@ import { narrator } from '../utils/narrator';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { useGameStagePaused, useGameStagePortal } from './GameFullscreenShell';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
+import eraMadrasaLanternImg from '../assets/images/era_madrasa_lantern_1794953898224.jpg';
 
 export interface EraArtifactItem {
   id: string;
@@ -1016,11 +1017,11 @@ const MadrasaLanternSweepGame: React.FC<{
         onPointerDown={(e) => moveLanternTo(e.clientX, e.clientY)}
         className="relative h-72 sm:h-80 rounded-2xl border-2 border-amber-500/50 overflow-hidden select-none touch-none bg-black cursor-none"
       >
-        {/* Subtle Heritage Backdrop — COMPLETELY HIDDEN in pitch black outside lantern beam */}
+        {/* Subtle Heritage Backdrop — bundled via Vite ES import */}
         <img
-          src="./src/assets/images/era_madrasa_lantern_1794953898224.jpg"
+          src={eraMadrasaLanternImg}
           alt="മദ്രസാ വിളക്ക് വെളിച്ചം"
-          className="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover opacity-55 pointer-events-none"
           referrerPolicy="no-referrer"
         />
 

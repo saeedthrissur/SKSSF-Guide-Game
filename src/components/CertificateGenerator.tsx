@@ -3,6 +3,7 @@ import { Award, Camera, Copy, Download, Lock, Printer, Share2, ShieldAlert, Tras
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
 import { loadDailyAndProfileState } from '../utils/gameStorage';
+import { ALL_LESSONS } from '../utils/lessonTracker';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 interface CertificateGeneratorProps {
@@ -93,7 +94,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   rank,
   badges,
   isPreviewOnly = false,
-  completedLessonsCount = 52,
+  completedLessonsCount = ALL_LESSONS.length,
 }) => {
   const initialDaily = loadDailyAndProfileState();
   const lockedName = initialDaily.profile.lockedCertificateName?.trim() || '';
@@ -142,11 +143,13 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const cleanCertificateLabel = (raw: string) =>
     raw
       .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
-      .replace(/കൂട്ടുകാരൻ/g, 'പ്രവർത്തകൻ')
+      .replace(/കൂട്ടുകാരൻ/g, 'അംഗം')
+      .replace(/പ്രവർത്തകൻ/g, 'അംഗം')
+      .replace(/സംഘാടകൻ/g, 'സംഘാടക പ്രതിനിധി')
       .replace(/\s+/g, ' ')
       .trim();
 
-  const cleanRank = cleanCertificateLabel(rank) || 'SKSSF പ്രവർത്തകൻ';
+  const cleanRank = cleanCertificateLabel(rank) || 'SKSSF അംഗം';
   const cleanBadges = badges.map(cleanCertificateLabel).filter(Boolean);
 
   const effectiveName = lockedName || recipientName.trim();
@@ -165,7 +168,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setGenerated(true);
     setShareNote(
       isPreviewOnly
-        ? 'ഇത് പ്രിവ്യൂ മാത്രമാണ് — 52 പാഠങ്ങളും കളിച്ച് തീർത്താലേ ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.'
+        ? `ഇത് പ്രിവ്യൂ മാത്രമാണ് — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.`
         : 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.'
     );
   };
@@ -267,17 +270,17 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#FEF3C7';
-      ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 22px "Noto Serif", Georgia, serif';
       ctx.fillText('SKJU · SKSSF', crestCx, crestCy + 8);
     }
 
     // Certificate Titles (optically centered)
     ctx.fillStyle = '#7F1D1D';
-    ctx.font = '700 26px "Noto Sans Malayalam", sans-serif';
+    ctx.font = '700 26px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
     drawOpticalCenteredLine(ctx, 'SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”', 800, 294);
 
     ctx.fillStyle = '#064E3B';
-    ctx.font = '800 48px "Noto Sans Malayalam", sans-serif';
+    ctx.font = '800 48px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
     drawOpticalCenteredLine(ctx, 'വിജയ സർട്ടിഫിക്കറ്റ്', 800, 356);
 
     // Ornamental gold divider line
@@ -290,7 +293,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
     // Natural, simple Kerala Malayalam body text
     ctx.fillStyle = '#334155';
-    ctx.font = '600 24px "Noto Sans Malayalam", sans-serif';
+    ctx.font = '600 24px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
     const lastLineY = wrapCenteredText(
       ctx,
       'സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന സർട്ടിഫിക്കറ്റ്.',
@@ -308,7 +311,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       startSize: number,
       minSize: number,
       weight = 700,
-      family = '"Noto Sans Malayalam", sans-serif'
+      family = '"Noto Serif Malayalam", "Noto Serif", Georgia, serif'
     ) => {
       ctx.save();
       ctx.textAlign = 'left';
@@ -394,7 +397,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       16,
       12,
       600,
-      '"Plus Jakarta Sans", sans-serif'
+      '"Noto Serif", Georgia, serif'
     );
     ctx.fillStyle = '#475569';
     drawCenteredFit(`തീയതി: ${issueDate}  ·  SKSSF ഗൈഡ് ഗെയിം`, 800, 1012, 920, 19, 14, 700);
@@ -405,7 +408,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const handleDownloadPng = async () => {
     if (isPreviewOnly) {
       sound.playError();
-      setShareNote('പ്രിവ്യൂവിൽ ഡൗൺലോഡ് പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      setShareNote(`പ്രിവ്യൂവിൽ ഡൗൺലോഡ് പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
       return;
     }
     setDownloading(true);
@@ -427,7 +430,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const handleShareSocial = async () => {
     if (isPreviewOnly) {
       sound.playError();
-      setShareNote('പ്രിവ്യൂവിൽ ഷെയർ പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      setShareNote(`പ്രിവ്യൂവിൽ ഷെയർ പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
       return;
     }
     setDownloading(true);
@@ -490,7 +493,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const handlePrint = () => {
     if (isPreviewOnly) {
       sound.playError();
-      setShareNote('പ്രിവ്യൂവിൽ പ്രിന്റ് പറ്റില്ല — 52 പാഠങ്ങളും കളിച്ച് തീർക്കൂ!');
+      setShareNote(`പ്രിവ്യൂവിൽ പ്രിന്റ് പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
       return;
     }
     sound.playClick();
@@ -519,7 +522,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           <div className="space-y-0.5">
             <p>👁️ പ്രിവ്യൂ മാത്രം (ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് അല്ല)</p>
             <p className="font-semibold text-amber-900 leading-relaxed">
-              ഇപ്പോൾ {completedLessonsCount}/52 പാഠങ്ങളേ കഴിഞ്ഞിട്ടുള്ളൂ. ഡിസൈൻ നോക്കാൻ മാത്രമാണ് ഇത് — 52 പാഠങ്ങളും കളിച്ച് തീർത്താലേ സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാനും ഷെയർ ചെയ്യാനും പറ്റൂ.
+              ഇപ്പോൾ {completedLessonsCount}/{ALL_LESSONS.length} പാഠങ്ങളേ കഴിഞ്ഞിട്ടുള്ളൂ. ഡിസൈൻ നോക്കാൻ മാത്രമാണ് ഇത് — {ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാനും ഷെയർ ചെയ്യാനും പറ്റൂ.
             </p>
           </div>
         </div>
@@ -632,7 +635,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       >
         {isPreviewOnly && (
           <div className="mb-3 rounded-xl bg-amber-300 border-2 border-amber-600 px-3 py-1.5 text-center text-xs font-black text-slate-950 tracking-wide">
-            PREVIEW ONLY · NOT OFFICIAL ({completedLessonsCount}/52 പാഠങ്ങൾ)
+            PREVIEW ONLY · NOT OFFICIAL ({completedLessonsCount}/{ALL_LESSONS.length} പാഠങ്ങൾ)
           </div>
         )}
         <div className="border-2 border-amber-600/80 rounded-xl p-4 sm:p-8 text-center space-y-4 sm:space-y-5 bg-gradient-to-b from-emerald-50/40 via-transparent to-transparent">
@@ -761,7 +764,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         >
           {isPreviewOnly ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
           {isPreviewOnly
-            ? '52 പാഠങ്ങളും പൂർത്തിയാക്കൂ'
+            ? `${ALL_LESSONS.length} പാഠങ്ങളും പൂർത്തിയാക്കൂ`
             : downloading
             ? 'തയ്യാറാക്കുന്നു...'
             : 'ചിത്രമായി ഡൗൺലോഡ്'}

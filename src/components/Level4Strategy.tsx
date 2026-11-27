@@ -9,7 +9,7 @@ import {
   Smartphone,
   Volume2,
 } from 'lucide-react';
-import { LessonDescriptor } from '../utils/lessonTracker';
+import { ALL_LESSONS, LessonDescriptor } from '../utils/lessonTracker';
 import {
   HIERARCHY_NODES,
   SOCIAL_ETHICS_CASES,
@@ -41,6 +41,18 @@ import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 import { OFFICIAL_PDF_GUIDES, getLinksForLesson } from '../data/officialLinks';
 import { InlineOfficialLinksStrip } from './OfficialResourceHubModal';
 import { SamasthaMediaStudioGame, SamasthaPortalRouterGame } from './PortalAndMediaGames';
+import {
+  HigherEducationPathwayGame,
+  IfcFamilyClusterGame,
+  IsthiqamaManeeshaPuzzleGame,
+  MeemMedicalCampGame,
+  NationalGlobalCoordGame,
+  OfficialSocialDetectiveGame,
+  OrganetAuditPuzzleGame,
+  SamasthaCellsMatrixGame,
+  SathyadharaIsaDeskGame,
+  TwalabaConferencePuzzleGame,
+} from './NewWingsAndCellsGames';
 
 export type L4Tab =
   | 'climb'
@@ -55,6 +67,16 @@ export type L4Tab =
   | 'green_earth'
   | 'samastha_portals'
   | 'media_youtube_hub'
+  | 'twalaba'
+  | 'isthiqama_maneesha'
+  | 'meem_health'
+  | 'ifc_family'
+  | 'organet_portal'
+  | 'sathyadhara_isa'
+  | 'national_global'
+  | 'samastha_cells'
+  | 'higher_education'
+  | 'social_verification'
   | 'certificate';
 
 interface Level4StrategyProps {
@@ -242,7 +264,10 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     if (activeTab !== 'certificate') {
       onActiveLessonChange?.(`l4_${activeTab}`);
     } else {
-      onActiveLessonChange?.('l4_green_earth');
+      onActiveLessonChange?.('l4_social_verification');
+    }
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
   }, [activeTab, onActiveLessonChange]);
 
@@ -302,6 +327,16 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
       'l4_green_earth',
       'l4_samastha_portals',
       'l4_media_youtube_hub',
+      'l4_twalaba',
+      'l4_isthiqama_maneesha',
+      'l4_meem_health',
+      'l4_ifc_family',
+      'l4_organet_portal',
+      'l4_sathyadhara_isa',
+      'l4_national_global',
+      'l4_samastha_cells',
+      'l4_higher_education',
+      'l4_social_verification',
     ] as const).forEach((lid) => {
       if (quizAnswers[lid]) {
         onMarkLessonCompleted?.(lid);
@@ -369,6 +404,56 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
       narrator.speak(
         'സമസ്ത മീഡിയ, മാസികകൾ & യൂട്യൂബ് സ്റ്റുഡിയോ! സുപ്രഭാതം ഇ-പേപ്പർ, കുരുന്നുകൾ, അൽ-മുഅല്ലിം, SKICR, ബാലവേദി ചാനലുകൾ പരിചയപ്പെടാം!',
         '📺 മീഡിയ & യൂട്യൂബ് സ്റ്റുഡിയോ'
+      );
+    } else if (activeTab === 'twalaba') {
+      narrator.speak(
+        'ത്വലബ വിംഗ്! ദർസ്-അറബിക് കോളേജ് വിദ്യാർത്ഥികളുടെ കേരള ത്വലബ കോൺഫറൻസും മുതഅല്ലിം കൂട്ടായ്മയും അടുത്തറിയാം!',
+        '📖 ത്വലബ വിംഗ്'
+      );
+    } else if (activeTab === 'isthiqama_maneesha') {
+      narrator.speak(
+        'ഇസ്തിഖാമയും മനീഷയും! ആദർശ പ്രതിരോധവും സാംസ്കാരിക-ബൗദ്ധിക സംവാദങ്ങളും വേർതിരിച്ച് മനസ്സിലാക്കാം!',
+        '🛡️ ഇസ്തിഖാമ & മനീഷ'
+      );
+    } else if (activeTab === 'meem_health') {
+      narrator.speak(
+        'മീം ആരോഗ്യ-മെഡിക്കൽ വിഭാഗം! സ്പെഷ്യാലിറ്റി മെഡിക്കൽ ക്യാമ്പുകളും പാലിയേറ്റീവ് ഹോം കെയറും ആസൂത്രണം ചെയ്യാം!',
+        '🩺 മീം ആരോഗ്യ വിഭാഗം'
+      );
+    } else if (activeTab === 'ifc_family') {
+      narrator.speak(
+        'ഇസ്‌ലാമിക് ഫാമിലി ക്ലസ്റ്റർ! 20 വീടുകൾ വീതമുള്ള ക്ലസ്റ്ററുകളിലൂടെ വനിതാ മതപഠനവും കുടുംബ ശാക്തീകരണവും ഒരുക്കാം!',
+        '🏡 ഐ.എഫ്.സി. കുടുംബ ക്ലസ്റ്റർ'
+      );
+    } else if (activeTab === 'organet_portal') {
+      narrator.speak(
+        'ഓർഗാനെറ്റ് & സംഘടനാ ഓഡിറ്റ്! ശാഖ മുതൽ സംസ്ഥാനം വരെയുള്ള കമ്മിറ്റി നിയമങ്ങളും മെന്ററിംഗും കൃത്യമായി പരിശോധിക്കാം!',
+        '💻 ഓർഗാനെറ്റ് & ഓഡിറ്റ്'
+      );
+    } else if (activeTab === 'sathyadhara_isa') {
+      narrator.speak(
+        'സത്യധാര, ഇസ്‌ലാമിക് സാഹിത്യ അക്കാദമി, ഫോർവേഡ് ഫൗണ്ടേഷൻ എന്നിവയുടെ പ്രസാധന-യുവജന ദൗത്യങ്ങൾ അടുത്തറിയാം!',
+        '📰 സത്യധാര & ISA'
+      );
+    } else if (activeTab === 'national_global') {
+      narrator.speak(
+        'SKSSF നാഷണൽ കമ്മിറ്റിയും പ്രവാസി SIC-യും! ഡൽഹി-ബംഗളൂരു ഹോസ്റ്റലുകളും ഹജ്ജ് വിഖായ സേവനങ്ങളും ഏകോപിപ്പിക്കാം!',
+        '✈️ നാഷണൽ & പ്രവാസി SIC'
+      );
+    } else if (activeTab === 'samastha_cells') {
+      narrator.speak(
+        'സമസ്തയുടെ പ്രത്യേക സെല്ലുകളും പോഷക സമിതികളും! SKJQ, SLC, SEA, SPC, SKJM, SKJMF, SKMMA എന്നിവയുടെ ദൗത്യം അറിയാം!',
+        '🏛️ സമസ്ത പ്രത്യേക സെല്ലുകൾ'
+      );
+    } else if (activeTab === 'higher_education') {
+      narrator.speak(
+        'സമസ്ത ഉന്നത വിദ്യാഭ്യാസ പാത! അൽബിർ പ്രീ-സ്കൂൾ മുതൽ SNEC, CSWC, ജാമിഅ നൂരിയ്യ, ജാമിഅ ജലാലിയ്യ വരെയുള്ള ശൃംഖല അടുത്തറിയാം!',
+        '🎓 സമസ്ത ഉന്നത വിദ്യാഭ്യാസം'
+      );
+    } else if (activeTab === 'social_verification') {
+      narrator.speak(
+        'ഔദ്യോഗിക വെബ്സൈറ്റുകളും സോഷ്യൽ മീഡിയയും തിരിച്ചറിയാം! വ്യാജ പേജുകളിൽ വീഴാതെ ഔദ്യോഗിക ഡൊമെയ്‌നുകളും ഹാൻഡിലുകളും ഉറപ്പാക്കാം!',
+        '✅ ഔദ്യോഗിക സോഷ്യൽ മീഡിയ'
       );
     } else {
       narrator.speak(
@@ -458,7 +543,17 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     { id: 'green_earth', label: '10. ഹരിത ക്യാമ്പസ്' },
     { id: 'samastha_portals', label: '11. വിദ്യാഭ്യാസ പോർട്ടലുകൾ' },
     { id: 'media_youtube_hub', label: '12. മീഡിയ & യൂട്യൂബ്' },
-    { id: 'certificate', label: '13. സാക്ഷ്യപത്രം' },
+    { id: 'twalaba', label: '13. ത്വലബ വിംഗ്' },
+    { id: 'isthiqama_maneesha', label: '14. ഇസ്തിഖാമ & മനീഷ' },
+    { id: 'meem_health', label: '15. മീം ആരോഗ്യ വിഭാഗം' },
+    { id: 'ifc_family', label: '16. IFC കുടുംബ ക്ലസ്റ്റർ' },
+    { id: 'organet_portal', label: '17. ഓർഗാനെറ്റ് & ഓഡിറ്റ്' },
+    { id: 'sathyadhara_isa', label: '18. സത്യധാര & ISA' },
+    { id: 'national_global', label: '19. നാഷണൽ & SIC' },
+    { id: 'samastha_cells', label: '20. സമസ്ത സെല്ലുകൾ' },
+    { id: 'higher_education', label: '21. ഉന്നത വിദ്യാഭ്യാസം' },
+    { id: 'social_verification', label: '22. ഔദ്യോഗിക സോഷ്യൽ' },
+    { id: 'certificate', label: '23. സാക്ഷ്യപത്രം' },
   ];
   const activeL4Idx = l4Tabs.findIndex((t) => t.id === activeTab);
   const nextL4Tab = activeL4Idx < l4Tabs.length - 1 ? l4Tabs[activeL4Idx + 1] : undefined;
@@ -495,6 +590,16 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
     { id: 'green_earth', lessonId: 'l4_green_earth', label: 'ഹരിത ക്യാമ്പസ്', emoji: '🌿' },
     { id: 'samastha_portals', lessonId: 'l4_samastha_portals', label: 'വിദ്യാഭ്യാസ പോർട്ടലുകൾ', emoji: '🌐' },
     { id: 'media_youtube_hub', lessonId: 'l4_media_youtube_hub', label: 'മീഡിയ & യൂട്യൂബ്', emoji: '📺' },
+    { id: 'twalaba', lessonId: 'l4_twalaba', label: 'ത്വലബ വിംഗ്', emoji: '📖' },
+    { id: 'isthiqama_maneesha', lessonId: 'l4_isthiqama_maneesha', label: 'ഇസ്തിഖാമ & മനീഷ', emoji: '🛡️' },
+    { id: 'meem_health', lessonId: 'l4_meem_health', label: 'മീം ആരോഗ്യം', emoji: '🩺' },
+    { id: 'ifc_family', lessonId: 'l4_ifc_family', label: 'IFC കുടുംബം', emoji: '🏡' },
+    { id: 'organet_portal', lessonId: 'l4_organet_portal', label: 'ഓർഗാനെറ്റ്', emoji: '💻' },
+    { id: 'sathyadhara_isa', lessonId: 'l4_sathyadhara_isa', label: 'സത്യധാര & ISA', emoji: '📰' },
+    { id: 'national_global', lessonId: 'l4_national_global', label: 'നാഷണൽ & SIC', emoji: '✈️' },
+    { id: 'samastha_cells', lessonId: 'l4_samastha_cells', label: 'സമസ്ത സെല്ലുകൾ', emoji: '🏛️' },
+    { id: 'higher_education', lessonId: 'l4_higher_education', label: 'ഉന്നത വിദ്യാഭ്യാസം', emoji: '🎓' },
+    { id: 'social_verification', lessonId: 'l4_social_verification', label: 'ഔദ്യോഗിക സോഷ്യൽ', emoji: '✅' },
     { id: 'certificate', lessonId: 'l4_certificate_done', label: 'സാക്ഷ്യപത്രം', emoji: '🏆' },
   ];
 
@@ -1752,7 +1857,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             key="l4-drawer-samastha-portals"
             emoji="🌐"
             title="സമസ്ത വിദ്യാഭ്യാസ ശൃംഖല & ഔദ്യോഗിക പോർട്ടലുകൾ · പാഠം 51"
-            badgeText="പാഠം 51/52"
+            badgeText={`പാഠം 51/${ALL_LESSONS.length}`}
             onSpeak={() =>
               narrator.speak(
                 'സമസ്തയുടെ വിദ്യാഭ്യാസ ശൃംഖലയിൽ SKIMVB, ഒരു ലക്ഷം അധ്യാപകരുള്ള SKJMCC, SNEC സമന്വയ കൗൺസിൽ, 114 വനിതാ കോളേജുകളുള്ള CSWC, 350-ലധികം ശാഖകളുള്ള അൽബിർ പ്രീ-സ്കൂൾ, സമസ്ത ഇ-ലേണിംഗ്, ജാമിഅ നൂരിയ്യ, MEAEC എന്നിവ ഉൾപ്പെടുന്നു. ഇവയുടെ ഔദ്യോഗിക വെബ്സൈറ്റുകളും PDF ഗൈഡുകളും ഇവിടെ നേരിട്ട് ഉപയോഗിക്കാം.',
@@ -1832,10 +1937,10 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
             key="l4-drawer-media-youtube-hub"
             emoji="📺"
             title="സമസ്ത മീഡിയ, മാസികകൾ & യൂട്യൂബ് സ്റ്റുഡിയോ · പാഠം 52"
-            badgeText="പാഠം 52/52"
+            badgeText={`പാഠം 52/${ALL_LESSONS.length}`}
             onSpeak={() =>
               narrator.speak(
-                'സുപ്രഭാതം ദിനപത്രവും ഇ-പേപ്പറും, 1959 മുതലുള്ള അൽ-മുഅല്ലിം, സന്തുഷ്ട കുടുംബം, കുട്ടികൾക്കായുള്ള കുരുന്നുകൾ, സത്യധാര ദ്വൈവാരിക എന്നിവ സമസ്തയുടെ പ്രമുഖ പ്രസിദ്ധീകരണങ്ങളാണ്. @SAMASTHAONLINEOFFICAL, @SKICROfficial, @balavedhi, @trendkerala, @skssfsargalaya എന്നീ യൂട്യൂബ് ചാനലുകളും വിദ്യാർത്ഥികൾക്ക് പഠനത്തിനായി ഉപയോഗിക്കാം.',
+                'സുപ്രഭാതം ദിനപത്രവും ഇ-പേപ്പറും, 1959 മുതലുള്ള അൽ-മുഅല്ലിം, സന്തുഷ്ട കുടുംബം, കുട്ടികൾക്കായുള്ള കുരുന്നുകൾ, സത്യധാര ദ്വൈവാരിക എന്നിവ സമസ്തയുടെ പ്രമുഖ പ്രസിദ്ധീകരണങ്ങളാണ്. @SamasthaOnline, @SKICRTV, @sksbvstate, @SKSSFLIVE, @SathyadharaDigital എന്നീ ഔദ്യോഗിക യൂട്യൂബ് ചാനലുകളും വിദ്യാർത്ഥികൾക്ക് പഠനത്തിനായി ഉപയോഗിക്കാം.',
                 '📺 മീഡിയ & യൂട്യൂബ് സ്റ്റുഡിയോ'
               )
             }
@@ -1851,13 +1956,13 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
                   <p className="text-sm font-extrabold text-amber-950">📖 അൽ-മുഅല്ലിം · സന്തുഷ്ട കുടുംബം · കുരുന്നുകൾ</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
-                    SKJMCC പുറത്തിറക്കുന്ന അൽ-മുഅല്ലിം (1959) അധ്യാപകർക്കും, സന്തുഷ്ട കുടുംബം രക്ഷിതാക്കൾക്കും, കുരുന്നുകൾ മദ്രസാ കൂട്ടുകാർക്കും വിജ്ഞാനവും കഥകളും പകരുന്നു.
+                    SKJMCC പുറത്തിറക്കുന്ന അൽ-മുഅല്ലിം (1959) അധ്യാപകർക്കും, സന്തുഷ്ട കുടുംബം രക്ഷിതാക്കൾക്കും, കുരുന്നുകൾ മദ്രസാ വിദ്യാർത്ഥികൾക്കും വിജ്ഞാനവും കഥകളും പകരുന്നു.
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
                   <p className="text-sm font-extrabold text-slate-900">▶ ഔദ്യോഗിക യൂട്യൂബ് ചാനലുകൾ</p>
                   <p className="text-xs text-slate-700 leading-relaxed">
-                    ഖുർആൻ പാരായണത്തിനും ഥിലാവയ്ക്കും @SAMASTHAONLINEOFFICAL, ലൈവ് ക്ലാസുകൾക്ക് @SKICROfficial, കുട്ടികൾക്ക് @balavedhi, കരിയറിന് @trendkerala, കലയ്ക്ക് @skssfsargalaya!
+                    സമസ്ത പരിപാടികൾക്ക് @SamasthaOnline, SKSSF ലൈവിന് @SKSSFLIVE, മീഡിയക്ക് @SKICRTV, ബാലവേദിക്ക് @sksbvstate, മുഅല്ലിം മീഡിയക്ക് @skjmccmedia3515, സത്യധാരയ്ക്ക് @SathyadharaDigital!
                   </p>
                 </div>
               </div>
@@ -1865,6 +1970,596 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
               <InlineOfficialLinksStrip
                 links={getLinksForLesson('l4_media_youtube_hub')}
                 heading="📺 നേരെ തുറന്ന് വായിക്കാനും കാണാനുമുള്ള ഔദ്യോഗിക മാധ്യമ ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 53: TWALABA WING */}
+      {activeTab === 'twalaba' && (
+        <div className="space-y-4">
+          <TwalabaConferencePuzzleGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_twalaba') ||
+              completedSceneGames.includes('l4_twalaba')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_twalaba') ? prev : [...prev, 'l4_twalaba']
+              );
+              if (quizAnswers.l4_twalaba) onMarkLessonCompleted?.('l4_twalaba');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-twalaba"
+            emoji="📖"
+            title="ത്വലബ വിംഗ് (Twalaba Wing) · പാഠം 53"
+            badgeText={`പാഠം 53/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'പള്ളി ദർസുകളിലെയും അറബിക്-ശരീഅത്ത് കോളേജുകളിലെയും മതവിദ്യാർത്ഥികളെ ഏകോപിപ്പിക്കുന്ന SKSSF വിഭാഗമാണ് ത്വലബ വിംഗ്. കേരള ത്വലബ കോൺഫറൻസ്, ബഹുഭാഷാ-പ്രഭാഷണ പരിശീലനം, സ്ഥാപനതല യൂണിറ്റുകൾ, മുതഅല്ലിം ക്ഷേമം എന്നിവയാണ് ഇതിന്റെ പ്രധാന പ്രവർത്തനങ്ങൾ.',
+                '📖 ത്വലബ വിംഗ്'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🕌 ദർസ് &amp; ശരീഅത്ത് കൂട്ടായ്മ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    കേരളത്തിലെ പള്ളി ദർസുകളിലെയും അറബിക്-ശരീഅത്ത് കോളേജുകളിലെയും മതവിദ്യാർത്ഥികളെ (മുതഅല്ലിമീങ്ങളെ) സംഘടനാപരമായി ഏകോപിപ്പിക്കുന്ന വിഭാഗമാണ് ത്വലബ വിംഗ്.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🎙️ കേരള ത്വലബ കോൺഫറൻസ്</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    പണ്ഡിത സാന്നിധ്യത്തിൽ നടക്കുന്ന കേരള ത്വലബ കോൺഫറൻസ്, ബഹുഭാഷാ പരിശീലനം, പ്രഭാഷണ-രചനാ ശില്പശാലകൾ എന്നിവ വിദ്യാർത്ഥികളുടെ ബൗദ്ധിക ശേഷി വളർത്തുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🤝 സ്ഥാപന യൂണിറ്റുകളും ക്ഷേമവും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഓരോ ദർസിലും സ്ഥാപനത്തിലും ത്വലബ യൂണിറ്റുകൾ പ്രവർത്തിക്കുന്നു; മുതഅല്ലിം ക്ഷേമ പദ്ധതികളും തുടർപഠന സഹായങ്ങളും വിംഗ് ഉറപ്പാക്കുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_twalaba')}
+                heading="🔗 ത്വലബ വിംഗ് & SKSSF ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 54: ISTHIQAMA & MANEESHA */}
+      {activeTab === 'isthiqama_maneesha' && (
+        <div className="space-y-4">
+          <IsthiqamaManeeshaPuzzleGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_isthiqama_maneesha') ||
+              completedSceneGames.includes('l4_isthiqama_maneesha')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_isthiqama_maneesha') ? prev : [...prev, 'l4_isthiqama_maneesha']
+              );
+              if (quizAnswers.l4_isthiqama_maneesha) onMarkLessonCompleted?.('l4_isthiqama_maneesha');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-isthiqama-maneesha"
+            emoji="🛡️"
+            title="ഇസ്തിഖാമ & മനീഷ · ആദർശവും സംസ്കാരവും · പാഠം 54"
+            badgeText={`പാഠം 54/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'പണ്ഡിത നേതൃത്വത്തിൽ അഹ്‌ലുസ്സുന്നത്ത് ആദർശ സംരക്ഷണവും വിശ്വാസ ബോധവൽക്കരണവും നയിക്കുന്ന വിഭാഗമാണ് ഇസ്തിഖാമ. ഇടം നേടുകയല്ല, ഇടപെടുകയാണ് എന്ന കാഴ്ചപ്പാടോടെ സാംസ്കാരിക-ചരിത്ര-ബൗദ്ധിക സംവാദങ്ങൾക്ക് മനീഷ നേതൃത്വം നൽകുന്നു.',
+                '🛡️ ഇസ്തിഖാമ & മനീഷ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🛡️ ഇസ്തിഖാമ (Isthiqama)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    അഹ്‌ലുസ്സുന്നത്തി വൽ ജമാഅത്തിന്റെ ആദർശവും വിശ്വാസവും സംരക്ഷിക്കാനും, തെറ്റായ പ്രചാരണങ്ങൾക്ക് പ്രമാണബദ്ധമായ മറുപടി നൽകാനും പ്രവർത്തിക്കുന്ന ആദർശ വിഭാഗം.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📚 മനീഷ (Maneesha)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    “ഇടം നേടുകയല്ല, ഇടപെടുകയാണ്” എന്ന കാഴ്ചപ്പാടോടെ ചരിത്ര-സാംസ്കാരിക-ബൗദ്ധിക സംവാദങ്ങളും സെമിനാറുകളും ഗവേഷണ കൂട്ടായ്മകളും നയിക്കുന്ന വിഭാഗം.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🤝 പണ്ഡിത നേതൃത്വവും വിവേകവും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    പ്രകോപനങ്ങളില്ലാതെ സൗമ്യമായും തെളിവുകളുടെ അടിസ്ഥാനത്തിലും ആദർശവും സാമൂഹിക സൗഹാർദ്ദവും അവതരിപ്പിക്കലാണ് ഇരു വിഭാഗങ്ങളുടെയും ശൈലി.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_isthiqama_maneesha')}
+                heading="🔗 ഇസ്തിഖാമ & മനീഷ ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 55: MEEM HEALTH */}
+      {activeTab === 'meem_health' && (
+        <div className="space-y-4">
+          <MeemMedicalCampGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_meem_health') ||
+              completedSceneGames.includes('l4_meem_health')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_meem_health') ? prev : [...prev, 'l4_meem_health']
+              );
+              if (quizAnswers.l4_meem_health) onMarkLessonCompleted?.('l4_meem_health');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-meem-health"
+            emoji="🩺"
+            title="മീം (MEEM — Medical Eminence for Ethical Movement) · പാഠം 55"
+            badgeText={`പാഠം 55/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'ഡോക്ടർമാർ, മെഡിക്കൽ-പാരാമെഡിക്കൽ വിദ്യാർത്ഥികൾ, ആരോഗ്യപ്രവർത്തകർ എന്നിവരുടെ കൂട്ടായ്മയാണ് SKSSF മീം. സൗജന്യ സ്പെഷ്യാലിറ്റി മെഡിക്കൽ ക്യാമ്പുകൾ, പാലിയേറ്റീവ് ഹോം കെയർ, മെഡിക്കൽ എത്തിക്സ് സംഗമങ്ങൾ, സഹചാരി റഫറൽ സേവനങ്ങൾ എന്നിവ മീം നയിക്കുന്നു.',
+                '🩺 മീം ആരോഗ്യ വിഭാഗം'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🩺 ആരോഗ്യപ്രവർത്തകരുടെ കൂട്ടായ്മ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    Medical Eminence for Ethical Movement (MEEM) — ഡോക്ടർമാർ, നഴ്സുമാർ, മെഡിക്കൽ-പാരാമെഡിക്കൽ വിദ്യാർത്ഥികൾ എന്നിവരെ ഒന്നിപ്പിക്കുന്ന സേവന വിഭാഗം.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🏥 സ്പെഷ്യാലിറ്റി ക്യാമ്പും പാലിയേറ്റീവും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഗ്രാമങ്ങളിലും മഹല്ലുകളിലും സൗജന്യ മെഡിക്കൽ ക്യാമ്പുകൾ, കിടപ്പുരോഗികൾക്കുള്ള പാലിയേറ്റീവ് ഹോം കെയർ, ആരോഗ്യ ബോധവൽക്കരണ ക്ലാസുകൾ എന്നിവ സംഘടിപ്പിക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">⚖️ മെഡിക്കൽ എത്തിക്സും സഹചാരിയും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ചികിത്സാ രംഗത്തെ ധാർമ്മിക മൂല്യങ്ങൾ ഉയർത്തിപ്പിടിക്കുന്നതോടൊപ്പം സഹചാരി റിലീഫ് സെല്ലുമായി ചേർന്ന് നിർധന രോഗികൾക്ക് തുടർചികിത്സ ഉറപ്പാക്കുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_meem_health')}
+                heading="🔗 മീം & സഹചാരി ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 56: IFC FAMILY CLUSTER */}
+      {activeTab === 'ifc_family' && (
+        <div className="space-y-4">
+          <IfcFamilyClusterGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_ifc_family') ||
+              completedSceneGames.includes('l4_ifc_family')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_ifc_family') ? prev : [...prev, 'l4_ifc_family']
+              );
+              if (quizAnswers.l4_ifc_family) onMarkLessonCompleted?.('l4_ifc_family');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-ifc-family"
+            emoji="🏡"
+            title="ഇസ്‌ലാമിക് ഫാമിലി ക്ലസ്റ്റർ (IFC) · പാഠം 56"
+            badgeText={`പാഠം 56/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                '20 വീടുകൾ വീതം ഒരു ക്ലസ്റ്ററാക്കി തിരിച്ച് വനിതാ മതപഠനം, പ്രീ-മാരിറ്റൽ കൗൺസിലിംഗ്, മാതൃകാ പാരന്റിംഗ്, അയൽപക്ക സൗഹൃദം എന്നിവ നടത്തുന്ന കുടുംബ ശാക്തീകരണ സംവിധാനമാണ് SKSSF ഇസ്‌ലാമിക് ഫാമിലി ക്ലസ്റ്റർ.',
+                '🏡 ഐ.എഫ്.സി. കുടുംബ ക്ലസ്റ്റർ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🏘️ 20 വീടുകൾ = 1 ക്ലസ്റ്റർ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    മഹല്ലുകളിലെ 20 വീടുകളെ ഒരു ക്ലസ്റ്ററായി തിരിച്ച് ഓരോ കുടുംബത്തിലും ആത്മീയ അന്തരീക്ഷവും പരസ്പര സ്നേഹവും വളർത്തുന്ന പ്രായോഗിക മാതൃക.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📚 വനിതാ പഠനവും പാരന്റിംഗും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    വനിതകൾക്കുള്ള കൃത്യമായ മതപഠന ക്ലാസുകൾ, കുട്ടികളെ സ്നേഹത്തോടെ വളർത്താനുള്ള പാരന്റിംഗ് ശില്പശാലകൾ, സദാചാര ബോധവൽക്കരണം എന്നിവ നയിക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">💬 പ്രീ-മാരിറ്റൽ &amp; കുടുംബ കൗൺസിലിംഗ്</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    വിവാഹപൂർവ്വ ബോധവൽക്കരണ ക്ലാസുകളും കുടുംബ പ്രശ്നങ്ങൾക്കുള്ള സൗഹൃദപരമായ കൗൺസിലിംഗും വഴി ഭദ്രമായ കുടുംബബന്ധങ്ങൾ ഉറപ്പാക്കുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_ifc_family')}
+                heading="🔗 IFC & SKSSF ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 57: ORGANET & AUDIT */}
+      {activeTab === 'organet_portal' && (
+        <div className="space-y-4">
+          <OrganetAuditPuzzleGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_organet_portal') ||
+              completedSceneGames.includes('l4_organet_portal')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_organet_portal') ? prev : [...prev, 'l4_organet_portal']
+              );
+              if (quizAnswers.l4_organet_portal) onMarkLessonCompleted?.('l4_organet_portal');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-organet-portal"
+            emoji="💻"
+            title="ഓർഗാനെറ്റ് (Organet) & സംഘടനാ ഓഡിറ്റ് · പാഠം 57"
+            badgeText={`പാഠം 57/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'ശാഖ മുതൽ സംസ്ഥാനം വരെയുള്ള കമ്മിറ്റി വിവരങ്ങൾ, മെമ്പർഷിപ്പ്, പ്രതിമാസ പ്രവർത്തന റിപ്പോർട്ടുകൾ, മെന്ററിംഗ് കോഴ്സുകൾ എന്നിവ ഡിജിറ്റലായി ഏകോപിപ്പിക്കുന്ന SKSSF സംവിധാനമാണ് ഓർഗാനെറ്റ്.',
+                '💻 ഓർഗാനെറ്റ് & ഓഡിറ്റ്'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">📊 കമ്മിറ്റി ഡാറ്റ &amp; വെരിഫിക്കേഷൻ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    യൂണിറ്റ് (15), ക്ലസ്റ്റർ (19), മേഖല (21), ജില്ല (25), സംസ്ഥാനം (31) എന്നീ ഘടകങ്ങളുടെ ഭാരവാഹികളെയും മെമ്പർഷിപ്പിനെയും organet.skssf.in വഴി വെരിഫൈ ചെയ്യുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📝 പ്രതിമാസ റിപ്പോർട്ടിംഗ് &amp; ഓഡിറ്റ്</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഓരോ മാസത്തെയും പ്രവർത്തനങ്ങളും വരവ്-ചെലവ് കണക്കുകളും കൃത്യമായി അപ്‌ലോഡ് ചെയ്യുന്നത് സംഘടനയ്ക്ക് 100% സുതാര്യതയും കാര്യക്ഷമതയും നൽകുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🎓 മെന്ററിംഗ് &amp; ഓൺലൈൻ പരിശീലനം</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    പുതിയ ഭാരവാഹികൾക്കും അംഗങ്ങൾക്കും സംഘടനാ നിയമങ്ങളും നേതൃത്വ പാഠങ്ങളും പഠിക്കാനുള്ള മെന്ററിംഗ് സൗകര്യവും ഓർഗാനെറ്റ് ഒരുക്കുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_organet_portal')}
+                heading="🔗 ഓർഗാനെറ്റ് & ഔദ്യോഗിക പോർട്ടൽ ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 58: SATHYADHARA, ISA & FORWARD FOUNDATION */}
+      {activeTab === 'sathyadhara_isa' && (
+        <div className="space-y-4">
+          <SathyadharaIsaDeskGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_sathyadhara_isa') ||
+              completedSceneGames.includes('l4_sathyadhara_isa')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_sathyadhara_isa') ? prev : [...prev, 'l4_sathyadhara_isa']
+              );
+              if (quizAnswers.l4_sathyadhara_isa) onMarkLessonCompleted?.('l4_sathyadhara_isa');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-sathyadhara-isa"
+            emoji="📰"
+            title="സത്യധാര, ഇസ്‌ലാമിക് സാഹിത്യ അക്കാദമി (ISA) & ഫോർവേഡ് ഫൗണ്ടേഷൻ · പാഠം 58"
+            badgeText={`പാഠം 58/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                '1997 മുതൽ പുറത്തിറങ്ങുന്ന SKSSF മുഖപത്രമായ സത്യധാര ദ്വൈവാരിക, സത്യധാര ഡിജിറ്റൽ, കോഴിക്കോട് ഇസ്‌ലാമിക് സെന്ററിലെ ഇസ്‌ലാമിക് സാഹിത്യ അക്കാദമി ബുക്ക് സ്റ്റാൾ, യുവജന ശാക്തീകരണത്തിനായുള്ള ഫോർവേഡ് ഫൗണ്ടേഷൻ എന്നിവയുടെ ദൗത്യം പഠിക്കാം.',
+                '📰 സത്യധാര & ISA'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">📰 സത്യധാര ദ്വൈവാരിക (1997)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SKSSF-ന്റെ ഔദ്യോഗിക മുഖപത്രമായ സത്യധാരയും ഗൾഫ് സത്യധാരയും sathyadhara.com-ഉം @SathyadharaDigital ചാനലും സമകാലിക ആദർശ-സാമൂഹിക വായന പകരുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📚 ഇസ്‌ലാമിക് സാഹിത്യ അക്കാദമി (ISA)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    കോഴിക്കോട് ഇസ്‌ലാമിക് സെന്റർ ആസ്ഥാനമായി പ്രവർത്തിക്കുന്ന പ്രസാധന വിഭാഗവും ബുക്ക് സ്റ്റാളും ആധികാരിക ഇസ്‌ലാമിക ഗ്രന്ഥങ്ങളും പഠന പുസ്തകങ്ങളും പ്രസിദ്ധീകരിക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🚀 ഫോർവേഡ് ഫൗണ്ടേഷൻ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    വിദ്യാർത്ഥികളുടെയും യുവാക്കളുടെയും സാമൂഹിക-വിദ്യാഭ്യാസ-നൈപുണ്യ ശാക്തീകരണത്തിനും നേതൃത്വ വികസനത്തിനുമായി പ്രവർത്തിക്കുന്ന SKSSF സംരംഭം.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_sathyadhara_isa')}
+                heading="🔗 സത്യധാര & ഫോർവേഡ് ഫൗണ്ടേഷൻ ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 59: NATIONAL COMMITTEE & GLOBAL SIC */}
+      {activeTab === 'national_global' && (
+        <div className="space-y-4">
+          <NationalGlobalCoordGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_national_global') ||
+              completedSceneGames.includes('l4_national_global')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_national_global') ? prev : [...prev, 'l4_national_global']
+              );
+              if (quizAnswers.l4_national_global) onMarkLessonCompleted?.('l4_national_global');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-national-global"
+            emoji="✈️"
+            title="SKSSF നാഷണൽ കമ്മിറ്റി & പ്രവാസി ആഗോള ശൃംഖല (SIC) · പാഠം 59"
+            badgeText={`പാഠം 59/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'കേരളത്തിന് പുറത്ത് ഡൽഹി ഓഖ്‌ല വിഹാറിലും ബംഗളൂരു ഹെബ്ബാളിലും ഹോസ്റ്റലുകളും ഇതര സംസ്ഥാന പ്രവർത്തനങ്ങളും SKSSF നാഷണൽ കമ്മിറ്റി നയിക്കുന്നു. വിദേശ രാജ്യങ്ങളിൽ സമസ്ത ഇസ്‌ലാമിക് സെന്ററും മക്ക-മദീന ഹജ്ജ് വിഖായയും സേവനം ചെയ്യുന്നു.',
+                '✈️ നാഷണൽ & പ്രവാസി SIC'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🇮🇳 SKSSF നാഷണൽ കമ്മിറ്റി</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഇന്ത്യയിലെ വിവിധ സംസ്ഥാനങ്ങളിലെയും കേന്ദ്ര സർവകലാശാലകളിലെയും വിദ്യാർത്ഥികളെ ഏകോപിപ്പിക്കുന്നതോടൊപ്പം ഡൽഹി (ഓഖ്‌ല വിഹാർ), ബംഗളൂരു (ഹെബ്ബാൾ) ഹോസ്റ്റലുകളും നടത്തുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🌍 സമസ്ത ഇസ്‌ലാമിക് സെന്റർ (SIC)</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    ഗൾഫ്, യൂറോപ്പ്, ഏഷ്യ, ആഫ്രിക്ക രാജ്യങ്ങളിലെ പ്രവാസി സമൂഹത്തിന് ആത്മീയ വേദികളും മദ്രസകളും കാരുണ്യ സേവനങ്ങളും ഒരുക്കുന്ന ആഗോള ശൃംഖല.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🕋 ഹജ്ജ് വിഖായ &amp; ഉംറ സേവനം</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    മക്കയിലും മദീനയിലും മിന-അറഫാ-മുസ്ദലിഫയിലും ഹജ്ജ്-ഉംറ തീർത്ഥാടകർക്ക് വഴികാട്ടിയും വൈദ്യസഹായവും കുടിവെള്ളവും എത്തിക്കുന്ന സന്നദ്ധ സേവനം.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_national_global')}
+                heading="🔗 നാഷണൽ കമ്മിറ്റി & ആഗോള ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 60: SAMASTHA SPECIAL CELLS & ASSOCIATE COUNCILS */}
+      {activeTab === 'samastha_cells' && (
+        <div className="space-y-4">
+          <SamasthaCellsMatrixGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_samastha_cells') ||
+              completedSceneGames.includes('l4_samastha_cells')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_samastha_cells') ? prev : [...prev, 'l4_samastha_cells']
+              );
+              if (quizAnswers.l4_samastha_cells) onMarkLessonCompleted?.('l4_samastha_cells');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-samastha-cells"
+            emoji="🏛️"
+            title="സമസ്തയുടെ പ്രത്യേക സെല്ലുകളും പോഷക സമിതികളും · പാഠം 60"
+            badgeText={`പാഠം 60/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'സമസ്തയ്ക്ക് കീഴിൽ പള്ളി ഖത്തീബുമാരുടെ SKJQ, നിയമസഹായ സമിതി SLC, വിദ്യാഭ്യാസ സമിതി SEA, പ്രവാസി സെൽ SPC, മുഅല്ലിം കൂട്ടായ്മ SKJM, ഇൻസ്പെക്ടർമാരുടെ SKJMF, മദ്രസാ മാനേജ്മെന്റ് അസോസിയേഷൻ SKMMA തുടങ്ങിയ സമിതികൾ പ്രവർത്തിക്കുന്നു.',
+                '🏛️ സമസ്ത പ്രത്യേക സെല്ലുകൾ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">⚖️ SKJQ · SLC · SEA · SPC</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SKJQ (പള്ളി ഖത്തീബുമാർ), സമസ്ത ലീഗൽ സെൽ — SLC (നിയമസഹായവും ഭരണഘടനാ അവകാശ സംരക്ഷണവും), SEA (എജ്യുക്കേഷൻ ആക്ഷൻ), SPC (പ്രവാസി സെൽ) എന്നിവ പ്രത്യേക മേഖലകളിൽ പ്രവർത്തിക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🏫 SKJM · SKJMF · SKMMA</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SKJMCC / SKJM (ഒരു ലക്ഷത്തിലധികം മുഅല്ലിമുകളുടെ കൂട്ടായ്മ), SKJMF (മദ്രസാ മുഫത്തിശുമാർ/ഇൻസ്പെക്ടർമാർ), SKMMA (മദ്രസാ മാനേജ്മെന്റ് അസോസിയേഷൻ) എന്നിവ മദ്രസാ ഗുണനിലവാരം ഉറപ്പാക്കുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🤝 പോഷക സംഘടനാ കുടുംബം</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    സമസ്ത കേന്ദ്ര മുശാവറയ്ക്ക് കീഴിൽ SKIMVB, SKSSF, SKSBV എന്നിവയോടൊപ്പം യുവജന വിഭാഗമായ SYS (1954), മഹല്ല് ഏകോപനത്തിനായുള്ള SMF (1976) എന്നിവയും പ്രവർത്തിക്കുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_samastha_cells')}
+                heading="🔗 സമസ്ത & പോഷക സമിതികളുടെ ഔദ്യോഗിക ലിങ്കുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 61: HIGHER EDUCATION PATHWAYS */}
+      {activeTab === 'higher_education' && (
+        <div className="space-y-4">
+          <HigherEducationPathwayGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_higher_education') ||
+              completedSceneGames.includes('l4_higher_education')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_higher_education') ? prev : [...prev, 'l4_higher_education']
+              );
+              if (quizAnswers.l4_higher_education) onMarkLessonCompleted?.('l4_higher_education');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-higher-education"
+            emoji="🎓"
+            title="സമസ്ത ഉന്നത വിദ്യാഭ്യാസ ശൃംഖല · പ്രീ-സ്കൂൾ മുതൽ ഉന്നത പഠനം വരെ · പാഠം 61"
+            badgeText={`പാഠം 61/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'അൽബിർ പ്രീ-സ്കൂൾ, ആസ്മി, സമസ്ത ഇ-ലേണിംഗ്, SNEC ശരീഅഃ-ഷീ-ലൈഫ് സമന്വയ കൗൺസിൽ, 114 വനിതാ കോളേജുകളുള്ള CSWC, പട്ടിക്കാട് ജാമിഅ നൂരിയ്യ, മുണ്ടക്കുളം ജാമിഅ ജലാലിയ്യ എന്നിവ സമസ്തയുടെ സമഗ്ര വിദ്യാഭ്യാസ ശൃംഖലയാണ്.',
+                '🎓 സമസ്ത ഉന്നത വിദ്യാഭ്യാസം'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🌱 അൽബിർ · ASMI · E-Learning</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    350+ ശാഖകളുള്ള അൽബിർ പ്രീ-സ്കൂൾ, ആധുനിക സ്കൂൾ പാഠ്യപദ്ധതിക്കുള്ള ASMI, 26+ രാജ്യങ്ങളിലേക്ക് ഓൺലൈൻ മദ്രസ എത്തിക്കുന്ന സമസ്ത ഇ-ലേണിംഗ് എന്നിവ അടിത്തറ പാകുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">🎓 SNEC &amp; CSWC വനിതാ കോളേജുകൾ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SNEC വഴി ശരീഅഃ, ഷീ, ലൈഫ് സമന്വയ (+2, ഡിഗ്രി, പി.ജി) പഠനവും, CSWC വഴി 114 വനിതാ കോളേജുകളിൽ ഫളീല-ഫാദീല കോഴ്സുകളും നൽകുന്നു.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🏛️ ജാമിഅ നൂരിയ്യ · ജലാലിയ്യ · സാങ്കേതിക പഠനം</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    1963-ൽ സ്ഥാപിതമായ പട്ടിക്കാട് ജാമിഅ നൂരിയ്യയും മുണ്ടക്കുളം ജാമിഅ ജലാലിയ്യയും ഉന്നത ഇസ്‌ലാമിക പഠനവും, MEA എഞ്ചിനീയറിംഗ് കോളേജ് പ്രൊഫഷണൽ സാങ്കേതിക കോഴ്സുകളും നൽകുന്നു.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_higher_education')}
+                heading="🔗 സമസ്ത ഉന്നത വിദ്യാഭ്യാസ ഔദ്യോഗിക പോർട്ടലുകൾ"
+              />
+            </div>
+          </CollapsibleLessonDrawer>
+        </div>
+      )}
+
+      {/* LESSON 62: OFFICIAL SOCIAL MEDIA & VERIFIED LINKS */}
+      {activeTab === 'social_verification' && (
+        <div className="space-y-4">
+          <OfficialSocialDetectiveGame
+            onAwardXp={onAwardXp}
+            isCompleted={
+              isCompleted ||
+              completedLessonIds.includes('l4_social_verification') ||
+              completedSceneGames.includes('l4_social_verification')
+            }
+            onComplete={() => {
+              setCompletedSceneGames((prev) =>
+                prev.includes('l4_social_verification') ? prev : [...prev, 'l4_social_verification']
+              );
+              if (quizAnswers.l4_social_verification) onMarkLessonCompleted?.('l4_social_verification');
+            }}
+          />
+          <CollapsibleLessonDrawer
+            key="l4-drawer-social-verification"
+            emoji="✅"
+            title="ഔദ്യോഗിക വെബ്സൈറ്റുകളും സോഷ്യൽ മീഡിയയും തിരിച്ചറിയാം · പാഠം 62"
+            badgeText={`പാഠം 62/${ALL_LESSONS.length}`}
+            onSpeak={() =>
+              narrator.speak(
+                'സമസ്തയുടെയും SKSSF-ന്റെയും ഔദ്യോഗിക വിവരങ്ങൾക്കായി samastha.info, skssf.in, sksbv.in, skjmcc.net, viqaya.skssf.in, sathyadhara.com തുടങ്ങിയ ഔദ്യോഗിക ഡൊമെയ്‌നുകളും @SamasthaOnline, @skssfkeralastate, @SKSSFLIVE, @SKICRTV, @sksbvstate തുടങ്ങിയ വെരിഫൈഡ് ഹാൻഡിലുകളും മാത്രം പിന്തുടരുക.',
+                '✅ ഔദ്യോഗിക സോഷ്യൽ മീഡിയ'
+              )
+            }
+          >
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-emerald-950">🌐 ഔദ്യോഗിക ഡൊമെയ്‌നുകൾ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    samastha.info, skssf.in, sksbv.in, skjmcc.net, viqaya.skssf.in, skicr.skssf.in, sathyadhara.com — എപ്പോഴും HTTPS ഉം കൃത്യമായ ഡൊമെയ്ൻ സ്പെല്ലിംഗും പരിശോധിക്കുക.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-amber-950">📱 ഔദ്യോഗിക സോഷ്യൽ ഹാൻഡിലുകൾ</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    @SamasthaOnline, @samastha_centenary, @skssfkeralastate, @SKSSFLIVE, @skssfstate, @SKICRTV, @sksbvofficial, @sksbvstate, @SathyadharaDigital, @forwardfoundation_kerala.
+                  </p>
+                </div>
+                <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 space-y-1.5">
+                  <p className="text-sm font-extrabold text-sky-950">🛡️ ആപ്പുകളും സൈബർ സുരക്ഷയും</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    SKICR TV മൊബൈൽ ആപ്പ് Google Play Store-ൽ നിന്ന് മാത്രം ഇൻസ്റ്റാൾ ചെയ്യുക. വാട്സ്ആപ്പ് വഴി വരുന്ന അജ്ഞാത APK ഫയലുകളും വ്യാജ ഫാൻ പേജുകളും ഒഴിവാക്കുക.
+                  </p>
+                </div>
+              </div>
+              <InlineOfficialLinksStrip
+                links={getLinksForLesson('l4_social_verification')}
+                heading="🔗 സമസ്ത & SKSSF ഔദ്യോഗിക സോഷ്യൽ മീഡിയ & ആപ്പ് ലിങ്കുകൾ"
               />
             </div>
           </CollapsibleLessonDrawer>
@@ -1891,7 +2586,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
         />
       )}
 
-      {/* TAB 13: STRICT 52/52 CERTIFICATE STUDIO */}
+      {/* TAB 23: STRICT CERTIFICATE STUDIO */}
       {activeTab === 'certificate' && (
         <div className="relative space-y-4">
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
@@ -1903,23 +2598,27 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                   🔒 സാക്ഷ്യപത്രം ലോക്കാണ് · കർശന പഠന നിയമം
                 </p>
                 <h3 className="text-base sm:text-xl font-black mt-1">
-                  സാക്ഷ്യപത്രം നേടാൻ എല്ലാ 52 പാഠങ്ങളും കളിച്ച് പൂർത്തിയാക്കണം!
+                  സാക്ഷ്യപത്രം നേടാൻ എല്ലാ {ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് പൂർത്തിയാക്കണം!
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-100 mt-1">
-                  ഡയറക്ട് ലിങ്ക് വഴി അവസാന പാഠത്തിൽ എത്തിയാലും, 52 പാഠങ്ങളും യഥാർത്ഥത്തിൽ പൂർത്തിയാക്കുന്നവർക്കാണ് ഔദ്യോഗിക SKSSF ഗൈഡ് സാക്ഷ്യപത്രം അൺലോക്ക് ആകുക.
+                  ഡയറക്ട് ലിങ്ക് വഴി അവസാന പാഠത്തിൽ എത്തിയാലും, {ALL_LESSONS.length} പാഠങ്ങളും യഥാർത്ഥത്തിൽ പൂർത്തിയാക്കുന്നവർക്കാണ് ഔദ്യോഗിക SKSSF ഗൈഡ് സാക്ഷ്യപത്രം അൺലോക്ക് ആകുക.
                 </p>
               </div>
 
               <div className="p-5 space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs sm:text-sm font-extrabold text-emerald-950 tabular-nums">
-                    <span>പൂർത്തിയാക്കിയ പാഠങ്ങൾ: {52 - unseenLessons.length} / 52</span>
+                    <span>
+                      പൂർത്തിയാക്കിയ പാഠങ്ങൾ: {ALL_LESSONS.length - unseenLessons.length} / {ALL_LESSONS.length}
+                    </span>
                     <span className="text-amber-700">ബാക്കി: {unseenLessons.length}</span>
                   </div>
                   <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
                     <div
                       style={{
-                        width: `${Math.round(((52 - unseenLessons.length) / 52) * 100)}%`,
+                        width: `${Math.round(
+                          ((ALL_LESSONS.length - unseenLessons.length) / ALL_LESSONS.length) * 100
+                        )}%`,
                       }}
                       className="h-full bg-gradient-to-r from-emerald-600 to-amber-400 transition-all duration-300"
                     />
@@ -1972,7 +2671,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 rank={rank}
                 badges={badges}
                 isPreviewOnly={devUnlocked && unseenLessons.length > 0}
-                completedLessonsCount={52 - unseenLessons.length}
+                completedLessonsCount={ALL_LESSONS.length - unseenLessons.length}
               />
 
               <div className="rounded-3xl border-2 border-dashed border-amber-300 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-5 text-center space-y-1.5">
@@ -1983,7 +2682,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                   കൂടുതൽ പാഠങ്ങളും പുതിയ ഗെയിമുകളും ഉടൻ വരുന്നു!
                 </h3>
                 <p className="text-xs font-semibold text-slate-600">
-                  More Lessons &amp; Challenges Coming Soon! · 52 പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
+                  More Lessons &amp; Challenges Coming Soon! · {ALL_LESSONS.length} പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
                 </p>
               </div>
             </>

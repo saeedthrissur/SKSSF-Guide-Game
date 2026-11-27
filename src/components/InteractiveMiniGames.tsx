@@ -78,7 +78,7 @@ const JEEP_ROUTE_PUZZLES: RouteLogicPuzzle[] = [
         label: 'ആശുപത്രി മേഖലയിലും ബാങ്ക് സമയത്തും മൈക്ക് ഓഫ് ചെയ്ത്, ടൗൺ ജംഗ്ഷനിൽ മാത്രം മിതമായ ശബ്ദത്തിൽ അനൗൺസ് ചെയ്യുക',
         isCorrect: true,
         feedback:
-          'കൃത്യം! പൊതുജനങ്ങൾക്ക് ബുദ്ധിമുട്ടുണ്ടാക്കാതെ, സൈലന്റ് സോണും പ്രാർത്ഥനാ സമയവും മാനിക്കുന്നതാണ് മാതൃകാ SKSSF സംഘാടകന്റെ അടയാളം.',
+          'കൃത്യം! പൊതുജനങ്ങൾക്ക് ബുദ്ധിമുട്ടുണ്ടാക്കാതെ, സൈലന്റ് സോണും പ്രാർത്ഥനാ സമയവും മാനിക്കുന്നതാണ് മാതൃകാ SKSSF സംഘാടനത്തിന്റെ അടയാളം.',
       },
       {
         label: 'എല്ലാ സ്ഥലത്തും ഒരേ ഉച്ചത്തിലുള്ള ശബ്ദത്തിൽ നിർത്താതെ അനൗൺസ് ചെയ്തു പോകുക',
@@ -632,52 +632,106 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
               <line x1="384" y1="132" x2="384" y2="20" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" />
               <circle cx="384" cy="17" r="5" fill="#F59E0B" stroke="#92400E" strokeWidth="1.5" />
 
-              {/* MODULE 2: REAL OFFICIAL SKSSF FLAG IMAGE FLUTTERING IN WIND */}
+              {/* MODULE 2: CUSTOM REALISTIC WAVING SKSSF CLOTH FLAG (Hoist on right pole, streaming left in wind) */}
               {placed.flag && (
-                <g transform="translate(290, 22)">
+                <g transform="translate(284, 18)">
+                  <defs>
+                    <clipPath id={`${flagWaveGradId}-clip`}>
+                      <path d="M 98,2 C 74,-1.5 48,4.2 22,0.2 C 11,-1.6 4,0.6 0,2.4 L 0,58.4 C 4,56.6 11,54.4 22,56.2 C 48,60.2 74,54.5 98,58 Z" />
+                    </clipPath>
+                  </defs>
                   <motion.g
                     animate={{
-                      skewY: missionDone ? [-3, 3.2, -2.2, 2.8, -3] : [-1.8, 2.1, -1.4, 1.8, -1.8],
-                      scaleX: [1, 0.96, 1.01, 0.97, 1],
+                      skewY: missionDone ? [-3.4, 3.6, -2.5, 3.1, -3.4] : [-1.8, 2.2, -1.5, 1.9, -1.8],
+                      scaleX: [1, 0.945, 1.015, 0.96, 1],
                     }}
                     transition={{
-                      duration: missionDone ? 0.85 : 1.5,
+                      duration: missionDone ? 0.78 : 1.45,
                       repeat: Infinity,
                       ease: 'easeInOut',
                     }}
-                    style={{ transformOrigin: '92px 28px' }}
+                    style={{ transformOrigin: '98px 30px' }}
                   >
-                    <rect
-                      x="0"
-                      y="0"
-                      width="92"
-                      height="56"
-                      rx="3"
-                      fill="#FFFFFF"
+                    <g clipPath={`url(#${flagWaveGradId}-clip)`}>
+                      {/* Base White Cloth Field */}
+                      <rect x="0" y="-4" width="98" height="68" fill="#FFFFFF" />
+
+                      {/* Authentic Mosque Dome & Tall Left Minaret on White Field */}
+                      <g
+                        transform="translate(10, 6)"
+                        fill="none"
+                        stroke="#0F172A"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="2" y="7" width="3.8" height="23" fill="#FFFFFF" />
+                        <line x1="2" y1="14" x2="5.8" y2="14" />
+                        <line x1="2" y1="21" x2="5.8" y2="21" />
+                        <path d="M 1.4,7 C 1.4,3.8 6.4,3.8 6.4,7 Z" fill="#0F172A" />
+                        <line x1="3.9" y1="1.8" x2="3.9" y2="4.4" />
+                        <path d="M 8,25.5 C 9,14 19,10.5 21,6.5 C 23,10.5 33,14 34,25.5 Z" fill="#FFFFFF" />
+                        <path d="M 21,6.5 L 21,25.5" />
+                        <path d="M 21,6.5 C 17.2,13 16,19.2 16,25.5" />
+                        <path d="M 21,6.5 C 24.8,13 26,19.2 26,25.5" />
+                        <path d="M 10.5,18.2 Q 21,20.8 31.5,18.2" />
+                        <line x1="21" y1="2.8" x2="21" y2="6.5" />
+                        <path d="M 6.2,25.5 L 35.8,25.5 L 37.2,30.5 L 4.8,30.5 Z" fill="#FFFFFF" />
+                      </g>
+
+                      {/* Official Sky-Blue Hoist Canton Sewn Against the Right Pole */}
+                      <rect x="60" y="-4" width="38" height="44" fill="#0EA5E9" />
+
+                      {/* Pure Geometric White Crescent (opening toward hoist pole) & 5-Pointed Star */}
+                      <g transform="translate(79, 20)">
+                        <path
+                          d="M -3.5,-9.5 A 10.2,10.2 0 1,1 -9.5,3.5 A 8.2,8.2 0 1,0 -3.5,-9.5 Z"
+                          fill="#FFFFFF"
+                        />
+                        <polygon
+                          points="4.2,-7.6 5.1,-5.1 7.7,-5.0 5.6,-3.4 6.4,-0.9 4.2,-2.4 2.0,-0.9 2.8,-3.4 0.7,-5.0 3.3,-5.1"
+                          fill="#FFFFFF"
+                        />
+                      </g>
+
+                      {/* Bottom Official Green Strip with Bold Noto Serif 'SKSSF' */}
+                      <rect x="0" y="40" width="98" height="24" fill="#16A34A" />
+                      <text
+                        x="49"
+                        y="53.5"
+                        textAnchor="middle"
+                        fill="#FFFFFF"
+                        fontSize="12.5"
+                        fontWeight="800"
+                        letterSpacing="2.2"
+                        fontFamily="'Noto Serif', Georgia, serif"
+                      >
+                        SKSSF
+                      </text>
+
+                      {/* Dynamic Fabric Light & Shadow Ripple Sweeping Across Cloth */}
+                      <motion.rect
+                        x="-40"
+                        y="-4"
+                        width="178"
+                        height="68"
+                        fill={`url(#${flagWaveGradId})`}
+                        animate={{ x: [28, -42] }}
+                        transition={{ duration: missionDone ? 0.72 : 1.35, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </g>
+
+                    {/* Subtle Rippled Cloth Outline */}
+                    <path
+                      d="M 98,2 C 74,-1.5 48,4.2 22,0.2 C 11,-1.6 4,0.6 0,2.4 L 0,58.4 C 4,56.6 11,54.4 22,56.2 C 48,60.2 74,54.5 98,58 Z"
+                      fill="none"
                       stroke="#0F172A"
-                      strokeWidth="1.5"
-                    />
-                    <image
-                      href={OFFICIAL_FLAG_ASSETS.skssf}
-                      x="2"
-                      y="2"
-                      width="88"
-                      height="52"
-                      preserveAspectRatio="xMidYMid meet"
-                    />
-                    <motion.rect
-                      x="0"
-                      y="0"
-                      width="92"
-                      height="56"
-                      rx="3"
-                      fill={`url(#${flagWaveGradId})`}
-                      animate={{ x: [45, -45] }}
-                      transition={{ duration: missionDone ? 0.75 : 1.4, repeat: Infinity, ease: 'linear' }}
+                      strokeWidth="1.25"
                     />
                   </motion.g>
-                  <circle cx="93" cy="8" r="2.5" fill="#F59E0B" />
-                  <circle cx="93" cy="48" r="2.5" fill="#F59E0B" />
+                  {/* Brass Grommet Ties Connecting Flag Cloth to Pole */}
+                  <circle cx="99.5" cy="9" r="2.4" fill="#F59E0B" />
+                  <circle cx="99.5" cy="51" r="2.4" fill="#F59E0B" />
                 </g>
               )}
 
@@ -993,7 +1047,7 @@ const MADRASA_PARTS: {
     emoji: '🗓️',
     title: 'ക്ലാസ്സ് & യൂണിറ്റ് അറിയിപ്പ്',
     hint: 'വലതുവശത്തെ ബോർഡിൽ വെക്കാം',
-    speech: 'മിടുക്കൻ! മദ്രസ സമയവിവരവും SKSSF യൂണിറ്റ് അറിയിപ്പ് ബോർഡും തയ്യാറായി!',
+    speech: 'മികച്ച പ്രകടനം! മദ്രസ സമയവിവരവും SKSSF യൂണിറ്റ് അറിയിപ്പ് ബോർഡും തയ്യാറായി!',
   },
 ];
 
@@ -1119,7 +1173,7 @@ export const MadrasaBoardActivity: React.FC<{
         setDoneNotified(true);
         sound.playHoist();
         onAwardXp(30, 'madrasa_board_complete');
-        onUnlockBadge?.('SKSSF മദ്രസാ പ്രവർത്തകൻ');
+        onUnlockBadge?.('SKSSF മദ്രസാ പ്രതിനിധി');
         onComplete?.();
         narrator.speak(
           'അടിപൊളി! നമ്മുടെ സമസ്ത മദ്രസ ബോർഡ് മനോഹരമായി ഒരുങ്ങി! 11,000-ലധികം മദ്രസകളുടെ വെളിച്ചം പകരുന്ന ഈ പൈതൃകമാണ് നമ്മുടെ കരുത്ത്.',

@@ -371,7 +371,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         name: 'വ്യാജ പ്രചാരകൻ',
         message: 'നാട്ടിൽ ഭിന്നതയുണ്ടാക്കുന്ന പ്രകോപന ലഘുലേഖകൾ ഹാളിൽ വിതരണം ചെയ്യണം!',
         allow: false,
-        feedback: 'മിടുക്കൻ! ഭിന്നത പരത്തുന്ന വിദ്വേഷ കെണിയെ ടാഗോർ ഹാൾ കവാടത്തിൽ തന്നെ തടഞ്ഞു!',
+        feedback: 'മികച്ച പ്രകടനം! ഭിന്നത പരത്തുന്ന വിദ്വേഷ കെണിയെ ടാഗോർ ഹാൾ കവാടത്തിൽ തന്നെ തടഞ്ഞു!',
       },
       {
         id: 'tg_taste',
@@ -599,7 +599,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       { emoji: '💣', label: 'അലസത' },
       { emoji: '💣', label: 'വഴക്ക്' },
     ],
-    doneMessage: '🎈 മിടുക്കൻ! പ്രായപാതയിലെ മൂന്ന് സംഘടനാ ബലൂണുകളും കൃത്യമായി പൊട്ടിച്ചു! (+25 XP)',
+    doneMessage: '🎈 മികച്ച പ്രകടനം! പ്രായപാതയിലെ മൂന്ന് സംഘടനാ ബലൂണുകളും കൃത്യമായി പൊട്ടിച്ചു! (+25 XP)',
   },
   l2_vault: {
     engine: 'road_vehicle_drive',
@@ -759,7 +759,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         isFake: true,
         emoji: '🤬',
         text: 'പ്രകോപന വീഡിയോ — കമന്റ് യുദ്ധ കെണി!',
-        feedback: '🛡️ മിടുക്കൻ! തർക്കുൽ മാലായഅ്നി — കമന്റ് യുദ്ധ കെണി തടുത്തുനിർത്തി!',
+        feedback: '🛡️ മികച്ച തീരുമാനം! തർക്കുൽ മാലായഅ്നി — കമന്റ് യുദ്ധ കെണി തടുത്തുനിർത്തി!',
       },
       {
         id: 'w4',
@@ -851,7 +851,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         name: 'അബ്ദുല്ല (ബിരുദ വിദ്യാർത്ഥി)',
         dream: 'എനിക്ക് ജില്ലാ കളക്ടറായി (IAS) നാടിനെ സത്യസന്ധമായി സേവിക്കണം!',
         correctTrackId: 'ias',
-        tip: 'മിടുക്കൻ! സിവിൽ സർവീസ് സ്വപ്നത്തിന് TREND Future India വിഭാഗം തിരഞ്ഞെടുത്തു!',
+        tip: 'മികച്ച തീരുമാനം! സിവിൽ സർവീസ് സ്വപ്നത്തിന് TREND Future India വിഭാഗം തിരഞ്ഞെടുത്തു!',
       },
       {
         id: 'st3',
@@ -907,7 +907,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         title: 'അനുചിത ബഹളവും അനാദരവ് പ്രദർശനവും',
         detail: 'ധാർമ്മിക മൂല്യങ്ങൾക്കും സർഗ്ഗലയം അച്ചടക്കത്തിനും വിരുദ്ധമായ പരിപാടി.',
         stage: 'reject',
-        note: 'മിടുക്കൻ! മൂല്യബോധമുള്ള സർഗ്ഗലയം വേദിയിൽ അനുചിത പരിപാടിക്ക് വിലക്കേർപ്പെടുത്തി!',
+        note: 'മികച്ച തീരുമാനം! മൂല്യബോധമുള്ള സർഗ്ഗലയം വേദിയിൽ അനുചിത പരിപാടിക്ക് വിലക്കേർപ്പെടുത്തി!',
       },
       {
         id: 'sg_a4',
@@ -1114,7 +1114,6 @@ const MiniOfficialFlagSvg: React.FC<{
   windSpeed = 'idle',
 }) => {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  const maskId = `mflag-crescent-${uid}`;
   const clipId = `mflag-clip-${uid}`;
   const sx = width / 94;
   const sy = height / 56;
@@ -1125,12 +1124,6 @@ const MiniOfficialFlagSvg: React.FC<{
   return (
     <g transform={`translate(${x}, ${y}) scale(${sx}, ${sy})`}>
       <defs>
-        {/* Exact Official Crescent Mask: Opening faces UPPER-HOIST toward the pole! */}
-        <mask id={maskId} maskUnits="userSpaceOnUse" x="-16" y="-16" width="32" height="32">
-          <rect x="-20" y="-20" width="40" height="40" fill="black" />
-          <circle cx="0" cy="0" r="10.2" fill="white" />
-          <circle cx={isLeft ? 3.5 : -3.5} cy="-3.1" r="8.5" fill="black" />
-        </mask>
         <clipPath id={clipId}>
           {isLeft ? (
             <path d="M 94,0 C 70,-2.2 44,2.6 20,-1.4 C 10,-2.8 4,-1 0,0.5 L 0,55.5 C 4,54 10,52.2 20,53.6 C 44,57.6 70,52.8 94,56 Z" />
@@ -1184,9 +1177,16 @@ const MiniOfficialFlagSvg: React.FC<{
           {/* Hoist-Side Canton Sewn Against the Flagpole */}
           <rect x={isLeft ? 58 : 0} y="-4" width="36" height="43" fill={cantonFill} />
 
-          {/* Official White Crescent & 5-Pointed Star Nestled Inside Opening */}
+          {/* Pure Geometric White Crescent & 5-Pointed Star (zero black mask rect) */}
           <g transform={isLeft ? 'translate(75, 20)' : 'translate(19, 20)'}>
-            <circle cx="0" cy="0" r="10.2" fill="#FFFFFF" mask={`url(#${maskId})`} />
+            <path
+              d={
+                isLeft
+                  ? 'M -3.5,-9.5 A 10.2,10.2 0 1,1 -9.5,3.5 A 8.2,8.2 0 1,0 -3.5,-9.5 Z'
+                  : 'M 3.5,-9.5 A 10.2,10.2 0 1,0 9.5,3.5 A 8.2,8.2 0 1,1 3.5,-9.5 Z'
+              }
+              fill="#FFFFFF"
+            />
             {isLeft ? (
               <polygon
                 points="4.1,-7.4 5.0,-4.9 7.6,-4.8 5.5,-3.2 6.3,-0.7 4.1,-2.2 1.9,-0.7 2.7,-3.2 0.6,-4.8 3.2,-4.9"
@@ -1200,7 +1200,7 @@ const MiniOfficialFlagSvg: React.FC<{
             )}
           </g>
 
-          {/* Bottom Official Green Strip (#16A34A) — SKSSF Text for SKSSF, Clean Solid Green for Samastha (flag_111154.jpg) */}
+          {/* Bottom Official Green Strip (#16A34A) — SKSSF Text in Bold Noto Serif */}
           <rect x="0" y="39" width="94" height="21" fill="#16A34A" />
           {variant === 'skssf' && (
             <text
@@ -1209,9 +1209,9 @@ const MiniOfficialFlagSvg: React.FC<{
               textAnchor="middle"
               fill="#FFFFFF"
               fontSize="11.5"
-              fontWeight="900"
+              fontWeight="800"
               letterSpacing="2.2"
-              fontFamily="Georgia, serif"
+              fontFamily="'Noto Serif', Georgia, serif"
             >
               SKSSF
             </text>

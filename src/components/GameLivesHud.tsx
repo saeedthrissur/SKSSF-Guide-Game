@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { BookOpen, Compass, Home, Info, Map as MapIcon, RotateCcw, Sparkles, X } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { useGameStagePortal } from './GameFullscreenShell';
-import guideLogoUrl from '../assets/images/guide_game_logo_1795638356373.jpg';
+import guideLogoUrl from '../assets/images/skssf_guide_logo_3d_1795802338366.jpg';
 
 /* ============================================================================
  * 1. SHATTERABLE CRYSTAL SHIELD / GLASS ORB LIVES (Replaces ❤️ Hearts in Games)

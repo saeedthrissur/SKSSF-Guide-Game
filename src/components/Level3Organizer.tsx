@@ -32,6 +32,8 @@ import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniG
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
+import worldSkyRainbowImg from '../assets/images/world_sky_rainbow_1794953897546.jpg';
+import worldNewsroomDeskImg from '../assets/images/world_newsroom_desk_1794953899783.jpg';
 
 export type L3Tab = 'sky_catcher' | 'scrolls' | 'mind_chain' | 'unit_desks' | 'newsroom';
 
@@ -151,9 +153,9 @@ const SKY_BUBBLES: SkyBubble[] = [
     x: '30%',
     y: '74%',
     insight:
-      'മറ്റുള്ളവരെ സഹായിക്കുന്നവനാണ് നല്ല നേതാവ്! നല്ല കുട്ടി എപ്പോഴും ഉമ്മ-ഉപ്പയെയും ഉസ്താദുമാരെയും അനുസരിക്കും.',
+      'മറ്റുള്ളവരെ സഹായിക്കുന്നവരാണ് നല്ല നേതൃത്വം! നല്ല വിദ്യാർത്ഥികൾ എപ്പോഴും ഉമ്മ-ഉപ്പയെയും ഉസ്താദുമാരെയും അനുസരിക്കും.',
     speech:
-      'മറ്റുള്ളവരെ സഹായിക്കുന്നവനാണ് നല്ല നേതാവ്! നല്ല കുട്ടി എപ്പോഴും ഉമ്മ ഉപ്പയെയും ഉസ്താദുമാരെയും അനുസരിക്കും.',
+      'മറ്റുള്ളവരെ സഹായിക്കുന്നവരാണ് നല്ല നേതൃത്വം! നല്ല വിദ്യാർത്ഥികൾ എപ്പോഴും ഉമ്മ ഉപ്പയെയും ഉസ്താദുമാരെയും അനുസരിക്കും.',
   },
   {
     id: 'v8',
@@ -720,7 +722,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
 
           <div className="relative w-full h-80 sm:h-96 rounded-2xl border-2 border-emerald-300 overflow-hidden shadow-md bg-sky-900">
             <img
-              src="./src/assets/images/world_sky_rainbow_1794953897546.jpg"
+              src={worldSkyRainbowImg}
               alt="സ്കൈ ക്യാച്ചർ മഴവില്ല് ആകാശ ഗെയിം"
               className="absolute inset-0 w-full h-full object-cover opacity-90"
               referrerPolicy="no-referrer"
@@ -1025,7 +1027,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="relative h-28 sm:h-32 rounded-2xl overflow-hidden border border-amber-200">
             <img
-              src="./src/assets/images/world_newsroom_desk_1794953899783.jpg"
+              src={worldNewsroomDeskImg}
               alt="യൂണിറ്റ് ഓഫീസ് ഡെസ്ക്"
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"

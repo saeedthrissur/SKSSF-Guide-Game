@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React from 'react';
 
 interface ImageFlagProps {
   className?: string;
@@ -80,8 +80,6 @@ export const AuthenticFlagCanvas: React.FC<AuthenticVectorFlagProps> = ({
   onSlotClick,
   onSlotDrop,
 }) => {
-  const uid = useId();
-  const maskId = `crescent-mask-${variant}-${uid.replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const cantonColor = variant === 'skju' ? '#8C1D40' : '#0EA5E9';
   const mosqueStroke = variant === 'skju' ? '#1E3A8A' : '#0F172A';
   const bottomText =
@@ -222,38 +220,21 @@ export const AuthenticFlagCanvas: React.FC<AuthenticVectorFlagProps> = ({
           </g>
         )}
 
-        {/* Top-Left Canton (Maroon for SKJU, Sky Blue for SKSSF/SKSBV) */}
+        {/* Top-Left Canton (Maroon for SKJU, Sky Blue for SKSSF/SKSBV) — Pure vector crescent (no black mask rect) */}
         {hasCanton ? (
           <g>
-            <defs>
-              <mask id={maskId} maskUnits="userSpaceOnUse" x="-32" y="-32" width="64" height="64">
-                <rect x="-40" y="-40" width="80" height="80" fill="black" />
-                <circle cx="0" cy="0" r="28" fill="white" />
-                <circle cx="-10" cy="-9" r="22" fill="black" />
-              </mask>
-            </defs>
             <rect x="0" y="0" width="118" height="126" fill={cantonColor} />
             <g transform="translate(61, 65)">
-              {/* Bold Crescent Moon opening toward upper-left with bright yellow-gold edge & crisp white fill */}
-              <circle
-                cx="0"
-                cy="0"
-                r="28"
+              {/* Bold Crescent Moon opening toward upper-left with crisp white fill & soft gold edge */}
+              <path
+                d="M 10,-26 A 28,28 0 1,0 26,10 A 22,22 0 1,1 10,-26 Z"
                 fill="#FFFFFF"
-                mask={`url(#${maskId})`}
-              />
-              <circle
-                cx="0"
-                cy="0"
-                r="28"
-                fill="none"
                 stroke="#FDE047"
                 strokeWidth="1.2"
-                mask={`url(#${maskId})`}
               />
               {/* 5-Pointed Star nestled cleanly inside the crescent */}
               <polygon
-                points="-11,-21 -8,-13 0,-13 -6,-8 -4,0 -11,-5 -18,0 -16,-8 -22,-13 -14,-13"
+                points="-7,-19 -4,-11 4,-11 -2,-6 0,2 -7,-3 -14,2 -12,-6 -18,-11 -10,-11"
                 fill="#FFFFFF"
                 stroke="#FDE047"
                 strokeWidth="0.9"
@@ -318,10 +299,10 @@ export const AuthenticFlagCanvas: React.FC<AuthenticVectorFlagProps> = ({
                 y="165"
                 textAnchor="middle"
                 fontSize="30"
-                fontWeight="900"
+                fontWeight="800"
                 fill="#FFFFFF"
                 letterSpacing="5"
-                fontFamily="Georgia, serif"
+                fontFamily="'Noto Serif', Georgia, serif"
               >
                 {bottomText}
               </text>

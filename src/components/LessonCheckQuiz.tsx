@@ -29,12 +29,12 @@ export function scrollToActiveQuiz(): void {
     '[data-lesson-drawer="true"][data-lesson-drawer-confirmed="false"]'
   );
   if (unconfirmedLesson) {
-    unconfirmedLesson.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    unconfirmedLesson.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
   const el = document.querySelector<HTMLElement>('[data-lesson-quiz="true"]');
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
@@ -43,7 +43,7 @@ export function scrollDirectToQuiz(): void {
   if (typeof document === 'undefined') return;
   const el = document.querySelector<HTMLElement>('[data-lesson-quiz="true"]');
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
@@ -52,8 +52,18 @@ export function scrollToLessonDrawer(): void {
   if (typeof document === 'undefined') return;
   const el = document.querySelector<HTMLElement>('[data-lesson-drawer="true"]');
   if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+}
+
+/** Fisher-Yates shuffle returning a randomized permutation of [0, 1, ..., n-1] */
+function createShuffledOrder(length: number): number[] {
+  const arr = Array.from({ length }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 interface LessonCheckQuizProps {
@@ -79,11 +89,15 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   const [shakeTick, setShakeTick] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const [optionOrder, setOptionOrder] = useState<number[]>(() =>
+    createShuffledOrder(quiz?.options.length ?? 3)
+  );
 
   useEffect(() => {
     setIsOpen(true);
     setShowInfo(false);
-  }, [lessonId]);
+    setOptionOrder(createShuffledOrder(quiz?.options.length ?? 3));
+  }, [lessonId, quiz?.options.length]);
 
   // Automatically open the quiz when the user confirms the lesson drawer
   useEffect(() => {
@@ -108,19 +122,19 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   // Mandatory lesson check: quiz stays locked until user confirms the lesson drawer (unless already answered or no drawer exists)
   const lessonUnlocked = isAnswered || !hasLessonDrawerOnPage || isLessonConfirmed(lessonId);
 
-  const handleChoose = (idx: number) => {
+  const handleChoose = (origIdx: number) => {
     if (!lessonUnlocked || isAnswered || lives <= 0) return;
     sound.unlockAudio();
-    const isCorrect = idx === quiz.correctIdx;
+    const isCorrect = origIdx === quiz.correctIdx;
 
     if (isCorrect) {
       sound.playSuccess();
-      onAnswered(lessonId, idx, true);
+      onAnswered(lessonId, origIdx, true);
       narrator.speak(`ശരിയാണ്! ${quiz.explanation}`);
     } else {
       sound.playError();
       setShakeTick((k) => k + 1);
-      onAnswered(lessonId, idx, false);
+      onAnswered(lessonId, origIdx, false);
       const nextLives = Math.max(0, lives - 1);
       if (nextLives > 0) {
         narrator.speak(
@@ -323,15 +337,16 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                   </p>
 
                   <div className="grid gap-2">
-                    {quiz.options.map((opt, idx) => {
-                      const isCorrectOption = idx === quiz.correctIdx;
-                      const isUserWrongPick = isWrongAnswered && savedAnswer?.selectedIdx === idx;
+                    {optionOrder.map((origIdx, displayIdx) => {
+                      const opt = quiz.options[origIdx];
+                      const isCorrectOption = origIdx === quiz.correctIdx;
+                      const isUserWrongPick = isWrongAnswered && savedAnswer?.selectedIdx === origIdx;
 
                       let cardClass =
                         'bg-white border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 text-slate-800 cursor-pointer';
                       let badgeEl: React.ReactNode = (
                         <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-extrabold text-xs flex items-center justify-center shrink-0">
-                          {idx + 1}
+                          {displayIdx + 1}
                         </span>
                       );
 
@@ -352,12 +367,12 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
 
                       return (
                         <motion.button
-                          key={idx}
+                          key={`${lessonId}-${origIdx}`}
                           type="button"
                           disabled={isAnswered || lives <= 0}
                           whileHover={!isAnswered ? { scale: 1.01 } : {}}
                           whileTap={!isAnswered ? { scale: 0.98 } : {}}
-                          onClick={() => handleChoose(idx)}
+                          onClick={() => handleChoose(origIdx)}
                           className={`w-full text-left rounded-2xl border-2 px-3.5 py-3 transition-all flex items-center justify-between gap-2.5 ${cardClass}`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">

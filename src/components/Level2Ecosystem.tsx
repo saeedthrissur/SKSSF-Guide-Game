@@ -42,6 +42,7 @@ import { MiniGameLessonKey, OptionalLessonMiniGame } from './OptionalLessonMiniG
 import { QuizAnswerMap } from '../utils/gameStorage';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
+import dawaCommunityLanternsImg from '../assets/images/dawa_community_lanterns_1794953898121.jpg';
 
 export type L2GameTab =
   | 'memory'
@@ -717,7 +718,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
       onAwardXp(15, `l2_${spec.id}`);
       triggerGlitter(`🏛️ ${spec.tier}: ${spec.totalMembers} അംഗ ഘടന പഠിച്ചു! (+15 XP)`);
       if (next.length === COMMITTEE_TIER_SPECS.length) {
-        onUnlockBadge('SKSSF കമ്മിറ്റി സംഘാടകൻ');
+        onUnlockBadge('SKSSF കമ്മിറ്റി ഭാരവാഹി');
       }
     }
     narrator.speak(spec.speech, `${spec.emoji} ${spec.tier} (${spec.totalMembers} അംഗങ്ങൾ)`);
@@ -1878,7 +1879,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
           <GlitterBurstOverlay triggerKey={glitterKey} label={glitterMsg} />
           <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-300 bg-emerald-950 text-white shadow-md">
             <img
-              src="./src/assets/images/dawa_community_lanterns_1794953898121.jpg"
+              src={dawaCommunityLanternsImg}
               alt="നാട്ടിലെ ദീനീ ദഅ്‌വത്ത് ഗ്രാമവും വിളക്കുകളും"
               className="w-full h-40 sm:h-48 object-cover opacity-80"
               referrerPolicy="no-referrer"
@@ -1917,7 +1918,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                       onAwardXp(15, `l2_dawa_${m.id}`);
                       triggerGlitter(`🏮 ${m.emoji} വിളക്ക് തെളിഞ്ഞു! +15 XP`);
                       if (nextLit.length === DAWA_TOWN_MISSIONS.length) {
-                        onUnlockBadge('SKSSF ദഅ്‌വത്ത് പ്രവർത്തകൻ');
+                        onUnlockBadge('SKSSF ദഅ്‌വത്ത് പ്രതിനിധി');
                       }
                     }
                     narrator.speak(m.speech, m.title);
