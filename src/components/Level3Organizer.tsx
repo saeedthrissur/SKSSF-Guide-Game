@@ -560,7 +560,7 @@ export const Level3Organizer: React.FC<Level3OrganizerProps> = ({
   const handleFinishLevel3 = () => {
     sound.playUnlock();
     onAwardXp(60, 'l3_complete');
-    onUnlockBadge('SKSSF ജില്ലാ ഭാരവാഹി');
+    onUnlockBadge('ആദർശരക്ഷാധികാരി');
     narrator.speak(
       'അഭിനന്ദനങ്ങൾ! ജില്ലാ തലത്തിലെ എല്ലാ പാഠങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി! ഇനി സ്റ്റേറ്റ് & ഗ്ലോബൽ തലത്തിലേക്ക് കടക്കാം!'
     );

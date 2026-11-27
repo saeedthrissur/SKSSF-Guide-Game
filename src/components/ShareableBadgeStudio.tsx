@@ -19,7 +19,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'starter_member',
     tierLabel: 'ഘട്ടം 1',
-    title: 'SKSSF അനുഭാവി',
+    title: 'വിജ്ഞാനാന്വേഷി',
     subtitle: 'വിജ്ഞാനം · വിനയം · സേവനം — പഠന യാത്ര തുടങ്ങി',
     unlockHint: 'തുടക്കത്തിൽ തന്നെ ലഭിക്കും',
     accentFrom: '#065F46',
@@ -28,8 +28,8 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'jeep_starter',
     tierLabel: 'ഘട്ടം 2',
-    title: 'SKSSF അംഗം',
-    subtitle: 'സംഘടനാ പ്രചാരണവും അടിസ്ഥാന പാഠങ്ങളും പൂർത്തിയാക്കി',
+    title: 'ആശയാഭിലാഷി',
+    subtitle: 'ആദർശത്തിന്റെ അടിസ്ഥാന പാഠങ്ങളും പ്രചാരണ ഗെയിമും പൂർത്തിയാക്കി',
     unlockHint: 'ജീപ്പ് ഗെയിം പൂർത്തിയാക്കൂ',
     accentFrom: '#0369A1',
     accentTo: '#065F46',
@@ -37,7 +37,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'flag_keeper',
     tierLabel: 'ഘട്ടം 3',
-    title: 'SKSSF സംഘാടക പ്രതിനിധി',
+    title: 'ആദർശാനുഭാവി',
     subtitle: 'സമസ്തയുടെയും SKSSF-ന്റെയും പതാകയും ചരിത്രവും പഠിച്ചു',
     unlockHint: 'പതാക പാഠം പൂർത്തിയാക്കൂ',
     accentFrom: '#7F1D1D',
@@ -46,7 +46,7 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'madrasa_guardian',
     tierLabel: 'ഘട്ടം 4',
-    title: 'SKSSF ഭാരവാഹി',
+    title: 'ചരിത്രാന്വേഷി',
     subtitle: 'സമസ്ത മദ്രസാ ബോർഡും സംഘടനാ സംവിധാനങ്ങളും പഠിച്ചു',
     unlockHint: 'മദ്രസ ബോർഡ് പൂർത്തിയാക്കൂ',
     accentFrom: '#047857',
@@ -55,8 +55,8 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'viqaya_hero',
     tierLabel: 'ഘട്ടം 5',
-    title: 'SKSSF വിഖായ വളണ്ടിയർ',
-    subtitle: 'സേവനത്തിനും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങൾക്കും സദാസന്നദ്ധർ',
+    title: 'ആദർശരക്ഷാധികാരി',
+    subtitle: 'സേവനത്തിന്റെയും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങളുടെയും പാഠങ്ങൾ പഠിച്ചു',
     unlockHint: 'വിഖായ വാഹനം പൂർത്തിയാക്കൂ',
     accentFrom: '#0E7490',
     accentTo: '#065F46',
@@ -64,8 +64,8 @@ export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'master_guide',
     tierLabel: 'പൂർണ്ണ വിജയം',
-    title: 'SKSSF മാർഗ്ഗദർശി',
-    subtitle: 'എല്ലാ പാഠങ്ങളും ദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി',
+    title: 'വിജ്ഞാനസാരഥി',
+    subtitle: 'എല്ലാ പാഠങ്ങളും ക്വിസ് ദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി',
     unlockHint: 'എല്ലാ ഘട്ടവും പൂർത്തിയാക്കൂ',
     accentFrom: '#92400E',
     accentTo: '#064E3B',
@@ -127,6 +127,7 @@ export interface ShareableBadgeStudioProps {
   completedLessonIds?: string[];
   completedLevels?: number[];
   awardedActions?: Record<string, boolean>;
+  onOpenSupport?: () => void;
 }
 
 export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
@@ -138,6 +139,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   completedLessonIds = [],
   completedLevels = [],
   awardedActions = {},
+  onOpenSupport,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('starter_member');
   const [userName, setUserName] = useState<string>('');
@@ -216,11 +218,17 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   const cleanRank =
     rank
       .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
-      .replace(/കൂട്ടുകാരൻ/g, 'അംഗം')
-      .replace(/പ്രവർത്തകൻ/g, 'അംഗം')
-      .replace(/സംഘാടകൻ/g, 'സംഘാടക പ്രതിനിധി')
+      .replace(/SKSSF അനുഭാവി/g, 'വിജ്ഞാനാന്വേഷി')
+      .replace(/SKSSF അംഗം/g, 'ആശയാഭിലാഷി')
+      .replace(/SKSSF സംഘാടക പ്രതിനിധി/g, 'ആദർശാനുഭാവി')
+      .replace(/SKSSF ഭാരവാഹി/g, 'ചരിത്രാന്വേഷി')
+      .replace(/SKSSF നേതൃത്വം/g, 'ആദർശരക്ഷാധികാരി')
+      .replace(/SKSSF മാർഗ്ഗദർശി/g, 'വിജ്ഞാനസാരഥി')
+      .replace(/കൂട്ടുകാരൻ/g, 'വിജ്ഞാനാന്വേഷി')
+      .replace(/പ്രവർത്തകൻ/g, 'ആശയാഭിലാഷി')
+      .replace(/സംഘാടകൻ/g, 'ആദർശാനുഭാവി')
       .replace(/\s+/g, ' ')
-      .trim() || 'SKSSF അംഗം';
+      .trim() || 'വിജ്ഞാനാന്വേഷി';
 
   const badge =
     SHAREABLE_BADGES.find((b) => b.id === selectedId && unlockedMap[b.id]) ||
@@ -699,6 +707,22 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               <p className="text-xs font-bold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
                 ✅ {statusMsg}
               </p>
+            )}
+
+            {onOpenSupport && (
+              <div className="pt-1 flex items-center justify-center sm:justify-start">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    onOpenSupport();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                </button>
+              </div>
             )}
           </div>
 

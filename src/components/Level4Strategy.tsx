@@ -98,6 +98,7 @@ interface Level4StrategyProps {
   quizAnswers: QuizAnswerMap;
   onQuizAnswered: (lessonId: string, selectedIdx: number, isCorrect: boolean) => void;
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
+  onOpenSupport?: () => void;
   devUnlocked?: boolean;
 }
 
@@ -214,6 +215,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   quizAnswers,
   onQuizAnswered,
   onOpenBadgeStudio,
+  onOpenSupport,
   devUnlocked = false,
 }) => {
   const [activeTab, setActiveTab] = useState<L4Tab>(initialTab || 'climb');
@@ -521,11 +523,11 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   const handleUnlockCertificate = () => {
     sound.playUnlock();
     onAwardXp(100, 'l4_complete');
-    onUnlockBadge('SKSSF മാർഗ്ഗദർശി');
+    onUnlockBadge('വിജ്ഞാനസാരഥി');
     onCompleteLevel();
-    triggerGlitter('SKSSF മാർഗ്ഗദർശി! സാക്ഷ്യപത്രം തുറന്നു!');
+    triggerGlitter('വിജ്ഞാനസാരഥി! പ്രശംസാപത്രം തുറന്നു!');
     narrator.speak(
-      'ആശംസകൾ! നിങ്ങൾ എല്ലാ ഘട്ടങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി! ഇനി നിങ്ങളുടെ പേരിലുള്ള സാക്ഷ്യപത്രം ഡൗൺലോഡ് ചെയ്യാം!'
+      'ആശംസകൾ! നിങ്ങൾ എല്ലാ ഘട്ടങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി! ഇനി നിങ്ങളുടെ പേരിലുള്ള ആദർശ വിജ്ഞാന പ്രതിഭ പ്രശംസാപത്രം ഡൗൺലോഡ് ചെയ്യാം!'
     );
     setActiveTab('certificate');
   };
@@ -2601,7 +2603,7 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                   സാക്ഷ്യപത്രം നേടാൻ എല്ലാ {ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് പൂർത്തിയാക്കണം!
                 </h3>
                 <p className="text-xs sm:text-sm text-emerald-100 mt-1">
-                  ഡയറക്ട് ലിങ്ക് വഴി അവസാന പാഠത്തിൽ എത്തിയാലും, {ALL_LESSONS.length} പാഠങ്ങളും യഥാർത്ഥത്തിൽ പൂർത്തിയാക്കുന്നവർക്കാണ് ഔദ്യോഗിക SKSSF ഗൈഡ് സാക്ഷ്യപത്രം അൺലോക്ക് ആകുക.
+                  ഡയറക്ട് ലിങ്ക് വഴി അവസാന പാഠത്തിൽ എത്തിയാലും, {ALL_LESSONS.length} പാഠങ്ങളും യഥാർത്ഥത്തിൽ പൂർത്തിയാക്കുന്നവർക്കാണ് ആദർശ വിജ്ഞാന പ്രതിഭ പ്രശംസാപത്രം അൺലോക്ക് ആകുക.
                 </p>
               </div>
 
@@ -2684,6 +2686,21 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 <p className="text-xs font-semibold text-slate-600">
                   More Lessons &amp; Challenges Coming Soon! · {ALL_LESSONS.length} പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
                 </p>
+                {onOpenSupport && (
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        onOpenSupport();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold shadow-2xs transition-colors cursor-pointer"
+                    >
+                      <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}

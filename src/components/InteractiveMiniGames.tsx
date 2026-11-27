@@ -1173,7 +1173,7 @@ export const MadrasaBoardActivity: React.FC<{
         setDoneNotified(true);
         sound.playHoist();
         onAwardXp(30, 'madrasa_board_complete');
-        onUnlockBadge?.('SKSSF മദ്രസാ പ്രതിനിധി');
+        onUnlockBadge?.('ചരിത്രാന്വേഷി');
         onComplete?.();
         narrator.speak(
           'അടിപൊളി! നമ്മുടെ സമസ്ത മദ്രസ ബോർഡ് മനോഹരമായി ഒരുങ്ങി! 11,000-ലധികം മദ്രസകളുടെ വെളിച്ചം പകരുന്ന ഈ പൈതൃകമാണ് നമ്മുടെ കരുത്ത്.',
@@ -1882,7 +1882,7 @@ export const ViqayaRescueVehicleActivity: React.FC<{
                   setPlaying(false);
                   sound.playHoist();
                   onAwardXp(40, 'viqaya_prep_complete');
-                  onUnlockBadge?.('SKSSF വിഖായ വളണ്ടിയർ');
+                  onUnlockBadge?.('ആദർശരക്ഷാധികാരി');
                   onComplete?.();
                   setStatusMsg('മൂന്ന് വിഖായ & അലേർട്ട് രക്ഷാദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി!');
                   narrator.speak('അടിപൊളി! പ്രളയ ദുരിതാശ്വാസം, ആശുപത്രി എക്സ്പ്രസ്, ഹജ്ജ് സേവനം എന്നീ മൂന്ന് വിഖായ ദൗത്യങ്ങളും വിജയിച്ചു!');

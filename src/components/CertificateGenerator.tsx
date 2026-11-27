@@ -143,14 +143,28 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const cleanCertificateLabel = (raw: string) =>
     raw
       .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
-      .replace(/കൂട്ടുകാരൻ/g, 'അംഗം')
-      .replace(/പ്രവർത്തകൻ/g, 'അംഗം')
-      .replace(/സംഘാടകൻ/g, 'സംഘാടക പ്രതിനിധി')
+      .replace(/SKSSF അനുഭാവി/g, 'വിജ്ഞാനാന്വേഷി')
+      .replace(/SKSSF അംഗം/g, 'ആശയാഭിലാഷി')
+      .replace(/SKSSF സംഘാടക പ്രതിനിധി/g, 'ആദർശാനുഭാവി')
+      .replace(/SKSSF ഭാരവാഹി/g, 'ചരിത്രാന്വേഷി')
+      .replace(/SKSSF നേതൃത്വം/g, 'ആദർശരക്ഷാധികാരി')
+      .replace(/SKSSF വിഖായ വളണ്ടിയർ/g, 'ആദർശരക്ഷാധികാരി')
+      .replace(/SKSSF മാർഗ്ഗദർശി/g, 'വിജ്ഞാനസാരഥി')
+      .replace(/SKSSF യൂണിറ്റ് പ്രതിനിധി/g, 'ആശയാഭിലാഷി')
+      .replace(/SKSSF ശാഖാ പ്രതിനിധി/g, 'ആശയാഭിലാഷി')
+      .replace(/SKSSF മദ്രസാ പ്രതിനിധി/g, 'ചരിത്രാന്വേഷി')
+      .replace(/SKSSF കമ്മിറ്റി ഭാരവാഹി/g, 'ആദർശാനുഭാവി')
+      .replace(/SKSSF മേഖലാ ഭാരവാഹി/g, 'ചരിത്രാന്വേഷി')
+      .replace(/SKSSF ജില്ലാ ഭാരവാഹി/g, 'ആദർശരക്ഷാധികാരി')
+      .replace(/SKSSF ദഅ്‌വത്ത് പ്രതിനിധി/g, 'ആദർശാനുഭാവി')
+      .replace(/കൂട്ടുകാരൻ/g, 'വിജ്ഞാനാന്വേഷി')
+      .replace(/പ്രവർത്തകൻ/g, 'ആശയാഭിലാഷി')
+      .replace(/സംഘാടകൻ/g, 'ആദർശാനുഭാവി')
       .replace(/\s+/g, ' ')
       .trim();
 
-  const cleanRank = cleanCertificateLabel(rank) || 'SKSSF അംഗം';
-  const cleanBadges = badges.map(cleanCertificateLabel).filter(Boolean);
+  const cleanRank = cleanCertificateLabel(rank) || 'വിജ്ഞാനാന്വേഷി';
+  const cleanBadges = Array.from(new Set(badges.map(cleanCertificateLabel).filter(Boolean)));
 
   const effectiveName = lockedName || recipientName.trim();
   const displayName = effectiveName || 'നിങ്ങളുടെ പേര്';
@@ -160,6 +174,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     month: 'long',
     day: 'numeric',
   });
+  const CERTIFICATE_TITLE = 'ആദർശ വിജ്ഞാന പ്രതിഭ - പ്രശംസാപത്രം';
+  const CERTIFICATE_DISCLAIMER =
+    'ഇതൊരു വിജ്ഞാനപ്രദമായ ഓൺലൈൻ ക്വിസ്/ഗെയിം വിജയത്തിന്റെ പ്രശംസാപത്രം മാത്രമാണ്; സംഘടനയുടെ ഔദ്യോഗിക അംഗത്വ രേഖയല്ല.';
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +185,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setGenerated(true);
     setShareNote(
       isPreviewOnly
-        ? `ഇത് പ്രിവ്യൂ മാത്രമാണ് — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.`
+        ? `ഇത് പ്രിവ്യൂ മാത്രമാണ് — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ പ്രശംസാപത്രം ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.`
         : 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.'
     );
   };
@@ -188,7 +205,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
     const canvas = document.createElement('canvas');
     canvas.width = 1600;
-    canvas.height = 1130;
+    canvas.height = 1190;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
@@ -197,7 +214,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
     // Warm ivory parchment canvas
     ctx.fillStyle = '#FCFBF7';
-    ctx.fillRect(0, 0, 1600, 1130);
+    ctx.fillRect(0, 0, 1600, 1190);
 
     // Subtle emerald top header tint
     const topTint = ctx.createLinearGradient(0, 48, 0, 290);
@@ -209,22 +226,22 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     // Outer deep emerald border & inner double gold frame
     ctx.strokeStyle = '#065F46';
     ctx.lineWidth = 20;
-    ctx.strokeRect(34, 34, 1532, 1062);
+    ctx.strokeRect(34, 34, 1532, 1122);
 
     ctx.strokeStyle = '#D97706';
     ctx.lineWidth = 5;
-    ctx.strokeRect(60, 60, 1480, 1010);
+    ctx.strokeRect(60, 60, 1480, 1070);
 
     ctx.strokeStyle = '#065F46';
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(72, 72, 1456, 986);
+    ctx.strokeRect(72, 72, 1456, 1046);
 
     // Maroon heritage corner bars
     ctx.fillStyle = '#7F1D1D';
     ctx.fillRect(60, 60, 116, 12);
     ctx.fillRect(1424, 60, 116, 12);
-    ctx.fillRect(60, 1058, 116, 12);
-    ctx.fillRect(1424, 1058, 116, 12);
+    ctx.fillRect(60, 1118, 116, 12);
+    ctx.fillRect(1424, 1118, 116, 12);
 
     // Draw Real Official Flags on Left & Right Top Corners (Aspect-ratio preserved!)
     if (samasthaFlag) {
@@ -280,8 +297,8 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     drawOpticalCenteredLine(ctx, 'SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”', 800, 294);
 
     ctx.fillStyle = '#064E3B';
-    ctx.font = '800 48px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
-    drawOpticalCenteredLine(ctx, 'വിജയ സർട്ടിഫിക്കറ്റ്', 800, 356);
+    ctx.font = '800 42px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
+    drawOpticalCenteredLine(ctx, CERTIFICATE_TITLE, 800, 356);
 
     // Ornamental gold divider line
     ctx.strokeStyle = '#D97706';
@@ -296,7 +313,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     ctx.font = '600 24px "Noto Serif Malayalam", "Noto Serif", Georgia, serif';
     const lastLineY = wrapCenteredText(
       ctx,
-      'സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന സർട്ടിഫിക്കറ്റ്.',
+      'സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന പ്രശംസാപത്രം.',
       800,
       432,
       1180,
@@ -379,20 +396,20 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     // Symmetrically Centered Footer with QR Code + App Link + Date
     if (qrImg) {
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(110, 916, 110, 110);
+      ctx.fillRect(110, 902, 110, 110);
       ctx.strokeStyle = '#059669';
       ctx.lineWidth = 2.5;
-      ctx.strokeRect(110, 916, 110, 110);
-      ctx.drawImage(qrImg, 115, 921, 100, 100);
+      ctx.strokeRect(110, 902, 110, 110);
+      ctx.drawImage(qrImg, 115, 907, 100, 100);
     }
 
     ctx.fillStyle = '#065F46';
-    drawCenteredFit('നിങ്ങൾക്കും ഈ ഗെയിം കളിക്കാം — QR കോഡ് സ്കാൻ ചെയ്യൂ', 800, 948, 920, 21, 15, 800);
+    drawCenteredFit('നിങ്ങൾക്കും ഈ ഗെയിം കളിക്കാം — QR കോഡ് സ്കാൻ ചെയ്യൂ', 800, 934, 920, 21, 15, 800);
     ctx.fillStyle = '#0F172A';
     drawCenteredFit(
       appUrl.replace(/^https?:\/\//, ''),
       800,
-      978,
+      964,
       920,
       16,
       12,
@@ -400,7 +417,18 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       '"Noto Serif", Georgia, serif'
     );
     ctx.fillStyle = '#475569';
-    drawCenteredFit(`തീയതി: ${issueDate}  ·  SKSSF ഗൈഡ് ഗെയിം`, 800, 1012, 920, 19, 14, 700);
+    drawCenteredFit(`തീയതി: ${issueDate}  ·  SKSSF ഗൈഡ് ഗെയിം`, 800, 998, 920, 19, 14, 700);
+
+    // Official non-membership disclaimer at the bottom
+    ctx.strokeStyle = '#E2E8F0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(130, 1034);
+    ctx.lineTo(1470, 1034);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748B';
+    drawCenteredFit(CERTIFICATE_DISCLAIMER, 800, 1076, 1360, 18, 12, 600);
 
     return canvas;
   };
@@ -451,16 +479,16 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         );
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: 'SKSSF ഗൈഡ് ഗെയിം — വിജയ സർട്ടിഫിക്കറ്റ്',
+            title: `SKSSF ഗൈഡ് ഗെയിം — ${CERTIFICATE_TITLE}`,
             text: shareCaption,
             url: appUrl,
             files: [file],
           });
-          setShareNote('സർട്ടിഫിക്കറ്റും ലിങ്കും ഷെയർ ചെയ്തു!');
+          setShareNote('പ്രശംസാപത്രവും ലിങ്കും ഷെയർ ചെയ്തു!');
           return;
         }
         await navigator.share({
-          title: 'SKSSF ഗൈഡ് ഗെയിം — വിജയ സർട്ടിഫിക്കറ്റ്',
+          title: `SKSSF ഗൈഡ് ഗെയിം — ${CERTIFICATE_TITLE}`,
           text: shareCaption,
           url: appUrl,
         });
@@ -520,9 +548,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-3.5 flex items-start gap-2.5 text-xs font-extrabold text-amber-950">
           <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
-            <p>👁️ പ്രിവ്യൂ മാത്രം (ഔദ്യോഗിക സർട്ടിഫിക്കറ്റ് അല്ല)</p>
+            <p>👁️ പ്രിവ്യൂ മാത്രം</p>
             <p className="font-semibold text-amber-900 leading-relaxed">
-              ഇപ്പോൾ {completedLessonsCount}/{ALL_LESSONS.length} പാഠങ്ങളേ കഴിഞ്ഞിട്ടുള്ളൂ. ഡിസൈൻ നോക്കാൻ മാത്രമാണ് ഇത് — {ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ സർട്ടിഫിക്കറ്റ് ഡൗൺലോഡ് ചെയ്യാനും ഷെയർ ചെയ്യാനും പറ്റൂ.
+              ഇപ്പോൾ {completedLessonsCount}/{ALL_LESSONS.length} പാഠങ്ങളേ കഴിഞ്ഞിട്ടുള്ളൂ. ഡിസൈൻ നോക്കാൻ മാത്രമാണ് ഇത് — {ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ പ്രശംസാപത്രം ഡൗൺലോഡ് ചെയ്യാനും ഷെയർ ചെയ്യാനും പറ്റൂ.
             </p>
           </div>
         </div>
@@ -674,14 +702,14 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             <p className="text-xs sm:text-sm font-extrabold text-red-900">
               SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”
             </p>
-            <h4 className="text-2xl sm:text-3xl font-extrabold text-emerald-950 mt-1">
-              വിജയ സർട്ടിഫിക്കറ്റ്
+            <h4 className="text-xl sm:text-3xl font-extrabold text-emerald-950 mt-1 leading-snug">
+              {CERTIFICATE_TITLE}
             </h4>
           </div>
 
           <div className="max-w-2xl mx-auto border-t-2 border-amber-500/40 pt-4">
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-              സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന സർട്ടിഫിക്കറ്റ്.
+              സമസ്തയുടെ ചരിത്രവും SKSSF പ്രവർത്തനങ്ങളും സബ് വിങ്ങുകളും സൈബർ മര്യാദകളും ഉൾപ്പെടെ എല്ലാ പാഠങ്ങളും ഗെയിമുകളും വിജയകരമായി പൂർത്തിയാക്കിയതിന് സ്നേഹത്തോടെ നൽകുന്ന പ്രശംസാപത്രം.
             </p>
           </div>
 
@@ -724,6 +752,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
                 തീയതി: {issueDate} · SKSSF ഗൈഡ് ഗെയിം · “വിജ്ഞാനം · വിനയം · സേവനം”
               </p>
             </div>
+            <p className="w-full pt-2.5 mt-1 border-t border-slate-200 text-[10px] sm:text-[11px] font-medium text-slate-500 leading-relaxed">
+              {CERTIFICATE_DISCLAIMER}
+            </p>
           </div>
         </div>
       </div>

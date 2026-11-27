@@ -370,7 +370,16 @@ export const SettingsModal: React.FC<{
   onResetProgress?: () => void;
   onClearAllData?: () => Promise<void> | void;
   onRestoreBackup?: () => void;
-}> = ({ isOpen, onClose, xp = 0, onResetProgress, onClearAllData, onRestoreBackup }) => {
+  onOpenSupport?: () => void;
+}> = ({
+  isOpen,
+  onClose,
+  xp = 0,
+  onResetProgress,
+  onClearAllData,
+  onRestoreBackup,
+  onOpenSupport,
+}) => {
   const [snd, setSnd] = useState<SoundStateSnapshot>(sound.getSnapshot());
   const [nav, setNav] = useState<NarratorState>(narrator.getState());
   const [disp, setDisp] = useState<DisplayPrefsSnapshot>(displayPrefs.getSnapshot());
@@ -1391,6 +1400,24 @@ export const SettingsModal: React.FC<{
           <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed">
             കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും കളികളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>ഗൈഡ് ഗെയിം (Guide Game)</strong>.
           </p>
+          {onOpenSupport && (
+            <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-emerald-900/80">
+                ഈ ആപ്പ് ഇഷ്ടമായോ?
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  onOpenSupport();
+                }}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
+              >
+                <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end pt-2 border-t border-slate-200">

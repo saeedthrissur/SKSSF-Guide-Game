@@ -323,6 +323,7 @@ export const GuideGameAboutModal: React.FC<{
   onGoHome: () => void;
   onOpenAllLessons: () => void;
   onOpenResourceHub?: () => void;
+  onOpenSupport?: () => void;
   completedCount: number;
   totalLessons: number;
   xp: number;
@@ -332,6 +333,7 @@ export const GuideGameAboutModal: React.FC<{
   onGoHome,
   onOpenAllLessons,
   onOpenResourceHub,
+  onOpenSupport,
   completedCount,
   totalLessons,
   xp,
@@ -457,6 +459,25 @@ export const GuideGameAboutModal: React.FC<{
                     സ്റ്റോറി ലൈൻ + ഗെയിം → പാഠം + ക്വിസ്
                   </span>
                 </div>
+                {onOpenSupport && (
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      നിർമ്മാതാവിനെ പ്രോത്സാഹിപ്പിക്കാൻ
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        onClose();
+                        onOpenSupport();
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer shrink-0"
+                    >
+                      <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>

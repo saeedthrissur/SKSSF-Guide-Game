@@ -248,7 +248,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
             </h1>
             <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
-              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള {totalLessons} പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള SKSSF ഗൈഡ് സാക്ഷ്യപത്രം നേടാം.
+              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള {totalLessons} പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള ആദർശ വിജ്ഞാന പ്രതിഭ പ്രശംസാപത്രം നേടാം.
             </p>
           </div>
         </div>
@@ -319,17 +319,9 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               <ArrowRight className="w-5 h-5 shrink-0" />
             </button>
 
-            <button
-              type="button"
-              onClick={onOpenSupport}
-              className="w-full min-h-[46px] px-5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 active:scale-[0.99] text-amber-950 font-extrabold text-sm sm:text-base border border-amber-300 shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
-            >
-              <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-            </button>
-
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
               <span>{totalLessons} പാഠങ്ങൾ · 3 ഹൃദയങ്ങൾ · 17 ഉപവിഭാഗങ്ങൾ · സാക്ഷ്യപത്രം</span>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <button
                   type="button"
                   onClick={onOpenAllLessons}
@@ -351,6 +343,13 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span>{shareCopied ? 'ലിങ്ക് കോപ്പി ചെയ്തു!' : 'ലിങ്ക് ഷെയർ ചെയ്യാം'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenSupport}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-extrabold transition-colors cursor-pointer"
+                >
+                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
                 </button>
               </div>
             </div>
@@ -1014,12 +1013,12 @@ export default function App() {
   }, [showIntro, stage, currentLevel]);
 
   const currentRank = useMemo(() => {
-    if (canonicalCompletedCount >= ALL_LESSONS.length) return 'SKSSF മാർഗ്ഗദർശി';
-    if (canonicalCompletedCount >= 40 || xp >= 450) return 'SKSSF നേതൃത്വം';
-    if (canonicalCompletedCount >= 30 || xp >= 320) return 'SKSSF ഭാരവാഹി';
-    if (canonicalCompletedCount >= 18 || xp >= 180) return 'SKSSF സംഘാടക പ്രതിനിധി';
-    if (canonicalCompletedCount >= 6 || xp >= 60) return 'SKSSF അംഗം';
-    return 'SKSSF അനുഭാവി';
+    if (canonicalCompletedCount >= ALL_LESSONS.length) return 'വിജ്ഞാനസാരഥി';
+    if (canonicalCompletedCount >= 40 || xp >= 450) return 'ആദർശരക്ഷാധികാരി';
+    if (canonicalCompletedCount >= 30 || xp >= 320) return 'ചരിത്രാന്വേഷി';
+    if (canonicalCompletedCount >= 18 || xp >= 180) return 'ആദർശാനുഭാവി';
+    if (canonicalCompletedCount >= 6 || xp >= 60) return 'ആശയാഭിലാഷി';
+    return 'വിജ്ഞാനാന്വേഷി';
   }, [xp, canonicalCompletedCount]);
 
   const handleAwardXp = useCallback((amount: number, actionId: string) => {
@@ -1853,6 +1852,7 @@ export default function App() {
                       setBadgeStudioPreset(presetId);
                       setBadgeStudioOpen(true);
                     }}
+                    onOpenSupport={() => setSupportModalOpen(true)}
                   />
                 )}
               </>
@@ -2025,6 +2025,7 @@ export default function App() {
         onResetProgress={handleResetCurrentGame}
         onClearAllData={handleClearAllSavedData}
         onRestoreBackup={handleRestoreFromBackup}
+        onOpenSupport={() => setSupportModalOpen(true)}
       />
       <ScoreComparisonModal
         isOpen={scoreModalOpen}
@@ -2055,6 +2056,7 @@ export default function App() {
             completedLessonIds={completedLessonIds}
             completedLevels={completedLevels}
             awardedActions={awardedActions}
+            onOpenSupport={() => setSupportModalOpen(true)}
           />
         </Suspense>
       )}
@@ -2097,6 +2099,7 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenResourceHub={() => setResourceHubOpen(true)}
+        onOpenSupport={() => setSupportModalOpen(true)}
         completedCount={canonicalCompletedCount}
         totalLessons={ALL_LESSONS.length}
         xp={xp}
@@ -2113,8 +2116,20 @@ export default function App() {
       )}
 
       <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500">
-        <p>
-          ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”
+        <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+          <span>ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”</span>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setSupportModalOpen(true);
+            }}
+            className="text-amber-800 hover:text-emerald-900 font-bold underline underline-offset-4 transition-colors cursor-pointer"
+          >
+            🎁 ഒരു ഹദിയ നൽകാം
+          </button>
         </p>
       </footer>
       <FloatingPageNavigator visible={!lessonsMapOpen && !showIntro} />

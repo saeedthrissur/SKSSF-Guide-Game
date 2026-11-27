@@ -305,19 +305,17 @@ export const GameOverResetModal: React.FC<{
               </motion.button>
 
               {onOpenSupport && (
-                <motion.button
+                <button
                   type="button"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
                   onClick={() => {
                     sound.unlockAudio();
                     sound.playClick();
                     onOpenSupport();
                   }}
-                  className="w-full py-3 px-5 rounded-2xl bg-emerald-800/80 hover:bg-emerald-700 text-amber-200 border border-emerald-500/50 text-sm font-extrabold shadow-md inline-flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="mx-auto py-1.5 px-3 rounded-lg text-amber-200/90 hover:text-amber-200 hover:bg-white/10 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-                </motion.button>
+                </button>
               )}
             </div>
           </motion.div>
