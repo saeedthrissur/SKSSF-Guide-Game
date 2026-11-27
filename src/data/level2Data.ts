@@ -377,23 +377,6 @@ export const SKSSF_SUBWINGS: SubWingInfo[] = [
     committeeSeats: 'സംസ്ഥാനം മുതൽ ശാഖ വരെ സജീവ കാരുണ്യ ശൃംഖല',
   },
   {
-    id: 'imt',
-    name: 'ഇൻസ്റ്റിറ്റ്യൂഷൻ മാനേജ്മെന്റ് ടീം (IMT)',
-    englishName: 'Institution Management Team (IMT)',
-    category: 'media_org',
-    arabicRoot: 'إِدَارَة وَتَطْوِير (സ്ഥാപന ഭരണവും വികസനവും)',
-    arabicMeaning: 'SKSSF സ്ഥാപനങ്ങളുടെ പ്രൊഫഷണൽ മേൽനോട്ടം',
-    roleSummary:
-      'SKSSF-ന് കീഴിലുള്ള ഇസ്‌ലാമിക് സെന്ററുകൾ, വനിതാ അക്കാദമികൾ, മോഡൽ സ്കൂളുകൾ, ഹോസ്റ്റലുകൾ, ഹിഫ്‌ളുൽ ഖുർആൻ അക്കാദമികൾ എന്നിവയുടെ വികസനം ഏകോപിപ്പിക്കുന്നു.',
-    keyHighlights: '8 ഇസ്‌ലാമിക് സെന്ററുകൾ, വാദിസകൻ, ഡൽഹി & ബംഗളൂരു SKSSF ഹോസ്റ്റലുകൾ.',
-    realActivities: [
-      'കോഴിക്കോട്, കൊച്ചി, മണ്ണാർക്കാട്, കോട്ടോപ്പാടം, ആതവനാട്, വെളിയങ്കോട്, പൊന്നാനി, വണ്ണപ്പുറം സെന്ററുകളുടെ വളർച്ച',
-      'അരീക്കോട് വാദിസകൻ, ഡൽഹി–ബംഗളൂരു വിദ്യാർത്ഥി ഹോസ്റ്റലുകൾ എന്നിവയുടെ മേൽനോട്ടം',
-      'വിദ്യാഭ്യാസ സ്ഥാപനങ്ങളുടെ അക്കാദമിക്–ഭരണ ഗുണനിലവാരം ഉയർത്തൽ',
-    ],
-    committeeSeats: 'സംസ്ഥാന പ്രത്യേക സ്ഥാപന സമിതി',
-  },
-  {
     id: 'national_committee',
     name: 'ദേശീയ സമിതി (National Committee)',
     englishName: 'SKSSF National Committee',
@@ -501,7 +484,7 @@ export const HELPDESK_CASES: HelpdeskCase[] = [
     title: 'യൂണിറ്റ് പ്രവർത്തന മോണിറ്ററിംഗും മെന്ററിംഗും',
     scenario:
       'ശാഖ–ക്ലസ്റ്റർ–മേഖല കമ്മിറ്റികളുടെ പ്രവർത്തനങ്ങൾ ഓൺലൈൻ പോർട്ടലിൽ അപ്‌ലോഡ് ചെയ്യാനും മെന്ററിംഗ് കോഴ്സ് നടത്താനും ഏത് വിംഗാണ് വേണ്ടത്?',
-    options: ['organet', 'sathyadhara', 'imt', 'cyber'],
+    options: ['organet', 'sathyadhara', 'maneesha', 'cyber'],
     correctWingId: 'organet',
     explanation:
       'ശരിയാണ്! സംഘടനാ പരിശീലനവും ഓൺലൈൻ മോണിറ്ററിംഗും (organet.skssf.in) നടത്തുന്നത് ഓർഗാനെറ്റ് (Organet) ആണ്!',

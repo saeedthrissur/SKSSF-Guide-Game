@@ -604,7 +604,7 @@ export function importProgressBackupCode(rawInput: string, pin: string): Restore
     const trimmed = rawInput.trim();
     const cleanPin = pin.trim();
 
-    if (trimmed.startsWith(BACKUP_V1_PREFIX)) {
+    if (trimmed.includes(BACKUP_V1_PREFIX) && !trimmed.includes(BACKUP_V2_PREFIX)) {
       return {
         ok: false,
         error:
@@ -612,7 +612,8 @@ export function importProgressBackupCode(rawInput: string, pin: string): Restore
       };
     }
 
-    if (!trimmed.startsWith(BACKUP_V2_PREFIX)) {
+    const bk2Match = trimmed.match(/SKSSF-BK2:[0-9a-f]{4,16}:[A-Za-z0-9+/=\s]+/i);
+    if (!bk2Match) {
       return {
         ok: false,
         error: 'തെറ്റായ ബാക്കപ്പ് കോഡാണ്. SKSSF-BK2: എന്ന് തുടങ്ങുന്ന മുഴുവൻ കോഡും ഒട്ടിക്കുക.',
@@ -626,7 +627,7 @@ export function importProgressBackupCode(rawInput: string, pin: string): Restore
       };
     }
 
-    const body = trimmed.slice(BACKUP_V2_PREFIX.length).replace(/\s+/g, '');
+    const body = bk2Match[0].slice(BACKUP_V2_PREFIX.length).replace(/\s+/g, '');
     const sepIdx = body.indexOf(':');
     if (sepIdx <= 0 || sepIdx > 16) {
       return { ok: false, error: 'ബാക്കപ്പ് കോഡ് അപൂർണ്ണമാണ് അല്ലെങ്കിൽ തകരാറുള്ളതാണ്.' };
@@ -677,10 +678,9 @@ export function importProgressBackupCode(rawInput: string, pin: string): Restore
     if (cleanGame) {
       saveGameState(cleanGame);
       try {
-        localStorage.setItem(
-          'skssf_guide_completed_lessons_v1',
-          JSON.stringify(cleanGame.completedLessonIds)
-        );
+        const serializedIds = JSON.stringify(cleanGame.completedLessonIds);
+        localStorage.setItem('skssf_guide_completed_lessons_v1', serializedIds);
+        localStorage.setItem('skssf_confirmed_lessons_v1', serializedIds);
       } catch {
         // Ignore
       }

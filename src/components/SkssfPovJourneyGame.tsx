@@ -672,7 +672,7 @@ export const SkssfPovJourneyGame: React.FC<SkssfPovJourneyGameProps> = ({
         if (nextDone.length === POV_CHAPTERS.length) {
           sound.playHoist();
           onAwardXp(40, 'pov_journey_master');
-          onUnlockBadge('🧭 നാട്ടിലെ കൂട്ടുകാരൻ');
+          onUnlockBadge('SKSSF ശാഖാ പ്രവർത്തകൻ');
         }
       }
       sound.playSuccess(chapterIdx + 1);

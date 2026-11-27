@@ -31,13 +31,73 @@ import {
 } from '../data/officialLogos';
 import { sound } from '../utils/sound';
 
-const KIND_BADGE: Record<OfficialLinkItem['kind'], { label: string; cls: string }> = {
-  website: { label: 'വെബ്സൈറ്റ്', cls: 'bg-emerald-50 text-emerald-900 border-emerald-200' },
-  portal: { label: 'പോർട്ടൽ', cls: 'bg-slate-100 text-slate-800 border-slate-200' },
-  youtube: { label: 'YouTube', cls: 'bg-rose-50 text-rose-900 border-rose-200' },
-  epaper: { label: 'ഇ-പേപ്പർ', cls: 'bg-amber-50 text-amber-950 border-amber-200' },
-  magazine: { label: 'മാസിക', cls: 'bg-amber-50 text-amber-900 border-amber-200' },
-  pdf: { label: 'PDF', cls: 'bg-emerald-50 text-emerald-950 border-emerald-300' },
+const KIND_BADGE: Record<OfficialLinkItem['kind'], { label: string; cls: string; cta: string; btnCls: string }> = {
+  website: {
+    label: 'വെബ്സൈറ്റ്',
+    cls: 'bg-emerald-50 text-emerald-900 border-emerald-200',
+    cta: 'സൈറ്റ് തുറക്കാം',
+    btnCls: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+  },
+  portal: {
+    label: 'പോർട്ടൽ',
+    cls: 'bg-slate-100 text-slate-800 border-slate-200',
+    cta: 'പോർട്ടൽ തുറക്കാം',
+    btnCls: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+  },
+  youtube: {
+    label: 'YouTube',
+    cls: 'bg-rose-50 text-rose-900 border-rose-200',
+    cta: 'YouTube തുറക്കാം',
+    btnCls: 'bg-rose-600 hover:bg-rose-700 text-white',
+  },
+  instagram: {
+    label: 'Instagram',
+    cls: 'bg-pink-50 text-pink-900 border-pink-200',
+    cta: 'Instagram തുറക്കാം',
+    btnCls: 'bg-pink-600 hover:bg-pink-700 text-white',
+  },
+  facebook: {
+    label: 'Facebook',
+    cls: 'bg-blue-50 text-blue-900 border-blue-200',
+    cta: 'Facebook തുറക്കാം',
+    btnCls: 'bg-blue-600 hover:bg-blue-700 text-white',
+  },
+  x: {
+    label: 'X (Twitter)',
+    cls: 'bg-slate-100 text-slate-900 border-slate-300',
+    cta: 'X പേജ് തുറക്കാം',
+    btnCls: 'bg-slate-900 hover:bg-slate-800 text-white',
+  },
+  telegram: {
+    label: 'Telegram',
+    cls: 'bg-sky-50 text-sky-900 border-sky-200',
+    cta: 'Telegram തുറക്കാം',
+    btnCls: 'bg-sky-600 hover:bg-sky-700 text-white',
+  },
+  app: {
+    label: 'Mobile App',
+    cls: 'bg-teal-50 text-teal-900 border-teal-200',
+    cta: 'ആപ്പ് തുറക്കാം',
+    btnCls: 'bg-teal-700 hover:bg-teal-800 text-white',
+  },
+  epaper: {
+    label: 'ഇ-പേപ്പർ',
+    cls: 'bg-amber-50 text-amber-950 border-amber-200',
+    cta: 'ഇ-പേപ്പർ വായിക്കാം',
+    btnCls: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+  },
+  magazine: {
+    label: 'മാസിക',
+    cls: 'bg-amber-50 text-amber-900 border-amber-200',
+    cta: 'മാസിക തുറക്കാം',
+    btnCls: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+  },
+  pdf: {
+    label: 'PDF',
+    cls: 'bg-emerald-50 text-emerald-950 border-emerald-300',
+    cta: 'PDF തുറക്കാം',
+    btnCls: 'bg-emerald-700 hover:bg-emerald-800 text-white',
+  },
 };
 
 /* ============================================================================
@@ -220,7 +280,7 @@ export const OfficialResourceHubModal: React.FC<{
                   <BookOpen className="w-3.5 h-3.5 shrink-0" />
                   <span>സമസ്ത &amp; SKSSF റഫറൻസ് ഹബ്</span>
                 </p>
-                <h2 className="text-base sm:text-lg font-extrabold leading-tight truncate mt-0.5">
+                <h2 className="text-base sm:text-lg font-extrabold leading-snug mt-0.5">
                   ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും
                 </h2>
                 <p className="text-[11px] font-semibold text-emerald-100 mt-0.5">
@@ -241,7 +301,7 @@ export const OfficialResourceHubModal: React.FC<{
             </div>
 
             {/* Clean 2-Tab Segmented Switcher */}
-            <div className="px-4 sm:px-5 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0">
+            <div className="px-3.5 sm:px-5 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0">
               <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-200/70">
                 <button
                   type="button"
@@ -249,14 +309,14 @@ export const OfficialResourceHubModal: React.FC<{
                     sound.playClick();
                     setHubTab('logos');
                   }}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
                     hubTab === 'logos'
                       ? 'bg-emerald-700 text-white shadow-xs'
                       : 'text-slate-700 hover:text-emerald-950'
                   }`}
                 >
                   <Shield className="w-3.5 h-3.5 shrink-0" />
-                  <span>ലോഗോകളും വിംഗുകളും ({OFFICIAL_LOGO_GUIDE_ITEMS.length})</span>
+                  <span className="break-words">ലോഗോകൾ ({OFFICIAL_LOGO_GUIDE_ITEMS.length})</span>
                 </button>
                 <button
                   type="button"
@@ -264,14 +324,14 @@ export const OfficialResourceHubModal: React.FC<{
                     sound.playClick();
                     setHubTab('links');
                   }}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-extrabold transition-colors cursor-pointer whitespace-nowrap ${
+                  className={`min-w-0 inline-flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-[11px] sm:text-xs font-extrabold leading-tight text-center transition-colors cursor-pointer ${
                     hubTab === 'links'
                       ? 'bg-emerald-700 text-white shadow-xs'
                       : 'text-slate-700 hover:text-emerald-950'
                   }`}
                 >
                   <Link2 className="w-3.5 h-3.5 shrink-0" />
-                  <span>ലിങ്കുകളും PDF-ഉം ({OFFICIAL_LINKS_CATALOG.length})</span>
+                  <span className="break-words">ലിങ്കുകളും PDF-ഉം ({OFFICIAL_LINKS_CATALOG.length})</span>
                 </button>
               </div>
             </div>
@@ -365,6 +425,7 @@ export const OfficialResourceHubModal: React.FC<{
                         <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap gap-2">
                           {activeLogoLinks.map((link) => {
                             const isYt = link.kind === 'youtube';
+                            const meta = KIND_BADGE[link.kind];
                             return (
                               <a
                                 key={link.id}
@@ -375,11 +436,7 @@ export const OfficialResourceHubModal: React.FC<{
                                   sound.playClick();
                                   onAwardXp?.(10, 'official_links_explorer');
                                 }}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-colors ${
-                                  isYt
-                                    ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                                    : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                                }`}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-colors ${meta.btnCls}`}
                               >
                                 {isYt ? (
                                   <Youtube className="w-3.5 h-3.5 shrink-0" />
@@ -619,14 +676,10 @@ export const OfficialResourceHubModal: React.FC<{
                                 sound.playClick();
                                 onAwardXp?.(10, 'official_links_explorer');
                               }}
-                              className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-colors ${
-                                isYt
-                                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                                  : 'bg-emerald-700 hover:bg-emerald-800 text-white'
-                              }`}
+                              className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold transition-colors ${badge.btnCls}`}
                             >
                               {isYt ? <Youtube className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
-                              <span>{isYt ? 'YouTube തുറക്കാം' : 'സൈറ്റ് തുറക്കാം'}</span>
+                              <span>{badge.cta}</span>
                             </a>
                             <button
                               type="button"

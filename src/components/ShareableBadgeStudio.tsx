@@ -7,7 +7,7 @@ import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 export interface ShareableBadgeMeta {
   id: string;
-  emoji: string;
+  tierLabel: string;
   title: string;
   subtitle: string;
   unlockHint: string;
@@ -18,54 +18,54 @@ export interface ShareableBadgeMeta {
 export const SHAREABLE_BADGES: ShareableBadgeMeta[] = [
   {
     id: 'starter_member',
-    emoji: '🌱',
-    title: 'SKSSF കൂട്ടുകാരൻ',
-    subtitle: 'വിജ്ഞാനം · വിനയം · സേവനം — പഠനം തുടങ്ങി!',
+    tierLabel: 'ഘട്ടം 1',
+    title: 'SKSSF അനുഭാവി',
+    subtitle: 'വിജ്ഞാനം · വിനയം · സേവനം — പഠന യാത്ര തുടങ്ങി',
     unlockHint: 'തുടക്കത്തിൽ തന്നെ ലഭിക്കും',
     accentFrom: '#065F46',
     accentTo: '#0F766E',
   },
   {
     id: 'jeep_starter',
-    emoji: '🚐',
-    title: 'പ്രചാരണ കൂട്ടുകാരൻ',
-    subtitle: 'SKSSF ജീപ്പിൽ കൊടിയും മൈക്കും ഭംഗിയായി ഒരുക്കി!',
+    tierLabel: 'ഘട്ടം 2',
+    title: 'SKSSF പ്രവർത്തകൻ',
+    subtitle: 'സംഘടനാ പ്രചാരണവും അടിസ്ഥാന പാഠങ്ങളും പൂർത്തിയാക്കി',
     unlockHint: 'ജീപ്പ് ഗെയിം പൂർത്തിയാക്കൂ',
     accentFrom: '#0369A1',
     accentTo: '#065F46',
   },
   {
     id: 'flag_keeper',
-    emoji: '🚩',
-    title: 'പതാക കൂട്ടുകാരൻ',
-    subtitle: 'സമസ്തയുടെയും SKSSF-ന്റെയും കൊടിയും ചരിത്രവും പഠിച്ചു!',
+    tierLabel: 'ഘട്ടം 3',
+    title: 'SKSSF സംഘാടകൻ',
+    subtitle: 'സമസ്തയുടെയും SKSSF-ന്റെയും പതാകയും ചരിത്രവും പഠിച്ചു',
     unlockHint: 'പതാക പാഠം പൂർത്തിയാക്കൂ',
     accentFrom: '#7F1D1D',
     accentTo: '#065F46',
   },
   {
     id: 'madrasa_guardian',
-    emoji: '🏫',
-    title: 'മദ്രസ കൂട്ടുകാരൻ',
-    subtitle: 'സമസ്ത മദ്രസ ബോർഡും സംഘടനാ പാഠങ്ങളും പഠിച്ചു!',
+    tierLabel: 'ഘട്ടം 4',
+    title: 'SKSSF ഭാരവാഹി',
+    subtitle: 'സമസ്ത മദ്രസാ ബോർഡും സംഘടനാ സംവിധാനങ്ങളും പഠിച്ചു',
     unlockHint: 'മദ്രസ ബോർഡ് പൂർത്തിയാക്കൂ',
     accentFrom: '#047857',
     accentTo: '#115E59',
   },
   {
     id: 'viqaya_hero',
-    emoji: '🚑',
-    title: 'വിഖായ വളണ്ടിയർ',
-    subtitle: 'സേവനത്തിനും സഹായത്തിനും എന്നും മുൻപന്തിയിൽ!',
+    tierLabel: 'ഘട്ടം 5',
+    title: 'SKSSF വിഖായ വളണ്ടിയർ',
+    subtitle: 'സേവനത്തിനും ദുരിതാശ്വാസ പ്രവർത്തനങ്ങൾക്കും സദാസന്നദ്ധൻ',
     unlockHint: 'വിഖായ വാഹനം പൂർത്തിയാക്കൂ',
     accentFrom: '#0E7490',
     accentTo: '#065F46',
   },
   {
     id: 'master_guide',
-    emoji: '🏆',
-    title: 'SKSSF ഗൈഡ് താരം',
-    subtitle: 'എല്ലാ പാഠങ്ങളും ഗെയിമുകളും ഭംഗിയായി പൂർത്തിയാക്കി!',
+    tierLabel: 'പൂർണ്ണ വിജയം',
+    title: 'SKSSF നേതാവ്',
+    subtitle: 'എല്ലാ പാഠങ്ങളും ദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി',
     unlockHint: 'എല്ലാ ഘട്ടവും പൂർത്തിയാക്കൂ',
     accentFrom: '#92400E',
     accentTo: '#064E3B',
@@ -213,6 +213,13 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
   if (!isOpen) return null;
 
+  const cleanRank =
+    rank
+      .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
+      .replace(/കൂട്ടുകാരൻ/g, 'പ്രവർത്തകൻ')
+      .replace(/\s+/g, ' ')
+      .trim() || 'SKSSF പ്രവർത്തകൻ';
+
   const badge =
     SHAREABLE_BADGES.find((b) => b.id === selectedId && unlockedMap[b.id]) ||
     SHAREABLE_BADGES[0];
@@ -345,24 +352,38 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fillStyle = '#ECFDF5';
+      ctx.fillStyle = badge.accentFrom;
       ctx.fill();
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius - 16, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(254, 243, 199, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.direction = 'ltr';
-      ctx.font = 'normal 400 112px sans-serif';
-      ctx.fillText(badge.emoji, cx, cy + 6);
+      ctx.fillStyle = '#FEF3C7';
+      ctx.font = '800 44px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('SKSSF', cx, cy - 12);
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('EST. 1989', cx, cy + 32);
       ctx.restore();
     }
 
-    // Ribbon Badge Title (dead centered)
+    // Ribbon Badge Title (dead centered — formal, zero emoji)
     ctx.fillStyle = badge.accentFrom;
     ctx.beginPath();
     ctx.roundRect(140, 626, 800, 86, 24);
     ctx.fill();
 
     ctx.fillStyle = '#FEF3C7';
-    drawOpticalCenteredFit(`${badge.emoji} ${badge.title}`, 540, 682, 740, 34, 20, 800);
+    drawOpticalCenteredFit(badge.title, 540, 682, 740, 34, 20, 800);
 
     // User Name & Place (dead centered)
     ctx.fillStyle = '#0F172A';
@@ -375,7 +396,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     ctx.fillStyle = '#334155';
     drawOpticalCenteredFit(badge.subtitle, 540, 896, 840, 23, 15, 600);
 
-    // XP & Rank Strip (dead centered)
+    // XP & Rank Strip (dead centered — zero emoji)
     ctx.fillStyle = '#F1F5F9';
     ctx.beginPath();
     ctx.roundRect(120, 926, 840, 68, 18);
@@ -385,7 +406,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawOpticalCenteredFit(`⭐ ${xp} XP  ·  ${rank}`, 540, 969, 780, 25, 16, 800);
+    drawOpticalCenteredFit(`${xp} XP  ·  ${cleanRank}`, 540, 969, 780, 25, 16, 800);
 
     // Symmetrically Centered Scannable QR Code + App Link Invite Strip
     ctx.fillStyle = '#ECFDF5';
@@ -407,7 +428,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     }
 
     ctx.fillStyle = '#064E3B';
-    drawOpticalCenteredFit('📲 നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ!', 540, 1178, 780, 23, 15, 800);
+    drawOpticalCenteredFit('നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ', 540, 1178, 780, 23, 15, 800);
     ctx.fillStyle = '#047857';
     drawOpticalCenteredFit('QR കോഡ് സ്കാൻ ചെയ്യൂ അല്ലെങ്കിൽ ലിങ്ക് തുറക്കൂ', 540, 1206, 780, 17, 13, 700);
     ctx.fillStyle = '#0F172A';
@@ -615,8 +636,12 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className={`text-lg ${locked ? 'grayscale opacity-60' : ''}`}>
-                          {item.emoji}
+                        <span
+                          className={`text-[10px] font-extrabold uppercase tracking-wider ${
+                            locked ? 'text-slate-400' : 'text-emerald-700'
+                          }`}
+                        >
+                          {item.tierLabel}
                         </span>
                         {locked ? (
                           <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -717,7 +742,15 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-5xl">{badge.emoji}</span>
+                        <div
+                          className="w-full h-full flex flex-col items-center justify-center text-amber-100"
+                          style={{ backgroundColor: badge.accentFrom }}
+                        >
+                          <span className="text-base font-black tracking-wider">SKSSF</span>
+                          <span className="text-[10px] font-bold text-amber-200 tracking-widest mt-0.5">
+                            EST. 1989
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -728,7 +761,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   className="py-2 px-3 rounded-xl text-amber-100 text-xs sm:text-sm font-extrabold"
                   style={{ backgroundColor: badge.accentFrom }}
                 >
-                  {badge.emoji} {badge.title}
+                  {badge.title}
                 </div>
 
                 <div>
@@ -744,7 +777,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
                 <div className="py-2 px-3 rounded-xl bg-slate-100 border border-slate-200 text-xs font-extrabold text-emerald-950 tabular-nums">
                   <Award className="w-3.5 h-3.5 inline mr-1 text-amber-600" />
-                  {xp} XP · {rank}
+                  {xp} XP · {cleanRank}
                 </div>
 
                 {/* Live Scannable QR Code + App Link Preview (Dead Centered) */}
@@ -758,7 +791,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   )}
                   <div className="min-w-0 w-full text-center">
                     <p className="text-[11px] font-extrabold text-emerald-950 leading-snug">
-                      📲 നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ!
+                      നിങ്ങളും ഈ ഗെയിം കളിച്ചു നോക്കൂ
                     </p>
                     <p className="text-[10px] font-semibold text-emerald-800 leading-snug mt-0.5 break-all">
                       {appUrl.replace(/^https?:\/\//, '')}

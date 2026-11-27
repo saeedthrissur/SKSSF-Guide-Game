@@ -382,6 +382,7 @@ export const SettingsModal: React.FC<{
   const [exportPin, setExportPin] = useState('');
   const [backupInput, setBackupInput] = useState('');
   const [restorePin, setRestorePin] = useState('');
+  const [generatedBackupCode, setGeneratedBackupCode] = useState<string | null>(null);
   const [backupFeedback, setBackupFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -1130,6 +1131,7 @@ export const SettingsModal: React.FC<{
                 sound.unlockAudio();
                 const res = exportProgressBackupCode(lockedOwnerName || backupName, exportPin);
                 if (res.ok && res.code) {
+                  setGeneratedBackupCode(res.code);
                   copyText(res.code, 'backup');
                   setBackupFeedback({
                     ok: true,
@@ -1137,6 +1139,7 @@ export const SettingsModal: React.FC<{
                   });
                 } else {
                   sound.playError();
+                  setGeneratedBackupCode(null);
                   setBackupFeedback({
                     ok: false,
                     text: res.error || 'ബാക്കപ്പ് കോഡ് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല.',
@@ -1155,6 +1158,21 @@ export const SettingsModal: React.FC<{
                 </>
               )}
             </button>
+            {generatedBackupCode && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-emerald-900">
+                  ഓട്ടോ കോപ്പി ആയില്ലെങ്കിൽ താഴെ തൊട്ട് മുഴുവൻ കോഡും സെലക്ട് ചെയ്ത് കോപ്പി ചെയ്യാം:
+                </p>
+                <input
+                  type="text"
+                  readOnly
+                  value={generatedBackupCode}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="തയ്യാറാക്കിയ ബാക്കപ്പ് കോഡ്"
+                  className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white text-[11px] font-mono text-slate-900 select-all"
+                />
+              </div>
+            )}
           </div>
 
           {/* Step 2: Restore Protected Backup */}
@@ -1979,7 +1997,7 @@ export const LessonProgressTrack: React.FC<{
 
   return (
     <div className="mt-3 rounded-2xl border border-emerald-200 bg-white px-3 py-2 shadow-2xs space-y-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2.5">
         <button
           type="button"
           onClick={() => {
@@ -1989,7 +2007,7 @@ export const LessonProgressTrack: React.FC<{
           }}
           aria-expanded={expanded}
           aria-label={stageTitle}
-          className="inline-flex items-center gap-1.5 text-left min-w-0"
+          className="inline-flex items-center gap-1 text-left shrink-0 whitespace-nowrap"
         >
           <span className="text-base shrink-0">🗺️</span>
           <span className="text-[11px] font-extrabold text-emerald-900 tabular-nums">
@@ -1998,7 +2016,7 @@ export const LessonProgressTrack: React.FC<{
         </button>
 
         {/* Icon-Only Quick Step Dots (Tap any icon to reveal its label & jump if unlocked!) */}
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex-1 min-w-0 flex flex-wrap items-center justify-start gap-1">
           {items.map((item, idx) => {
             const isCurrent = item.id === activeId;
             const isDone = completedLessonIds.includes(item.lessonId);

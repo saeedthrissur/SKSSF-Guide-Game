@@ -26,7 +26,11 @@ export type OfficialWingLogoId =
   | 'asmi'
   | 'samastha_magazines'
   | 'suprabhaatham'
-  | 'sic';
+  | 'sic'
+  | 'skjq'
+  | 'slc'
+  | 'spc'
+  | 'skmma';
 
 export interface OfficialWingLogo {
   id: OfficialWingLogoId;
@@ -204,6 +208,30 @@ export const OFFICIAL_WING_LOGOS: Record<OfficialWingLogoId, OfficialWingLogo> =
     label: 'SIC · സമസ്ത ഇസ്‌ലാമിക് സെന്റർ',
     shortLabel: 'SIC',
   },
+  skjq: {
+    id: 'skjq',
+    src: './assets/official/logo_skjq.png',
+    label: 'SKJQ · സമസ്ത കേരള ജംഇയ്യത്തുൽ ഖുത്വബാഅ്',
+    shortLabel: 'SKJQ',
+  },
+  slc: {
+    id: 'slc',
+    src: './assets/official/logo_slc.png',
+    label: 'SLC · സമസ്ത ലീഗൽ സെൽ',
+    shortLabel: 'SLC',
+  },
+  spc: {
+    id: 'spc',
+    src: './assets/official/logo_spc.png',
+    label: 'SPC · സമസ്ത പ്രവാസി സെൽ',
+    shortLabel: 'SPC',
+  },
+  skmma: {
+    id: 'skmma',
+    src: './assets/official/logo_skmma.png',
+    label: 'SKMMA · സമസ്ത കേരള മദ്രസാ മാനേജ്മെന്റ് അസോസിയേഷൻ',
+    shortLabel: 'SKMMA',
+  },
 };
 
 export const ALL_OFFICIAL_WING_LOGOS: OfficialWingLogo[] = [
@@ -358,7 +386,7 @@ export const OFFICIAL_LOGO_GUIDE_CATEGORIES: {
   id: LogoGuideCategory | 'all';
   label: string;
 }[] = [
-  { id: 'all', label: 'എല്ലാം (31)' },
+  { id: 'all', label: 'എല്ലാം (35)' },
   { id: 'flags', label: 'ഔദ്യോഗിക കൊടികൾ' },
   { id: 'skssf_wings', label: 'SKSSF വിംഗുകൾ' },
   { id: 'samastha_boards', label: 'സമസ്ത വിദ്യാഭ്യാസം' },
@@ -379,7 +407,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'നൂറ്റാണ്ടിലേറെയായി ഇസ്‌ലാമിക വിദ്യാഭ്യാസത്തിനും സമാധാനത്തിനും നേതൃത്വം നൽകുന്നു.',
       'SKIMVB, SYS, SKSSF, SMF, SKSBV ഉൾപ്പെടെ 14 പോഷക സംഘടനകളുടെ മാതൃപ്രസ്ഥാനം.',
     ],
-    relatedLinkIds: ['skju_web', 'skju_org_list', 'skju_yt'],
+    relatedLinkIds: ['skju_web', 'skju_org_list', 'skju_yt', 'skju_centenary_ig'],
   },
   {
     id: 'flag_skssf',
@@ -394,7 +422,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'യൂണിറ്റ് മുതൽ സ്റ്റേറ്റ്, നാഷണൽ, വിദേശ ഘടകങ്ങൾ വരെ വ്യാപിച്ച സംഘടനാ സംവിധാനം.',
       'വിദ്യാഭ്യാസം, കാരുണ്യം, മീഡിയ, പരിസ്ഥിതി, ആത്മീയ മേഖലകളിൽ 17 സബ് വിംഗുകൾ.',
     ],
-    relatedLinkIds: ['skssf_web', 'skssf_yt', 'sathyadhara_web'],
+    relatedLinkIds: ['skssf_web', 'skssf_ig', 'skssf_fb', 'skssf_x', 'skssf_yt', 'sathyadhara_site'],
   },
   {
     id: 'flag_sksbv',
@@ -409,7 +437,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'മദ്രസാ തലത്തിൽ ബാലസഭകൾ, സർഗ്ഗമേളകൾ, പഠന ക്യാമ്പുകൾ എന്നിവ സംഘടിപ്പിക്കുന്നു.',
       'കുട്ടികളെ നല്ല സ്വഭാവത്തിലും അറിവിലും വളർത്തുന്ന ആദ്യ സംഘടനാ കളരി.',
     ],
-    relatedLinkIds: ['sksbv_web', 'sksbv_yt'],
+    relatedLinkIds: ['sksbv_web', 'sksbv_ig', 'sksbv_fb', 'sksbv_yt'],
   },
   {
     id: 'guide_viqaya',
@@ -425,7 +453,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'പൊതുസമ്മേളനങ്ങളിലും ആശുപത്രികളിലും സദാസന്നദ്ധരായ വളണ്ടിയർമാർ.',
     ],
     logoId: 'viqaya',
-    relatedLinkIds: ['viqaya_web', 'sahachari_web'],
+    relatedLinkIds: ['viqaya_web', 'viqaya_skssf_page', 'viqaya_fb', 'sahachari_web'],
   },
   {
     id: 'guide_cyber',
@@ -617,7 +645,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'കേരളത്തിന് പുറമെ പ്രവാസികൾക്കായി ഗൾഫ് സത്യധാരയും പ്രസിദ്ധീകരിക്കുന്നു.',
     ],
     logoId: 'sathyadhara',
-    relatedLinkIds: ['sathyadhara_web'],
+    relatedLinkIds: ['sathyadhara_site', 'sathyadhara_web', 'sathyadhara_fb', 'sathyadhara_yt'],
   },
   {
     id: 'guide_isa',
@@ -633,7 +661,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'പഠന ഗ്രന്ഥങ്ങളും റഫറൻസ് പുസ്തകങ്ങളും വായനക്കാരിലേക്ക് എത്തിക്കുന്നു.',
     ],
     logoId: 'isa',
-    relatedLinkIds: ['isa_web', 'isa_yt'],
+    relatedLinkIds: ['forward_foundation_ig', 'isa_web', 'isa_yt'],
   },
   {
     id: 'guide_meem',
@@ -681,7 +709,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'യൂട്യൂബ് വഴിയും വെബ് പോർട്ടൽ വഴിയും സൗജന്യ പഠന സൗകര്യം.',
     ],
     logoId: 'skicr',
-    relatedLinkIds: ['skicr_portal', 'skicr_yt', 'skicr_tv_yt'],
+    relatedLinkIds: ['skicr_portal', 'skicr_tv_yt', 'skicr_fb', 'skicr_telegram', 'skicr_app'],
   },
   {
     id: 'guide_skimvb',
@@ -697,7 +725,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       '26+ രാജ്യങ്ങളിലേക്കായി സമസ്ത ഇ-ലേണിംഗ് ഓൺലൈൻ മദ്രസയും പ്രവർത്തിക്കുന്നു.',
     ],
     logoId: 'skimvb',
-    relatedLinkIds: ['skimvb_portal', 'elearning_web', 'skimvb_yt'],
+    relatedLinkIds: ['skimvb_portal', 'skju_yt', 'elearning_web'],
   },
   {
     id: 'guide_skjmcc',
@@ -713,7 +741,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'കുരുന്നുകൾ, അൽ-മുഅല്ലിം, സന്തുഷ്ട കുടുംബം തുടങ്ങിയ പ്രമുഖ മാസികകൾ.',
     ],
     logoId: 'skjmcc',
-    relatedLinkIds: ['skjmcc_web', 'kurunnukal_web', 'skjmcc_yt'],
+    relatedLinkIds: ['skjmcc_web', 'skjmcc_magazine', 'skjmcc_fb', 'skjmcc_yt'],
   },
   {
     id: 'guide_snec',
@@ -809,7 +837,7 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
       'മഹല്ല് ശാക്തീകരണം, കുടുംബ ബോധവൽക്കരണം, ദുരന്തനിവാരണ പ്രവർത്തനങ്ങൾ.',
     ],
     logoId: 'smf',
-    relatedLinkIds: ['smf_web', 'smf_yt'],
+    relatedLinkIds: ['smf_web', 'smf_fb', 'smf_yt'],
   },
   {
     id: 'guide_sic',
@@ -858,5 +886,69 @@ export const OFFICIAL_LOGO_GUIDE_ITEMS: OfficialLogoGuideEntry[] = [
     ],
     logoId: 'samastha_magazines',
     relatedLinkIds: ['skjmcc_magazine', 'kurunnukal_web', 'kurunnukal_bulk'],
+  },
+  {
+    id: 'guide_skmma',
+    src: OFFICIAL_WING_LOGOS.skmma.src,
+    shortLabel: 'SKMMA',
+    title: 'SKMMA · സമസ്ത കേരള മദ്രസാ മാനേജ്മെന്റ് അസോസിയേഷൻ',
+    category: 'samastha_boards',
+    categoryLabelMl: 'മദ്രസാ മാനേജ്മെന്റ്',
+    summaryMl:
+      'സമസ്തയ്ക്ക് കീഴിലുള്ള മദ്രസകളുടെ ഭരണസമിതികളെ ഏകോപിപ്പിക്കുകയും അടിസ്ഥാന സൗകര്യങ്ങളും ഭരണ മികവും ഉയർത്തുകയും ചെയ്യുന്ന സംഘടന.',
+    highlightsMl: [
+      'മദ്രസാ കമ്മിറ്റികൾക്ക് സംഘടനാ-ഭരണ മാർഗ്ഗനിർദ്ദേശങ്ങൾ നൽകുന്നു.',
+      'മദ്രസാ വികസനത്തിനും മുഅല്ലിം ക്ഷേമ പദ്ധതികൾക്കും ശക്തമായ പിന്തുണ.',
+    ],
+    logoId: 'skmma',
+    relatedLinkIds: ['cell_skmma', 'skimvb_portal'],
+  },
+  {
+    id: 'guide_skjq',
+    src: OFFICIAL_WING_LOGOS.skjq.src,
+    shortLabel: 'SKJQ',
+    title: 'SKJQ · സമസ്ത കേരള ജംഇയ്യത്തുൽ ഖുത്വബാഅ്',
+    category: 'media_community',
+    categoryLabelMl: 'ഇമാമുമാരും ഖത്തീബുമാരും',
+    summaryMl:
+      'പള്ളികളിൽ ജുമുഅ ഖുതുബയും മതപ്രബോധനവും നിർവ്വഹിക്കുന്ന ഇമാമുമാരുടെയും ഖത്തീബുമാരുടെയും സമസ്തയുടെ ഔദ്യോഗിക സംഘടന.',
+    highlightsMl: [
+      'ഖത്തീബുമാർക്കായി പ്രത്യേക പഠന-പരിശീലന സംഗമങ്ങളും റഫറൻസ് പിന്തുണയും.',
+      'മഹല്ലുകളിൽ സമാധാനവും ആധികാരിക ദീനീ സന്ദേശവും ഉറപ്പാക്കുന്നു.',
+    ],
+    logoId: 'skjq',
+    relatedLinkIds: ['cell_skjq', 'skju_web'],
+  },
+  {
+    id: 'guide_slc',
+    src: OFFICIAL_WING_LOGOS.slc.src,
+    shortLabel: 'SLC (ലീഗൽ സെൽ)',
+    title: 'SLC · സമസ്ത ലീഗൽ സെൽ',
+    category: 'media_community',
+    categoryLabelMl: 'നിയമ സഹായ വേദി',
+    summaryMl:
+      'മഹല്ലുകൾക്കും സ്ഥാപനങ്ങൾക്കും പൊതുസമൂഹത്തിനും ആധികാരിക നിയമോപദേശവും നിയമസഹായവും ബോധവൽക്കരണവും നൽകുന്ന സമസ്തയുടെ നിയമ വിഭാഗം.',
+    highlightsMl: [
+      'അഭിഭാഷകരുടെയും നിയമവിദഗ്ധരുടെയും കൂട്ടായ്മ.',
+      'വഖഫ്, വിദ്യാഭ്യാസ-ഭരണഘടനാ അവകാശ സംരക്ഷണത്തിൽ നിയമപരമായ ഇടപെടലുകൾ.',
+    ],
+    logoId: 'slc',
+    relatedLinkIds: ['cell_slc', 'skju_web'],
+  },
+  {
+    id: 'guide_spc',
+    src: OFFICIAL_WING_LOGOS.spc.src,
+    shortLabel: 'SPC (പ്രവാസി സെൽ)',
+    title: 'SPC · സമസ്ത പ്രവാസി സെൽ',
+    category: 'media_community',
+    categoryLabelMl: 'പ്രവാസി ക്ഷേമ വിഭാഗം',
+    summaryMl:
+      'വിദേശ രാജ്യങ്ങളിൽ ജോലി ചെയ്യുന്ന പ്രവാസി മലയാളികളുടെ ക്ഷേമവും പുനരധിവാസവും സാമൂഹിക സഹായങ്ങളും ഏകോപിപ്പിക്കുന്ന സമസ്തയുടെ പ്രത്യേക സെൽ.',
+    highlightsMl: [
+      'പ്രവാസികൾക്കും അവരുടെ കുടുംബങ്ങൾക്കും ക്ഷേമ-സഹായ പദ്ധതികൾ.',
+      'ഗൾഫ് ഉൾപ്പെടെയുള്ള വിദേശ ഘടകങ്ങളുമായി ചേർന്ന് പ്രവർത്തിക്കുന്നു.',
+    ],
+    logoId: 'spc',
+    relatedLinkIds: ['cell_spc', 'cell_sic'],
   },
 ];

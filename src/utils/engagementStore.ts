@@ -558,7 +558,7 @@ export function buildLeaderboardWhatsAppMessage(params: {
   streakDays: number;
   shareUrl: string;
 }): string {
-  const displayName = params.playerName.trim() || 'SKSSF കൂട്ടുകാരൻ';
+  const displayName = params.playerName.trim() || 'SKSSF പ്രവർത്തകൻ';
   const unitDisplay = formatUnitDisplay(params.unit);
   return [
     `🏆 SKSSF ഗൈഡ് ഗെയിം — യൂണിറ്റ് & മേഖലാ റാങ്ക്!`,

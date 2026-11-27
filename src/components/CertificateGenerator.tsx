@@ -139,6 +139,16 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const cleanCertificateLabel = (raw: string) =>
+    raw
+      .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
+      .replace(/കൂട്ടുകാരൻ/g, 'പ്രവർത്തകൻ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const cleanRank = cleanCertificateLabel(rank) || 'SKSSF പ്രവർത്തകൻ';
+  const cleanBadges = badges.map(cleanCertificateLabel).filter(Boolean);
+
   const effectiveName = lockedName || recipientName.trim();
   const displayName = effectiveName || 'നിങ്ങളുടെ പേര്';
   const displayUnit = unitName.trim() || 'യൂണിറ്റ് / നാട്';
@@ -356,11 +366,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     ctx.stroke();
 
     ctx.fillStyle = '#064E3B';
-    drawCenteredFit(`സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${rank}`, 800, boxY + 48, 1140, 27, 18, 800);
+    drawCenteredFit(`സ്കോർ: ${xp} XP   ·   സ്ഥാനം: ${cleanRank}`, 800, boxY + 48, 1140, 27, 18, 800);
 
     ctx.fillStyle = '#334155';
     const badgeLine =
-      badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി';
+      cleanBadges.length > 0 ? cleanBadges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി';
     drawCenteredFit(`ബാഡ്ജുകൾ: ${badgeLine}`, 800, boxY + 92, 1140, 21, 14, 600);
 
     // Symmetrically Centered Footer with QR Code + App Link + Date
@@ -495,7 +505,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         </span>
         <div>
           <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-            🏆 നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ്
+            നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ്
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
             പേരും നാടും (വേണമെങ്കിൽ ഫോട്ടോയും) ചേർത്ത് നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ് ഫോണിൽ സേവ് ചെയ്യാം, വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.
@@ -537,7 +547,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             type="text"
             required
             readOnly={Boolean(lockedName)}
-            value={effectiveName}
+            value={lockedName || recipientName}
             onChange={(e) => {
               if (!lockedName) setRecipientName(e.target.value);
             }}
@@ -684,11 +694,11 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
 
           <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 sm:p-4 max-w-2xl mx-auto text-xs sm:text-sm space-y-1.5">
             <p className="font-extrabold text-emerald-950 tabular-nums">
-              സ്കോർ: {xp} XP · സ്ഥാനം: {rank}
+              സ്കോർ: {xp} XP · സ്ഥാനം: {cleanRank}
             </p>
             <p className="text-slate-700 font-semibold leading-relaxed">
               ബാഡ്ജുകൾ:{' '}
-              {badges.length > 0 ? badges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി'}
+              {cleanBadges.length > 0 ? cleanBadges.join(' · ') : 'എല്ലാ പാഠങ്ങളും പൂർത്തിയാക്കി'}
             </p>
           </div>
 

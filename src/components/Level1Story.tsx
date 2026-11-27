@@ -683,7 +683,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
   const handleFinishLevel1 = () => {
     sound.playUnlock();
     onAwardXp(50, 'l1_complete');
-    onUnlockBadge('⛵ യൂണിറ്റ് താരം');
+    onUnlockBadge('SKSSF യൂണിറ്റ് പ്രവർത്തകൻ');
     narrator.speak(
       'മികച്ച പ്രകടനം! യൂണിറ്റ് തലം പൂർത്തിയായി. ഇനി ക്ലസ്റ്റർ, മേഖലാ തലത്തിലേക്ക് കടക്കാം!'
     );

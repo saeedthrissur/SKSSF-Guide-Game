@@ -449,7 +449,7 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
 
       {/* Compact Lesson Progress & 2-Step Indicator Strip */}
       {activeLesson && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-2xs space-y-2">
+        <div className="relative isolate rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-2xs space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0 flex-1 flex items-center gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 tabular-nums min-w-0">
@@ -993,10 +993,12 @@ export default function App() {
   }, [showIntro, stage, currentLevel]);
 
   const currentRank = useMemo(() => {
-    if (canonicalCompletedCount >= ALL_LESSONS.length) return '🏆 SKSSF ഗൈഡ് താരം';
-    if (canonicalCompletedCount >= 35 || xp >= 340) return '🛡️ നല്ല പ്രവർത്തകൻ';
-    if (canonicalCompletedCount >= 18 || xp >= 150) return '🧭 സജീവ കൂട്ടുകാരൻ';
-    return '🌱 പുതിയ കൂട്ടുകാരൻ';
+    if (canonicalCompletedCount >= ALL_LESSONS.length) return 'SKSSF മാർഗ്ഗദർശി';
+    if (canonicalCompletedCount >= 40 || xp >= 450) return 'SKSSF നേതാവ്';
+    if (canonicalCompletedCount >= 30 || xp >= 320) return 'SKSSF ഭാരവാഹി';
+    if (canonicalCompletedCount >= 18 || xp >= 180) return 'SKSSF സംഘാടകൻ';
+    if (canonicalCompletedCount >= 6 || xp >= 60) return 'SKSSF പ്രവർത്തകൻ';
+    return 'SKSSF അനുഭാവി';
   }, [xp, canonicalCompletedCount]);
 
   const handleAwardXp = useCallback((amount: number, actionId: string) => {
@@ -1241,14 +1243,24 @@ export default function App() {
   );
 
   const handleUpdateUnitProfile = useCallback((patch: Partial<UnitProfile>) => {
-    setDailyState((prev) => ({
-      ...prev,
-      profile: {
-        playerName: patch.playerName !== undefined ? patch.playerName.slice(0, 60) : prev.profile.playerName,
-        unitName: patch.unitName !== undefined ? patch.unitName.slice(0, 60) : prev.profile.unitName,
-        mekhalaName: patch.mekhalaName !== undefined ? patch.mekhalaName.slice(0, 60) : prev.profile.mekhalaName,
-      },
-    }));
+    setDailyState((prev) => {
+      const lockedCert = prev.profile.lockedCertificateName?.trim();
+      return {
+        ...prev,
+        profile: {
+          ...prev.profile,
+          playerName: lockedCert
+            ? lockedCert
+            : patch.playerName !== undefined
+            ? patch.playerName.slice(0, 60)
+            : prev.profile.playerName,
+          unitName: patch.unitName !== undefined ? patch.unitName.slice(0, 60) : prev.profile.unitName,
+          mekhalaName:
+            patch.mekhalaName !== undefined ? patch.mekhalaName.slice(0, 60) : prev.profile.mekhalaName,
+          ...(lockedCert ? { lockedCertificateName: lockedCert } : {}),
+        },
+      };
+    });
   }, []);
 
   const handleRestoreFromBackup = useCallback(() => {
@@ -1256,6 +1268,21 @@ export default function App() {
     setRunHistory(loadRunHistory());
     setDailyState(loadDailyAndProfileState());
     if (restored) {
+      const targetLesson = ALL_LESSONS.find((l) => l.id === restored.activeLessonId);
+      if (targetLesson) {
+        if (targetLesson.stage === 'prologue') {
+          setPrologueInitialLessonId(targetLesson.id);
+        } else if (targetLesson.stage === 'storyboard') {
+          setStoryboardInitialTab(targetLesson.tab);
+        } else if (targetLesson.stage === 'pov') {
+          setPovInitialTab(targetLesson.tab ?? targetLesson.id);
+        } else if (targetLesson.stage === 'world' && targetLesson.level && targetLesson.tab) {
+          if (targetLesson.level === 1) setL1InitialTab(targetLesson.tab as L1Tab);
+          if (targetLesson.level === 2) setL2InitialTab(targetLesson.tab as L2GameTab);
+          if (targetLesson.level === 3) setL3InitialTab(targetLesson.tab as L3Tab);
+          if (targetLesson.level === 4) setL4InitialTab(targetLesson.tab as L4Tab);
+        }
+      }
       setStage(restored.stage);
       setCurrentLevel(restored.currentLevel);
       setActiveLessonId(restored.activeLessonId);
@@ -1274,6 +1301,8 @@ export default function App() {
       setLives(restored.lives);
       setRunNumber(restored.runNumber);
       setPreviewLessonId(null);
+      setShowIntro(false);
+      setLessonJumpSeq((s) => s + 1);
       setAttemptKey((k) => k + 1);
     }
   }, []);
@@ -1362,9 +1391,9 @@ export default function App() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }}
     >
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col overflow-x-clip">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Slim Sticky Top Bar — Single Settings Icon Only + Icon-First Status */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-2xs">
+      <header className="sticky top-0 z-40 bg-white [transform:translateZ(0)] border-b border-slate-200 shadow-2xs">
         <div className="max-w-7xl mx-auto px-2.5 sm:px-6 py-2 flex items-center justify-between gap-1.5 sm:gap-2">
           <button
             type="button"

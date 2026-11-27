@@ -436,9 +436,9 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   const handleUnlockCertificate = () => {
     sound.playUnlock();
     onAwardXp(100, 'l4_complete');
-    onUnlockBadge('🏆 SKSSF ഗൈഡ് താരം');
+    onUnlockBadge('SKSSF മാർഗ്ഗദർശി');
     onCompleteLevel();
-    triggerGlitter('🎉 SKSSF ഗൈഡ് താരം! സാക്ഷ്യപത്രം തുറന്നു!');
+    triggerGlitter('SKSSF മാർഗ്ഗദർശി! സാക്ഷ്യപത്രം തുറന്നു!');
     narrator.speak(
       'ആശംസകൾ! നിങ്ങൾ എല്ലാ ഘട്ടങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി! ഇനി നിങ്ങളുടെ പേരിലുള്ള സാക്ഷ്യപത്രം ഡൗൺലോഡ് ചെയ്യാം!'
     );

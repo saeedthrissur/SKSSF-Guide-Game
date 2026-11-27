@@ -422,7 +422,6 @@ const WING_EMOJIS: Record<string, string> = {
   ifc: '🏠',
   meem: '🩺',
   sathyadhara: '📰',
-  imt: '🤝',
   national_committee: '🇮🇳',
   forward_isa: '📚',
 };
@@ -442,7 +441,6 @@ const SHORT_WING_CUES: Record<string, string> = {
   ifc: '20 വീടുകളുടെ ഫാമിലി ക്ലസ്റ്റർ',
   meem: 'മെഡിക്കൽ ക്ലിനിക് & ഹെൽത്ത് ക്യാമ്പ്',
   sathyadhara: '1997 ഔദ്യോഗിക ദ്വൈവാരിക',
-  imt: 'ഇസ്‌ലാമിക് മീറ്റ് & സ്നേഹസംഗമം',
   national_committee: 'ഡൽഹി/ബെംഗളൂരു ഹോസ്റ്റൽ & പ്രവാസി',
   forward_isa: 'ഫോർവേഡ് ഫൗണ്ടേഷൻ & ISA പുസ്തകങ്ങൾ',
 };
@@ -719,7 +717,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
       onAwardXp(15, `l2_${spec.id}`);
       triggerGlitter(`🏛️ ${spec.tier}: ${spec.totalMembers} അംഗ ഘടന പഠിച്ചു! (+15 XP)`);
       if (next.length === COMMITTEE_TIER_SPECS.length) {
-        onUnlockBadge('🏛️ കമ്മിറ്റി കൂട്ടുകാരൻ');
+        onUnlockBadge('SKSSF കമ്മിറ്റി സംഘാടകൻ');
       }
     }
     narrator.speak(spec.speech, `${spec.emoji} ${spec.tier} (${spec.totalMembers} അംഗങ്ങൾ)`);
@@ -764,7 +762,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
   const handleFinishLevel2 = () => {
     sound.playUnlock();
     onAwardXp(60, 'l2_complete');
-    onUnlockBadge('🏛️ മേഖലാ താരം');
+    onUnlockBadge('SKSSF മേഖലാ ഭാരവാഹി');
     narrator.speak(
       'മികച്ച പ്രകടനം! ക്ലസ്റ്റർ, മേഖലാ തലം പൂർത്തിയായി. ഇനി ജില്ലാ തലത്തിലേക്ക് കടക്കാം!'
     );
@@ -1919,7 +1917,7 @@ export const Level2Ecosystem: React.FC<Level2EcosystemProps> = ({
                       onAwardXp(15, `l2_dawa_${m.id}`);
                       triggerGlitter(`🏮 ${m.emoji} വിളക്ക് തെളിഞ്ഞു! +15 XP`);
                       if (nextLit.length === DAWA_TOWN_MISSIONS.length) {
-                        onUnlockBadge('🌟 ദഅ്‌വത്ത് പ്രകാശം');
+                        onUnlockBadge('SKSSF ദഅ്‌വത്ത് പ്രവർത്തകൻ');
                       }
                     }
                     narrator.speak(m.speech, m.title);

@@ -928,7 +928,7 @@ export const VisualStoryboardArena: React.FC<VisualStoryboardArenaProps> = ({
       setVisitedBranches(nextVisited);
       onAwardXp(branch.isPositive ? 30 : 15, `storyboard_${branch.id}`);
       if (nextVisited.length >= 4) {
-        onUnlockBadge('📖 കഥാ കൂട്ടുകാരൻ');
+        onUnlockBadge('SKSSF ചരിത്ര പഠിതാവ്');
       }
     }
     if (branch.isPositive) {

@@ -572,6 +572,46 @@ html.dark .logo-emblem-frame {
   transform: scale(0.985);
 }
 
+@keyframes road-scroll-down {
+  0% {
+    background-position-y: 0px;
+  }
+  100% {
+    background-position-y: 48px;
+  }
+}
+
+.animate-road-scroll-down {
+  animation: road-scroll-down 0.42s linear infinite;
+  will-change: background-position;
+}
+
+@keyframes rain-fall {
+  0% {
+    background-position: 0px 0px;
+  }
+  100% {
+    background-position: -36px 96px;
+  }
+}
+
+.animate-rain-fall {
+  animation: rain-fall 0.45s linear infinite;
+}
+
+@keyframes flood-flow {
+  0% {
+    background-position-x: 0px;
+  }
+  100% {
+    background-position-x: 64px;
+  }
+}
+
+.animate-flood-flow {
+  animation: flood-flow 0.65s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .flag-wave,
   .animate-sway-plant,
@@ -581,6 +621,7 @@ html.dark .logo-emblem-frame {
   .animate-float-bob,
   .animate-twinkle,
   .animate-glitter-drop,
+  .animate-road-scroll-down,
   .map-group-enter,
   .lesson-card-lift,
   .lesson-card-lift:hover:not(:disabled),
