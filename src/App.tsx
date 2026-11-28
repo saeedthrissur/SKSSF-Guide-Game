@@ -1,20 +1,29 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  AlertTriangle,
   ArrowRight,
   Award,
   BarChart3,
   BookOpen,
+  Calendar,
   Check,
   CheckCircle2,
   Compass,
+  Crown,
   Download,
   Flame,
   Gamepad2,
   Gift,
+  QrCode,
   Scale,
+  ScrollText,
   Settings,
   Share2,
+  Sparkles,
+  Store,
+  Swords,
   Trophy,
+  Users,
   Volume2,
   VolumeX,
   WifiOff,
@@ -62,6 +71,69 @@ const DailyChallengeModal = lazy(() =>
     default: m.DailyChallengeModal,
   }))
 );
+const KnowledgeMarketModal = lazy(() =>
+  import('./components/KnowledgeMarketModal').then((m) => ({
+    default: m.KnowledgeMarketModal,
+  }))
+);
+const HeritageAlbumModal = lazy(() =>
+  import('./components/HeritageAndPassModals').then((m) => ({
+    default: m.HeritageAlbumModal,
+  }))
+);
+const KnowledgePass14Modal = lazy(() =>
+  import('./components/HeritageAndPassModals').then((m) => ({
+    default: m.KnowledgePass14Modal,
+  }))
+);
+const EveryThreeLessonsPackModal = lazy(() =>
+  import('./components/HeritageAndPassModals').then((m) => ({
+    default: m.EveryThreeLessonsPackModal,
+  }))
+);
+const AnnualSeasonalEventModal = lazy(() =>
+  import('./components/HeritageAndPassModals').then((m) => ({
+    default: m.AnnualSeasonalEventModal,
+  }))
+);
+const FriendsAndChatHubModal = lazy(() =>
+  import('./components/FriendsAndChatHub').then((m) => ({
+    default: m.FriendsAndChatHubModal,
+  }))
+);
+const MultiplayerDuelModal = lazy(() =>
+  import('./components/MultiplayerDuelModal').then((m) => ({
+    default: m.MultiplayerDuelModal,
+  }))
+);
+const CardQrVerifierModal = lazy(() =>
+  import('./components/CardQrVerifierModal').then((m) => ({
+    default: m.CardQrVerifierModal,
+  }))
+);
+const GreetingGiftCardStudioModal = lazy(() =>
+  import('./components/GreetingGiftCardStudio').then((m) => ({
+    default: m.GreetingGiftCardStudioModal,
+  }))
+);
+const LevelBossChallengeModal = lazy(() =>
+  import('./components/GrandFinaleAndBossModals').then((m) => ({
+    default: m.LevelBossChallengeModal,
+  }))
+);
+const SmartCooldownGateModal = lazy(() =>
+  import('./components/GrandFinaleAndBossModals').then((m) => ({
+    default: m.SmartCooldownGateModal,
+  }))
+);
+const GrandFinaleVaultModal = lazy(() =>
+  import('./components/GrandFinaleAndBossModals').then((m) => ({
+    default: m.GrandFinaleVaultModal,
+  }))
+);
+import { EcosystemProvider, GuidedHubId, useEcosystem } from './utils/ecosystemStore';
+import { GoldCoinSvg, HiddenTreasureStar, WalletHudBar } from './components/CurrencyIcons';
+import { EcosystemChatDockSlot } from './components/FriendsAndChatHub';
 import { getTodaySpecialGame } from './components/DailyChallengeModal';
 import {
   AudioLoadingFloatBadge,
@@ -410,6 +482,7 @@ interface LessonWorkspaceFrameProps {
   completedCount: number;
   totalLessons: number;
   isPreviewMode?: boolean;
+  devUnlocked?: boolean;
   nextSequentialLesson?: { number: number; id: string; title: string; emoji: string } | null;
   onReturnToMyProgress?: () => void;
   children: React.ReactNode;
@@ -419,6 +492,7 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
   completedCount,
   totalLessons,
   isPreviewMode = false,
+  devUnlocked = false,
   nextSequentialLesson = null,
   onReturnToMyProgress,
   children,
@@ -431,18 +505,71 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
     hasGameOnPage,
     isGameDone,
   } = useLessonFlow();
+  const { state: ecoState, transactCurrency } = useEcosystem();
   const currentGameDone = isGameDone(activeLessonId);
   const [lessonCopied, setLessonCopied] = useState(false);
   const [shareBoxOpen, setShareBoxOpen] = useState(false);
+  const [skipTries, setSkipTries] = useState(0);
+  const [skipBypassed, setSkipBypassed] = useState(false);
+  const [skipWarn, setSkipWarn] = useState<string | null>(null);
   const lessonIdx = ALL_LESSONS.findIndex((l) => l.id === activeLessonId);
   const activeLesson = lessonIdx >= 0 ? ALL_LESSONS[lessonIdx] : null;
   const progressPct = Math.round((completedCount / Math.max(1, totalLessons)) * 100);
   const lessonShareUrl = activeLesson ? getLessonShareUrl(activeLesson.id) : '';
 
+  const canEnterStudyFreely =
+    currentGameDone ||
+    devUnlocked ||
+    skipBypassed ||
+    ecoState.inventory.freeRoamStageUnlocked;
+
   useEffect(() => {
     setShareBoxOpen(false);
     setLessonCopied(false);
+    setSkipTries(0);
+    setSkipBypassed(false);
+    setSkipWarn(null);
   }, [activeLessonId]);
+
+  const handleRequestStudyStep = () => {
+    sound.unlockAudio();
+    if (canEnterStudyFreely) {
+      sound.playClick();
+      setSkipWarn(null);
+      goToStudyStep();
+      return;
+    }
+    const nextTries = skipTries + 1;
+    setSkipTries(nextTries);
+    sound.playError();
+    if (nextTries < 2) {
+      setSkipWarn(
+        '🎮 ആദ്യം ഈ ചെറിയ ഗെയിം കളിച്ചു പൂർത്തിയാക്കൂ! (2 ശ്രമത്തിന് ശേഷം 20 സ്വർണ്ണം നൽകി സ്കിപ്പ് ചെയ്യാം)'
+      );
+    } else {
+      setSkipWarn(
+        '🪙 ഗെയിം പൂർത്തിയാക്കാതെ മുന്നോട്ട് പോകാൻ താഴത്തെ "20 സ്വർണ്ണം നൽകി സ്കിപ്പ്" ബട്ടൺ ഉപയോഗിക്കാം.'
+      );
+    }
+  };
+
+  const handlePaidSkip20Gold = () => {
+    sound.unlockAudio();
+    const res = transactCurrency({
+      action: 'skip_minigame_20g',
+      deltaGold: -20,
+      meta: activeLessonId,
+    });
+    if (!res.ok) {
+      sound.playError();
+      setSkipWarn('⚠️ സ്കിപ്പ് ചെയ്യാൻ 20 സ്വർണ്ണ നാണയം ആവശ്യമാണ്! ഗെയിം കളിച്ചു പൂർത്തിയാക്കാം.');
+      return;
+    }
+    sound.playUnlock();
+    setSkipBypassed(true);
+    setSkipWarn(null);
+    goToStudyStep();
+  };
 
   const handleShareLesson = async () => {
     if (!activeLesson) return;
@@ -563,18 +690,14 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
                   type="button"
                   role="tab"
                   aria-selected={lessonViewStep === 'study'}
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    goToStudyStep();
-                  }}
+                  onClick={handleRequestStudyStep}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                     lessonViewStep === 'study'
                       ? 'bg-amber-400 text-slate-950 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  2. പാഠം + ക്വിസ്
+                  2. പാഠം + ക്വിസ് {!canEnterStudyFreely && '🔒'}
                 </button>
               </div>
             )}
@@ -631,37 +754,61 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
           - On 'study': Renders ONLY Lesson (Item 1) + Quiz (Item 2) */}
       {children}
 
-      {/* Screen 1 ('play'): Clean Bottom Bar strictly OUTSIDE the Game container */}
+      {/* Screen 1 ('play'): Clean Bottom Bar with Anti-Skip Protection */}
       {lessonViewStep === 'play' && hasGameOnPage && (
-        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-2xs">
-          <p className="text-xs font-bold text-slate-600 text-center sm:text-left">
-            {currentGameDone
-              ? 'ഗെയിം പൂർത്തിയായി! ഇനി പാഠവും ക്വിസ്സും വായിച്ച് മുന്നോട്ട് പോകാം.'
-              : 'കളി കഴിഞ്ഞോ, അല്ലെങ്കിൽ നേരിട്ട് പാഠവും ക്വിസ്സും വായിക്കണോ?'}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              goToStudyStep();
-            }}
-            className={`w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shrink-0 ${
-              currentGameDone
-                ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-500 shadow-xs'
-                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 shrink-0" />
-            <span>നേരിട്ട് പാഠത്തിലേക്ക് പോകാം</span>
-          </button>
+        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 space-y-2.5 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <p className="text-xs font-bold text-slate-600 text-center sm:text-left">
+              {canEnterStudyFreely
+                ? 'ഗെയിം പൂർത്തിയായി! ഇനി പാഠവും ക്വിസ്സും വായിച്ച് മുന്നോട്ട് പോകാം.'
+                : 'ആദ്യം മുകളിലെ ചെറിയ ഗെയിം കളിച്ചു പൂർത്തിയാക്കാം!'}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleRequestStudyStep}
+                className={`w-full sm:w-auto min-h-[44px] px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm inline-flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shrink-0 ${
+                  canEnterStudyFreely
+                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-500 shadow-xs'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300'
+                }`}
+              >
+                <BookOpen className="w-4 h-4 shrink-0" />
+                <span>{canEnterStudyFreely ? 'പാഠത്തിലേക്ക് പോകാം' : 'പാഠത്തിലേക്ക് (ഗെയിം ആദ്യം)'}</span>
+              </button>
+              {!canEnterStudyFreely && skipTries >= 2 && (
+                <button
+                  type="button"
+                  onClick={handlePaidSkip20Gold}
+                  className="w-full sm:w-auto min-h-[44px] px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-400 text-amber-950 text-xs font-black inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <GoldCoinSvg className="w-4 h-4" />
+                  <span>20 സ്വർണ്ണം നൽകി സ്കിപ്പ്</span>
+                </button>
+              )}
+            </div>
+          </div>
+          {skipWarn && (
+            <p className="text-xs font-extrabold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-center sm:text-left">
+              {skipWarn}
+            </p>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default function App() {
+function AppInner() {
+  const {
+    state: ecoState,
+    activeSeasonal,
+    redeemRecipientLockedGift,
+    registerInvitedBy,
+    triggerCooldownNow,
+    dismissTamperBanner,
+    deleteProfileAndResetEcosystem,
+  } = useEcosystem();
   const [savedInit] = useState(() => loadSavedGameState());
   const [initialDeepLink] = useState(() => resolveLessonFromUrl(ALL_LESSONS));
   const [initialCompleted] = useState<string[]>(() =>
@@ -749,6 +896,98 @@ export default function App() {
   const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
   const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
   const [footerIosHint, setFooterIosHint] = useState<boolean>(false);
+
+  // Ecosystem & Gamification Hub Modals
+  const [marketOpen, setMarketOpen] = useState<boolean>(false);
+  const [albumOpen, setAlbumOpen] = useState<boolean>(false);
+  const [pass14Open, setPass14Open] = useState<boolean>(false);
+  const [multiplayerOpen, setMultiplayerOpen] = useState<boolean>(false);
+  const [verifierOpen, setVerifierOpen] = useState<boolean>(false);
+  const [friendsOpen, setFriendsOpen] = useState<boolean>(false);
+  const [seasonalOpen, setSeasonalOpen] = useState<boolean>(false);
+  const [greetingStudioOpen, setGreetingStudioOpen] = useState<boolean>(false);
+  const [bossLevel, setBossLevel] = useState<number | null>(null);
+  const [grandFinaleOpen, setGrandFinaleOpen] = useState<boolean>(false);
+  const [packRewardOpen, setPackRewardOpen] = useState<boolean>(false);
+  const [cooldownOpen, setCooldownOpen] = useState<boolean>(false);
+  const [incomingDuelCode, setIncomingDuelCode] = useState<string | null>(null);
+  const [ecoToast, setEcoToast] = useState<string | null>(null);
+
+  const showEcoToast = useCallback((msg: string) => {
+    setEcoToast(msg);
+  }, []);
+
+  useEffect(() => {
+    if (!ecoToast) return;
+    const t = window.setTimeout(() => setEcoToast(null), 5500);
+    return () => window.clearTimeout(t);
+  }, [ecoToast]);
+
+  // Handle incoming signed ecosystem URL parameters (?gift=, ?duel=, ?invite=, ?chatWith=)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const giftCode = params.get('gift');
+    const duelCode = params.get('duel');
+    const inviteId = params.get('invite');
+    const inviteBy = params.get('by') || undefined;
+    const chatWith = params.get('chatWith');
+    let dirty = false;
+
+    if (giftCode) {
+      const res = redeemRecipientLockedGift(giftCode);
+      setEcoToast(res.message);
+      params.delete('gift');
+      dirty = true;
+    }
+    if (duelCode) {
+      setIncomingDuelCode(duelCode);
+      setMultiplayerOpen(true);
+      params.delete('duel');
+      dirty = true;
+    }
+    if (inviteId) {
+      registerInvitedBy(inviteId, inviteBy);
+      setEcoToast(`🎉 ${inviteBy || inviteId} നിങ്ങളെ ക്ഷണിച്ചു! 3 പാഠങ്ങൾ പൂർത്തിയാക്കിയാൽ ഇരുവർക്കും +1 വജ്രം!`);
+      params.delete('invite');
+      params.delete('by');
+      dirty = true;
+    }
+    if (chatWith) {
+      window.dispatchEvent(
+        new CustomEvent('skssf:open-chat-bridge', {
+          detail: { userId: chatWith, name: chatWith },
+        })
+      );
+      params.delete('chatWith');
+      dirty = true;
+    }
+
+    if (dirty) {
+      try {
+        const nextSearch = params.toString();
+        const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${window.location.hash}`;
+        window.history.replaceState(null, '', nextUrl);
+      } catch {
+        // Ignore history restriction
+      }
+    }
+  }, [redeemRecipientLockedGift, registerInvitedBy]);
+
+  // Auto-open Every-3-Lessons PES-Style Pack Reward modal when triggered
+  useEffect(() => {
+    if (ecoState.progression.pendingPackReward && !packRewardOpen) {
+      setPackRewardOpen(true);
+    }
+  }, [ecoState.progression.pendingPackReward, packRewardOpen]);
+
+  // Auto-open Smart 1-Hour Cooldown gate when triggered after 5 consecutive lessons
+  useEffect(() => {
+    if (ecoState.progression.cooldownUntil > Date.now() && !cooldownOpen && !devUnlocked) {
+      setCooldownOpen(true);
+    }
+  }, [ecoState.progression.cooldownUntil, cooldownOpen, devUnlocked]);
+
   const isOnline = useOnlineStatus();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
 
@@ -762,7 +1001,19 @@ export default function App() {
     supportModalOpen ||
     aboutModalOpen ||
     resourceHubOpen ||
-    legalModalOpen;
+    legalModalOpen ||
+    marketOpen ||
+    albumOpen ||
+    pass14Open ||
+    multiplayerOpen ||
+    verifierOpen ||
+    friendsOpen ||
+    seasonalOpen ||
+    greetingStudioOpen ||
+    bossLevel !== null ||
+    grandFinaleOpen ||
+    packRewardOpen ||
+    cooldownOpen;
 
   useEffect(() => {
     if (typeof document === 'undefined' || !isAnyModalOpen) return;
@@ -823,6 +1074,8 @@ export default function App() {
   const isPreviewMode = Boolean(
     previewLessonId &&
       !devUnlocked &&
+      !ecoState.inventory.freeRoamStageUnlocked &&
+      !ecoState.social.giftedLessonIds.includes(activeLessonId) &&
       ALL_LESSONS.findIndex((l) => l.id === activeLessonId) >
         getSequentialFrontierIndex(completedLessonIds)
   );
@@ -998,8 +1251,13 @@ export default function App() {
     (lessonId: string, options?: { isDirectLink?: boolean }) => {
       const target = ALL_LESSONS.find((l) => l.id === lessonId);
       if (!target) return;
-      const unlocked = isLessonSequentiallyUnlocked(target.id, completedLessonIds, devUnlocked);
-      // Direct links to locked lessons open in isolated Guest Preview mode without unlocking earlier lessons
+      const unlockedByGift = ecoState.social.giftedLessonIds.includes(target.id);
+      const unlockedByFreeRoam = ecoState.inventory.freeRoamStageUnlocked;
+      const unlocked =
+        unlockedByGift ||
+        unlockedByFreeRoam ||
+        isLessonSequentiallyUnlocked(target.id, completedLessonIds, devUnlocked);
+      // Direct links (?lesson=X) strictly respect progress locks unless sequentially unlocked or gifted
       const enteringPreview = Boolean(options?.isDirectLink && !unlocked);
       if (!options?.isDirectLink && !unlocked) return;
 
@@ -1034,7 +1292,12 @@ export default function App() {
       setLessonsMapOpen(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [completedLessonIds, devUnlocked]
+    [
+      completedLessonIds,
+      devUnlocked,
+      ecoState.inventory.freeRoamStageUnlocked,
+      ecoState.social.giftedLessonIds,
+    ]
   );
 
   // Keep browser URL cleanly synced with the active lesson so copying/reloading always works
@@ -1151,6 +1414,7 @@ export default function App() {
           setHeartBreakEvent(ev);
           setActiveFlightEvent(ev);
           if (nextLives <= 0) {
+            triggerCooldownNow();
             window.setTimeout(() => {
               setGameOverOpen(true);
             }, 1300);
@@ -1159,7 +1423,7 @@ export default function App() {
         });
       }
     },
-    [devUnlocked, handleAwardXp]
+    [devUnlocked, handleAwardXp, triggerCooldownNow]
   );
 
   const handleUnlockBadge = (badge: string) => {
@@ -1318,6 +1582,7 @@ export default function App() {
 
   const handleClearAllSavedData = async () => {
     clearAllAppStorage();
+    deleteProfileAndResetEcosystem();
     displayPrefs.resetToDefaults();
     sound.resetToDefaults();
     await narrator.clearVoiceCache();
@@ -1698,6 +1963,149 @@ export default function App() {
 
       {/* Main Game Workspace */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 pt-3 sm:pt-5 pb-24 sm:pb-20">
+        {/* Tamper Detection Integrity Warning (if localStorage was edited manually) */}
+        {ecoState.tamperDetected && (
+          <div className="mb-3 rounded-2xl border-2 border-rose-400 bg-rose-50 px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs font-extrabold text-rose-950">
+            <span className="inline-flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{ecoState.tamperMessage}</span>
+            </span>
+            <button
+              type="button"
+              onClick={dismissTamperBanner}
+              className="px-2 py-1 rounded-lg bg-white border border-rose-300 text-rose-800 text-[11px] font-black cursor-pointer shrink-0"
+            >
+              ശരി
+            </button>
+          </div>
+        )}
+
+        {/* Ecosystem Action Toast */}
+        {ecoToast && (
+          <div className="mb-3 rounded-2xl border-2 border-emerald-400 bg-emerald-50 px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 shadow-xs">
+            <span>{ecoToast}</span>
+            <button
+              type="button"
+              onClick={() => setEcoToast(null)}
+              aria-label="അടയ്ക്കുക"
+              className="p-1 rounded-lg hover:bg-emerald-100 text-emerald-800 cursor-pointer shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Metallic Currency Wallet HUD + 6-Hub Guided Exploration Strip */}
+        <div className="mb-3 space-y-2">
+          <WalletHudBar
+            xp={xp}
+            onOpenMarket={() => setMarketOpen(true)}
+            hasUnvisitedMarket={!ecoState.exploration.visitedHubs.includes('market')}
+            onMilestoneToast={showEcoToast}
+          />
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {(
+              [
+                {
+                  id: 'album' as GuidedHubId,
+                  label: 'പൈതൃക ആൽബം',
+                  icon: <ScrollText className="w-3.5 h-3.5 text-amber-700" />,
+                  onClick: () => setAlbumOpen(true),
+                },
+                {
+                  id: 'pass14' as GuidedHubId,
+                  label: '14-ദിന യാത്ര',
+                  icon: <Sparkles className="w-3.5 h-3.5 text-emerald-700" />,
+                  onClick: () => setPass14Open(true),
+                },
+                {
+                  id: 'multiplayer' as GuidedHubId,
+                  label: '2P മത്സരം',
+                  icon: <Swords className="w-3.5 h-3.5 text-indigo-700" />,
+                  onClick: () => setMultiplayerOpen(true),
+                },
+                {
+                  id: 'verifier' as GuidedHubId,
+                  label: 'QR വെരിഫയർ',
+                  icon: <QrCode className="w-3.5 h-3.5 text-sky-700" />,
+                  onClick: () => setVerifierOpen(true),
+                },
+                {
+                  id: 'friends' as GuidedHubId,
+                  label: 'കൂട്ടുകാർ & ദർസ്',
+                  icon: <Users className="w-3.5 h-3.5 text-emerald-800" />,
+                  onClick: () => setFriendsOpen(true),
+                },
+              ] as const
+            ).map((hub) => {
+              const unvisited = !ecoState.exploration.visitedHubs.includes(hub.id);
+              return (
+                <button
+                  key={hub.id}
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playClick();
+                    hub.onClick();
+                  }}
+                  className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-[11px] font-extrabold whitespace-nowrap shrink-0 cursor-pointer shadow-2xs transition-colors"
+                >
+                  {hub.icon}
+                  <span>{hub.label}</span>
+                  {unvisited && (
+                    <span
+                      aria-label="പുതിയ വിഭാഗം"
+                      className="w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"
+                    />
+                  )}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playPop();
+                setSeasonalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-[11px] font-black whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-amber-700" />
+              <span>{activeSeasonal.isLiveWindow ? '🔴 സീസണൽ ലൈവ്' : 'വാർഷിക ദിനങ്ങൾ'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playPop();
+                setGreetingStudioOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 text-[11px] font-extrabold whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Gift className="w-3.5 h-3.5 text-emerald-700" />
+              <span>ആശംസാ കാർഡ്</span>
+            </button>
+
+            {(canonicalCompletedCount >= ALL_LESSONS.length || devUnlocked) && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playUnlock();
+                  setGrandFinaleOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-amber-300 text-[11px] font-black whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Crown className="w-3.5 h-3.5" />
+                <span>62/62 വോൾട്ട്</span>
+              </button>
+            )}
+          </div>
+        </div>
+
         {!showIntro && showResumeToast && (
           <div className="mb-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 flex items-center justify-between gap-2 text-xs font-bold text-emerald-950">
             <span className="tabular-nums notranslate min-w-0 break-words">
@@ -1734,47 +2142,59 @@ export default function App() {
                 onSetDevUnlocked={setDevUnlocked}
                 onSelectLesson={handleJumpToLesson}
                 onClose={() => setLessonsMapOpen(false)}
+                onOpenBossChallenge={(lvl) => setBossLevel(lvl)}
+                onOpenGrandFinale={() => setGrandFinaleOpen(true)}
+                onEcoToast={showEcoToast}
               />
             </Suspense>
           </AppErrorBoundary>
         ) : showIntro ? (
-          <WelcomeIntroScreen
-            xp={xp}
-            completedCount={canonicalCompletedCount}
-            totalLessons={ALL_LESSONS.length}
-            activeLessonTitle={activeLessonTitle}
-            streakDays={dailyState.streakDays}
-            todaySpecialGameDone={Boolean(dailyState.todaySpecialGameDone)}
-            onStartJourney={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              setShowIntro(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onOpenAllLessons={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              setShowIntro(false);
-              setLessonsMapOpen(true);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onOpenBadgeStudio={() => {
-              sound.unlockAudio();
-              sound.playPop();
-              setBadgeStudioPreset('starter_member');
-              setBadgeStudioOpen(true);
-            }}
-            onOpenDailyChallenge={() => {
-              sound.unlockAudio();
-              sound.playPop();
-              setDailyModalOpen(true);
-            }}
-            onOpenSupport={() => {
-              sound.unlockAudio();
-              sound.playClick();
-              setSupportModalOpen(true);
-            }}
-          />
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <HiddenTreasureStar
+                starId="star_welcome_banner"
+                hintLabel="സ്വാഗത പേജിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
+                onClaimed={showEcoToast}
+              />
+            </div>
+            <WelcomeIntroScreen
+              xp={xp}
+              completedCount={canonicalCompletedCount}
+              totalLessons={ALL_LESSONS.length}
+              activeLessonTitle={activeLessonTitle}
+              streakDays={dailyState.streakDays}
+              todaySpecialGameDone={Boolean(dailyState.todaySpecialGameDone)}
+              onStartJourney={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setShowIntro(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onOpenAllLessons={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setShowIntro(false);
+                setLessonsMapOpen(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onOpenBadgeStudio={() => {
+                sound.unlockAudio();
+                sound.playPop();
+                setBadgeStudioPreset('starter_member');
+                setBadgeStudioOpen(true);
+              }}
+              onOpenDailyChallenge={() => {
+                sound.unlockAudio();
+                sound.playPop();
+                setDailyModalOpen(true);
+              }}
+              onOpenSupport={() => {
+                sound.unlockAudio();
+                sound.playClick();
+                setSupportModalOpen(true);
+              }}
+            />
+          </div>
         ) : (
           <>
             {activeMilestone && (() => {
@@ -1859,6 +2279,7 @@ export default function App() {
               completedCount={canonicalCompletedCount}
               totalLessons={ALL_LESSONS.length}
               isPreviewMode={isPreviewMode}
+              devUnlocked={devUnlocked}
               nextSequentialLesson={nextSequentialLesson}
               onReturnToMyProgress={() => handleJumpToLesson(nextSequentialLesson.id)}
             >
@@ -2024,6 +2445,8 @@ export default function App() {
                       setBadgeStudioOpen(true);
                     }}
                     onOpenSupport={() => setSupportModalOpen(true)}
+                    onOpenGrandFinale={() => setGrandFinaleOpen(true)}
+                    onOpenGreetingStudio={() => setGreetingStudioOpen(true)}
                   />
                 )}
               </>
@@ -2307,6 +2730,134 @@ export default function App() {
         </Suspense>
       )}
 
+      {/* ECOSYSTEM & GAMIFICATION MODALS */}
+      {marketOpen && (
+        <Suspense fallback={null}>
+          <KnowledgeMarketModal
+            isOpen={marketOpen}
+            onClose={() => setMarketOpen(false)}
+            xp={xp}
+            onGrantExtraHp={() => setLives((l) => Math.min(3, l + 1))}
+            onUpdatePlayerNameExternal={(newName) =>
+              handleUpdateUnitProfile({ playerName: newName })
+            }
+          />
+        </Suspense>
+      )}
+
+      {albumOpen && (
+        <Suspense fallback={null}>
+          <HeritageAlbumModal isOpen={albumOpen} onClose={() => setAlbumOpen(false)} />
+        </Suspense>
+      )}
+
+      {pass14Open && (
+        <Suspense fallback={null}>
+          <KnowledgePass14Modal
+            isOpen={pass14Open}
+            onClose={() => setPass14Open(false)}
+            completedLessonsCount={canonicalCompletedCount}
+            streakDays={dailyState.streakDays}
+          />
+        </Suspense>
+      )}
+
+      {packRewardOpen && (
+        <Suspense fallback={null}>
+          <EveryThreeLessonsPackModal
+            isOpen={packRewardOpen}
+            onClose={() => setPackRewardOpen(false)}
+            onGrantExtraHp={() => setLives((l) => Math.min(3, l + 1))}
+          />
+        </Suspense>
+      )}
+
+      {seasonalOpen && (
+        <Suspense fallback={null}>
+          <AnnualSeasonalEventModal isOpen={seasonalOpen} onClose={() => setSeasonalOpen(false)} />
+        </Suspense>
+      )}
+
+      {friendsOpen && (
+        <Suspense fallback={null}>
+          <FriendsAndChatHubModal
+            isOpen={friendsOpen}
+            onClose={() => setFriendsOpen(false)}
+            xp={xp}
+            rank={currentRank}
+            completedLessonsCount={canonicalCompletedCount}
+            onDeleteAllProfileData={handleClearAllSavedData}
+            onSyncExternalProfileName={(newName) =>
+              handleUpdateUnitProfile({ playerName: newName })
+            }
+          />
+        </Suspense>
+      )}
+
+      {multiplayerOpen && (
+        <Suspense fallback={null}>
+          <MultiplayerDuelModal
+            isOpen={multiplayerOpen}
+            onClose={() => setMultiplayerOpen(false)}
+            incomingDuelCode={incomingDuelCode}
+            onClearIncomingDuel={() => setIncomingDuelCode(null)}
+          />
+        </Suspense>
+      )}
+
+      {verifierOpen && (
+        <Suspense fallback={null}>
+          <CardQrVerifierModal
+            isOpen={verifierOpen}
+            onClose={() => setVerifierOpen(false)}
+            xp={xp}
+            rank={currentRank}
+            completedLessonsCount={canonicalCompletedCount}
+            onRestoredBackup={handleRestoreFromBackup}
+          />
+        </Suspense>
+      )}
+
+      {greetingStudioOpen && (
+        <Suspense fallback={null}>
+          <GreetingGiftCardStudioModal
+            isOpen={greetingStudioOpen}
+            onClose={() => setGreetingStudioOpen(false)}
+          />
+        </Suspense>
+      )}
+
+      {bossLevel !== null && (
+        <Suspense fallback={null}>
+          <LevelBossChallengeModal level={bossLevel} onClose={() => setBossLevel(null)} />
+        </Suspense>
+      )}
+
+      {cooldownOpen && (
+        <Suspense fallback={null}>
+          <SmartCooldownGateModal
+            isOpen={cooldownOpen}
+            onClose={() => setCooldownOpen(false)}
+          />
+        </Suspense>
+      )}
+
+      {grandFinaleOpen && (
+        <Suspense fallback={null}>
+          <GrandFinaleVaultModal
+            isOpen={grandFinaleOpen}
+            onClose={() => setGrandFinaleOpen(false)}
+            xp={xp}
+            rank={currentRank}
+            completedCount={canonicalCompletedCount}
+            devUnlocked={devUnlocked}
+          />
+        </Suspense>
+      )}
+
+      {/* AUTHORIZED APP-SK-CHAT-04 PLUGIN DOCK SLOT */}
+      <EcosystemChatDockSlot />
+
       <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500 space-y-2">
         <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5">
           <span>ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”</span>
@@ -2360,6 +2911,11 @@ export default function App() {
               </button>
             </>
           )}
+          <HiddenTreasureStar
+            starId="star_footer_vault"
+            hintLabel="അടിക്കുറിപ്പിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
+            onClaimed={showEcoToast}
+          />
         </p>
         {footerIosHint && isIOS && !isInstalled && (
           <p className="max-w-md mx-auto text-[11px] font-bold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
@@ -2372,5 +2928,13 @@ export default function App() {
     </div>
     </LessonFlowProvider>
     </GameLivesProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <EcosystemProvider>
+      <AppInner />
+    </EcosystemProvider>
   );
 }

@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 import type { LessonDescriptor } from './lessonTracker';
 
 export function getAppShareUrl(): string {
-  if (typeof window === 'undefined') return 'https://saeedthrissur.github.io/SKSSF-Guide-Game/';
+  if (typeof window === 'undefined') return '';
   const cleanPath = window.location.pathname.replace(/\/lesson\/[^/]+\/?$/i, '/');
   return `${window.location.origin}${cleanPath}`;
 }

@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle2, Lock, Play, Search, Unlock, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Crown, Gift, Lock, Play, Search, Swords, Unlock, X, Zap } from 'lucide-react';
 import {
   ALL_LESSONS,
   getSequentialFrontierIndex,
   LessonDescriptor,
 } from '../utils/lessonTracker';
+import { SNAKES_AND_LADDERS_NODES, useEcosystem } from '../utils/ecosystemStore';
+import { CrownStarSvg, HiddenTreasureStar } from './CurrencyIcons';
 import { sound } from '../utils/sound';
 
 interface AllLessonsMapPageProps {
@@ -15,6 +17,9 @@ interface AllLessonsMapPageProps {
   onSetDevUnlocked: (val: boolean) => void;
   onSelectLesson: (lessonId: string) => void;
   onClose: () => void;
+  onOpenBossChallenge?: (level: number) => void;
+  onOpenGrandFinale?: () => void;
+  onEcoToast?: (msg: string) => void;
 }
 
 const DEV_UNLOCK_SALT = 'skssf-guide-dev-salt-v2::';
@@ -94,7 +99,11 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   onSetDevUnlocked,
   onSelectLesson,
   onClose,
+  onOpenBossChallenge,
+  onOpenGrandFinale,
+  onEcoToast,
 }) => {
+  const { state: ecoState, consumeVipJumpPass } = useEcosystem();
   const [tapCount, setTapCount] = useState(0);
   const tapTimerRef = useRef<number | null>(null);
   const [codePromptOpen, setCodePromptOpen] = useState(false);
@@ -102,6 +111,17 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
   const [codeError, setCodeError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'done' | 'remaining'>('all');
+  const [vipNotice, setVipNotice] = useState<string | null>(null);
+
+  const giftedSet = useMemo(
+    () => new Set(ecoState.social.giftedLessonIds),
+    [ecoState.social.giftedLessonIds]
+  );
+  const snakeLadderByIndex = useMemo(() => {
+    const m = new Map<number, (typeof SNAKES_AND_LADDERS_NODES)[number]>();
+    SNAKES_AND_LADDERS_NODES.forEach((n) => m.set(n.lessonIndex, n));
+    return m;
+  }, []);
 
   const totalCount = ALL_LESSONS.length;
   const completedSet = useMemo(() => new Set(completedLessonIds), [completedLessonIds]);
@@ -364,6 +384,80 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Visual Snakes & Ladders + 45s Boss Challenges + Hidden Treasure Star #1 Strip */}
+        <div className="pt-2.5 border-t border-slate-100 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50/70 border border-emerald-200 px-3 py-2 text-[11px] font-bold text-emerald-950">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-black">🪜 പാമ്പും കോണിയും ബോർഡ്:</span>
+              <span>🪜 ബോണസ് കോണി (മുന്നോട്ട് കുതിക്കാം)</span>
+              <span>·</span>
+              <span>🐍 റിവിഷൻ പാമ്പ് (വീണ്ടും ഉറപ്പിക്കാം)</span>
+            </div>
+            <HiddenTreasureStar
+              starId="star_map_vault"
+              hintLabel="മാപ്പിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
+              onClaimed={onEcoToast}
+            />
+          </div>
+
+          {ecoState.inventory.vipJumpPasses > 0 && (
+            <div className="rounded-xl bg-amber-50 border border-amber-300 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-amber-950">
+              <span className="inline-flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-amber-600" />
+                വിഐപി ജമ്പ് പാസ് ലഭ്യമാണ് ({ecoState.inventory.vipJumpPasses}) — അടുത്ത 1–2 പാഠങ്ങളിലേക്ക് കുതിക്കാം!
+              </span>
+            </div>
+          )}
+          {vipNotice && (
+            <p className="text-xs font-extrabold text-emerald-800 px-1">{vipNotice}</p>
+          )}
+
+          {onOpenBossChallenge && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map((lvl) => {
+                const done = ecoState.progression.completedBossLevels.includes(lvl);
+                return (
+                  <button
+                    key={lvl}
+                    type="button"
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playPop();
+                      onOpenBossChallenge(lvl);
+                    }}
+                    className={`px-2.5 py-2 rounded-xl border text-left text-[11px] font-black transition-all cursor-pointer flex items-center justify-between gap-1.5 ${
+                      done
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                        : 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-950'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-1 truncate">
+                      {done ? <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" /> : <Swords className="w-3.5 h-3.5 text-amber-700 shrink-0" />}
+                      <span className="truncate">ഘട്ടം {lvl} ബോസ്</span>
+                    </span>
+                    <span className="text-[10px] shrink-0">{done ? '✓' : '45s'}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {onOpenGrandFinale && (completedCount >= totalCount || devUnlocked) && (
+            <button
+              type="button"
+              onClick={() => {
+                sound.unlockAudio();
+                sound.playUnlock();
+                onOpenGrandFinale();
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-900 via-emerald-800 to-amber-700 text-white text-xs sm:text-sm font-black shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Crown className="w-4 h-4 text-amber-300" />
+              <span>🏆 62/62 ഗ്രാൻഡ് ഫിനാലെ വോൾട്ട് (9:16 സ്റ്റാറ്റസ് കാർഡ് · പോക്കറ്റ് വോൾട്ട് · റാപ്പിഡ് ക്വിസ്)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Grouped Complete List of All Lessons */}
@@ -406,13 +500,32 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                 {grp.items.map(({ lesson, globalIdx }) => {
                   const isDone = completedSet.has(lesson.id);
                   const isCurrent = lesson.id === activeLessonId;
-                  const canOpen = devUnlocked || isDone || globalIdx <= nextSequentialIdx;
+                  const isGifted = giftedSet.has(lesson.id);
+                  const isFreeRoam = ecoState.inventory.freeRoamStageUnlocked;
+                  const canOpen =
+                    devUnlocked || isFreeRoam || isDone || isGifted || globalIdx <= nextSequentialIdx;
+                  const canVipJump =
+                    !canOpen &&
+                    ecoState.inventory.vipJumpPasses > 0 &&
+                    globalIdx <= nextSequentialIdx + 2;
+                  const slNode = snakeLadderByIndex.get(globalIdx);
+                  const stars = ecoState.progression.lessonStars[lesson.id] ?? 0;
+
                   return (
                     <button
                       key={lesson.id}
                       type="button"
-                      disabled={!canOpen}
+                      disabled={!canOpen && !canVipJump}
                       onClick={() => {
+                        if (canVipJump && !canOpen) {
+                          if (consumeVipJumpPass()) {
+                            sound.unlockAudio();
+                            sound.playUnlock();
+                            setVipNotice(`🪜 വിഐപി ജമ്പ് പാസ് ഉപയോഗിച്ച് പാഠം ${globalIdx + 1}-ലേക്ക് കയറി!`);
+                            onSelectLesson(lesson.id);
+                          }
+                          return;
+                        }
                         if (!canOpen) return;
                         sound.unlockAudio();
                         sound.playClick();
@@ -423,8 +536,12 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                           ? 'bg-emerald-700 text-white border-emerald-900 shadow-sm cursor-pointer'
                           : isDone
                           ? 'bg-emerald-50/90 text-emerald-950 border-emerald-300 hover:bg-emerald-100 hover:shadow-xs cursor-pointer'
+                          : isGifted
+                          ? 'bg-sky-50 text-sky-950 border-sky-300 hover:bg-sky-100 cursor-pointer'
                           : canOpen
                           ? 'bg-white text-slate-900 border-amber-300 hover:bg-amber-50 hover:shadow-xs cursor-pointer'
+                          : canVipJump
+                          ? 'bg-amber-50/90 text-amber-950 border-dashed border-amber-400 hover:bg-amber-100 cursor-pointer'
                           : 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-75'
                       }`}
                     >
@@ -435,8 +552,12 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                               ? 'bg-amber-400 text-slate-950'
                               : isDone
                               ? 'bg-emerald-700 text-white'
+                              : isGifted
+                              ? 'bg-sky-600 text-white'
                               : canOpen
                               ? 'bg-amber-100 text-amber-950'
+                              : canVipJump
+                              ? 'bg-amber-400 text-slate-950'
                               : 'bg-slate-200 text-slate-500'
                           }`}
                         >
@@ -445,9 +566,48 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                         <span className="text-lg shrink-0 notranslate" aria-hidden="true">
                           {lesson.emoji}
                         </span>
-                        <span className="min-w-0 flex-1 text-xs sm:text-sm font-extrabold leading-snug break-words">
-                          {lesson.title}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-xs sm:text-sm font-extrabold leading-snug break-words">
+                            {lesson.title}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                            {slNode && (
+                              <span
+                                title={slNode.descriptionMl}
+                                className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
+                                  slNode.type === 'ladder'
+                                    ? isCurrent
+                                      ? 'bg-amber-400 text-slate-950'
+                                      : 'bg-emerald-100 text-emerald-900'
+                                    : isCurrent
+                                    ? 'bg-rose-400 text-slate-950'
+                                    : 'bg-rose-100 text-rose-900'
+                                }`}
+                              >
+                                {slNode.type === 'ladder'
+                                  ? `🪜 കോണി → #${slNode.targetIndex + 1}`
+                                  : `🐍 റിവിഷൻ → #${slNode.targetIndex + 1}`}
+                              </span>
+                            )}
+                            {isGifted && !isDone && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-900">
+                                <Gift className="w-2.5 h-2.5" /> ഗിഫ്റ്റ് അൺലോക്ക്
+                              </span>
+                            )}
+                            {canVipJump && (
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-amber-200 text-amber-950">
+                                ⚡ വിഐപി ജമ്പ്
+                              </span>
+                            )}
+                            {stars > 0 && (
+                              <span className="inline-flex items-center gap-0.5">
+                                {[1, 2, 3].map((n) => (
+                                  <CrownStarSvg key={n} filled={n <= stars} className="w-3 h-3" />
+                                ))}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       <span className="shrink-0">
@@ -455,10 +615,12 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                           <CheckCircle2
                             className={`w-4 h-4 ${isCurrent ? 'text-amber-300' : 'text-emerald-600'}`}
                           />
-                        ) : isCurrent || devUnlocked ? (
+                        ) : isCurrent || devUnlocked || isGifted || isFreeRoam ? (
                           <Play
                             className={`w-4 h-4 ${isCurrent ? 'text-amber-300' : 'text-emerald-700'}`}
                           />
+                        ) : canVipJump ? (
+                          <Zap className="w-4 h-4 text-amber-600" />
                         ) : (
                           <Lock className="w-4 h-4 text-slate-400" />
                         )}

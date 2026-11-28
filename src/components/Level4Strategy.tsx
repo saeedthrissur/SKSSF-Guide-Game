@@ -99,6 +99,8 @@ interface Level4StrategyProps {
   onQuizAnswered: (lessonId: string, selectedIdx: number, isCorrect: boolean) => void;
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
   onOpenSupport?: () => void;
+  onOpenGrandFinale?: () => void;
+  onOpenGreetingStudio?: () => void;
   devUnlocked?: boolean;
 }
 
@@ -216,6 +218,8 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
   onQuizAnswered,
   onOpenBadgeStudio,
   onOpenSupport,
+  onOpenGrandFinale,
+  onOpenGreetingStudio,
   devUnlocked = false,
 }) => {
   const [activeTab, setActiveTab] = useState<L4Tab>(initialTab || 'climb');
@@ -2686,8 +2690,34 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                 <p className="text-xs font-semibold text-slate-600">
                   More Lessons &amp; Challenges Coming Soon! · {ALL_LESSONS.length} പാഠങ്ങൾ പൂർത്തിയാക്കിയ നിങ്ങൾക്ക് അഭിനന്ദനങ്ങൾ!
                 </p>
-                {onOpenSupport && (
-                  <div className="pt-2">
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+                  {onOpenGrandFinale && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playUnlock();
+                        onOpenGrandFinale();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-amber-300 text-xs font-black shadow-xs transition-colors cursor-pointer"
+                    >
+                      <span>🏆 62/62 ഗ്രാൻഡ് ഫിനാലെ വോൾട്ട് തുറക്കാം</span>
+                    </button>
+                  )}
+                  {onOpenGreetingStudio && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playPop();
+                        onOpenGreetingStudio();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shadow-xs transition-colors cursor-pointer"
+                    >
+                      <span>🌙 ആശംസാ &amp; ഗിഫ്റ്റ് കാർഡ് സ്റ്റുഡിയോ</span>
+                    </button>
+                  )}
+                  {onOpenSupport && (
                     <button
                       type="button"
                       onClick={() => {
@@ -2695,12 +2725,12 @@ export const Level4Strategy: React.FC<Level4StrategyProps> = ({
                         sound.playClick();
                         onOpenSupport();
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold shadow-2xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold shadow-2xs transition-colors cursor-pointer"
                     >
                       <span>🎁 ഒരു ഹദിയ നൽകാം</span>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </>
           )}
