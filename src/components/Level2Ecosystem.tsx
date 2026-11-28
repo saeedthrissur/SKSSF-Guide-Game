@@ -448,7 +448,7 @@ const SHORT_WING_CUES: Record<string, string> = {
 
 const OFFICIAL_LOGOS_VAULT = [
   { id: 'skju', title: '📰 SKJU · അൽ ബയാൻ · സുപ്രഭാതം', img: './assets/official/logo_samastha.png' },
-  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: './assets/aistudio/image_e03981e1.png' },
+  { id: 'skimvb', title: '🏫 SKIMVB · ജാമിഅ നൂരിയ്യ · SNEC', img: './assets/illustrations/image_e03981e1.png' },
   { id: 'sys_smf', title: '🕌 SMF & SYS · സുന്നി അഫ്കാർ', img: './assets/official/logo_smf.png' },
   { id: 'sksbv', title: '🌟 SKSBV · മജ്‌ലിസുൽ മആരിഫ്', img: './assets/official/logo_sksbv.png' },
   { id: 'special_cells', title: '🌍 SKJQ · SEA · SLC · SPC · SIC', img: './assets/official/logo_sic.png' },
@@ -495,7 +495,7 @@ const DAWA_AGE_PATHS = [
     wing: 'സമസ്തയുടെ എല്ലാ സംവിധാനങ്ങളും',
     title: 'എല്ലാവർക്കും പ്രായത്തിനനുസരിച്ച് ദീനീ ദഅ്‌വത്ത് ചെയ്യാം!',
     detail:
-      'മദ്‌റസാ പ്രായത്തിൽ SKSBV, 14 മുതൽ 40 വയസ്സ് വരെ SKSSF, 18 വയസ്സിന് മുകളിൽ SYS എന്നിങ്ങനെ സമസ്തയുടെ സംഘടനകളിൽ പ്രവർത്തിച്ച് നാട്ടിൽ ദീനീ ദഅ്‌വത്ത് സജീവമാക്കാം.',
+      'മദ്രസാ പ്രായത്തിൽ SKSBV, 14 മുതൽ 40 വയസ്സ് വരെ SKSSF, 18 വയസ്സിന് മുകളിൽ SYS എന്നിങ്ങനെ സമസ്തയുടെ സംഘടനകളിൽ പ്രവർത്തിച്ച് നാട്ടിൽ ദീനീ ദഅ്‌വത്ത് സജീവമാക്കാം.',
     speech:
       'കുട്ടികൾക്ക് എസ് കെ എസ് ബി വി, പതിനാല് മുതൽ നാൽപ്പത് വയസ്സ് വരെ എസ് കെ എസ് എസ് എഫ്, പതിനെട്ടിന് മുകളിൽ എസ് വൈ എസ് എന്നിങ്ങനെ എല്ലാവർക്കും സമസ്തയുടെ സംവിധാനങ്ങളിൽ ദീനീ ദഅ് വത്ത് ചെയ്യാം!',
   },

@@ -158,46 +158,82 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
   const [showInfo, setShowInfo] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
 
-  // Unified blurred start-theme & victory/defeat stage overlays
-  const [briefingOpen, setBriefingOpen] = useState(true);
+  // Unified 1-click launch + 1.5s win-grace hold & victory/defeat stage overlays
   const [showWinOverlay, setShowWinOverlay] = useState(false);
+  const [winGracePending, setWinGracePending] = useState(false);
   const [winSummary, setWinSummary] = useState<string | null>(null);
   const [portalOverlayActive, setPortalOverlayActive] = useState(false);
   const [overlayHostEl, setOverlayHostEl] = useState<HTMLDivElement | null>(null);
 
   const prevDoneRef = useRef(isGameDone);
   const prevWinTriggerRef = useRef(winTrigger);
+  const winGraceTimerRef = useRef<number | null>(null);
 
-  // Sync game completion with LessonFlowContext + trigger blurred Victory overlay on win
+  const clearWinGraceTimer = useCallback(() => {
+    if (winGraceTimerRef.current !== null) {
+      window.clearTimeout(winGraceTimerRef.current);
+      winGraceTimerRef.current = null;
+    }
+    setWinGracePending(false);
+  }, []);
+
+  const scheduleWinOverlay = useCallback(
+    (summary?: string) => {
+      if (summary !== undefined) {
+        setWinSummary(summary);
+      }
+      if (showWinOverlay) return;
+      if (winGraceTimerRef.current !== null) {
+        window.clearTimeout(winGraceTimerRef.current);
+      }
+      setWinGracePending(true);
+      setPortalOverlayActive(false);
+      winGraceTimerRef.current = window.setTimeout(() => {
+        winGraceTimerRef.current = null;
+        setWinGracePending(false);
+        setShowWinOverlay(true);
+      }, 1500);
+    },
+    [showWinOverlay]
+  );
+
+  // Clean up win-grace timer on unmount
+  useEffect(() => {
+    return () => {
+      if (winGraceTimerRef.current !== null) {
+        window.clearTimeout(winGraceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Sync game completion with LessonFlowContext + trigger 1.5s win-grace hold before Victory overlay
   useEffect(() => {
     if (isGameDone && activeLessonId) {
       markGameDone(activeLessonId);
     }
     if (!prevDoneRef.current && isGameDone && (isExpanded || isFullscreen)) {
-      setBriefingOpen(false);
-      setShowWinOverlay(true);
+      scheduleWinOverlay();
     }
     prevDoneRef.current = isGameDone;
-  }, [isGameDone, activeLessonId, markGameDone, isExpanded, isFullscreen]);
+  }, [isGameDone, activeLessonId, markGameDone, isExpanded, isFullscreen, scheduleWinOverlay]);
 
   // Also trigger Victory overlay when explicit winTrigger increments (handles replays of completed games!)
   useEffect(() => {
     if (winTrigger > prevWinTriggerRef.current && (isExpanded || isFullscreen)) {
-      setBriefingOpen(false);
-      setShowWinOverlay(true);
+      scheduleWinOverlay();
     }
     prevWinTriggerRef.current = winTrigger;
-  }, [winTrigger, isExpanded, isFullscreen]);
+  }, [winTrigger, isExpanded, isFullscreen, scheduleWinOverlay]);
 
   // Collapse & reset overlays cleanly when switching to a brand-new lesson
   useEffect(() => {
+    clearWinGraceTimer();
     setIsExpanded(defaultExpanded);
     setShowInfo(false);
-    setBriefingOpen(true);
     setShowWinOverlay(false);
     setWinSummary(null);
     setPortalOverlayActive(false);
-  }, [activeLessonId, defaultExpanded]);
+  }, [activeLessonId, defaultExpanded, clearWinGraceTimer]);
 
   // Sync fullscreen status with LessonFlowContext so FloatingPageNavigator hides in fullscreen
   useEffect(() => {
@@ -298,19 +334,29 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     };
   }, [isFullscreen]);
 
-  const notifyStageWin = useCallback((summary?: string) => {
-    setBriefingOpen(false);
-    setWinSummary(summary ?? null);
-    setShowWinOverlay(true);
-  }, []);
+  const notifyStageWin = useCallback(
+    (summary?: string) => {
+      scheduleWinOverlay(summary);
+    },
+    [scheduleWinOverlay]
+  );
+
+  const safeSetPortalOverlayActive = useCallback(
+    (active: boolean) => {
+      if (active && (winGracePending || showWinOverlay)) return;
+      setPortalOverlayActive(active);
+    },
+    [winGracePending, showWinOverlay]
+  );
 
   const enterFullscreen = () => {
     sound.unlockAudio();
     sound.playPop();
     lastActiveGameShellId = shellId;
     if (!isExpanded) {
-      setBriefingOpen(true);
+      clearWinGraceTimer();
       setShowWinOverlay(false);
+      setReplayKey((k) => k + 1);
     }
     setIsExpanded(true);
     setDismissedLandscapeFs(false);
@@ -343,8 +389,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
   const handleOpenLessonFromGame = useCallback(() => {
     sound.unlockAudio();
     sound.playClick();
+    clearWinGraceTimer();
     setShowWinOverlay(false);
-    setBriefingOpen(false);
     setPortalOverlayActive(false);
     if (isFullscreen) {
       setIsFullscreen(false);
@@ -363,27 +409,17 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
       onSkipGame?.();
     }
     goToStudyStep();
-  }, [isFullscreen, isGameDone, allowSkip, onSkipGame, goToStudyStep]);
+  }, [isFullscreen, isGameDone, allowSkip, onSkipGame, goToStudyStep, clearWinGraceTimer]);
 
   const handleReplay = () => {
     sound.unlockAudio();
     sound.playPop();
     lastActiveGameShellId = shellId;
+    clearWinGraceTimer();
     setIsExpanded(true);
     setShowWinOverlay(false);
     setWinSummary(null);
     setPortalOverlayActive(false);
-    setBriefingOpen(false);
-    setReplayKey((k) => k + 1);
-  };
-
-  const handleStartFromBriefing = () => {
-    sound.unlockAudio();
-    sound.playPop();
-    setBriefingOpen(false);
-    setShowWinOverlay(false);
-    setPortalOverlayActive(false);
-    // Remount fresh so any timer-based game starts with 100% full countdown
     setReplayKey((k) => k + 1);
   };
 
@@ -394,99 +430,62 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     getLessonThemeBrief(activeLessonId) ||
     'ലക്ഷ്യം കൃത്യമായി പൂർത്തിയാക്കി കവചം സംരക്ഷിച്ച് ദൗത്യം വിജയിക്കൂ!';
 
-  const shouldBlurGame = briefingOpen || showWinOverlay || portalOverlayActive;
+  const shouldBlurGame = showWinOverlay || portalOverlayActive;
 
   const portalContextValue: GameStagePortalContextValue = {
     overlayHostEl,
-    setPortalOverlayActive,
-    isStagePaused: shouldBlurGame,
+    setPortalOverlayActive: safeSetPortalOverlayActive,
+    isStagePaused: shouldBlurGame || winGracePending,
     notifyStageWin,
     openLesson: handleOpenLessonFromGame,
     hasLesson: hasLessonDrawerOnPage,
   };
 
-  // Shared game viewport with blurred background + Start Theme / Victory / Defeat Portal overlays
+  // Shared game viewport with 1-line inline Malayalam instruction strip + smooth Victory / Defeat overlays
   const renderGameViewport = (fullscreenLayout: boolean) => (
     <div
-      className={`relative rounded-2xl overflow-hidden ${
-        fullscreenLayout ? 'w-full flex-1 min-h-0 flex flex-col justify-center' : ''
+      className={`relative rounded-2xl overflow-hidden flex flex-col gap-1.5 ${
+        fullscreenLayout ? 'w-full flex-1 min-h-0 justify-center' : ''
       }`}
     >
-      {/* Underlying live game screen (blurs smoothly behind Start / Victory / Defeat overlays) */}
-      <div
-        className={`transition-all duration-300 ${
-          shouldBlurGame ? 'blur-[6px] scale-[0.99] pointer-events-none select-none opacity-85' : ''
-        }`}
-      >
-        <React.Fragment key={replayKey}>{children}</React.Fragment>
-      </div>
+      {/* Crisp 1-line Malayalam "How to Play" Strip — replaces blocking blurred Mission Brief modal */}
+      {!showWinOverlay && !portalOverlayActive && (
+        <div
+          className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold leading-snug shrink-0 ${
+            winGracePending
+              ? 'bg-emerald-600 text-white border border-emerald-400'
+              : fullscreenLayout
+              ? 'bg-emerald-950/90 text-emerald-100 border border-emerald-700/70'
+              : 'bg-amber-50 text-amber-950 border border-amber-200'
+          }`}
+        >
+          <span className="truncate">
+            {winGracePending
+              ? '🎉 മനോഹരം! ദൗത്യം വിജയിച്ചു...'
+              : `🎯 എങ്ങനെ കളിക്കാം: ${themeLine}`}
+          </span>
+        </div>
+      )}
 
-      {/* Portal Host for GameDefeatBurstOverlay (ALWAYS centered over the SAME blurred screen!) */}
-      <div
-        ref={setOverlayHostEl}
-        className={`absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 transition-all ${
-          portalOverlayActive
-            ? 'bg-slate-950/65 backdrop-blur-sm pointer-events-auto'
-            : 'pointer-events-none'
-        }`}
-      />
+      <div className={`relative rounded-2xl overflow-hidden ${fullscreenLayout ? 'flex-1 min-h-0' : ''}`}>
+        {/* Underlying live game screen (blurs smoothly behind Victory / Defeat overlays) */}
+        <div
+          className={`transition-all duration-300 ${
+            shouldBlurGame ? 'blur-[6px] scale-[0.99] pointer-events-none select-none opacity-85' : ''
+          }`}
+        >
+          <React.Fragment key={replayKey}>{children}</React.Fragment>
+        </div>
 
-      {/* BLURRED START-OF-GAME THEME OVERLAY */}
-      <AnimatePresence>
-        {briefingOpen && !portalOverlayActive && !showWinOverlay && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="absolute inset-0 z-40 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 12, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.94, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-              className="max-w-md w-full rounded-2xl border-2 border-emerald-400/75 bg-slate-900/95 text-white p-4 sm:p-5 text-center shadow-2xl space-y-3"
-            >
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-[11px] font-black tracking-wide">
-                <Gamepad2 className="w-3.5 h-3.5 text-amber-300" />
-                <span>ഗെയിം തീം · MISSION BRIEF</span>
-              </div>
-
-              <h4 className="text-sm sm:text-base font-black text-amber-300 leading-snug">
-                {title}
-              </h4>
-
-              <p className="text-xs sm:text-sm font-semibold text-slate-200 leading-relaxed bg-slate-950/65 border border-white/10 rounded-xl px-3.5 py-2.5">
-                {themeLine}
-              </p>
-
-              <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleStartFromBriefing}
-                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 border-b-4 border-emerald-800 text-xs sm:text-sm font-black shadow-lg cursor-pointer"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>കളിക്കാം! (Start Game)</span>
-                </motion.button>
-                {hasLessonDrawerOnPage && (
-                  <button
-                    type="button"
-                    onClick={handleOpenLessonFromGame}
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white text-xs sm:text-sm font-extrabold cursor-pointer active:scale-95 transition-transform"
-                  >
-                    <BookOpen className="w-4 h-4 text-amber-300" />
-                    <span>പാഠം വായിക്കാം</span>
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Portal Host for GameDefeatBurstOverlay (ALWAYS centered over the SAME blurred screen!) */}
+        <div
+          ref={setOverlayHostEl}
+          className={`absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-4 transition-all ${
+            portalOverlayActive
+              ? 'bg-slate-950/65 backdrop-blur-sm pointer-events-auto'
+              : 'pointer-events-none'
+          }`}
+        />
 
       {/* BLURRED SAME-SCREEN VICTORY OVERLAY */}
       <AnimatePresence>
@@ -565,6 +564,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 
@@ -573,19 +573,20 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
     return null;
   }
 
-  // COLLAPSED LAUNCHER CARD (Kid-Friendly, Unmistakable Playful Game Card)
+  // COLLAPSED LAUNCHER CARD (1-Click Direct Launch — Natural Kerala Malayalam)
   if (!isExpanded && !isFullscreen) {
     const openGameCard = () => {
       sound.unlockAudio();
       sound.playPop();
       lastActiveGameShellId = shellId;
+      clearWinGraceTimer();
       setShowWinOverlay(false);
       setPortalOverlayActive(false);
-      setBriefingOpen(true);
+      setReplayKey((k) => k + 1);
       setIsExpanded(true);
-      window.setTimeout(() => {
+      window.requestAnimationFrame(() => {
         containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 60);
+      });
     };
 
     return (
@@ -604,12 +605,12 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
           className="pointer-events-none absolute -bottom-10 -left-8 w-32 h-32 rounded-full bg-emerald-400/20 blur-2xl"
         />
 
-        {/* Row 1: Playful Animated Game Controller Emblem + Clear Kid-Friendly Game Tag & Title */}
+        {/* Row 1: Playful Animated Game Controller Emblem + Clear Malayalam Game Tag & Title */}
         <div className="relative z-10 flex items-start gap-3.5 w-full">
           <motion.button
             type="button"
             onClick={openGameCard}
-            aria-label="ഗെയിം തുറക്കാം"
+            aria-label="കളി തുടങ്ങാം"
             animate={{ rotate: [-3, 3, -3], y: [0, -2, 0] }}
             transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}
             className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-400 to-orange-400 text-slate-950 border-2 border-amber-100 border-b-4 border-b-amber-700 flex items-center justify-center shrink-0 shadow-lg cursor-pointer"
@@ -621,11 +622,11 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] sm:text-[11px] font-black tracking-wide shadow-2xs">
                 <Sparkles className="w-3 h-3" />
-                <span>രസകരമായ ഗെയിം · GAME</span>
+                <span>രസകരമായ കളി</span>
               </span>
               {isGameDone ? (
                 <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-400/25 text-emerald-200 border border-emerald-300/60">
-                  <CheckCircle2 className="w-3 h-3 text-amber-300" /> ജയിച്ച ഗെയിം 🏆
+                  <CheckCircle2 className="w-3 h-3 text-amber-300" /> ജയിച്ച കളി 🏆
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white/15 text-amber-200 border border-white/20">
@@ -649,7 +650,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96, y: 2 }}
             onClick={openGameCard}
-            className="relative overflow-hidden flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 hover:from-amber-200 hover:via-amber-300 hover:to-amber-400 text-slate-950 text-sm font-black border-2 border-amber-100 border-b-[5px] border-b-amber-700 shadow-lg cursor-pointer"
+            className="relative overflow-hidden flex-1 sm:flex-initial min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500 hover:from-amber-200 hover:via-amber-300 hover:to-amber-400 text-slate-950 text-sm font-black border-2 border-amber-100 border-b-[5px] border-b-amber-700 shadow-lg cursor-pointer"
           >
             {/* Animated Shine Sweep */}
             <motion.span
@@ -664,10 +665,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
               <Play className="w-4 h-4 fill-current relative z-10" />
             )}
             <span className="relative z-10">
-              {isGameDone ? 'വീണ്ടും കളിക്കാം!' : 'ഗെയിം കളിക്കാം!'}
-            </span>
-            <span className="relative z-10 px-1.5 py-0.5 rounded-md bg-slate-950/90 text-amber-300 text-[10px] font-black tracking-wider">
-              PLAY
+              {isGameDone ? 'വീണ്ടും കളിക്കാം!' : 'കളി തുടങ്ങാം!'}
             </span>
           </motion.button>
 
@@ -678,9 +676,9 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                 sound.playClick();
                 setShowInfo((v) => !v);
               }}
-              aria-label="ഗെയിം വിവരണം"
+              aria-label="കളിയുടെ വിവരണം"
               title="വിവരണം"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-colors cursor-pointer"
             >
               <Info className="w-4 h-4" />
             </button>
@@ -688,9 +686,9 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
             <button
               type="button"
               onClick={enterFullscreen}
-              title="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
-              aria-label="ഫുൾ സ്ക്രീനിൽ കളിക്കാം"
-              className="inline-flex items-center justify-center gap-1 px-2.5 h-9 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-amber-400/50 text-amber-300 text-xs font-extrabold transition-colors cursor-pointer"
+              title="വലിയ സ്ക്രീനിൽ കളിക്കാം"
+              aria-label="വലിയ സ്ക്രീനിൽ കളിക്കാം"
+              className="inline-flex items-center justify-center gap-1 px-3 min-w-[40px] min-h-[40px] rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-amber-400/50 text-amber-300 text-xs font-extrabold transition-colors cursor-pointer"
             >
               <VideoFullscreenEnterIcon className="w-4 h-4" />
               <span className="hidden sm:inline">വലിയ സ്ക്രീൻ</span>
@@ -700,7 +698,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
 
         {showInfo && (
           <div className="relative z-10 rounded-xl bg-slate-950/75 border border-amber-400/40 px-3.5 py-2.5 text-xs font-bold text-emerald-100 leading-relaxed">
-            ℹ️ ഈ പാഠം രസകരമായി കളിച്ചു പഠിക്കാൻ മഞ്ഞ <strong>“ഗെയിം കളിക്കാം! PLAY”</strong> ബട്ടൺ അമർത്തുക. ഗെയിമിന് പകരം നേരിട്ട് താഴത്തെ <strong>“Open Lesson”</strong> തുറന്ന് വായിക്കാനും കഴിയും.
+            ℹ️ ഈ പാഠം രസകരമായി കളിച്ചു പഠിക്കാൻ മഞ്ഞ <strong>“കളി തുടങ്ങാം!”</strong> ബട്ടൺ അമർത്തുക. നേരിട്ട് താഴത്തെ <strong>“പാഠം തുറക്കാം”</strong> അമർത്തി വായിക്കാനും കഴിയും.
           </div>
         )}
       </div>
@@ -735,9 +733,9 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     onClick={handleReplay}
                     title="വീണ്ടും കളിക്കാം (XP ആവർത്തിക്കില്ല)"
                     aria-label="വീണ്ടും കളിക്കാം"
-                    className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-[11px] font-extrabold transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1 px-2.5 min-w-[40px] min-h-[40px] rounded-lg bg-white/15 hover:bg-white/25 border border-white/25 text-white text-[11px] font-extrabold transition-colors cursor-pointer"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-4 h-4" />
                     <span className="hidden sm:inline">വീണ്ടും</span>
                   </button>
                   {hasLessonDrawerOnPage && (
@@ -746,13 +744,13 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                       onClick={handleOpenLessonFromGame}
                       aria-label="പാഠം തുറക്കാം"
                       title="പാഠം തുറക്കാം"
-                      className={`inline-flex items-center gap-1 px-2.5 h-8 rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer ${
+                      className={`inline-flex items-center justify-center gap-1 px-3 min-h-[40px] rounded-lg text-[11px] font-extrabold transition-colors cursor-pointer ${
                         isGameDone && !lessonAlreadyRead
                           ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-200 shadow-sm'
                           : 'bg-emerald-700 hover:bg-emerald-600 border border-emerald-400/60 text-white'
                       }`}
                     >
-                      <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                      <BookOpen className="w-4 h-4 shrink-0" />
                       <span>പാഠം</span>
                     </button>
                   )}
@@ -760,8 +758,8 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     type="button"
                     onClick={exitFullscreen}
                     title="ചെറുതാക്കാം"
-                    aria-label="ഫുൾ സ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കാം"
-                    className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xs transition-transform active:scale-95 cursor-pointer"
+                    aria-label="വലിയ സ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കാം"
+                    className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xs transition-transform active:scale-95 cursor-pointer"
                   >
                     <VideoFullscreenExitIcon className="w-4 h-4" />
                   </button>
@@ -803,13 +801,14 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                 type="button"
                 onClick={() => {
                   sound.playClick();
+                  clearWinGraceTimer();
                   setIsExpanded(false);
                 }}
-                aria-label="ഗെയിം അടയ്ക്കാം"
-                className="inline-flex items-center gap-1 px-3 h-8 rounded-lg bg-white hover:bg-slate-100 border border-emerald-300 text-emerald-950 text-xs font-extrabold cursor-pointer"
+                aria-label="കളി നിർത്താം"
+                className="inline-flex items-center justify-center gap-1 px-3 min-h-[40px] rounded-lg bg-white hover:bg-slate-100 border border-emerald-300 text-emerald-950 text-xs font-extrabold cursor-pointer"
               >
-                <ChevronUp className="w-3.5 h-3.5" />
-                <span>Close Game</span>
+                <ChevronUp className="w-4 h-4" />
+                <span>കളി നിർത്താം</span>
               </button>
 
               <div className="flex items-center gap-1.5 shrink-0">
@@ -820,10 +819,10 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     setShowInfo((v) => !v);
                   }}
                   title="വിവരണം"
-                  aria-label="ഗെയിം വിവരണം"
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white hover:bg-emerald-100 border border-emerald-200 text-emerald-800 cursor-pointer"
+                  aria-label="കളിയുടെ വിവരണം"
+                  className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg bg-white hover:bg-emerald-100 border border-emerald-200 text-emerald-800 cursor-pointer"
                 >
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-4 h-4" />
                 </button>
 
                 <button
@@ -831,10 +830,10 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   onClick={handleReplay}
                   title="വീണ്ടും കളിക്കാം (XP ആവർത്തിക്കില്ല)"
                   aria-label="വീണ്ടും കളിക്കാം"
-                  className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1 px-3 min-h-[40px] rounded-lg bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Replay</span>
+                  <RotateCcw className="w-4 h-4" />
+                  <span>വീണ്ടും</span>
                 </button>
 
                 {hasLessonDrawerOnPage && (
@@ -843,13 +842,13 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                     onClick={handleOpenLessonFromGame}
                     title="പാഠം തുറക്കാം"
                     aria-label="പാഠം തുറക്കാം"
-                    className={`inline-flex items-center gap-1 px-3 h-8 rounded-lg text-xs font-extrabold transition-all cursor-pointer active:scale-95 ${
+                    className={`inline-flex items-center justify-center gap-1 px-3 min-h-[40px] rounded-lg text-xs font-extrabold transition-all cursor-pointer active:scale-95 ${
                       isGameDone && !lessonAlreadyRead
                         ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 ring-2 ring-amber-300 shadow-xs'
                         : 'bg-emerald-700 hover:bg-emerald-800 text-white border-b-2 border-emerald-950 shadow-2xs'
                     }`}
                   >
-                    <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    <BookOpen className="w-4 h-4 shrink-0" />
                     <span>{lessonAlreadyRead ? 'പാഠം ✓' : 'പാഠം'}</span>
                   </button>
                 )}
@@ -857,11 +856,11 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                 <button
                   type="button"
                   onClick={enterFullscreen}
-                  title="ഫുൾ സ്ക്രീൻ"
-                  aria-label="ഫുൾ സ്ക്രീൻ"
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-amber-300 transition-colors cursor-pointer"
+                  title="വലിയ സ്ക്രീൻ"
+                  aria-label="വലിയ സ്ക്രീൻ"
+                  className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg bg-emerald-800 hover:bg-emerald-900 text-amber-300 transition-colors cursor-pointer"
                 >
-                  <VideoFullscreenEnterIcon className="w-3.5 h-3.5" />
+                  <VideoFullscreenEnterIcon className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -869,7 +868,7 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
 
           {showInfo && (
             <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-950 leading-relaxed">
-              ℹ️ ഗെയിം കളിക്കുമ്പോഴോ പൂർത്തിയാക്കിയാലോ മുകളിലെ <strong>“📖 പാഠം”</strong> ബട്ടൺ അമർത്തി നേരിട്ട് പാഠം വായിച്ച് ക്വിസ് തുറക്കാം. “Replay” അമർത്തി എപ്പോൾ വേണമെങ്കിലും വീണ്ടും കളിക്കാം.
+              ℹ️ കളി പൂർത്തിയാക്കിയാലോ ഇടയ്ക്ക് വെച്ചോ മുകളിലെ <strong>“📖 പാഠം”</strong> ബട്ടൺ അമർത്തി നേരിട്ട് പാഠം വായിച്ച് ക്വിസ് തുറക്കാം. “വീണ്ടും” അമർത്തി എപ്പോൾ വേണമെങ്കിലും വീണ്ടും കളിക്കാം.
             </div>
           )}
 

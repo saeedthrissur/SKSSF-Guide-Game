@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Award, CheckCircle2, RotateCcw, Sparkles, Volume2 } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
-import { GameFullscreenShell, useGameFullscreen } from './GameFullscreenShell';
+import { GameFullscreenShell, useGameFullscreen, useGameStagePaused } from './GameFullscreenShell';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
@@ -682,14 +682,14 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                       {/* Official Sky-Blue Hoist Canton Sewn Against the Right Pole */}
                       <rect x="60" y="-4" width="38" height="44" fill="#0EA5E9" />
 
-                      {/* Pure Geometric White Crescent (opening toward hoist pole) & 5-Pointed Star */}
+                      {/* Pure Geometric White Crescent (opening toward right hoist pole) & 5-Pointed Star nestled cleanly in opening */}
                       <g transform="translate(79, 20)">
                         <path
-                          d="M -3.5,-9.5 A 10.2,10.2 0 1,1 -9.5,3.5 A 8.2,8.2 0 1,0 -3.5,-9.5 Z"
+                          d="M -4.11,-8.77 A 10.5,10.5 0 1,0 9.59,2.72 A 9.4,9.4 0 1,1 -4.11,-8.77 Z"
                           fill="#FFFFFF"
                         />
                         <polygon
-                          points="4.2,-7.6 5.1,-5.1 7.7,-5.0 5.6,-3.4 6.4,-0.9 4.2,-2.4 2.0,-0.9 2.8,-3.4 0.7,-5.0 3.3,-5.1"
+                          points="2.4,-6.9 3.4,-4.0 6.5,-4.0 4.1,-2.1 4.9,0.8 2.4,-0.9 -0.1,0.8 0.7,-2.1 -1.7,-4.0 1.4,-4.0"
                           fill="#FFFFFF"
                         />
                       </g>
@@ -886,7 +886,7 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
         ) : !allPlaced ? (
           <div className="mt-3 space-y-2">
             <p className="text-[11px] font-extrabold text-slate-700 text-center">
-              താഴെ നിന്ന് ഓരോ ഉപകരണവും തിരഞ്ഞെടുത്ത് വാഹനത്തിലെ കൃത്യമായ സ്ഥാനത്ത് ഘടിപ്പിക്കുക:
+              താഴെ നിന്ന് ഓരോ ഉപകരണവും തൊട്ട് തിരഞ്ഞെടുത്ത് കൃത്യമായ സ്ഥലത്ത് തൊടുക:
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {JEEP_PARTS.map((part) => {
@@ -911,7 +911,7 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                       setWrongMsg(null);
                     }}
                     disabled={isDone}
-                    className={`relative py-2.5 px-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                    className={`relative min-h-[44px] py-2.5 px-2.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                       isDone
                         ? 'bg-emerald-50 border-emerald-300 text-emerald-800 opacity-60 cursor-default'
                         : isSelected
@@ -1072,6 +1072,7 @@ export const MadrasaBoardActivity: React.FC<{
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
   onComplete?: () => void;
 }> = ({ onAwardXp, onUnlockBadge, onOpenBadgeStudio, onComplete }) => {
+  const stagePaused = useGameStagePaused();
   const [placed, setPlaced] = useState<Record<MadrasaPartId, boolean>>({
     arch_flag: false,
     main_board: false,
@@ -1107,19 +1108,20 @@ export const MadrasaBoardActivity: React.FC<{
   };
 
   useEffect(() => {
-    if (!started || allDone || failed) return;
+    if (!started || allDone || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
-          setFailReason('⏱️ മദ്രസ ബെൽ അടിച്ചു! 28 സെക്കൻഡിനുള്ളിൽ 4 ഭാഗങ്ങളും ഒരുക്കണം — വീണ്ടും ശ്രമിക്കാം!');
+          setFailReason('⏱️ മദ്രസ ബെൽ അടിച്ചു! 28 സെക്കൻഡിനുള്ളിൽ 4 ഭാഗങ്ങളും ഒരുക്കണം — സാരമില്ല, ഒന്നുകൂടി ശ്രമിക്കാം!');
           return 0;
         }
         return t - 1;
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, allDone, failed]);
+  }, [started, allDone, failed, stagePaused]);
 
   const loseShield = (reasonMsg: string) => {
     sound.playError();
@@ -1571,7 +1573,7 @@ const AidCrateGraphic: React.FC<{ variant: AidVariant }> = ({ variant }) => {
           <circle cx="48" cy="36" r="4.5" fill="#FEE2E2" stroke="#DC2626" strokeWidth="1.5" />
           <path d="M48 33 Q51 37 48 39 Q45 37 48 33 Z" fill="#DC2626" />
         </svg>
-        <span className="-mt-1 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] font-black leading-none shadow-xs">
+        <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-black leading-snug shadow-xs">
           രക്തം · മരുന്ന്
         </span>
       </div>
@@ -1592,7 +1594,7 @@ const AidCrateGraphic: React.FC<{ variant: AidVariant }> = ({ variant }) => {
             </g>
           ))}
         </svg>
-        <span className="-mt-1 px-1.5 py-0.5 rounded bg-sky-600 text-white text-[9px] font-black leading-none shadow-xs">
+        <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-sky-600 text-white text-[10px] font-black leading-snug shadow-xs">
           കുടിവെള്ളം
         </span>
       </div>
@@ -1611,7 +1613,7 @@ const AidCrateGraphic: React.FC<{ variant: AidVariant }> = ({ variant }) => {
         <rect x="18.5" y="34" width="3" height="6" fill="#059669" />
         <rect x="17" y="35.5" width="6" height="3" fill="#059669" />
       </svg>
-      <span className="-mt-1 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[9px] font-black leading-none shadow-xs">
+      <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-black leading-snug shadow-xs">
         സഹായ കിറ്റ്
       </span>
     </div>
@@ -1629,7 +1631,7 @@ const RoadHazardGraphic: React.FC<{ variant: HazardVariant }> = ({ variant }) =>
           <ellipse cx="36" cy="30" rx="14" ry="6" fill="#020617" />
           <path d="M12 24 L20 20 M56 22 L64 26 M26 14 L32 18" stroke="#94A3B8" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <span className="-mt-1 px-1.5 py-0.5 rounded bg-slate-950/90 border border-amber-400 text-amber-300 text-[9px] font-black leading-none">
+        <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-slate-950/90 border border-amber-400 text-amber-300 text-[10px] font-black leading-snug">
           റോഡ് കുഴി
         </span>
       </div>
@@ -1649,7 +1651,7 @@ const RoadHazardGraphic: React.FC<{ variant: HazardVariant }> = ({ variant }) =>
           <ellipse cx="30" cy="23" rx="11" ry="4.5" fill="#38BDF8" opacity="0.35" />
           <ellipse cx="44" cy="29" rx="8" ry="3.5" fill="#A855F7" opacity="0.4" />
         </svg>
-        <span className="-mt-1 px-1.5 py-0.5 rounded bg-slate-950/90 border border-indigo-400 text-indigo-200 text-[9px] font-black leading-none">
+        <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-slate-950/90 border border-indigo-400 text-indigo-200 text-[10px] font-black leading-snug">
           ഓയിൽ ചോർച്ച
         </span>
       </div>
@@ -1668,7 +1670,7 @@ const RoadHazardGraphic: React.FC<{ variant: HazardVariant }> = ({ variant }) =>
         <circle cx="16" cy="9" r="4.5" fill="#FACC15" stroke="#B45309" strokeWidth="1.5" />
         <circle cx="60" cy="9" r="4.5" fill="#FACC15" stroke="#B45309" strokeWidth="1.5" />
       </svg>
-      <span className="-mt-1 px-1.5 py-0.5 rounded bg-orange-600 text-white text-[9px] font-black leading-none">
+      <span className="-mt-0.5 px-1.5 py-0.5 rounded bg-orange-600 text-white text-[10px] font-black leading-snug">
         ബാരിക്കേഡ്
       </span>
     </div>
@@ -1681,6 +1683,7 @@ export const ViqayaRescueVehicleActivity: React.FC<{
   onOpenBadgeStudio?: (presetBadgeId: string) => void;
   onComplete?: () => void;
 }> = ({ onAwardXp, onUnlockBadge, onOpenBadgeStudio, onComplete }) => {
+  const stagePaused = useGameStagePaused();
   const [missionIdx, setMissionIdx] = useState(0);
   const [lane, setLane] = useState<0 | 1 | 2>(1);
   const [steerTilt, setSteerTilt] = useState<-1 | 0 | 1>(0);
@@ -1708,6 +1711,7 @@ export const ViqayaRescueVehicleActivity: React.FC<{
   const missionRef = useRef(0);
   const collectedRef = useRef(0);
   const livesRef = useRef(3);
+  const objectsRef = useRef<RoadObj[]>([]);
   const uidRef = useRef(1);
   const floodRef = useRef<{ active: boolean; y: number; cleared: boolean }>({
     active: false,
@@ -1796,12 +1800,13 @@ export const ViqayaRescueVehicleActivity: React.FC<{
     };
   }, [playing, won, failed]);
 
-  // Game Loop: smooth 60ms ticks with variable speed, braking & flowing floodwater current
+  // Game Loop: smooth 60ms ticks with variable speed, braking & flowing floodwater current (pauses on overlay/background)
   useEffect(() => {
-    if (!playing || won || failed) return;
+    if (!playing || won || failed || stagePaused) return;
     let tick = 0;
 
     const timer = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       tick += 1;
       const mIdx = missionRef.current;
       const mDef = VIQAYA_MISSIONS[mIdx];
@@ -1853,98 +1858,111 @@ export const ViqayaRescueVehicleActivity: React.FC<{
         setStatusMsg('മുന്നറിയിപ്പ്! റോഡിന് കുറുകെ വെള്ളമൊഴുക്ക് വരുന്നു — ബ്രേക്ക് പിടിച്ച് നിർത്തൂ!');
       }
 
-      setObjects((prev) => {
-        const nextList: RoadObj[] = [];
-        for (const obj of prev) {
-          const ny = obj.y + roadSpeed;
-          // Collision window near ambulance (y between 72 and 89)
-          if (ny >= 72 && ny <= 89 && obj.lane === laneRef.current) {
-            if (obj.kind === 'aid') {
-              const newCount = collectedRef.current + 1;
-              collectedRef.current = newCount;
-              setCollected(newCount);
-              sound.playSuccess(newCount);
-              if (newCount >= mDef.goalCount) {
-                if (mIdx + 1 < VIQAYA_MISSIONS.length) {
-                  const nextMission = VIQAYA_MISSIONS[mIdx + 1];
-                  missionRef.current = mIdx + 1;
-                  collectedRef.current = 0;
-                  floodRef.current = { active: false, y: -15, cleared: false };
-                  setFloodSurge({ active: false, y: -15, cleared: false });
-                  setMissionIdx(mIdx + 1);
-                  setCollected(0);
-                  onAwardXp(15, `viqaya_mission_${mDef.id}`);
-                  setStatusMsg(`${mDef.title} വിജയിച്ചു! അടുത്തത്: ${nextMission.title}`);
-                  narrator.speak(mDef.speech);
-                  return [];
-                } else {
-                  setWon(true);
-                  setPlaying(false);
-                  sound.playHoist();
-                  onAwardXp(40, 'viqaya_prep_complete');
-                  onUnlockBadge?.('ആദർശരക്ഷാധികാരി');
-                  onComplete?.();
-                  setStatusMsg('മൂന്ന് വിഖായ & അലേർട്ട് രക്ഷാദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി!');
-                  narrator.speak('അടിപൊളി! പ്രളയ ദുരിതാശ്വാസം, ആശുപത്രി എക്സ്പ്രസ്, ഹജ്ജ് സേവനം എന്നീ മൂന്ന് വിഖായ ദൗത്യങ്ങളും വിജയിച്ചു!');
-                  return [];
-                }
+      // Compute collisions, aid collection, and spawning cleanly outside React state updater (StrictMode safe!)
+      const prevObjects = objectsRef.current;
+      const nextList: RoadObj[] = [];
+      let resetRoad = false;
+
+      for (const obj of prevObjects) {
+        const ny = obj.y + roadSpeed;
+        // Collision window near ambulance (y between 72 and 89)
+        if (ny >= 72 && ny <= 89 && obj.lane === laneRef.current) {
+          if (obj.kind === 'aid') {
+            const newCount = collectedRef.current + 1;
+            collectedRef.current = newCount;
+            setCollected(newCount);
+            sound.playSuccess(newCount);
+            if (newCount >= mDef.goalCount) {
+              if (mIdx + 1 < VIQAYA_MISSIONS.length) {
+                const nextMission = VIQAYA_MISSIONS[mIdx + 1];
+                missionRef.current = mIdx + 1;
+                collectedRef.current = 0;
+                floodRef.current = { active: false, y: -15, cleared: false };
+                setFloodSurge({ active: false, y: -15, cleared: false });
+                setMissionIdx(mIdx + 1);
+                setCollected(0);
+                onAwardXp(15, `viqaya_mission_${mDef.id}`);
+                setStatusMsg(`${mDef.title} വിജയിച്ചു! അടുത്തത്: ${nextMission.title}`);
+                narrator.speak(mDef.speech);
+                resetRoad = true;
+                break;
               } else {
-                setStatusMsg(`${mDef.needLabel} ശേഖരിച്ചു (${newCount}/${mDef.goalCount})`);
+                setWon(true);
+                setPlaying(false);
+                sound.playHoist();
+                onAwardXp(40, 'viqaya_prep_complete');
+                onUnlockBadge?.('ആദർശരക്ഷാധികാരി');
+                onComplete?.();
+                setStatusMsg('മൂന്ന് വിഖായ & അലേർട്ട് രക്ഷാദൗത്യങ്ങളും വിജയകരമായി പൂർത്തിയാക്കി!');
+                narrator.speak('അടിപൊളി! പ്രളയ ദുരിതാശ്വാസം, ആശുപത്രി എക്സ്പ്രസ്, ഹജ്ജ് സേവനം എന്നീ മൂന്ന് വിഖായ ദൗത്യങ്ങളും വിജയിച്ചു!');
+                resetRoad = true;
+                break;
               }
             } else {
-              // Hit road obstacle!
-              const nextLives = Math.max(0, livesRef.current - 1);
-              livesRef.current = nextLives;
-              setLives(nextLives);
-              sound.playError();
-              setHitFlash(true);
-              window.setTimeout(() => setHitFlash(false), 320);
-              const hitName =
-                obj.hazardVariant === 'pothole'
-                  ? 'റോഡ് കുഴി'
-                  : obj.hazardVariant === 'oil'
-                  ? 'ഓയിൽ ചോർച്ച'
-                  : 'റോഡ് ബാരിക്കേഡ്';
-              if (nextLives <= 0) {
-                setFailed(true);
-                setPlaying(false);
-                setStatusMsg('വാഹനത്തിന് 3 തവണ തടസ്സമേറ്റു! വേഗം നിയന്ത്രിച്ച് വീണ്ടും ശ്രമിക്കാം.');
-                return [];
-              } else {
-                setStatusMsg(`${hitName} തട്ടി! ശ്രദ്ധിച്ച് സ്റ്റിയറിംഗ് തിരിക്കൂ (ബാക്കി കവചം: ${nextLives})`);
-              }
+              setStatusMsg(`${mDef.needLabel} ശേഖരിച്ചു (${newCount}/${mDef.goalCount})`);
             }
-            continue;
+          } else {
+            // Hit road obstacle!
+            const nextLives = Math.max(0, livesRef.current - 1);
+            livesRef.current = nextLives;
+            setLives(nextLives);
+            sound.playError();
+            setHitFlash(true);
+            window.setTimeout(() => setHitFlash(false), 320);
+            const hitName =
+              obj.hazardVariant === 'pothole'
+                ? 'റോഡ് കുഴി'
+                : obj.hazardVariant === 'oil'
+                ? 'ഓയിൽ ചോർച്ച'
+                : 'റോഡ് ബാരിക്കേഡ്';
+            if (nextLives <= 0) {
+              setFailed(true);
+              setPlaying(false);
+              setStatusMsg('വാഹനത്തിന് 3 തവണ തടസ്സമേറ്റു! വേഗം നിയന്ത്രിച്ച് വീണ്ടും ശ്രമിക്കാം.');
+              resetRoad = true;
+              break;
+            } else {
+              setStatusMsg(`${hitName} തട്ടി! ശ്രദ്ധിച്ച് സ്റ്റിയറിംഗ് തിരിക്കൂ (ബാക്കി കവചം: ${nextLives})`);
+            }
           }
-          if (ny < 106) {
-            nextList.push({ ...obj, y: ny });
-          }
+          continue;
         }
+        if (ny < 106) {
+          nextList.push({ ...obj, y: ny });
+        }
+      }
 
-        // Spawn aid boxes & realistic hazards only while moving (and not overlapping active flood surge)
-        const spawnEvery = speedRef.current === 3 ? 11 : speedRef.current === 2 ? 14 : 18;
-        if (!isBrakingNow && !floodRef.current.active && tick % spawnEvery === 0) {
-          const spawnLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
-          const isHazard = Math.random() < 0.54;
-          const aidVariant: AidVariant =
-            mIdx === 0 ? 'relief_box' : mIdx === 1 ? 'blood_box' : 'water_pack';
-          const hazardPool: HazardVariant[] =
-            mIdx === 0
-              ? ['pothole', 'oil', 'barricade']
-              : mIdx === 1
-              ? ['barricade', 'oil', 'pothole']
-              : ['barricade', 'pothole', 'oil'];
-          const hazardVariant = hazardPool[Math.floor(Math.random() * hazardPool.length)];
-          nextList.push({
-            uid: uidRef.current++,
-            lane: spawnLane,
-            y: -10,
-            kind: isHazard ? 'hazard' : 'aid',
-            ...(isHazard ? { hazardVariant } : { aidVariant }),
-          });
-        }
-        return nextList;
-      });
+      if (resetRoad) {
+        objectsRef.current = [];
+        setObjects([]);
+        return;
+      }
+
+      // Spawn aid boxes & realistic hazards only while moving (and not overlapping active flood surge)
+      const spawnEvery = speedRef.current === 3 ? 11 : speedRef.current === 2 ? 14 : 18;
+      if (!isBrakingNow && !floodRef.current.active && tick % spawnEvery === 0) {
+        const spawnLane = Math.floor(Math.random() * 3) as 0 | 1 | 2;
+        const isHazard = Math.random() < 0.54;
+        const aidVariant: AidVariant =
+          mIdx === 0 ? 'relief_box' : mIdx === 1 ? 'blood_box' : 'water_pack';
+        const hazardPool: HazardVariant[] =
+          mIdx === 0
+            ? ['pothole', 'oil', 'barricade']
+            : mIdx === 1
+            ? ['barricade', 'oil', 'pothole']
+            : ['barricade', 'pothole', 'oil'];
+        const hazardVariant = hazardPool[Math.floor(Math.random() * hazardPool.length)];
+        nextList.push({
+          uid: uidRef.current++,
+          lane: spawnLane,
+          y: -10,
+          kind: isHazard ? 'hazard' : 'aid',
+          ...(isHazard ? { hazardVariant } : { aidVariant }),
+        });
+      }
+
+      objectsRef.current = nextList;
+      setObjects(nextList);
     }, 60);
 
     return () => window.clearInterval(timer);
@@ -1959,6 +1977,7 @@ export const ViqayaRescueVehicleActivity: React.FC<{
     laneRef.current = 1;
     speedRef.current = 2;
     brakingRef.current = false;
+    objectsRef.current = [];
     floodRef.current = { active: false, y: -15, cleared: false };
     setMissionIdx(0);
     setCollected(0);

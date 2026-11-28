@@ -135,6 +135,10 @@ class SoundEngine {
     if (typeof window === 'undefined') return;
     const kick = () => {
       this.unlockAudio();
+      if (!this.muted && this.ctx && this.ctx.state === 'running') {
+        window.removeEventListener('pointerdown', kick, true);
+        window.removeEventListener('keydown', kick, true);
+      }
     };
     window.addEventListener('pointerdown', kick, { capture: true, passive: true });
     window.addEventListener('keydown', kick, { capture: true, passive: true });
@@ -209,6 +213,7 @@ class SoundEngine {
     this.preset = 'voice_focus';
     this.soundPack = 'classic';
     this.stopAmbience();
+    this.stopSpiritualAudio();
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.removeItem('skssf_guide_audio_v3');
@@ -324,18 +329,15 @@ class SoundEngine {
 
   private getEffectiveSpiritualGain(): number {
     if (this.muted || this.spiritualPct <= 0) return 0;
-    const base = Math.pow(this.spiritualPct / 100, 1.35) * 0.72;
-    // Gently duck background Quran/Adhan while narrator is speaking so both remain pleasant
-    if (this.ducked) {
-      return Math.min(base, base * 0.35);
-    }
-    return base;
+    return Math.pow(this.spiritualPct / 100, 1.35) * 0.72;
   }
 
   private getEffectiveSfxGain(baseWeight = 1.0): number {
     if (this.muted || !this.sfxEnabled || this.sfxPct <= 0) return 0;
+    // Respectfully silence non-spiritual SFX (clicks, applause, chimes) during Quran or Adhan
+    if (this.quranActive || this.adhanActive) return 0;
     const raw = Math.pow(this.sfxPct / 100, 1.45) * 0.22 * baseWeight;
-    if (this.ducked || this.quranActive || this.adhanActive) {
+    if (this.ducked) {
       return Math.min(raw, raw * 0.35);
     }
     return raw;
@@ -639,6 +641,7 @@ class SoundEngine {
     if (typeof window === 'undefined') return;
     if (this.muted) {
       this.muted = false;
+      this.onMuteChange?.(false);
     }
     if (trackId) {
       this.quranTrack = trackId;
@@ -711,6 +714,7 @@ class SoundEngine {
     if (typeof window === 'undefined') return;
     if (this.muted) {
       this.muted = false;
+      this.onMuteChange?.(false);
     }
     this.stopQuran();
     this.onBeforeSpiritualPlay?.();
@@ -721,7 +725,7 @@ class SoundEngine {
     }
 
     const audio = new Audio('./assets/audio/adhan_full.mp3');
-    audio.loop = true;
+    audio.loop = false;
     audio.volume = this.getEffectiveSpiritualGain();
     audio.onended = () => {
       if (this.adhanAudio === audio) {
@@ -841,7 +845,9 @@ class SoundEngine {
 
   // ==================== TACTILE UI SOUND EFFECTS ====================
   private getToneGain(base: number): number {
-    if (this.muted || !this.sfxEnabled || this.sfxPct <= 0) return 0;
+    if (this.muted || !this.sfxEnabled || this.sfxPct <= 0 || this.quranActive || this.adhanActive) {
+      return 0;
+    }
     return base * Math.pow(this.sfxPct / 100, 1.5) * 1.15;
   }
 
@@ -1005,20 +1011,25 @@ class SoundEngine {
 
   public playError() {
     const ctx = this.getContext();
-    const g = this.getToneGain(0.055);
+    const g = this.getToneGain(0.038);
     if (!ctx || g <= 0) return;
     try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(240, ctx.currentTime);
-      osc.frequency.linearRampToValueAtTime(160, ctx.currentTime + 0.14);
-      gain.gain.setValueAtTime(g, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.17);
+      // Gentle, dignified soft two-note descending chime (never a harsh buzzer)
+      const notes = [330, 277.18];
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const start = ctx.currentTime + idx * 0.09;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.linearRampToValueAtTime(g, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.16);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.17);
+      });
     } catch {
       // Ignore
     }

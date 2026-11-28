@@ -78,6 +78,25 @@ export const smoothScrollToSelector = (selector: string): boolean => {
   return false;
 };
 
+const scrollWithRafRetries = (
+  selector: string,
+  fallback: () => void,
+  maxFrames = 5
+): void => {
+  if (typeof window === 'undefined') return;
+  let attempts = 0;
+  const step = () => {
+    attempts += 1;
+    if (smoothScrollToSelector(selector)) return;
+    if (attempts < maxFrames) {
+      window.requestAnimationFrame(step);
+    } else {
+      fallback();
+    }
+  };
+  window.requestAnimationFrame(step);
+};
+
 export const LessonFlowProvider: React.FC<{
   activeLessonId: string;
   quizDoneLessons: Record<string, boolean>;
@@ -139,26 +158,37 @@ export const LessonFlowProvider: React.FC<{
 
   const goToStudyStep = useCallback(() => {
     setLessonViewStep('study');
-    window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent('skssf:open-lesson'));
-      window.setTimeout(() => {
-        const found = smoothScrollToSelector('[data-lesson-drawer="true"]');
-        if (!found) {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      }, 60);
-    }, 40);
+      scrollWithRafRetries(
+        '[data-lesson-drawer="true"]',
+        () => {
+          if (!smoothScrollToSelector('[data-lesson-quiz="true"]')) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        },
+        6
+      );
+    });
   }, []);
 
   const goToPlayStep = useCallback(() => {
     setLessonViewStep('play');
-    window.setTimeout(() => {
-      const found = smoothScrollToSelector('[data-lesson-game="true"]');
-      if (!found) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }, 60);
+    scrollWithRafRetries(
+      '[data-lesson-game="true"]',
+      () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+      5
+    );
   }, []);
+
+  // Allow any child game or scrollToActiveQuiz() call from Screen 1 to cleanly switch to Study/Quiz
+  useEffect(() => {
+    const handleGoToStudy = () => {
+      goToStudyStep();
+    };
+    window.addEventListener('skssf:go-to-study', handleGoToStudy);
+    return () => window.removeEventListener('skssf:go-to-study', handleGoToStudy);
+  }, [goToStudyStep]);
 
   const confirmLesson = useCallback(
     (lessonId?: string) => {
@@ -290,13 +320,13 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
     if (lessonViewStep !== targetStep) {
       setLessonViewStep(targetStep);
     }
-    window.setTimeout(() => {
+    window.requestAnimationFrame(() => {
       if (openEvent) {
         window.dispatchEvent(new CustomEvent(openEvent));
       }
-      window.setTimeout(() => {
-        const found = smoothScrollToSelector(selector);
-        if (!found) {
+      scrollWithRafRetries(
+        selector,
+        () => {
           if (targetStep === 'play') {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           } else if (selector === '[data-lesson-quiz="true"]') {
@@ -304,9 +334,10 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
           } else {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }
-        }
-      }, 90);
-    }, 50);
+        },
+        6
+      );
+    });
   };
 
   return (
@@ -324,24 +355,24 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
             <div className="bg-emerald-700 px-3.5 py-2.5 flex items-center justify-between text-white">
               <div className="flex items-center gap-2">
                 <Compass className="w-4 h-4 text-amber-300" />
-                <span className="text-xs font-extrabold">പേജ് നാവിഗേഷൻ</span>
+                <span className="text-xs font-extrabold">പേജ് വഴികാട്ടി</span>
               </div>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => setShowInfo((v) => !v)}
-                  aria-label="നാവിഗേഷൻ വിവരണം"
-                  className="p-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors cursor-pointer"
+                  aria-label="വഴികാട്ടി വിവരണം"
+                  className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors cursor-pointer flex items-center justify-center"
                 >
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
                   aria-label="അടയ്ക്കുക"
-                  className="p-1 rounded-lg bg-white/15 hover:bg-white/25 transition-colors cursor-pointer"
+                  className="min-w-[36px] min-h-[36px] p-1.5 rounded-lg bg-white/15 hover:bg-white/25 transition-colors cursor-pointer flex items-center justify-center"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -492,15 +523,15 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          aria-label="പേജ് നാവിഗേഷൻ തുറക്കുക"
-          className={`flex items-center gap-1.5 p-2.5 sm:px-3.5 sm:py-2.5 rounded-full font-extrabold text-xs shadow-lg border-2 backdrop-blur-xs transition-all active:scale-95 cursor-pointer ${
+          aria-label="പേജ് വഴികാട്ടി തുറക്കുക"
+          className={`min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2.5 rounded-full font-extrabold text-xs shadow-lg border-2 backdrop-blur-xs transition-all active:scale-95 cursor-pointer ${
             open
               ? 'bg-slate-900/95 text-white border-slate-700'
               : 'bg-emerald-700/95 hover:bg-emerald-800 text-white border-amber-300'
           }`}
         >
           {open ? <X className="w-4 h-4" /> : <Compass className="w-4 h-4 text-amber-300" />}
-          <span className="hidden sm:inline">{open ? 'അടയ്ക്കുക' : 'നാവിഗേഷൻ'}</span>
+          <span className="hidden sm:inline">{open ? 'അടയ്ക്കുക' : 'വഴികാട്ടി'}</span>
         </button>
       </div>
     </div>

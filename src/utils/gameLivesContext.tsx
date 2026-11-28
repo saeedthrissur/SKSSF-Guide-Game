@@ -1,6 +1,6 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { RotateCcw } from 'lucide-react';
+import { CheckCircle2, Heart, RotateCcw, Sparkles } from 'lucide-react';
 import { sound } from './sound';
 
 export interface HeartBreakEvent {
@@ -102,7 +102,7 @@ export const HeaderHeartsBar: React.FC = () => {
   return (
     <div
       aria-label={`ബാക്കി ജീവൻ: ${lives}/${maxLives}`}
-      title={`ക്വിസ് ജീവൻ: ${lives}/${maxLives} (3 തവണ തെറ്റിച്ചാൽ പാഠം ആദ്യം മുതൽ തുടങ്ങും)`}
+      title={`ക്വിസ് ജീവൻ: ${lives}/${maxLives} (3 ഹൃദയവും കഴിഞ്ഞാൽ 2 റിവിഷൻ ചോദ്യങ്ങളിലൂടെ ഹൃദയം തിരിച്ചുപിടിക്കാം)`}
       className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl border-2 transition-colors shrink-0 ${
         lives <= 1
           ? 'bg-rose-100 border-rose-400 shadow-xs'
@@ -237,12 +237,106 @@ export const HeartBreakFlightOverlay: React.FC<{
   );
 };
 
-/* FULL RESET GAME OVER MODAL WHEN ALL 3 HEARTS BREAK */
+interface RecoveryQuestion {
+  q: string;
+  options: string[];
+  correctIdx: number;
+  note: string;
+}
+
+const HEART_RECOVERY_POOL: RecoveryQuestion[] = [
+  {
+    q: 'SKSSF-ന്റെ ആപ്തവാക്യം (Motto) ഏതാണ്?',
+    options: [
+      'വിജ്ഞാനം · വിനയം · സേവനം',
+      'വേഗത · ശക്തി · വിജയം',
+      'സമ്പത്ത് · പ്രശസ്തി · അധികാരം',
+    ],
+    correctIdx: 0,
+    note: 'വിജ്ഞാനം, വിനയം, സേവനം എന്നിവയാണ് SKSSF-ന്റെ അടിസ്ഥാന മുദ്രാവാക്യം.',
+  },
+  {
+    q: 'സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ രൂപീകൃതമായ വർഷം ഏതാണ്?',
+    options: ['1926', '1951', '1989'],
+    correctIdx: 0,
+    note: '1926 ജൂൺ 26-ന് കോഴിക്കോട് വെച്ചാണ് സമസ്ത രൂപീകൃതമായത്.',
+  },
+  {
+    q: 'SKSSF രൂപീകൃതമായത് എന്നാണ്?',
+    options: ['1989 ഫെബ്രുവരി 19', '1926 ജൂൺ 26', '1995 ഡിസംബർ 10'],
+    correctIdx: 0,
+    note: '1989 ഫെബ്രുവരി 19-ന് കോഴിക്കോട് സാമൂതിരി ഹൈസ്കൂളിൽ വെച്ച് SKSSF പിറവിയെടുത്തു.',
+  },
+  {
+    q: 'ദുരന്തനിവാരണത്തിനും സന്നദ്ധ സേവനത്തിനുമായുള്ള SKSSF-ന്റെ വിംഗ് ഏതാണ്?',
+    options: ['വിഖായ (Viqaya)', 'സത്യധാര', 'ട്രെൻഡ്'],
+    correctIdx: 0,
+    note: 'നിസ്വാർത്ഥ സന്നദ്ധ സേവനത്തിനും ദുരന്തനിവാരണത്തിനും വിഖായ സദാ സജ്ജമാണ്.',
+  },
+  {
+    q: 'സമസ്ത കേരള ഇസ്‌ലാം മത വിദ്യാഭ്യാസ ബോർഡ് (SKIMVB) രൂപീകരിച്ച വർഷം?',
+    options: ['1951', '1970', '1989'],
+    correctIdx: 0,
+    note: '1951 സെപ്റ്റംബർ 17-ന് വളാഞ്ചേരിയിൽ വെച്ച് വിദ്യാഭ്യാസ ബോർഡ് നിലവിൽ വന്നു.',
+  },
+  {
+    q: 'സമസ്തയുടെയും SKSSF-ന്റെയും ഏറ്റവും അടിസ്ഥാന സംഘടനാ ഘടകം ഏതാണ്?',
+    options: ['യൂണിറ്റ് (Unit)', 'സ്റ്റേറ്റ് കമ്മിറ്റി', 'ജില്ലാ കമ്മിറ്റി'],
+    correctIdx: 0,
+    note: 'ഓരോ മഹല്ലിലെയും ശാഖ / യൂണിറ്റ് ആണ് സംഘടനയുടെ ശക്തമായ അടിത്തറ.',
+  },
+];
+
+/* FAIR HEART RECOVERY MODAL (2-Question Revision Restores 2 Hearts Without Wiping Progress!) */
 export const GameOverResetModal: React.FC<{
   isOpen: boolean;
   onRestartFromStart: () => void;
+  onRecoverHearts?: () => void;
   onOpenSupport?: () => void;
-}> = ({ isOpen, onRestartFromStart, onOpenSupport }) => {
+}> = ({ isOpen, onRestartFromStart, onRecoverHearts, onOpenSupport }) => {
+  const [questionIdx, setQuestionIdx] = useState(0);
+  const [seedOffset, setSeedOffset] = useState(0);
+  const [solvedCount, setSolvedCount] = useState(0);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSeedOffset((prev) => (prev + 2) % HEART_RECOVERY_POOL.length);
+      setQuestionIdx(0);
+      setSolvedCount(0);
+      setFeedback(null);
+      setShowRestartConfirm(false);
+    }
+  }, [isOpen]);
+
+  const activeQuestion =
+    HEART_RECOVERY_POOL[(seedOffset + questionIdx) % HEART_RECOVERY_POOL.length];
+  const recovered = solvedCount >= 2;
+
+  const handleAnswer = (optIdx: number) => {
+    if (recovered) return;
+    sound.unlockAudio();
+    if (optIdx === activeQuestion.correctIdx) {
+      sound.playSuccess(2);
+      const nextSolved = solvedCount + 1;
+      setSolvedCount(nextSolved);
+      setFeedback({ ok: true, text: `ശരിയാണ്! ${activeQuestion.note}` });
+      if (nextSolved < 2) {
+        window.setTimeout(() => {
+          setQuestionIdx((q) => q + 1);
+          setFeedback(null);
+        }, 900);
+      }
+    } else {
+      sound.playError();
+      setFeedback({
+        ok: false,
+        text: 'സാരമില്ല, നമുക്ക് ഒന്നുകൂടി ശ്രമിക്കാം — ശരിയായ ഉത്തരം തൊടൂ!',
+      });
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -250,72 +344,169 @@ export const GameOverResetModal: React.FC<{
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
+          role="dialog"
+          aria-modal="true"
+          aria-label="ഹൃദയം തിരിച്ചുപിടിക്കാം"
         >
           <motion.div
-            initial={{ scale: 0.8, y: 24, opacity: 0 }}
+            initial={{ scale: 0.9, y: 18, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.88, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="max-w-md w-full rounded-3xl border-4 border-rose-500 bg-gradient-to-b from-slate-900 via-rose-950/90 to-slate-950 text-white p-6 sm:p-7 text-center shadow-2xl space-y-4"
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+            className="max-w-md w-full max-h-[85vh] overflow-y-auto overscroll-contain my-auto rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-slate-900 via-emerald-950/95 to-slate-950 text-white p-5 sm:p-6 text-center shadow-2xl space-y-4"
           >
-            {/* 3 Animated Broken Hearts */}
+            {/* Visual Hearts Status */}
             <div className="flex items-center justify-center gap-3 pt-1">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  initial={{ scale: 0.5, rotate: -18 }}
-                  animate={{
-                    scale: [1, 1.12, 1],
-                    rotate: [-6, 6, -4, 0],
-                  }}
-                  transition={{ duration: 0.9, delay: i * 0.14 }}
-                >
-                  <BrokenHeartSvg className="w-12 h-12 drop-shadow-lg" large />
-                </motion.div>
-              ))}
+              {[0, 1, 2].map((i) => {
+                const healed = i < solvedCount;
+                return (
+                  <motion.div
+                    key={`${i}_${healed ? 'healed' : 'broken'}`}
+                    initial={{ scale: 0.7 }}
+                    animate={{ scale: healed ? [1.2, 1] : 1 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    {healed ? (
+                      <WholeHeartSvg className="w-11 h-11 drop-shadow-lg" />
+                    ) : (
+                      <BrokenHeartSvg className="w-11 h-11 opacity-75" large />
+                    )}
+                  </motion.div>
+                );
+              })}
             </div>
 
-            <div className="space-y-2">
-              <p className="inline-block px-3 py-1 rounded-full bg-rose-600/30 border border-rose-400/50 text-amber-300 text-xs font-extrabold">
-                💔 3 അവസരവും കഴിഞ്ഞു!
+            <div className="space-y-1.5">
+              <p className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 border border-amber-400/50 text-amber-200 text-xs font-extrabold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>ഹൃദയം തിരിച്ചുപിടിക്കാം (Heart Recovery)</span>
               </p>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-white leading-snug">
-                3 ഹൃദയങ്ങളും നഷ്ടമായി!
+              <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug">
+                {recovered
+                  ? 'അഭിനന്ദനങ്ങൾ! 2 ഹൃദയങ്ങൾ തിരിച്ചുകിട്ടി!'
+                  : 'സാരമില്ല, നമുക്ക് ഒന്നുകൂടി ശ്രമിക്കാം!'}
               </h3>
-              <p className="text-xs sm:text-sm font-semibold text-rose-100 leading-relaxed">
-                3 ക്വിസ് ഉത്തരങ്ങൾ തെറ്റിച്ചതിനാൽ മുകളിലെ 3 ഹൃദയങ്ങളും (💔 💔 💔) പൊട്ടിപ്പോയി! ഇനി എല്ലാ പാഠങ്ങളും ഒന്നാമത്തെ പാഠം മുതൽ പുതിയ 3 ഹൃദയത്തോടെ വീണ്ടും തുടങ്ങാം.
+              <p className="text-xs sm:text-sm font-medium text-emerald-100/90 leading-relaxed">
+                {recovered
+                  ? 'നിങ്ങളുടെ പാഠപുരോഗതി സുരക്ഷിതമാണ് — ഇതേ പാഠത്തിൽ നിന്ന് തന്നെ സന്തോഷത്തോടെ തുടരാം.'
+                  : 'നിങ്ങളുടെ ഇതുവരെയുള്ള പാഠങ്ങൾ നഷ്ടപ്പെടില്ല! 2 ചെറിയ റിവിഷൻ ചോദ്യങ്ങൾക്ക് ശരിയുത്തരം നൽകിയാൽ ❤️❤️ 2 ഹൃദയങ്ങൾ തിരിച്ചുകിട്ടും.'}
               </p>
             </div>
 
-            <div className="space-y-2.5">
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playPop();
-                  onRestartFromStart();
-                }}
-                className="w-full py-3.5 px-5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 border-b-4 border-amber-600 text-sm sm:text-base font-extrabold shadow-xl inline-flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <RotateCcw className="w-5 h-5" />
-                <span>🔄 ഒന്നാമത്തെ പാഠം മുതൽ വീണ്ടും തുടങ്ങാം (❤️❤️❤️)</span>
-              </motion.button>
+            {onRecoverHearts ? (
+              recovered ? (
+                <div className="space-y-3 pt-1">
+                  <div className="rounded-2xl bg-emerald-900/60 border border-emerald-400/50 p-3 text-xs font-bold text-emerald-100 flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+                    <span>റിവിഷൻ പൂർത്തിയായി · ❤️❤️ 2 ഹൃദയങ്ങൾ തയ്യാറാണ്!</span>
+                  </div>
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      sound.unlockAudio();
+                      sound.playUnlock();
+                      onRecoverHearts();
+                    }}
+                    className="w-full min-h-[46px] py-3 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-b-4 border-emerald-800 text-sm sm:text-base font-black shadow-xl inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Heart className="w-5 h-5 fill-rose-600 text-rose-700" />
+                    <span>ഇതേ പാഠത്തിൽ തുടരാം (❤️❤️)</span>
+                  </motion.button>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-white/95 text-slate-900 border-2 border-emerald-300 p-4 text-left space-y-3">
+                  <div className="flex items-center justify-between gap-2 text-[11px] font-extrabold text-emerald-800">
+                    <span>റിവിഷൻ ചോദ്യം {solvedCount + 1} / 2</span>
+                    <span className="tabular-nums">❤️❤️ തിരിച്ചുപിടിക്കാം</span>
+                  </div>
+                  <p className="text-sm font-extrabold text-slate-900 leading-snug">
+                    {activeQuestion.q}
+                  </p>
+                  <div className="space-y-2">
+                    {activeQuestion.options.map((opt, idx) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleAnswer(idx)}
+                        className="w-full min-h-[42px] px-3.5 py-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 text-left text-xs sm:text-sm font-extrabold text-slate-900 transition-colors cursor-pointer"
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  {feedback && (
+                    <p
+                      className={`text-xs font-extrabold rounded-xl px-3 py-2 border ${
+                        feedback.ok
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                          : 'bg-amber-50 border-amber-300 text-amber-950'
+                      }`}
+                    >
+                      {feedback.ok ? '✅ ' : '💡 '}
+                      {feedback.text}
+                    </p>
+                  )}
+                </div>
+              )
+            ) : null}
 
-              {onOpenSupport && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    onOpenSupport();
-                  }}
-                  className="mx-auto py-1.5 px-3 rounded-lg text-amber-200/90 hover:text-amber-200 hover:bg-white/10 text-xs font-bold inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-                </button>
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              {!showRestartConfirm ? (
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sound.playClick();
+                      setShowRestartConfirm(true);
+                    }}
+                    className="min-h-[36px] py-1.5 px-3 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>ഒന്നാമത്തെ പാഠം മുതൽ പുതുതായി തുടങ്ങാം</span>
+                  </button>
+                  {onOpenSupport && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        onOpenSupport();
+                      }}
+                      className="min-h-[36px] py-1.5 px-3 rounded-lg text-amber-200/90 hover:text-amber-200 hover:bg-white/10 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-xl bg-rose-950/70 border border-rose-400/50 p-3 space-y-2">
+                  <p className="text-xs font-bold text-rose-100">
+                    നിലവിലെ പാഠപുരോഗതി റീസെറ്റ് ചെയ്ത് ആദ്യം മുതൽ തുടങ്ങട്ടെ?
+                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playPop();
+                        onRestartFromStart();
+                      }}
+                      className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold cursor-pointer"
+                    >
+                      അതെ, ആദ്യം മുതൽ തുടങ്ങാം
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowRestartConfirm(false)}
+                      className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold cursor-pointer"
+                    >
+                      വേണ്ട
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </motion.div>

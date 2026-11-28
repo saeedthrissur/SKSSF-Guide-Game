@@ -237,7 +237,7 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
           role="dialog"
           aria-modal="true"
           aria-labelledby="support-developer-heading"
-          className="fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[120] bg-slate-950/60 backdrop-blur-[2px] flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
         >
           <motion.div
             initial={{ scale: 0.94, y: 12, opacity: 0 }}
@@ -245,7 +245,7 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
             exit={{ scale: 0.95, y: 8, opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 space-y-3.5"
+            className="relative w-full max-w-sm max-h-[85vh] overflow-y-auto overscroll-contain my-auto rounded-2xl border border-slate-200 bg-white shadow-2xl p-5 space-y-3.5"
           >
             {/* Compact Header */}
             <div className="flex items-start justify-between gap-3">
@@ -271,9 +271,9 @@ export const SupportDeveloperModal: React.FC<SupportDeveloperModalProps> = ({
                   onClose();
                 }}
                 aria-label="അടയ്ക്കുക"
-                className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+                className="min-w-[40px] min-h-[40px] rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 

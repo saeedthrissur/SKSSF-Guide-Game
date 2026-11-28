@@ -114,6 +114,11 @@ class MaleStoryNarrator {
 
   constructor() {
     sound.registerNarratorHooks({
+      onBeforeSpiritualPlay: () => {
+        this.pendingSpeech = null;
+        this.awaitingUnlock = false;
+        this.stop();
+      },
       onNarratorVolChange: (vol) => {
         if (this.currentAudio) {
           this.currentAudio.volume = vol;
@@ -231,6 +236,8 @@ class MaleStoryNarrator {
 
     if (!this.enabled || sound.isMuted() || !cleanText) return;
 
+    // Respectfully stop active Quran recitation or Adhan before narration begins
+    sound.stopSpiritualAudio();
     this.stop();
     const mySeq = this.requestSeq;
     this.lastSpeechText = text;

@@ -382,6 +382,29 @@ html.dark #certificate-print-area .text-amber-100 {
   color: #fef3c7 !important;
 }
 
+/* Keep ShareableBadgeStudio live preview card crisp paper-ink in Dark Mode (no white-on-white) */
+html.dark .badge-preview-surface .bg-white {
+  background-color: #ffffff !important;
+}
+
+html.dark .badge-preview-surface .text-slate-900,
+html.dark .badge-preview-surface .text-slate-950 {
+  color: #0f172a !important;
+}
+
+html.dark .badge-preview-surface .text-slate-700,
+html.dark .badge-preview-surface .text-slate-600 {
+  color: #334155 !important;
+}
+
+html.dark .badge-preview-surface .text-slate-500 {
+  color: #475569 !important;
+}
+
+html.dark .badge-preview-surface .text-amber-700 {
+  color: #b45309 !important;
+}
+
 /* Keep official logo emblem tiles crisp white in dark mode so dark-ink logos stay vivid */
 html.dark .logo-emblem-frame {
   background-color: #ffffff !important;

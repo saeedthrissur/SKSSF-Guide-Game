@@ -1502,7 +1502,7 @@ export const StageSetupDragGame: React.FC<HandsOnGameProps> = ({
       {failed ? (
         <FailOverlay
           headline="വേദി ഒരുക്കൽ തോറ്റു!"
-          note="ഓരോ സാധനവും കൃത്യമായ സ്ഥാനത്ത് വലിച്ചിടുകയോ തൊടുകയോ ചെയ്യൂ!"
+          note="ഓരോ സാധനവും തൊട്ട് തിരഞ്ഞെടുത്ത് കൃത്യമായ സ്ഥലത്ത് തൊടുക!"
           onRetry={reset}
         />
       ) : !won ? (

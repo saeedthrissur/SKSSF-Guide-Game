@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Calendar,
   CheckCircle2,
@@ -70,7 +70,7 @@ export const DAILY_SPECIAL_GAMES: DailySpecialGameMeta[] = [
     dayName: 'വ്യാഴം',
     emoji: '🏛️',
     title: 'ഘടനാ പിരമിഡ് ക്രമീകരണം',
-    tagline: 'യൂണിറ്റ് മുതൽ സംസ്ഥാനം വരെ ശരിയായ ക്രമത്തിൽ അടുക്കാം',
+    tagline: 'യൂണിറ്റ് മുതൽ ദേശീയ/ഗ്ലോബൽ തലം വരെ ശരിയായ ക്രമത്തിൽ അടുക്കാം',
     type: 'hierarchy',
   },
   {
@@ -148,7 +148,7 @@ const SPEED_QUIZ_ITEMS: McqItem[] = [
       'നീല, മഞ്ഞ, പച്ച',
     ],
     correct: 0,
-    note: 'മുകളിൽ നീല, നടുവിൽ വെള്ള, താഴെ പച്ച എന്നതാണ് SKSSF പതാകയുടെ ക്രമം.',
+    note: 'മുകളിൽ ഇടത് മൂലയിൽ നീല ഭാഗവും ചന്ദ്രക്കല-നക്ഷത്രവും, വലതുഭാഗത്ത് വെള്ളയിൽ മസ്ജിദും, താഴെ പച്ച പട്ടയുമാണ് SKSSF പതാകയുടെ രൂപകൽപ്പന.',
   },
   {
     q: 'ദുരിതാശ്വാസത്തിനും സന്നദ്ധ സേവനത്തിനുമുള്ള SKSSF വിഭാഗം ഏത്?',
@@ -201,35 +201,35 @@ const FRIDAY_SCHOLAR_ITEMS: McqItem[] = [
   {
     q: '1926-ൽ സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമയുടെ സ്ഥാപക പ്രസിഡന്റ് ആരായിരുന്നു?',
     options: [
-      'വരക്കൽ മുല്ലക്കോയ തങ്ങൾ',
-      'ശംസുൽ ഉലമ ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ',
-      'കണ്ണിയത്ത് അഹമ്മദ് മുസ്ലിയാർ',
-      'പാണക്കാട് ശിഹാബ് തങ്ങൾ',
+      'വരക്കൽ മുല്ലക്കോയ തങ്ങൾ (ന.മ.)',
+      'ശംസുൽ ഉലമ ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ (ന.മ.)',
+      'കണ്ണിയത്ത് അഹമ്മദ് മുസ്ലിയാർ (ന.മ.)',
+      'പാണക്കാട് ശിഹാബ് തങ്ങൾ (ന.മ.)',
     ],
     correct: 0,
-    note: 'സയ്യിദ് അബ്ദുറഹ്മാൻ ബാഅലവി വരക്കൽ മുല്ലക്കോയ തങ്ങളാണ് സമസ്തയുടെ സ്ഥാപക പ്രസിഡന്റ്.',
+    note: 'സയ്യിദ് അബ്ദുറഹ്മാൻ ബാഅലവി വരക്കൽ മുല്ലക്കോയ തങ്ങൾ (ന.മ.) ആണ് സമസ്തയുടെ സ്ഥാപക പ്രസിഡന്റ്.',
   },
   {
     q: 'സമസ്തയുടെ 1926 രൂപീകരണ യോഗത്തിൽ അധ്യക്ഷത വഹിച്ച മഹാൻ ആര്?',
     options: [
-      'പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്ലിയാർ',
-      'ചെറുശ്ശേരി സൈനുദ്ദീൻ മുസ്ലിയാർ',
-      'കോട്ടുമല അബൂബക്കർ മുസ്ലിയാർ',
-      'വാണിയമ്പലം അബ്ദുറഹ്മാൻ മുസ്ലിയാർ',
+      'പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്ലിയാർ (ന.മ.)',
+      'ചെറുശ്ശേരി സൈനുദ്ദീൻ മുസ്ലിയാർ (ന.മ.)',
+      'കോട്ടുമല അബൂബക്കർ മുസ്ലിയാർ (ന.മ.)',
+      'വാണിയമ്പലം അബ്ദുറഹ്മാൻ മുസ്ലിയാർ (ന.മ.)',
     ],
     correct: 0,
-    note: 'പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്ലിയാരായിരുന്നു 1926-ലെ ചരിത്ര സമ്മേളനത്തിന്റെ അധ്യക്ഷൻ.',
+    note: 'പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്ലിയാർ (ന.മ.) ആയിരുന്നു 1926-ലെ ചരിത്ര സമ്മേളനത്തിന്റെ അധ്യക്ഷൻ.',
   },
   {
     q: '‘ശംസുൽ ഉലമ’ എന്ന അപരനാമത്തിൽ അറിയപ്പെടുന്ന സമസ്തയുടെ ദീർഘകാല ജനറൽ സെക്രട്ടറി?',
     options: [
-      'ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ',
-      'കണ്ണിയത്ത് അഹമ്മദ് മുസ്ലിയാർ',
-      'കെ.കെ അബൂബക്കർ ഹസ്രത്ത്',
-      'പറവണ്ണ മുഹ്‌യിദ്ദീൻ കുട്ടി മുസ്ലിയാർ',
+      'ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ (ന.മ.)',
+      'കണ്ണിയത്ത് അഹമ്മദ് മുസ്ലിയാർ (ന.മ.)',
+      'കെ.കെ അബൂബക്കർ ഹസ്രത്ത് (ന.മ.)',
+      'പറവണ്ണ മുഹ്‌യിദ്ദീൻ കുട്ടി മുസ്ലിയാർ (ന.മ.)',
     ],
     correct: 0,
-    note: '40 വർഷത്തോളം സമസ്തയെ നയിച്ച മഹാനാണ് ശംസുൽ ഉലമ ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ.',
+    note: '40 വർഷത്തോളം സമസ്തയെ നയിച്ച മഹാനാണ് ശംസുൽ ഉലമ ഇ.കെ അബൂബക്കർ മുസ്ലിയാർ (ന.മ.).',
   },
   {
     q: 'മദ്രസാ വിദ്യാഭ്യാസത്തിന് ഏകീകൃത സിലബസ് രൂപീകരിച്ച സമസ്തയുടെ ബോർഡ് ഏത് വർഷം സ്ഥാപിതമായി?',
@@ -255,7 +255,7 @@ const YEAR_MATCH_PAIRS = [
   { id: 'y1934', event: 'സമസ്ത ഔദ്യോഗിക രജിസ്ട്രേഷൻ', year: '1934' },
   { id: 'y1951', event: 'സമസ്ത മദ്രസാ വിദ്യാഭ്യാസ ബോർഡ്', year: '1951' },
   { id: 'y1989', event: 'SKSSF രൂപീകരണം (ഫെബ്രുവരി 19)', year: '1989' },
-  { id: 'y1995', event: 'സത്യധാര മാസിക തുടക്കം', year: '1995' },
+  { id: 'y1997', event: 'സത്യധാര ദ്വൈവാരിക തുടക്കം', year: '1997' },
 ];
 
 const TRUE_FALSE_ITEMS = [
@@ -267,7 +267,7 @@ const TRUE_FALSE_ITEMS = [
   {
     statement: 'സമസ്തയുടെ പതാകയിൽ ചുവപ്പ്, വെള്ള, പച്ച എന്നീ നിറങ്ങളാണ് ഉള്ളത്.',
     answer: true,
-    note: 'ശരി! മുകളിൽ ചുവപ്പും (ചന്ദ്രക്കലയും നക്ഷത്രവും), നടുവിൽ വെള്ളയും, താഴെ പച്ചയുമാണ് സമസ്ത പതാക.',
+    note: 'ശരി! മുകളിൽ ഇടത് മൂലയിൽ ചുവപ്പ് ഭാഗവും ചന്ദ്രക്കല-നക്ഷത്രവും, വലതുഭാഗത്ത് വെള്ളയിൽ മസ്ജിദും, താഴെ പച്ച പട്ടയുമാണ് സമസ്ത പതാക.',
   },
   {
     statement: 'വിഖായ എന്നത് SKSSF-ന്റെ കലാ-സാഹിത്യ ഉപവിഭാഗത്തിന്റെ പേരാണ്.',
@@ -277,7 +277,7 @@ const TRUE_FALSE_ITEMS = [
   {
     statement: 'SKSSF-ന്റെ പ്രാഥമിക സംഘടനാ ഘടകം യൂണിറ്റ് (Unit) ആണ്.',
     answer: true,
-    note: 'ശരി! യൂണിറ്റിൽ തുടങ്ങി ക്ലസ്റ്റർ, മേഖല, ജില്ല, സംസ്ഥാനം എന്നിങ്ങനെയാണ് ഘടന.',
+    note: 'ശരി! യൂണിറ്റിൽ തുടങ്ങി ക്ലസ്റ്റർ, മേഖല, ജില്ല, സംസ്ഥാനം, ദേശീയ/ഗ്ലോബൽ തലം എന്നിങ്ങനെയാണ് ഘടന.',
   },
   {
     statement: 'സമസ്ത മദ്രസാ വിദ്യാഭ്യാസ ബോർഡ് സ്ഥാപിതമായത് 1989-ലാണ്.',
@@ -297,6 +297,7 @@ const HIERARCHY_TARGET = [
   { id: 'mekhala', label: '3. മേഖലാ കമ്മിറ്റി', hint: 'ക്ലസ്റ്ററുകളെ നയിക്കുന്ന തലം' },
   { id: 'district', label: '4. ജില്ലാ കമ്മിറ്റി', hint: 'ജില്ലാതല ഏകോപനം' },
   { id: 'state', label: '5. സംസ്ഥാന കമ്മിറ്റി', hint: 'സംസ്ഥാനതല നേതൃത്വം' },
+  { id: 'national_global', label: '6. ദേശീയ / ഗ്ലോബൽ കമ്മിറ്റി', hint: 'ദേശീയ-അന്താരാഷ്ട്ര തല ഏകോപനം' },
 ];
 
 const MEMORY_CARDS_SOURCE = [
@@ -315,6 +316,25 @@ function buildShuffled<T>(arr: T[]): T[] {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+function shuffleMcqItems(items: McqItem[]): McqItem[] {
+  return items.map((item) => {
+    const tagged = item.options.map((text, idx) => ({
+      text,
+      isCorrect: idx === item.correct,
+    }));
+    const shuffled = buildShuffled(tagged);
+    const newCorrect = Math.max(
+      0,
+      shuffled.findIndex((entry) => entry.isCorrect)
+    );
+    return {
+      ...item,
+      options: shuffled.map((entry) => entry.text),
+      correct: newCorrect,
+    };
+  });
 }
 
 export interface DailyChallengeModalProps {
@@ -338,10 +358,25 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
   const [finalResult, setFinalResult] = useState<{ score: number; maxScore: number } | null>(null);
 
   // MCQ / Speed / Wing / Friday state
+  const [shuffledMcqList, setShuffledMcqList] = useState<McqItem[]>([]);
   const [qIdx, setQIdx] = useState(0);
   const [score, setScore] = useState(0);
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(60);
+
+  // Tracked timeouts so tab switches / restarts / closes never leak stale callbacks
+  const timersRef = useRef<number[]>([]);
+  const clearAllTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  };
+  const scheduleTimer = (fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+  };
 
   // Year Match state
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -369,11 +404,15 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
   const isTodayOfficial = activeDayIdx === todayGame.dayIndex;
 
   useEffect(() => {
+    clearAllTimers();
     if (isOpen) {
       setActiveDayIdx(getTodaySpecialGame().dayIndex);
       setPhase('ready');
       setFinalResult(null);
     }
+    return () => {
+      clearAllTimers();
+    };
   }, [isOpen]);
 
   // Countdown timer for Sunday Speed Flash Quiz
@@ -421,10 +460,18 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
   const streakTier = getStreakTierInfo(dailyState.streakDays);
 
   const startSelectedGame = () => {
+    clearAllTimers();
     sound.unlockAudio();
     sound.playPop();
     setPhase('playing');
     setFinalResult(null);
+    const sourceMcq =
+      selectedGame.type === 'speed_quiz'
+        ? SPEED_QUIZ_ITEMS
+        : selectedGame.type === 'wing_match'
+        ? WING_SCENARIO_ITEMS
+        : FRIDAY_SCHOLAR_ITEMS;
+    setShuffledMcqList(shuffleMcqItems(sourceMcq));
     setQIdx(0);
     setScore(0);
     setSelectedOpt(null);
@@ -454,18 +501,21 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
   };
 
   const finishGame = (earned: number, max: number) => {
+    clearAllTimers();
     sound.playSuccess(3);
     setFinalResult({ score: earned, maxScore: max });
     setPhase('done');
     onCompleteSpecialGame(earned, max, isTodayOfficial);
   };
 
-  const activeMcqList: McqItem[] =
+  const fallbackMcqList: McqItem[] =
     selectedGame.type === 'speed_quiz'
       ? SPEED_QUIZ_ITEMS
       : selectedGame.type === 'wing_match'
       ? WING_SCENARIO_ITEMS
       : FRIDAY_SCHOLAR_ITEMS;
+  const activeMcqList: McqItem[] =
+    shuffledMcqList.length > 0 ? shuffledMcqList : fallbackMcqList;
 
   const handleMcqAnswer = (idx: number) => {
     if (selectedOpt !== null) return;
@@ -479,7 +529,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
     } else {
       sound.playError();
     }
-    window.setTimeout(() => {
+    scheduleTimer(() => {
       if (qIdx + 1 >= activeMcqList.length) {
         finishGame(nextScore, activeMcqList.length);
       } else {
@@ -498,7 +548,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
       setSelectedEventId(null);
       setYearWrongFlash(null);
       if (next.length >= YEAR_MATCH_PAIRS.length) {
-        window.setTimeout(() => finishGame(YEAR_MATCH_PAIRS.length, YEAR_MATCH_PAIRS.length), 350);
+        scheduleTimer(() => finishGame(YEAR_MATCH_PAIRS.length, YEAR_MATCH_PAIRS.length), 350);
       }
     } else {
       sound.playError();
@@ -518,7 +568,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
     } else {
       sound.playError();
     }
-    window.setTimeout(() => {
+    scheduleTimer(() => {
       if (tfIdx + 1 >= TRUE_FALSE_ITEMS.length) {
         finishGame(nextScore, TRUE_FALSE_ITEMS.length);
       } else {
@@ -537,7 +587,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
       setHierarchyPool((pool) => pool.filter((x) => x.id !== item.id));
       setHierarchyError(null);
       if (nextBuilt.length >= HIERARCHY_TARGET.length) {
-        window.setTimeout(() => finishGame(HIERARCHY_TARGET.length, HIERARCHY_TARGET.length), 350);
+        scheduleTimer(() => finishGame(HIERARCHY_TARGET.length, HIERARCHY_TARGET.length), 350);
       }
     } else {
       sound.playError();
@@ -569,10 +619,10 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
         setMemCards(matchedDeck);
         setMemOpenUids([]);
         if (matchedDeck.every((c) => c.matched)) {
-          window.setTimeout(() => finishGame(MEMORY_CARDS_SOURCE.length, MEMORY_CARDS_SOURCE.length), 400);
+          scheduleTimer(() => finishGame(MEMORY_CARDS_SOURCE.length, MEMORY_CARDS_SOURCE.length), 400);
         }
       } else {
-        window.setTimeout(() => {
+        scheduleTimer(() => {
           setMemCards((prev) =>
             prev.map((c) =>
               c.uid === firstUid || c.uid === secondUid ? { ...c, flipped: false } : c
@@ -586,14 +636,17 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5 overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-label="പ്രതിദിന സ്ട്രീക്കും സ്പെഷ്യൽ ഗെയിമുകളും"
-      onClick={onClose}
+      onClick={() => {
+        clearAllTimers();
+        onClose();
+      }}
     >
       <div
-        className="bg-white rounded-3xl border-2 border-amber-300 shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 space-y-5 my-auto"
+        className="bg-white rounded-3xl border-2 border-amber-300 shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-5 my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Modal Header */}
@@ -615,7 +668,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -689,6 +742,7 @@ export const DailyChallengeModal: React.FC<DailyChallengeModalProps> = ({
                   key={g.dayIndex}
                   type="button"
                   onClick={() => {
+                    clearAllTimers();
                     sound.playClick();
                     setActiveDayIdx(g.dayIndex);
                     setPhase('ready');

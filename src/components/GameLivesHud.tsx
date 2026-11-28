@@ -158,7 +158,7 @@ export const GameDefeatBurstOverlay: React.FC<{
   onRetry: () => void;
   overlay?: boolean;
 }> = ({
-  title = 'കവചം തകർന്നു — പരാജയപ്പെട്ടു!',
+  title = 'സാരമില്ല, നമുക്ക് ഒന്നുകൂടി ശ്രമിക്കാം!',
   reason,
   scoreText,
   onRetry,
@@ -342,7 +342,7 @@ export const GuideGameAboutModal: React.FC<{
     <AnimatePresence>
       {open && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-label="ഗൈഡ് ഗെയിം വിവരണം"
@@ -354,10 +354,10 @@ export const GuideGameAboutModal: React.FC<{
             exit={{ opacity: 0, scale: 0.92, y: 12 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className="max-w-md w-full rounded-3xl bg-white border-2 border-emerald-300 shadow-2xl overflow-hidden"
+            className="max-w-md w-full max-h-[85vh] overflow-y-auto overscroll-contain my-auto rounded-3xl bg-white border-2 border-emerald-300 shadow-2xl"
           >
             {/* Brand Header Banner */}
-            <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 text-white p-5 text-center space-y-3">
+            <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 text-white p-5 text-center space-y-3 rounded-t-3xl">
               <button
                 type="button"
                 onClick={() => {
@@ -365,7 +365,7 @@ export const GuideGameAboutModal: React.FC<{
                   onClose();
                 }}
                 aria-label="അടയ്ക്കുക"
-                className="absolute top-3.5 right-3.5 w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center cursor-pointer"
+                className="absolute top-3.5 right-3.5 min-w-[40px] min-h-[40px] rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

@@ -261,7 +261,7 @@ export const OfficialResourceHubModal: React.FC<{
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4"
+          className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto overscroll-contain"
           role="dialog"
           aria-modal="true"
           aria-label="സമസ്ത & SKSSF ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും"
@@ -273,7 +273,7 @@ export const OfficialResourceHubModal: React.FC<{
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl flex flex-col overflow-hidden"
+            className="w-full max-w-3xl max-h-[85vh] my-auto bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-sky-900 text-white px-4 sm:px-5 py-3.5 flex items-center justify-between gap-3 shrink-0">
@@ -296,7 +296,7 @@ export const OfficialResourceHubModal: React.FC<{
                   onClose();
                 }}
                 aria-label="അടയ്ക്കുക"
-                className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center shrink-0 cursor-pointer"
+                className="min-w-[40px] min-h-[40px] rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center shrink-0 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -354,7 +354,7 @@ export const OfficialResourceHubModal: React.FC<{
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto p-4 sm:p-5 space-y-4">
+            <div className="overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4">
               {hubTab === 'scenarios' ? (
                 <WingsScenarioChallenge onAwardXp={onAwardXp} />
               ) : hubTab === 'logos' ? (

@@ -7,14 +7,17 @@ import {
   Check,
   CheckCircle2,
   Compass,
+  Download,
   Flame,
   Gamepad2,
   Gift,
+  Scale,
   Settings,
   Share2,
   Trophy,
   Volume2,
   VolumeX,
+  WifiOff,
   X,
 } from 'lucide-react';
 import type { L1Tab } from './components/Level1Story';
@@ -71,6 +74,7 @@ import {
   UnseenLessonBanner,
 } from './components/GameEffects';
 import { SupportDeveloperModal } from './components/SupportDeveloperModal';
+import { LegalPrivacyModal } from './components/LegalPrivacyModal';
 import {
   ALL_LESSONS,
   getAllUnseenLessons,
@@ -89,11 +93,13 @@ import {
   loadRunHistory,
   loadSavedGameState,
   QuizAnswerMap,
+  recordGenuineDailyActivity,
   RunHistoryEntry,
   saveDailyAndProfileState,
   saveGameState,
   UnitProfile,
 } from './utils/gameStorage';
+import { useOnlineStatus, usePWAInstall } from './utils/usePWAInstall';
 import { sound } from './utils/sound';
 import { narrator } from './utils/narrator';
 import {
@@ -329,7 +335,7 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
               onClick={onStartJourney}
               className="w-full min-h-[54px] px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
-              <span>പഠനം തുടങ്ങാം (Start Journey)</span>
+              <span>പഠനം തുടങ്ങാം</span>
               <ArrowRight className="w-5 h-5 shrink-0" />
             </button>
 
@@ -647,7 +653,7 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
             }`}
           >
             <BookOpen className="w-4 h-4 shrink-0" />
-            <span>ഗെയിം ഒഴിവാക്കി പാഠത്തിലേക്ക് പോകാം (Skip Game → Lesson)</span>
+            <span>നേരിട്ട് പാഠത്തിലേക്ക് പോകാം</span>
           </button>
         </div>
       )}
@@ -741,6 +747,31 @@ export default function App() {
   const [lessonsMapOpen, setLessonsMapOpen] = useState<boolean>(false);
   const [resourceHubOpen, setResourceHubOpen] = useState<boolean>(false);
   const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
+  const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
+  const [footerIosHint, setFooterIosHint] = useState<boolean>(false);
+  const isOnline = useOnlineStatus();
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+
+  const isAnyModalOpen =
+    settingsOpen ||
+    scoreModalOpen ||
+    dailyModalOpen ||
+    badgeStudioOpen ||
+    giftChestOpen ||
+    gameOverOpen ||
+    supportModalOpen ||
+    aboutModalOpen ||
+    resourceHubOpen ||
+    legalModalOpen;
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || !isAnyModalOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isAnyModalOpen]);
 
   const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(() => initialCompleted);
   const [activeLessonId, setActiveLessonId] = useState<string>(
@@ -849,16 +880,22 @@ export default function App() {
     saveDailyAndProfileState(dailyState);
   }, [dailyState]);
 
-  const handleMarkLessonCompleted = useCallback((lessonId: string) => {
-    setCompletedLessonIds((prev) => {
-      if (prev.includes(lessonId)) return prev;
-      setDailyState((d) => ({
-        ...d,
-        todayLessonsCount: d.todayLessonsCount + 1,
-      }));
-      return [...prev, lessonId];
-    });
-  }, []);
+  const handleMarkLessonCompleted = useCallback(
+    (lessonId: string) => {
+      if (devUnlocked) return;
+      setCompletedLessonIds((prev) => {
+        if (prev.includes(lessonId)) return prev;
+        setDailyState((d) =>
+          recordGenuineDailyActivity({
+            ...d,
+            todayLessonsCount: d.todayLessonsCount + 1,
+          })
+        );
+        return [...prev, lessonId];
+      });
+    },
+    [devUnlocked]
+  );
 
   const skippedUnseenBefore = useMemo(
     () => getSkippedUnseenLessonsBefore(activeLessonId, completedLessonIds),
@@ -886,10 +923,10 @@ export default function App() {
 
   const STAGE_MILESTONE_LABELS: Record<number, { title: string; badgePreset: string }> = {
     6: { title: 'ആമുഖ ഘട്ടം പൂർത്തിയാക്കി!', badgePreset: 'starter_member' },
-    18: { title: 'പ്രായോഗിക യാത്ര പൂർത്തിയാക്കി!', badgePreset: 'unit_organizer' },
+    18: { title: 'പ്രായോഗിക യാത്ര പൂർത്തിയാക്കി!', badgePreset: 'jeep_starter' },
     26: { title: 'യൂണിറ്റ് തലം പൂർത്തിയാക്കി!', badgePreset: 'flag_keeper' },
-    35: { title: 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'wing_hero' },
-    40: { title: 'ജില്ലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'cyber_guardian' },
+    35: { title: 'ക്ലസ്റ്റർ & മേഖലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'madrasa_guardian' },
+    40: { title: 'ജില്ലാ തലം പൂർത്തിയാക്കി!', badgePreset: 'viqaya_hero' },
     [ALL_LESSONS.length]: { title: `എല്ലാ ${ALL_LESSONS.length} പാഠങ്ങളും പൂർത്തിയാക്കി!`, badgePreset: 'master_guide' },
   };
 
@@ -1062,16 +1099,21 @@ export default function App() {
     return 'വിജ്ഞാനാന്വേഷി';
   }, [xp, canonicalCompletedCount]);
 
-  const handleAwardXp = useCallback((amount: number, actionId: string) => {
-    setAwardedActions((prev) => {
-      if (prev[actionId]) return prev;
-      setXp((curr) => curr + amount);
-      return { ...prev, [actionId]: true };
-    });
-  }, []);
+  const handleAwardXp = useCallback(
+    (amount: number, actionId: string) => {
+      if (devUnlocked) return;
+      setAwardedActions((prev) => {
+        if (prev[actionId]) return prev;
+        setXp((curr) => curr + amount);
+        return { ...prev, [actionId]: true };
+      });
+    },
+    [devUnlocked]
+  );
 
   const handleQuizAnswered = useCallback(
     (lessonId: string, selectedIdx: number, isCorrect: boolean) => {
+      if (devUnlocked) return;
       let isFirstTimeAnswer = false;
       setQuizAnswers((prev) => {
         if (prev[lessonId]) return prev;
@@ -1089,14 +1131,16 @@ export default function App() {
       if (isCorrect) {
         handleAwardXp(15, `quiz_${lessonId}`);
         if (isFirstTimeAnswer) {
-          setDailyState((d) => ({
-            ...d,
-            todayQuizzesCorrect: d.todayQuizzesCorrect + 1,
-          }));
+          setDailyState((d) =>
+            recordGenuineDailyActivity({
+              ...d,
+              todayQuizzesCorrect: d.todayQuizzesCorrect + 1,
+            })
+          );
         }
       } else {
-        // Deduct 1 global heart, play dramatic heartbreak-to-header flight animation!
-        // On 3rd mistake (lives === 0), reset ALL lessons back to Lesson 1 from the beginning!
+        // Deduct 1 global heart, play gentle heartbreak-to-header flight animation!
+        // On 3rd mistake (lives === 0), open fair Heart Recovery revision challenge (restores 2 hearts)!
         setLives((prevLives) => {
           const nextLives = Math.max(0, prevLives - 1);
           const ev: HeartBreakEvent = {
@@ -1109,23 +1153,24 @@ export default function App() {
           if (nextLives <= 0) {
             window.setTimeout(() => {
               setGameOverOpen(true);
-            }, 1450);
+            }, 1300);
           }
           return nextLives;
         });
       }
     },
-    [handleAwardXp]
+    [devUnlocked, handleAwardXp]
   );
 
   const handleUnlockBadge = (badge: string) => {
+    if (devUnlocked) return;
     setBadges((prev) => (prev.includes(badge) ? prev : [...prev, badge]));
   };
 
   const handleClaimEasterEgg = (egg: EasterEggItem) => {
     sound.unlockAudio();
     sound.playUnlock();
-    if (!collectedEggs.includes(egg.id)) {
+    if (!devUnlocked && !collectedEggs.includes(egg.id)) {
       setCollectedEggs((prev) => [...prev, egg.id]);
       handleAwardXp(25, `easter_${egg.id}`);
       handleUnlockBadge(egg.badge);
@@ -1136,9 +1181,19 @@ export default function App() {
   };
 
   const handleCompleteLevel = (level: LevelNumber) => {
+    // Secret map preview mode is strictly read-only: allows navigation without awarding completions/unlocks
+    if (devUnlocked) {
+      if (level < 4) {
+        const next = (level + 1) as LevelNumber;
+        setStage('world');
+        setCurrentLevel(next);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
     // Do not unlock subsequent levels or mark Level 4 complete when viewing via Guest Preview link
-    if (isPreviewMode && !devUnlocked) return;
-    if (level === 4 && !devUnlocked && canonicalCompletedCount < ALL_LESSONS.length) return;
+    if (isPreviewMode) return;
+    if (level === 4 && canonicalCompletedCount < ALL_LESSONS.length) return;
     setCompletedLevels((prev) => (prev.includes(level) ? prev : [...prev, level]));
     if (level < 4) {
       const next = (level + 1) as LevelNumber;
@@ -1148,6 +1203,14 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  const handleRecoverHearts = useCallback(() => {
+    setLives(2);
+    setHeartBreakEvent(null);
+    setActiveFlightEvent(null);
+    setGameOverOpen(false);
+    sound.playSuccess(2);
+  }, []);
 
   const handleSwitchLevel = (lvlId: LevelNumber) => {
     if (!devUnlocked && lvlId === 1 && !world1Unlocked) return;
@@ -1316,19 +1379,15 @@ export default function App() {
         if (!alreadyDone) {
           handleAwardXp(35, `daily_special_game_${prev.todayDate}`);
         }
-        const nextHistory = prev.streakHistoryDates?.includes(prev.todayDate)
-          ? prev.streakHistoryDates
-          : [...(prev.streakHistoryDates || []), prev.todayDate].slice(-60);
         const nextCompletedDates = prev.completedDailyGameDates?.includes(prev.todayDate)
           ? prev.completedDailyGameDates
           : [...(prev.completedDailyGameDates || []), prev.todayDate].slice(-60);
-        return {
+        return recordGenuineDailyActivity({
           ...prev,
           todaySpecialGameDone: true,
-          streakHistoryDates: nextHistory,
           completedDailyGameDates: nextCompletedDates,
           dailyGameBestScore: bestScore,
-        };
+        });
       });
     },
     [handleAwardXp]
@@ -1486,7 +1545,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Slim Sticky Top Bar — Single Settings Icon Only + Icon-First Status */}
       <header className="sticky top-0 z-40 bg-white [transform:translateZ(0)] border-b border-slate-200 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 py-2 flex items-center justify-between gap-1.5 sm:gap-2">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 py-1.5 sm:py-2 flex flex-nowrap items-center justify-between gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => {
@@ -1496,14 +1555,16 @@ export default function App() {
             }}
             aria-label="ഗൈഡ് ഗെയിം — ഹോം & വിവരണം"
             title="ഗൈഡ് ഗെയിം (Guide Game)"
-            className="inline-flex items-center gap-2 text-left shrink-0 rounded-xl hover:opacity-90 active:scale-95 transition-transform cursor-pointer"
+            className="inline-flex items-center gap-2 text-left shrink-0 min-h-[40px] rounded-xl hover:opacity-90 active:scale-95 transition-transform cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
           >
             <GuideGameBrandLogo size="sm" />
           </button>
 
-          <div className="flex flex-wrap items-center justify-end gap-1 sm:gap-1.5 min-w-0">
+          <div className="flex flex-nowrap items-center justify-end gap-1 sm:gap-1.5 min-w-0 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
-            <HeaderHeartsBar />
+            <div className="shrink-0">
+              <HeaderHeartsBar />
+            </div>
 
             <button
               type="button"
@@ -1514,7 +1575,7 @@ export default function App() {
               }}
               aria-label="ദിന സ്ട്രീക്കും ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിമും"
               title="ദിന സ്ട്രീക്കും സ്പെഷ്യൽ ഗെയിമും"
-              className={`inline-flex items-center gap-1 h-[34px] sm:h-9 px-2 sm:px-2.5 rounded-lg border text-[11px] sm:text-xs font-extrabold tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 notranslate ${
+              className={`inline-flex items-center justify-center gap-1 h-10 min-w-[40px] px-2 sm:px-2.5 rounded-lg border text-[11px] sm:text-xs font-extrabold tabular-nums whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 notranslate ${
                 dailyState.todaySpecialGameDone
                   ? 'border-emerald-300 bg-emerald-50 text-emerald-950 hover:bg-emerald-100'
                   : 'border-amber-400 bg-amber-50 text-amber-950 hover:bg-amber-100'
@@ -1531,9 +1592,9 @@ export default function App() {
                 sound.playClick();
                 setScoreModalOpen(true);
               }}
-              aria-label="സ്കോർ & പുരോഗതി റിപ്പോർട്ട്"
-              title="സ്കോർ"
-              className="inline-flex items-center gap-1 h-[34px] sm:h-9 px-2 sm:px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 notranslate"
+              aria-label="എന്റെ പഠന പുരോഗതി"
+              title="എന്റെ പഠന പുരോഗതി"
+              className="inline-flex items-center justify-center gap-1 h-10 min-w-[40px] px-2 sm:px-2.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-950 text-[11px] sm:text-xs font-extrabold hover:bg-emerald-100 tabular-nums whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 notranslate"
             >
               <BarChart3 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
               <span>{xp}</span>
@@ -1548,8 +1609,8 @@ export default function App() {
                 setBadgeStudioOpen(true);
               }}
               aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ്"
-              title="ബാഡ്ജ്"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              title="എന്റെ ഫോട്ടോ ബാഡ്ജ്"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-amber-400 bg-amber-400 text-slate-950 hover:bg-amber-300 shadow-xs shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
             >
               <Award className="w-4 h-4 shrink-0" />
             </button>
@@ -1565,8 +1626,8 @@ export default function App() {
                   setGiftChestOpen(true);
                 }}
                 aria-label="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
-                title="സമ്മാനങ്ങൾ"
-                className="inline-flex items-center gap-1 h-9 px-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                title="കണ്ടെത്തിയ സർപ്രൈസ് സമ്മാനങ്ങൾ"
+                className="inline-flex items-center justify-center gap-1 h-10 min-w-[40px] px-2.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-950 text-xs font-extrabold hover:bg-amber-100 tabular-nums whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
               >
                 <Gift className="w-3.5 h-3.5 text-amber-600" />
                 <span>{collectedEggs.length}</span>
@@ -1583,7 +1644,7 @@ export default function App() {
               }}
               aria-label="ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും"
               title="ലോഗോ ഗൈഡും ഔദ്യോഗിക ലിങ്കുകളും"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-900 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               <BookOpen className="w-4 h-4" />
             </button>
@@ -1598,7 +1659,7 @@ export default function App() {
               }}
               aria-label="സെറ്റിംഗ്സ്"
               title="സെറ്റിംഗ്സ്"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               <Settings className="w-4 h-4" />
             </button>
@@ -1607,8 +1668,8 @@ export default function App() {
               type="button"
               onClick={toggleSound}
               aria-label={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
-              title={muted ? 'ശബ്ദം ഓൺ' : 'മ്യൂട്ട്'}
-              className="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+              title={muted ? 'ശബ്ദം ഓൺ ചെയ്യുക' : 'ശബ്ദം മ്യൂട്ട് ചെയ്യുക'}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
             >
               {muted ? (
                 <VolumeX className="w-4 h-4 text-slate-500" />
@@ -1619,6 +1680,18 @@ export default function App() {
           </div>
         </div>
       </header>
+
+      {/* Offline Mode Indicator Banner */}
+      {!isOnline && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="bg-amber-50 border-b border-amber-300 px-3 py-1.5 text-center text-[11px] sm:text-xs font-extrabold text-amber-950 flex items-center justify-center gap-1.5"
+        >
+          <WifiOff className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+          <span>ഓഫ്‌ലൈൻ മോഡ് — സേവ് ചെയ്ത പാഠങ്ങളും ഗെയിമുകളും ഇന്റർനെറ്റില്ലാതെ തുടരാം</span>
+        </div>
+      )}
 
       {/* Non-blocking Floating Top-Right Audio Loader */}
       <AudioLoadingFloatBadge />
@@ -1722,7 +1795,7 @@ export default function App() {
                         അഭിനന്ദനങ്ങൾ! {meta.title} ({activeMilestone}/{ALL_LESSONS.length})
                       </p>
                       <p className="text-xs text-emerald-50 font-medium leading-snug mt-0.5 break-words">
-                        നിങ്ങളുടെ നേട്ടം ({xp} XP · {currentRank}) വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം അല്ലെങ്കിൽ ഫോട്ടോ ബാഡ്ജ് നിർമ്മിക്കാം.
+                        നിങ്ങളുടെ നേട്ടം ({xp} XP · {currentRank}) വാട്സ്ആപ്പിൽ ഷെയർ ചെയ്യാം അല്ലെങ്കിൽ ഫോട്ടോ ബാഡ്ജ് നിർമ്മിക്കാം.
                       </p>
                     </div>
                   </div>
@@ -2124,6 +2197,7 @@ export default function App() {
         onClearAllData={handleClearAllSavedData}
         onRestoreBackup={handleRestoreFromBackup}
         onOpenSupport={() => setSupportModalOpen(true)}
+        onOpenLegal={() => setLegalModalOpen(true)}
       />
       <ScoreComparisonModal
         isOpen={scoreModalOpen}
@@ -2166,6 +2240,8 @@ export default function App() {
             completedLessonIds={completedLessonIds}
             completedLevels={completedLevels}
             awardedActions={awardedActions}
+            profile={dailyState.profile}
+            onUpdateUnitProfile={handleUpdateUnitProfile}
             onOpenSupport={() => setSupportModalOpen(true)}
           />
         </Suspense>
@@ -2177,22 +2253,28 @@ export default function App() {
         activeCelebrationEgg={celebrationEgg}
       />
 
-      {/* DRAMATIC CENTER-TO-HEADER HEART-BREAK FLIGHT ANIMATION */}
+      {/* CENTER-TO-HEADER HEART-BREAK FLIGHT ANIMATION */}
       <HeartBreakFlightOverlay
         event={activeFlightEvent}
         onComplete={() => setActiveFlightEvent(null)}
       />
 
-      {/* 3-HEART LOSS FULL GAME RESET MODAL */}
+      {/* FAIR HEART RECOVERY MODAL (2-Question Revision Restores 2 Hearts!) */}
       <GameOverResetModal
         isOpen={gameOverOpen}
         onRestartFromStart={handleResetCurrentGame}
+        onRecoverHearts={handleRecoverHearts}
         onOpenSupport={() => setSupportModalOpen(true)}
       />
 
       <SupportDeveloperModal
         isOpen={supportModalOpen}
         onClose={() => setSupportModalOpen(false)}
+      />
+
+      <LegalPrivacyModal
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
       />
 
       <GuideGameAboutModal
@@ -2225,9 +2307,43 @@ export default function App() {
         </Suspense>
       )}
 
-      <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500">
-        <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+      <footer className="border-t border-slate-200 bg-white pt-4 pb-20 sm:py-5 px-4 sm:px-6 text-center text-xs text-slate-500 space-y-2">
+        <p className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5">
           <span>ഗൈഡ് ഗെയിം (Guide Game) · SKSSF · “വിജ്ഞാനം, വിനയം, സേവനം”</span>
+          <span aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              setLegalModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold underline underline-offset-4 transition-colors cursor-pointer"
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>സ്വകാര്യത, നിബന്ധനകൾ &amp; കോപ്പിറൈറ്റ്</span>
+          </button>
+          {!isInstalled && (isInstallable || isIOS) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  sound.unlockAudio();
+                  sound.playPop();
+                  if (isInstallable) {
+                    await install();
+                  } else if (isIOS) {
+                    setFooterIosHint((v) => !v);
+                  }
+                }}
+                className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-extrabold underline underline-offset-4 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>ആപ്പ് ഇൻസ്റ്റാൾ</span>
+              </button>
+            </>
+          )}
           {!(showIntro && !lessonsMapOpen) && (
             <>
               <span aria-hidden="true">·</span>
@@ -2245,8 +2361,14 @@ export default function App() {
             </>
           )}
         </p>
+        {footerIosHint && isIOS && !isInstalled && (
+          <p className="max-w-md mx-auto text-[11px] font-bold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+            Safari-യിൽ താഴെയുള്ള <strong>Share (↑)</strong> തൊട്ട്{' '}
+            <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ഓഫ്‌ലൈൻ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
+          </p>
+        )}
       </footer>
-      <FloatingPageNavigator visible={!lessonsMapOpen && !showIntro} />
+      <FloatingPageNavigator visible={!lessonsMapOpen && !showIntro && !isAnyModalOpen} />
     </div>
     </LessonFlowProvider>
     </GameLivesProvider>

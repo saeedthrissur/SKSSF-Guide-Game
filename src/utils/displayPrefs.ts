@@ -6,22 +6,6 @@ export interface DisplayPrefsSnapshot {
   language: string;
 }
 
-export interface TranslateLanguageOption {
-  code: string;
-  label: string;
-  nativeLabel: string;
-}
-
-export const TRANSLATE_LANGUAGES: TranslateLanguageOption[] = [
-  { code: 'ml', label: 'Malayalam', nativeLabel: 'മലയാളം (Original)' },
-  { code: 'en', label: 'English', nativeLabel: 'English' },
-  { code: 'ar', label: 'Arabic', nativeLabel: 'العربية' },
-  { code: 'ur', label: 'Urdu', nativeLabel: 'اردو' },
-  { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
-  { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்' },
-  { code: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ' },
-];
-
 export const FONT_LEVEL_META: Record<
   FontSizeLevel,
   { scalePct: number; label: string }
@@ -35,45 +19,15 @@ export const FONT_LEVEL_META: Record<
 
 const STORAGE_KEY = 'skssf_display_prefs_v1';
 
-declare global {
-  interface Window {
-    google?: {
-      translate?: {
-        TranslateElement?: new (
-          options: Record<string, unknown>,
-          elementId: string
-        ) => unknown;
-      };
-    };
-    googleTranslateElementInit?: () => void;
-  }
-}
-
-function readCookieLanguage(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)googtrans=\/[^/]+\/([^;]+)/i);
-  if (match?.[1]) {
-    return decodeURIComponent(match[1]).trim();
-  }
-  return null;
-}
-
-function setGoogleTranslateCookie(langCode: string): void {
+/** Clean up any legacy third-party translation cookies if previously set */
+function clearLegacyTranslateCookies(): void {
   if (typeof document === 'undefined' || typeof window === 'undefined') return;
-  const host = window.location.hostname;
   const expiryPast = 'Thu, 01 Jan 1970 00:00:00 GMT';
-  if (!langCode || langCode === 'ml') {
-    document.cookie = `googtrans=; expires=${expiryPast}; path=/`;
-    if (host && host.includes('.')) {
-      document.cookie = `googtrans=; expires=${expiryPast}; path=/; domain=.${host}`;
-      document.cookie = `googtrans=; expires=${expiryPast}; path=/; domain=${host}`;
-    }
-    return;
-  }
-  const value = `/ml/${langCode}`;
-  document.cookie = `googtrans=${value}; path=/; SameSite=Lax`;
+  document.cookie = `googtrans=; expires=${expiryPast}; path=/`;
+  const host = window.location.hostname;
   if (host && host.includes('.')) {
-    document.cookie = `googtrans=${value}; path=/; domain=.${host}; SameSite=Lax`;
+    document.cookie = `googtrans=; expires=${expiryPast}; path=/; domain=.${host}`;
+    document.cookie = `googtrans=; expires=${expiryPast}; path=/; domain=${host}`;
   }
 }
 
@@ -84,12 +38,10 @@ class DisplayPrefsManager {
     language: 'ml',
   };
   private listeners = new Set<(snap: DisplayPrefsSnapshot) => void>();
-  private gtScriptRequested = false;
-  private gtInitialized = false;
-  private pendingLang: string | null = null;
 
   constructor() {
     this.loadFromStorage();
+    clearLegacyTranslateCookies();
   }
 
   private loadFromStorage(): void {
@@ -102,17 +54,7 @@ class DisplayPrefsManager {
         const rawLevel = Number(parsed.fontLevel);
         const fontLevel: FontSizeLevel =
           rawLevel >= 1 && rawLevel <= 5 ? (Math.round(rawLevel) as FontSizeLevel) : 2;
-        const cookieLang = readCookieLanguage();
-        const language =
-          typeof parsed.language === 'string' && parsed.language
-            ? parsed.language
-            : cookieLang || 'ml';
-        this.prefs = { darkMode, fontLevel, language };
-      } else {
-        const cookieLang = readCookieLanguage();
-        if (cookieLang && cookieLang !== 'ml') {
-          this.prefs.language = cookieLang;
-        }
+        this.prefs = { darkMode, fontLevel, language: 'ml' };
       }
     } catch {
       // Ignore storage read errors
@@ -158,11 +100,6 @@ class DisplayPrefsManager {
     if (themeMeta) {
       themeMeta.setAttribute('content', this.prefs.darkMode ? '#0b1220' : '#047857');
     }
-
-    if (this.prefs.language && this.prefs.language !== 'ml') {
-      setGoogleTranslateCookie(this.prefs.language);
-      this.ensureGoogleTranslateLoaded();
-    }
   }
 
   public setDarkMode(enabled: boolean): void {
@@ -188,114 +125,12 @@ class DisplayPrefsManager {
     this.setFontLevel(this.prefs.fontLevel + delta);
   }
 
-  public ensureGoogleTranslateLoaded(): void {
-    if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-    // Ensure hidden mount container exists permanently in document.body
-    let mount = document.getElementById('google_translate_element');
-    if (!mount) {
-      mount = document.createElement('div');
-      mount.id = 'google_translate_element';
-      mount.style.position = 'fixed';
-      mount.style.bottom = '-9999px';
-      mount.style.left = '-9999px';
-      mount.style.visibility = 'hidden';
-      document.body.appendChild(mount);
-    }
-
-    if (this.gtInitialized) {
-      if (this.pendingLang) {
-        this.applyComboLanguage(this.pendingLang);
-      }
-      return;
-    }
-
-    window.googleTranslateElementInit = () => {
-      try {
-        const TranslateElement = window.google?.translate?.TranslateElement;
-        if (!TranslateElement) return;
-        new TranslateElement(
-          {
-            pageLanguage: 'ml',
-            autoDisplay: false,
-            includedLanguages: 'ml,en,ar,ur,hi,ta,kn,te,bn,fr,es,de,id,ms,tr',
-          },
-          'google_translate_element'
-        );
-        this.gtInitialized = true;
-        if (this.pendingLang) {
-          window.setTimeout(() => this.applyComboLanguage(this.pendingLang!), 350);
-        }
-      } catch {
-        // Ignore third-party widget init errors
-      }
-    };
-
-    if (!this.gtScriptRequested) {
-      this.gtScriptRequested = true;
-      const script = document.createElement('script');
-      script.src =
-        'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-  }
-
-  private applyComboLanguage(langCode: string, retries = 10): void {
-    if (typeof document === 'undefined') return;
-    const combo = document.querySelector<HTMLSelectElement>('select.goog-te-combo');
-    if (combo) {
-      combo.value = langCode;
-      combo.dispatchEvent(new Event('change', { bubbles: true }));
-      this.pendingLang = null;
-      return;
-    }
-    if (retries > 0) {
-      window.setTimeout(() => this.applyComboLanguage(langCode, retries - 1), 300);
-    }
-  }
-
-  public setLanguage(langCode: string): void {
-    const normalized = (langCode || 'ml').trim();
-    const prev = this.prefs.language;
-    this.prefs.language = normalized;
-    this.persist();
-    this.emit();
-
-    setGoogleTranslateCookie(normalized);
-
-    if (normalized === 'ml') {
-      // Returning to original Malayalam: cleanly restore original text nodes
-      const combo =
-        typeof document !== 'undefined'
-          ? document.querySelector<HTMLSelectElement>('select.goog-te-combo')
-          : null;
-      if (combo) {
-        combo.value = 'ml';
-        combo.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-      if (prev !== 'ml' && typeof window !== 'undefined') {
-        window.setTimeout(() => window.location.reload(), 120);
-      }
-      return;
-    }
-
-    this.pendingLang = normalized;
-    this.ensureGoogleTranslateLoaded();
-    this.applyComboLanguage(normalized);
-  }
-
   public resetToDefaults(): void {
-    const wasTranslated = this.prefs.language !== 'ml';
     this.prefs = { darkMode: false, fontLevel: 2, language: 'ml' };
     this.persist();
-    setGoogleTranslateCookie('ml');
+    clearLegacyTranslateCookies();
     this.applyToDom();
     this.emit();
-    if (wasTranslated && typeof window !== 'undefined') {
-      window.setTimeout(() => window.location.reload(), 120);
-    }
   }
 }
 

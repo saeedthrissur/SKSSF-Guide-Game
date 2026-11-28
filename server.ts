@@ -278,8 +278,30 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '256kb' }));
 
+  // Lightweight per-IP rate limiter for /api/tts (30 requests / 60s)
+  const ttsRateBuckets = new Map<string, { count: number; resetAt: number }>();
+  const TTS_RATE_LIMIT = 30;
+  const TTS_RATE_WINDOW_MS = 60_000;
+
   // Server-side Strictly Natural Google Gemini Male Malayalam TTS (Charon ONLY)
   app.post('/api/tts', async (req, res) => {
+    const clientIp = (req.ip || req.socket?.remoteAddress || 'unknown').slice(0, 64);
+    const now = Date.now();
+    if (ttsRateBuckets.size > 500) {
+      for (const [k, v] of ttsRateBuckets.entries()) {
+        if (v.resetAt <= now) ttsRateBuckets.delete(k);
+      }
+    }
+    const bucket = ttsRateBuckets.get(clientIp);
+    if (!bucket || bucket.resetAt <= now) {
+      ttsRateBuckets.set(clientIp, { count: 1, resetAt: now + TTS_RATE_WINDOW_MS });
+    } else if (bucket.count >= TTS_RATE_LIMIT) {
+      res.status(429).json({ error: 'Too many voice requests, please wait a moment' });
+      return;
+    } else {
+      bucket.count += 1;
+    }
+
     const rawText = typeof req.body?.text === 'string' ? req.body.text : '';
     const cleanText = normalizeMalayalamSpeechText(rawText);
     if (!cleanText) {
@@ -302,10 +324,9 @@ async function startServer() {
         mimeType: audio.mimeType,
         provider: audio.provider,
       });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'TTS generation failed';
+    } catch {
       res.status(502).json({
-        error: message,
+        error: 'TTS generation failed',
       });
     }
   });

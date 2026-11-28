@@ -36,7 +36,7 @@ const CompactGameBar: React.FC<{
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-emerald-950 text-white">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <button
             type="button"
             onClick={() => {
@@ -44,7 +44,7 @@ const CompactGameBar: React.FC<{
               setInfoOpen((v) => !v);
             }}
             aria-label={title}
-            className="w-7 h-7 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm"
+            className="min-w-[40px] min-h-[40px] rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm shrink-0 cursor-pointer"
           >
             {icon}
           </button>
@@ -55,14 +55,14 @@ const CompactGameBar: React.FC<{
               setInfoOpen((v) => !v);
             }}
             aria-label="വിവരം"
-            className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+            className={`min-w-[40px] min-h-[40px] rounded-lg flex items-center justify-center shrink-0 cursor-pointer ${
               infoOpen ? 'bg-white text-emerald-950' : 'bg-white/15 text-amber-200'
             }`}
           >
-            <Info className="w-3.5 h-3.5" />
+            <Info className="w-4 h-4" />
           </button>
           {logoSrc && (
-            <div className="h-7 px-1.5 rounded-lg bg-white flex items-center justify-center shrink-0">
+            <div className="h-8 px-1.5 rounded-lg bg-white flex items-center justify-center shrink-0">
               <img
                 src={logoSrc}
                 alt={logoAlt || title}
@@ -70,11 +70,11 @@ const CompactGameBar: React.FC<{
               />
             </div>
           )}
-          <span className="px-2 py-0.5 rounded-md bg-white/15 text-amber-200 text-xs font-extrabold tabular-nums">
+          <span className="px-2 py-1 rounded-md bg-white/15 text-amber-200 text-xs font-extrabold tabular-nums">
             {progress}
           </span>
           {done && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-600 text-white text-xs font-extrabold">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600 text-white text-xs font-extrabold">
               <CheckCircle2 className="w-3.5 h-3.5" /> +30
             </span>
           )}
@@ -86,17 +86,16 @@ const CompactGameBar: React.FC<{
           <button
             type="button"
             onClick={onReset}
-            aria-label="വീണ്ടും"
-            className="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+            aria-label="വീണ്ടും കളിക്കാം"
+            className="min-w-[40px] min-h-[40px] rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center justify-center cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </div>
-      {infoOpen && (
-        <div className="px-3 py-2 rounded-xl bg-emerald-900 text-emerald-50 text-xs space-y-0.5">
-          <p className="font-extrabold text-amber-300">{title}</p>
-          <p className="font-semibold text-[11px]">{subtitle}</p>
+      {subtitle && (
+        <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-[11px] sm:text-xs font-bold leading-snug">
+          {infoOpen ? `${title} — ${subtitle}` : subtitle}
         </div>
       )}
     </div>
@@ -104,41 +103,48 @@ const CompactGameBar: React.FC<{
 };
 
 const GameDoneNextBar: React.FC<{ label?: string; onReplay: () => void }> = ({
-  label = 'അടുത്തത് · ക്വിസ്',
+  label = 'അടുത്തത് · പാഠവും ക്വിസും',
   onReplay,
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-400 flex items-center justify-between gap-2"
-  >
-    <div className="flex items-center gap-2">
-      <span className="text-xl">🎉</span>
-      <span className="text-xs sm:text-sm font-extrabold text-emerald-950">+30 XP</span>
-    </div>
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onReplay}
-        aria-label="വീണ്ടും"
-        className="w-9 h-9 rounded-xl bg-white border border-emerald-300 text-emerald-900 flex items-center justify-center"
-      >
-        <RotateCcw className="w-4 h-4" />
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          sound.playClick();
-          scrollToActiveQuiz();
-        }}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm"
-      >
-        <span>{label}</span>
-        <ArrowRight className="w-4 h-4" />
-      </button>
-    </div>
-  </motion.div>
-);
+}) => {
+  const stagePortal = useGameStagePortal();
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-400 flex items-center justify-between gap-2"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-xl">🎉</span>
+        <span className="text-xs sm:text-sm font-extrabold text-emerald-950">+30 XP</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onReplay}
+          aria-label="വീണ്ടും കളിക്കാം"
+          className="min-w-[40px] min-h-[40px] rounded-xl bg-white border border-emerald-300 text-emerald-900 flex items-center justify-center cursor-pointer"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            sound.playClick();
+            if (stagePortal) {
+              stagePortal.openLesson();
+            } else {
+              scrollToActiveQuiz();
+            }
+          }}
+          className="min-h-[40px] inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm cursor-pointer"
+        >
+          <span>{label}</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 /* ============================================================================
  * 1. WALL WRITING MURAL STUDIO (സമ്മേളന ചുമരിലെഴുത്ത്)
@@ -167,7 +173,7 @@ interface MuralZone {
 
 const WALL_W = 680;
 const WALL_H = 340;
-const PRIVATE_PILLAR_W = 64; // Far-left & far-right private gate pillars (DO NOT PAINT!)
+const PRIVATE_PILLAR_W = 54; // Far-left & far-right private gate pillars (20px safe gap before arches!)
 const WALL_TIME_LIMIT = 55;
 
 const MURAL_ZONES: MuralZone[] = [
@@ -219,7 +225,7 @@ const MURAL_ZONES: MuralZone[] = [
     id: 'arches',
     label: '🕌 മിനാരം & കമാനം',
     requiredColor: 'gold',
-    x: 78,
+    x: 74,
     y: 62,
     w: 72,
     h: 224,
@@ -267,12 +273,13 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
 
   const [selectedColor, setSelectedColor] = useState<WallColorId>('sky');
   const [completedZones, setCompletedZones] = useState<MuralZone['id'][]>([]);
+  const [activeZonePct, setActiveZonePct] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(WALL_TIME_LIMIT);
   const [won, setWon] = useState(false);
   const [failReason, setFailReason] = useState('');
   const [statusMsg, setStatusMsg] = useState<{ text: string; tone: 'info' | 'ok' | 'err' }>({
-    text: '🖌️ തിളങ്ങുന്ന ഭാഗത്തിന് ചേരുന്ന നിറം തിരഞ്ഞെടുത്ത് വിരൽ ഓടിച്ച് പെയിന്റ് ചെയ്യൂ! (സ്വകാര്യ ഗേറ്റിൽ തട്ടരുത്!)',
+    text: '🖌️ തിളങ്ങുന്ന ഭാഗത്തിന് ചേരുന്ന നിറം തിരഞ്ഞെടുത്ത് വിരൽ ഓടിച്ച് പെയിന്റ് ചെയ്യൂ! (ചുവന്ന സ്വകാര്യ ചുമരിൽ തട്ടരുത്!)',
     tone: 'info',
   });
 
@@ -291,15 +298,19 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
   wonRef.current = won;
   const failedRef = useRef(failed);
   failedRef.current = failed;
+  const stagePausedRef = useRef(stagePaused);
+  stagePausedRef.current = stagePaused;
+  const bgCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Countdown timer (pauses cleanly while blurred briefing / defeat / win overlay is up)
+  // Countdown timer (pauses cleanly while overlay is up or tab hidden)
   useEffect(() => {
     if (won || failed || stagePaused) return;
     const timer = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((prev) => {
         if (prev <= 1) {
           window.clearInterval(timer);
-          setFailReason('⏱️ സമ്മേളന ഘോഷയാത്ര എത്തി! സമയം തീരുന്നതിന് മുമ്പ് ചുമരെഴുത്ത് പൂർത്തിയാക്കാനായില്ല.');
+          setFailReason('⏱️ സമയം തീർന്നു! സാരമില്ല, നമുക്ക് ഒന്നുകൂടി ശ്രമിക്കാം.');
           sound.playError();
           return 0;
         }
@@ -309,9 +320,109 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     return () => window.clearInterval(timer);
   }, [won, failed, stagePaused]);
 
-  // Smooth 60fps Canvas Renderer (pure canvas drawing, zero DOM layout thrash!)
+  // Smooth 60fps Canvas Renderer with cached static wall background + pause/visibility awareness
   useEffect(() => {
     let rafId = 0;
+
+    // Build static background offscreen once
+    if (!bgCanvasRef.current && typeof document !== 'undefined') {
+      const off = document.createElement('canvas');
+      off.width = WALL_W;
+      off.height = WALL_H;
+      const bctx = off.getContext('2d');
+      if (bctx) {
+        const wallGrad = bctx.createLinearGradient(0, 0, 0, WALL_H);
+        wallGrad.addColorStop(0, '#FFFDF7');
+        wallGrad.addColorStop(0.86, '#FEF9EC');
+        wallGrad.addColorStop(1, '#DCFCE7');
+        bctx.fillStyle = wallGrad;
+        bctx.fillRect(0, 0, WALL_W, WALL_H);
+
+        // Subtle brickwork texture
+        bctx.strokeStyle = 'rgba(217, 119, 6, 0.12)';
+        bctx.lineWidth = 1;
+        for (let row = 0; row < 10; row++) {
+          const y = 32 + row * 28;
+          bctx.beginPath();
+          bctx.moveTo(PRIVATE_PILLAR_W, y);
+          bctx.lineTo(WALL_W - PRIVATE_PILLAR_W, y);
+          bctx.stroke();
+          const offset = row % 2 === 0 ? 0 : 28;
+          for (let x = PRIVATE_PILLAR_W + offset; x < WALL_W - PRIVATE_PILLAR_W; x += 56) {
+            bctx.beginPath();
+            bctx.moveTo(x, y);
+            bctx.lineTo(x, y + 28);
+            bctx.stroke();
+          }
+        }
+
+        // Festive conference bunting (തോരണങ്ങൾ)
+        const buntingColors = ['#0284C7', '#059669', '#F59E0B', '#FFFFFF', '#0284C7', '#059669'];
+        bctx.strokeStyle = '#334155';
+        bctx.lineWidth = 1.5;
+        bctx.beginPath();
+        bctx.moveTo(PRIVATE_PILLAR_W, 10);
+        bctx.quadraticCurveTo(WALL_W / 2, 28, WALL_W - PRIVATE_PILLAR_W, 10);
+        bctx.stroke();
+        for (let i = 0; i < 16; i++) {
+          const bx = PRIVATE_PILLAR_W + 18 + i * 35;
+          const by = 14 + Math.sin((i / 15) * Math.PI) * 9;
+          bctx.fillStyle = buntingColors[i % buntingColors.length];
+          bctx.beginPath();
+          bctx.moveTo(bx - 10, by);
+          bctx.lineTo(bx + 10, by);
+          bctx.lineTo(bx, by + 16);
+          bctx.closePath();
+          bctx.fill();
+        }
+
+        // Unpermitted private gate pillars
+        const drawPrivatePillar = (px: number) => {
+          bctx.save();
+          bctx.fillStyle = '#FEE2E2';
+          bctx.fillRect(px, 0, PRIVATE_PILLAR_W, WALL_H);
+          bctx.strokeStyle = '#EF4444';
+          bctx.lineWidth = 2;
+          bctx.strokeRect(px + 1, 1, PRIVATE_PILLAR_W - 2, WALL_H - 2);
+          bctx.beginPath();
+          bctx.rect(px, 0, PRIVATE_PILLAR_W, WALL_H);
+          bctx.clip();
+          bctx.strokeStyle = 'rgba(220, 38, 38, 0.22)';
+          bctx.lineWidth = 8;
+          for (let sy = -60; sy < WALL_H + 80; sy += 26) {
+            bctx.beginPath();
+            bctx.moveTo(px - 10, sy);
+            bctx.lineTo(px + PRIVATE_PILLAR_W + 10, sy + 44);
+            bctx.stroke();
+          }
+          bctx.restore();
+
+          bctx.save();
+          bctx.fillStyle = '#991B1B';
+          bctx.font = '800 16px sans-serif';
+          bctx.textAlign = 'center';
+          bctx.fillText('🚫', px + PRIVATE_PILLAR_W / 2, 136);
+          bctx.font = '800 9.5px sans-serif';
+          bctx.fillText('സ്വകാര്യ', px + PRIVATE_PILLAR_W / 2, 160);
+          bctx.fillText('ചുമർ', px + PRIVATE_PILLAR_W / 2, 175);
+          bctx.fillText('അനുവാദം', px + PRIVATE_PILLAR_W / 2, 198);
+          bctx.fillText('ഇല്ല!', px + PRIVATE_PILLAR_W / 2, 213);
+          bctx.restore();
+        };
+        drawPrivatePillar(0);
+        drawPrivatePillar(WALL_W - PRIVATE_PILLAR_W);
+
+        // Grass strip + golden outer mural frame
+        bctx.fillStyle = '#15803D';
+        bctx.fillRect(PRIVATE_PILLAR_W, WALL_H - 22, WALL_W - PRIVATE_PILLAR_W * 2, 22);
+        bctx.fillStyle = '#22C55E';
+        bctx.fillRect(PRIVATE_PILLAR_W, WALL_H - 24, WALL_W - PRIVATE_PILLAR_W * 2, 6);
+        bctx.strokeStyle = '#D97706';
+        bctx.lineWidth = 3;
+        bctx.strokeRect(PRIVATE_PILLAR_W + 8, 34, WALL_W - PRIVATE_PILLAR_W * 2 - 16, WALL_H - 64);
+      }
+      bgCanvasRef.current = off;
+    }
 
     const drawMinaretPair = (ctx: CanvasRenderingContext2D, progress: number) => {
       const drawOne = (cx: number) => {
@@ -357,7 +468,9 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
       drawOne(WALL_W - 114);
     };
 
+    let cancelled = false;
     const renderFrame = (time: number) => {
+      if (cancelled) return;
       const canvas = canvasRef.current;
       if (!canvas) {
         rafId = requestAnimationFrame(renderFrame);
@@ -369,99 +482,19 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
         return;
       }
 
-      // 1. Warm plastered Kerala compound wall backdrop
-      const wallGrad = ctx.createLinearGradient(0, 0, 0, WALL_H);
-      wallGrad.addColorStop(0, '#FFFDF7');
-      wallGrad.addColorStop(0.86, '#FEF9EC');
-      wallGrad.addColorStop(1, '#DCFCE7');
-      ctx.fillStyle = wallGrad;
-      ctx.fillRect(0, 0, WALL_W, WALL_H);
-
-      // Subtle brickwork texture (static, crisp)
-      ctx.strokeStyle = 'rgba(217, 119, 6, 0.12)';
-      ctx.lineWidth = 1;
-      for (let row = 0; row < 10; row++) {
-        const y = 32 + row * 28;
-        ctx.beginPath();
-        ctx.moveTo(PRIVATE_PILLAR_W, y);
-        ctx.lineTo(WALL_W - PRIVATE_PILLAR_W, y);
-        ctx.stroke();
-        const offset = row % 2 === 0 ? 0 : 28;
-        for (let x = PRIVATE_PILLAR_W + offset; x < WALL_W - PRIVATE_PILLAR_W; x += 56) {
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(x, y + 28);
-          ctx.stroke();
-        }
+      // 1. Blit cached static wall, brickwork, bunting, private pillars & golden frame
+      if (bgCanvasRef.current) {
+        ctx.drawImage(bgCanvasRef.current, 0, 0);
+      } else {
+        ctx.fillStyle = '#FFFDF7';
+        ctx.fillRect(0, 0, WALL_W, WALL_H);
       }
 
-      // Festive conference bunting (തോരണങ്ങൾ) at the top
-      const buntingColors = ['#0284C7', '#059669', '#F59E0B', '#FFFFFF', '#0284C7', '#059669'];
-      ctx.strokeStyle = '#334155';
-      ctx.lineWidth = 1.5;
+      // Clip all mural paint, sparkles, and live brush strictly inside the permitted mural area
+      ctx.save();
       ctx.beginPath();
-      ctx.moveTo(PRIVATE_PILLAR_W, 10);
-      ctx.quadraticCurveTo(WALL_W / 2, 28, WALL_W - PRIVATE_PILLAR_W, 10);
-      ctx.stroke();
-      for (let i = 0; i < 16; i++) {
-        const bx = PRIVATE_PILLAR_W + 16 + i * 34;
-        const by = 14 + Math.sin((i / 15) * Math.PI) * 9;
-        ctx.fillStyle = buntingColors[i % buntingColors.length];
-        ctx.beginPath();
-        ctx.moveTo(bx - 10, by);
-        ctx.lineTo(bx + 10, by);
-        ctx.lineTo(bx, by + 16);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // 2. Far-left & far-right UNPERMITTED PRIVATE GATE PILLARS (Hazard Zone!)
-      const drawPrivatePillar = (px: number) => {
-        ctx.save();
-        ctx.fillStyle = '#FEE2E2';
-        ctx.fillRect(px, 0, PRIVATE_PILLAR_W, WALL_H);
-        ctx.strokeStyle = '#EF4444';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(px + 1, 1, PRIVATE_PILLAR_W - 2, WALL_H - 2);
-        // Hazard diagonal stripes
-        ctx.beginPath();
-        ctx.rect(px, 0, PRIVATE_PILLAR_W, WALL_H);
-        ctx.clip();
-        ctx.strokeStyle = 'rgba(220, 38, 38, 0.22)';
-        ctx.lineWidth = 8;
-        for (let sy = -60; sy < WALL_H + 80; sy += 26) {
-          ctx.beginPath();
-          ctx.moveTo(px - 10, sy);
-          ctx.lineTo(px + PRIVATE_PILLAR_W + 10, sy + 44);
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        ctx.save();
-        ctx.fillStyle = '#991B1B';
-        ctx.font = '800 18px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🚫', px + PRIVATE_PILLAR_W / 2, 136);
-        ctx.font = '800 10px sans-serif';
-        ctx.fillText('സ്വകാര്യ', px + PRIVATE_PILLAR_W / 2, 160);
-        ctx.fillText('ചുമർ', px + PRIVATE_PILLAR_W / 2, 175);
-        ctx.fillText('അനുവാദം', px + PRIVATE_PILLAR_W / 2, 198);
-        ctx.fillText('ഇല്ല!', px + PRIVATE_PILLAR_W / 2, 213);
-        ctx.restore();
-      };
-      drawPrivatePillar(0);
-      drawPrivatePillar(WALL_W - PRIVATE_PILLAR_W);
-
-      // Decorative green grass strip along wall base
-      ctx.fillStyle = '#15803D';
-      ctx.fillRect(PRIVATE_PILLAR_W, WALL_H - 22, WALL_W - PRIVATE_PILLAR_W * 2, 22);
-      ctx.fillStyle = '#22C55E';
-      ctx.fillRect(PRIVATE_PILLAR_W, WALL_H - 24, WALL_W - PRIVATE_PILLAR_W * 2, 6);
-
-      // Ornamental Golden Outer Mural Frame
-      ctx.strokeStyle = '#D97706';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(PRIVATE_PILLAR_W + 8, 34, WALL_W - PRIVATE_PILLAR_W * 2 - 16, WALL_H - 64);
+      ctx.rect(PRIVATE_PILLAR_W + 2, 0, WALL_W - (PRIVATE_PILLAR_W + 2) * 2, WALL_H);
+      ctx.clip();
 
       // Helper to compute smooth progress per zone
       const getProgress = (z: MuralZone) => {
@@ -701,14 +734,14 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
       }
       particlesRef.current = alive;
 
-      // 6. Live Paintbrush indicator while dragging
+      // 6. Live Paintbrush indicator while dragging (larger mobile-friendly radius, strictly clipped to permitted wall)
       const ptr = pointerPosRef.current;
       if (ptr && paintingRef.current && !wonRef.current && !failedRef.current) {
         const brushHex =
           WALL_PALETTE.find((c) => c.id === selectedColorRef.current)?.color || '#0284C7';
         ctx.save();
         ctx.beginPath();
-        ctx.arc(ptr.x, ptr.y, 16, 0, Math.PI * 2);
+        ctx.arc(ptr.x, ptr.y, 22, 0, Math.PI * 2);
         ctx.fillStyle = `${brushHex}55`;
         ctx.fill();
         ctx.strokeStyle = brushHex;
@@ -717,12 +750,40 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
         ctx.restore();
       }
 
+      // Restore permitted mural clip
+      ctx.restore();
+
+      const shouldStopLoop =
+        cancelled ||
+        stagePausedRef.current ||
+        document.hidden ||
+        ((wonRef.current || failedRef.current) && particlesRef.current.length === 0);
+
+      if (!shouldStopLoop) {
+        rafId = requestAnimationFrame(renderFrame);
+      } else {
+        rafId = 0;
+      }
+    };
+
+    const startLoop = () => {
+      if (cancelled || rafId !== 0) return;
       rafId = requestAnimationFrame(renderFrame);
     };
 
-    rafId = requestAnimationFrame(renderFrame);
-    return () => cancelAnimationFrame(rafId);
-  }, []);
+    startLoop();
+    const onVisibility = () => {
+      if (!document.hidden && !stagePausedRef.current) {
+        startLoop();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [stagePaused, won, failed, completedZones.length]);
 
   const spawnSplash = (x: number, y: number, color: string, count = 6) => {
     for (let i = 0; i < count; i++) {
@@ -755,6 +816,38 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     });
   }, []);
 
+  const completeZoneNow = useCallback(
+    (zone: MuralZone, splashX: number, splashY: number) => {
+      if (zoneDoneRef.current[zone.id]) return;
+      zoneDoneRef.current[zone.id] = true;
+      setActiveZonePct(0);
+      spawnSplash(splashX, splashY, '#FACC15', 14);
+      sound.playSuccess(completedZones.length + 1);
+      setCompletedZones((prev) => {
+        const next = prev.includes(zone.id) ? prev : [...prev, zone.id];
+        const remaining = MURAL_ZONES.find((m) => !next.includes(m.id));
+        if (remaining) {
+          const nextCol = WALL_PALETTE.find((c) => c.id === remaining.requiredColor)!;
+          setStatusMsg({
+            text: `✨ "${zone.label}" മനോഹരമായി! ഇനി ${nextCol.emoji} ${nextCol.label} എടുത്ത് "${remaining.label}" പെയിന്റ് ചെയ്യൂ!`,
+            tone: 'ok',
+          });
+        } else {
+          setWon(true);
+          sound.playHoist();
+          onAwardXp(35, `wall_write_${xpKey}`);
+          onComplete?.();
+          stagePortal?.notifyStageWin(
+            'അനുവാദമുള്ള ചുമരിൽ 5 ഭാഗങ്ങളും മനോഹരമായി പെയിന്റ് ചെയ്ത് സമ്മേളന ചുമരെഴുത്ത് പൂർത്തിയാക്കി!'
+          );
+          narrator.speak('മനോഹരം! സമ്മേളന ചുമരിലെഴുത്ത് വൃത്തിയായും ഭംഗിയായും പൂർത്തിയാക്കി!');
+        }
+        return next;
+      });
+    },
+    [completedZones.length, onAwardXp, onComplete, stagePortal, xpKey]
+  );
+
   const handleBrushAt = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas || wonRef.current || failedRef.current || stagePaused) return;
@@ -765,22 +858,35 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
 
     // 1. Check Unpermitted Private Gate Pillars (Far left / Far right)
     if (x <= PRIVATE_PILLAR_W || x >= WALL_W - PRIVATE_PILLAR_W) {
-      spawnSplash(x, y, '#EF4444', 8);
-      penalize('🚫 അനുവാദമില്ലാത്ത സ്വകാര്യ ചുമരിൽ പെയിന്റ് തട്ടി! (-1 കവചം)');
+      spawnSplash(
+        Math.max(PRIVATE_PILLAR_W + 4, Math.min(WALL_W - PRIVATE_PILLAR_W - 4, x)),
+        y,
+        '#EF4444',
+        6
+      );
+      penalize('🚫 അനുവാദമില്ലാത്ത സ്വകാര്യ ചുമരിൽ തട്ടി! ചുവന്ന ഭാഗം ഒഴിവാക്കി നടുവിൽ പെയിന്റ് ചെയ്യൂ.');
       return;
     }
 
-    // 2. Hit-test any unpainted Mural Zone (arches matches both left & right minaret!)
-    const hitZone = MURAL_ZONES.find((z) => {
+    const hitTestZone = (z: MuralZone, pad: number) => {
       if (zoneDoneRef.current[z.id]) return false;
-      const inPrimary = x >= z.x - 10 && x <= z.x + z.w + 10 && y >= z.y - 10 && y <= z.y + z.h + 10;
+      const inPrimary = x >= z.x - pad && x <= z.x + z.w + pad && y >= z.y - pad && y <= z.y + z.h + pad;
       if (inPrimary) return true;
       if (z.id === 'arches') {
         const rx = WALL_W - z.x - z.w;
-        return x >= rx - 10 && x <= rx + z.w + 10 && y >= z.y - 10 && y <= z.y + z.h + 10;
+        return x >= rx - pad && x <= rx + z.w + pad && y >= z.y - pad && y <= z.y + z.h + pad;
       }
       return false;
-    });
+    };
+
+    // 2. Prioritize current activeZone first with generous touch padding; zero cross-zone bleed padding for others
+    const currentActive = activeZoneRef.current;
+    let hitZone: MuralZone | undefined;
+    if (currentActive && hitTestZone(currentActive, 10)) {
+      hitZone = currentActive;
+    } else {
+      hitZone = MURAL_ZONES.find((z) => z.id !== currentActive?.id && hitTestZone(z, 0));
+    }
 
     if (!hitZone) return;
 
@@ -790,9 +896,9 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
 
     // 3. Color Match Check
     if (brushColorId !== hitZone.requiredColor) {
-      spawnSplash(x, y, '#F43F5E', 7);
+      spawnSplash(x, y, '#F43F5E', 6);
       penalize(
-        `🎨 തെറ്റായ നിറം! "${hitZone.label}" പെയിന്റ് ചെയ്യാൻ ${requiredMeta.emoji} ${requiredMeta.label} തിരഞ്ഞെടുക്കൂ!`
+        `🎨 "${hitZone.label}" പെയിന്റ് ചെയ്യാൻ ${requiredMeta.emoji} ${requiredMeta.label} തിരഞ്ഞെടുക്കൂ!`
       );
       return;
     }
@@ -817,31 +923,12 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     }
 
     const totalCells = hitZone.cols * hitZone.rows;
+    const ratio = cellSet.size / Math.max(1, totalCells * 0.72);
+    if (currentActive && hitZone.id === currentActive.id) {
+      setActiveZonePct(Math.min(100, Math.round(ratio * 100)));
+    }
     if (cellSet.size >= Math.ceil(totalCells * 0.72) && !zoneDoneRef.current[hitZone.id]) {
-      zoneDoneRef.current[hitZone.id] = true;
-      spawnSplash(x, y, '#FACC15', 14);
-      sound.playSuccess(completedZones.length + 1);
-      setCompletedZones((prev) => {
-        const next = prev.includes(hitZone.id) ? prev : [...prev, hitZone.id];
-        const remaining = MURAL_ZONES.find((m) => !next.includes(m.id));
-        if (remaining) {
-          const nextCol = WALL_PALETTE.find((c) => c.id === remaining.requiredColor)!;
-          setStatusMsg({
-            text: `✨ "${hitZone.label}" മനോഹരമായി! ഇനി ${nextCol.emoji} ${nextCol.label} എടുത്ത് "${remaining.label}" പെയിന്റ് ചെയ്യൂ!`,
-            tone: 'ok',
-          });
-        } else {
-          setWon(true);
-          sound.playHoist();
-          onAwardXp(35, `wall_write_${xpKey}`);
-          onComplete?.();
-          stagePortal?.notifyStageWin(
-            'അനുവാദമുള്ള ചുമരിൽ 5 ഭാഗങ്ങളും മനോഹരമായി പെയിന്റ് ചെയ്ത് സമ്മേളന ചുമരെഴുത്ത് പൂർത്തിയാക്കി!'
-          );
-          narrator.speak('മനോഹരം! സമ്മേളന ചുമരിലെഴുത്ത് വൃത്തിയായും ഭംഗിയായും പൂർത്തിയാക്കി!');
-        }
-        return next;
-      });
+      completeZoneNow(hitZone, x, y);
     }
   };
 
@@ -864,13 +951,14 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
     particlesRef.current = [];
     lastPenaltyTsRef.current = 0;
     setCompletedZones([]);
+    setActiveZonePct(0);
     setShields(3);
     setTimeLeft(WALL_TIME_LIMIT);
     setSelectedColor('sky');
     setWon(false);
     setFailReason('');
     setStatusMsg({
-      text: '🖌️ തിളങ്ങുന്ന ഭാഗത്തിന് ചേരുന്ന നിറം തിരഞ്ഞെടുത്ത് വിരൽ ഓടിച്ച് പെയിന്റ് ചെയ്യൂ! (സ്വകാര്യ ഗേറ്റിൽ തട്ടരുത്!)',
+      text: '🖌️ തിളങ്ങുന്ന ഭാഗത്തിന് ചേരുന്ന നിറം തിരഞ്ഞെടുത്ത് വിരൽ ഓടിച്ച് പെയിന്റ് ചെയ്യൂ! (ചുവന്ന സ്വകാര്യ ചുമരിൽ തട്ടരുത്!)',
       tone: 'info',
     });
   };
@@ -981,9 +1069,9 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
         />
       </div>
 
-      {/* Fixed-Height Status Strip (NEVER mounts/unmounts — zero layout jump!) */}
+      {/* Fixed-Height Status Strip + 60% Auto-Fill Helper */}
       <div
-        className={`rounded-xl px-3 py-2 text-xs font-extrabold border min-h-[38px] flex items-center transition-colors ${
+        className={`rounded-xl px-3 py-2 text-xs font-extrabold border min-h-[42px] flex flex-wrap items-center justify-between gap-2 transition-colors ${
           statusMsg.tone === 'err'
             ? 'bg-rose-50 border-rose-300 text-rose-900'
             : statusMsg.tone === 'ok'
@@ -991,15 +1079,31 @@ export const WallWritingPaintGame: React.FC<PracticalGameProps> = ({
             : 'bg-amber-50 border-amber-200 text-amber-950'
         }`}
       >
-        {statusMsg.text}
+        <span className="flex-1 min-w-[180px] leading-snug">{statusMsg.text}</span>
+        {activeZone && !won && !failed && activeZonePct >= 60 && (
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              completeZoneNow(
+                activeZone,
+                activeZone.x + activeZone.w / 2,
+                activeZone.y + activeZone.h / 2
+              );
+            }}
+            className="shrink-0 min-h-[36px] px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold shadow-xs cursor-pointer active:scale-95 transition-transform"
+          >
+            ✨ ഈ ഭാഗം പൂർത്തിയാക്കാം
+          </button>
+        )}
       </div>
 
       {failed && (
         <GameDefeatBurstOverlay
-          title="🖌️ ചുമരെഴുത്ത് ദൗത്യം പരാജയപ്പെട്ടു!"
+          title="🖌️ സാരമില്ല, നമുക്ക് ഒന്നുകൂടി ശ്രമിക്കാം!"
           reason={
             failReason ||
-            'തെറ്റായ നിറം / അനുവാദമില്ലാത്ത സ്വകാര്യ ചുമരിൽ പെയിന്റ് തട്ടിയതിനാൽ കവചം തകർന്നു!'
+            'ശരിയായ നിറം തിരഞ്ഞെടുത്ത് നടുവിലെ ചുമരിൽ വീണ്ടും പെയിന്റ് ചെയ്തു നോക്കൂ!'
           }
           scoreText={`പൂർത്തിയാക്കിയ ഭാഗങ്ങൾ: ${completedZones.length}/${MURAL_ZONES.length}`}
           onRetry={reset}
@@ -1830,7 +1934,7 @@ const AGENDA_SLOTS = [
   { id: 'chair', emoji: '👑', role: '4. അധ്യക്ഷൻ', expectedPerson: 'president' },
   { id: 'inaug', emoji: '🎤', role: '5. ഉദ്ഘാടനം / മജ്‌ലിസുന്നൂർ', expectedPerson: 'ustad' },
   { id: 'felic', emoji: '🤝', role: '6. ആശംസ', expectedPerson: 'mahallu' },
-  { id: 'thanks', emoji: '🙏', role: '7. നന്ദി', expectedPerson: 'treasurer' },
+  { id: 'thanks', emoji: '✨', role: '7. നന്ദി', expectedPerson: 'treasurer' },
 ] as const;
 
 const AGENDA_PEOPLE = [
@@ -2443,7 +2547,7 @@ export const ProgramBudgetCheeraniGame: React.FC<PracticalGameProps> = ({
  * 7. POST-EVENT REVIEW REPORT GAME (പരിപാടി അവലോകന റിപ്പോർട്ട്)
  * ========================================================================== */
 const REVIEW_OPTIONS = [
-  { id: 'attendance', emoji: '👥', label: 'പങ്കാളിത്തവും സംഘാടന വിലയിരുത്തലും', valid: true },
+  { id: 'attendance', emoji: '📋', label: 'പങ്കാളിത്തവും സംഘാടന വിലയിരുത്തലും', valid: true },
   { id: 'bad_hide', emoji: '🙈', label: 'കണക്കുകൾ രഹസ്യമായി ഒളിപ്പിച്ചുവെക്കൽ', valid: false },
   { id: 'accounts', emoji: '💰', label: 'വരവ്–ചെലവ്–നീക്കിയിരിപ്പ് സുതാര്യ അവതരണം', valid: true },
   { id: 'cleanup', emoji: '🏟️', label: 'ചീരണി & വിഖായ ശുചീകരണ അവലോകനം', valid: true },

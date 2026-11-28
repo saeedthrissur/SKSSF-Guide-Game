@@ -488,7 +488,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
       {/* Silent Unmarked Access Modal — ONLY opens after 6 rapid taps on the corner icon */}
       {codePromptOpen && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-[110] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setCodePromptOpen(false)}
         >
           <form

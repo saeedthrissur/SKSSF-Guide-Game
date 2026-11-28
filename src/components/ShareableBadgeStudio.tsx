@@ -3,6 +3,8 @@ import { Award, Camera, Check, Copy, Download, Flame, Lock, Share2, Trash2, X } 
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl } from '../utils/shareLink';
 import { ALL_LESSONS } from '../utils/lessonTracker';
+import { loadDailyAndProfileState, UnitProfile } from '../utils/gameStorage';
+import { sanitizeFinalPlayerText, sanitizePlayerText } from '../utils/sanitize';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
 export type BadgeMetalTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'emerald' | 'royal';
@@ -298,6 +300,8 @@ export interface ShareableBadgeStudioProps {
   completedLessonIds?: string[];
   completedLevels?: number[];
   awardedActions?: Record<string, boolean>;
+  profile?: UnitProfile;
+  onUpdateUnitProfile?: (patch: Partial<UnitProfile>) => void;
   onOpenSupport?: () => void;
 }
 
@@ -311,7 +315,8 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   completedLessonIds = [],
   completedLevels = [],
   awardedActions = {},
-  onOpenSupport,
+  profile,
+  onUpdateUnitProfile,
 }) => {
   const [selectedId, setSelectedId] = useState<string>('starter_member');
   const [userName, setUserName] = useState<string>('');
@@ -375,6 +380,19 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     setStatusMsg(null);
+    // Auto-fill Name & Unit from saved profile
+    const savedProfile = profile || loadDailyAndProfileState().profile;
+    const savedName = sanitizeFinalPlayerText(
+      savedProfile.lockedCertificateName || savedProfile.playerName || '',
+      40
+    );
+    const savedUnit = sanitizeFinalPlayerText(
+      [savedProfile.unitName, savedProfile.mekhalaName].filter(Boolean).join(' · '),
+      45
+    );
+    if (savedName) setUserName((prev) => prev || savedName);
+    if (savedUnit) setUnitPlace((prev) => prev || savedUnit);
+
     if (initialBadgeId && unlockedMap[initialBadgeId]) {
       setSelectedId(initialBadgeId);
       return;
@@ -383,35 +401,22 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       .reverse()
       .find((b) => unlockedMap[b.id]);
     setSelectedId(highestUnlocked?.id || 'starter_member');
-  }, [isOpen, initialBadgeId, unlockedMap]);
+  }, [isOpen, initialBadgeId, unlockedMap, profile]);
 
   if (!isOpen) return null;
-
-  const cleanRank =
-    rank
-      .replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '')
-      .replace(/SKSSF അനുഭാവി/g, 'വിജ്ഞാനാന്വേഷി')
-      .replace(/SKSSF അംഗം/g, 'ആശയാഭിലാഷി')
-      .replace(/SKSSF സംഘാടക പ്രതിനിധി/g, 'ആദർശാനുഭാവി')
-      .replace(/SKSSF ഭാരവാഹി/g, 'ചരിത്രാന്വേഷി')
-      .replace(/SKSSF നേതൃത്വം/g, 'ആദർശരക്ഷാധികാരി')
-      .replace(/SKSSF മാർഗ്ഗദർശി/g, 'വിജ്ഞാനസാരഥി')
-      .replace(/കൂട്ടുകാരൻ/g, 'വിജ്ഞാനാന്വേഷി')
-      .replace(/പ്രവർത്തകൻ/g, 'ആശയാഭിലാഷി')
-      .replace(/സംഘാടകൻ/g, 'ആദർശാനുഭാവി')
-      .replace(/\s+/g, ' ')
-      .trim() || 'വിജ്ഞാനാന്വേഷി';
 
   const badge =
     SHAREABLE_BADGES.find((b) => b.id === selectedId && unlockedMap[b.id]) ||
     SHAREABLE_BADGES[0];
-  const displayName = userName.trim() || 'നിങ്ങളുടെ പേര്';
-  const displayPlace = unitPlace.trim() || 'യൂണിറ്റ് / നാട്';
+  const displayName = sanitizeFinalPlayerText(userName, 40) || 'നിങ്ങളുടെ പേര്';
+  const displayPlace = sanitizeFinalPlayerText(unitPlace, 45) || 'യൂണിറ്റ് / നാട്';
   const starGlyphs = '★'.repeat(badge.stars);
+  // Never repeat badge title inside the XP pill: clean format "20 XP • ഘട്ടം 1 • 🔥 1 ദിവസം"
   const statsSummary =
     streakDays > 0
-      ? `${xp} XP · ${cleanRank} · 🔥 ${streakDays} ദിവസം`
-      : `${xp} XP · ${cleanRank}`;
+      ? `${xp} XP • ${badge.tierLabel} • 🔥 ${streakDays} ദിവസം`
+      : `${xp} XP • ${badge.tierLabel}`;
+  void rank;
 
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -441,17 +446,17 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
     const canvas = document.createElement('canvas');
     canvas.width = 1080;
-    canvas.height = 1350;
+    canvas.height = 1385;
     const ctx = canvas.getContext('2d')!;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     // 1. Rich Metallic Outer Background Frame (Bronze / Silver / Gold / Platinum / Emerald / Royal)
-    const frameGrad = ctx.createLinearGradient(0, 0, 1080, 1350);
+    const frameGrad = ctx.createLinearGradient(0, 0, 1080, 1385);
     frameGrad.addColorStop(0, badge.frameStops[0]);
     frameGrad.addColorStop(0.5, badge.frameStops[1]);
     frameGrad.addColorStop(1, badge.frameStops[2]);
     ctx.fillStyle = frameGrad;
-    ctx.fillRect(0, 0, 1080, 1350);
+    ctx.fillRect(0, 0, 1080, 1385);
 
     // Subtle diagonal metallic sheen overlay
     const sheenGrad = ctx.createLinearGradient(0, 0, 1080, 620);
@@ -459,7 +464,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     sheenGrad.addColorStop(0.45, 'rgba(255,255,255,0.03)');
     sheenGrad.addColorStop(1, 'rgba(0,0,0,0.18)');
     ctx.fillStyle = sheenGrad;
-    ctx.fillRect(0, 0, 1080, 1350);
+    ctx.fillRect(0, 0, 1080, 1385);
 
     // 2. Crisp Rounded Inner Card (Zero Clipping!)
     ctx.save();
@@ -468,7 +473,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     ctx.shadowOffsetY = 14;
     ctx.fillStyle = badge.cardBg;
     ctx.beginPath();
-    ctx.roundRect(48, 48, 984, 1254, 42);
+    ctx.roundRect(48, 48, 984, 1289, 42);
     ctx.fill();
     ctx.restore();
 
@@ -476,7 +481,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     ctx.strokeStyle = badge.trimColor;
     ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.roundRect(68, 68, 944, 1214, 30);
+    ctx.roundRect(68, 68, 944, 1249, 30);
     ctx.stroke();
 
     // 3. Subtle Low-Opacity Shield Crest Watermark behind the card center (never obscures text)
@@ -541,7 +546,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     // Header Titles
     ctx.fillStyle = badge.accentText;
     drawOpticalCenteredFit(
-      `${starGlyphs}  ${badge.metalNameEn} BADGE  ·  ${badge.tierLabel}`,
+      `${starGlyphs}  ${badge.metalNameMl} ബാഡ്ജ്  ·  ${badge.tierLabel}`,
       540,
       126,
       560,
@@ -701,6 +706,18 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       '"Noto Serif", Georgia, serif'
     );
 
+    // 10. Official Disclaimer Footer
+    ctx.fillStyle = '#64748B';
+    drawOpticalCenteredFit(
+      'ഇതൊരു പഠന ഗെയിം ബാഡ്ജ് മാത്രമാണ് · ഔദ്യോഗിക അംഗത്വ രേഖയല്ല',
+      540,
+      1288,
+      880,
+      18,
+      13,
+      600
+    );
+
     return canvas;
   };
 
@@ -714,7 +731,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       link.download = `SKSSF-${badge.metalNameEn}-Badge-${displayName.replace(/\s+/g, '-')}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
-      setStatusMsg('ബാഡ്ജ് സേവ് ചെയ്തു! ഇനി വാട്‌സ്ആപ്പിലോ സ്റ്റാറ്റസിലോ ഇടാം.');
+      setStatusMsg('ബാഡ്ജ് സേവ് ചെയ്തു! ഇനി വാട്സ്ആപ്പിലോ സ്റ്റാറ്റസിലോ ഇടാം.');
     } finally {
       setBusy(false);
     }
@@ -755,7 +772,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
       link.href = canvas.toDataURL('image/png');
       link.click();
       await copyAppShareLink();
-      setStatusMsg('ചിത്രം ഡൗൺലോഡ് ചെയ്തു, ഗെയിം ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്‌സ്ആപ്പിൽ അയക്കാം!');
+      setStatusMsg('ചിത്രം ഡൗൺലോഡ് ചെയ്തു, ഗെയിം ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്സ്ആപ്പിൽ അയക്കാം!');
     } catch {
       setStatusMsg('ഷെയർ വേണ്ടെന്ന് വെച്ചു — ഡൗൺലോഡ് / ലിങ്ക് കോപ്പി ബട്ടൺ ഉപയോഗിക്കാം.');
     } finally {
@@ -775,12 +792,16 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-label="എന്റെ ഫോട്ടോ ബാഡ്ജ്"
+      onClick={onClose}
     >
-      <div className="bg-white rounded-3xl border-2 border-amber-300 shadow-2xl max-w-4xl w-full p-4 sm:p-6 my-auto max-h-[92vh] overflow-y-auto space-y-5">
+      <div
+        className="bg-white rounded-3xl border-2 border-amber-300 shadow-2xl max-w-4xl w-full p-4 sm:p-6 my-auto max-h-[85vh] overflow-y-auto overscroll-contain space-y-5"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
           <div>
             <p className="text-xs font-extrabold text-emerald-700">
@@ -794,15 +815,15 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* Left: Form + Photo Picker + Metallic Progressive Badge Selector */}
-          <div className="lg:col-span-6 space-y-4">
+          {/* Form + Photo Picker + Metallic Progressive Badge Selector (Below preview on mobile, left on desktop) */}
+          <div className="order-2 lg:order-1 lg:col-span-6 space-y-4">
             {/* Photo Upload Box */}
             <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-2.5">
               <p className="text-xs font-extrabold text-amber-950">
@@ -822,7 +843,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                  className="min-h-[40px] inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
                 >
                   <Camera className="w-4 h-4" />
                   <span>{photoDataUrl ? 'വേറെ ഫോട്ടോ വെക്കാം' : '📷 ഫോട്ടോ എടുക്കാം / ചേർക്കാം'}</span>
@@ -831,7 +852,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   <button
                     type="button"
                     onClick={() => setPhotoDataUrl(null)}
-                    className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold hover:bg-rose-50 cursor-pointer"
+                    className="min-h-[40px] inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white border border-rose-300 text-rose-800 text-xs font-bold hover:bg-rose-50 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> നീക്കാം
                   </button>
@@ -839,7 +860,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               </div>
             </div>
 
-            {/* Name & Unit */}
+            {/* Name & Unit (Sanitized + Auto-Synced) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-extrabold text-slate-700 mb-1">
@@ -847,10 +868,15 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 </label>
                 <input
                   type="text"
+                  maxLength={40}
                   value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
+                  onChange={(e) => {
+                    const clean = sanitizePlayerText(e.target.value, 40);
+                    setUserName(clean);
+                    onUpdateUnitProfile?.({ playerName: clean });
+                  }}
                   placeholder="ഉദാ: മുഹമ്മദ് റയ്യാൻ"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
                 />
               </div>
               <div>
@@ -859,10 +885,15 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 </label>
                 <input
                   type="text"
+                  maxLength={45}
                   value={unitPlace}
-                  onChange={(e) => setUnitPlace(e.target.value)}
+                  onChange={(e) => {
+                    const clean = sanitizePlayerText(e.target.value, 45);
+                    setUnitPlace(clean);
+                    onUpdateUnitProfile?.({ unitName: clean });
+                  }}
                   placeholder="ഉദാ: നിങ്ങളുടെ നാട് / യൂണിറ്റ്"
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
+                  className="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-600"
                 />
               </div>
             </div>
@@ -870,7 +901,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
             {/* Metallic Progressive Badge Picker */}
             <div className="space-y-2">
               <p className="text-xs font-extrabold text-slate-700">
-                4. നിങ്ങൾക്ക് തുറന്ന മെറ്റാലിക് ബാഡ്ജ് തിരഞ്ഞെടുക്കാം:
+                4. നിങ്ങൾക്ക് തുറന്ന ബാഡ്ജ് തിരഞ്ഞെടുക്കാം:
               </p>
               <div className="grid grid-cols-2 gap-2">
                 {SHAREABLE_BADGES.map((item) => {
@@ -885,7 +916,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                         sound.playPop();
                         setSelectedId(item.id);
                       }}
-                      className={`p-2.5 rounded-xl border-2 text-left transition-all flex items-start gap-2.5 ${
+                      className={`min-h-[56px] p-2.5 rounded-xl border-2 text-left transition-all flex items-start gap-2.5 ${
                         active
                           ? 'bg-emerald-50 border-emerald-600 text-slate-950 shadow-xs cursor-pointer'
                           : locked
@@ -902,7 +933,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                             className="text-[10px] font-black tracking-wide truncate"
                             style={{ color: locked ? '#94A3B8' : item.accentText }}
                           >
-                            {item.metalNameEn}
+                            {item.metalNameMl}
                           </span>
                           {locked ? (
                             <Lock className="w-3 h-3 text-slate-400 shrink-0" />
@@ -914,7 +945,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                           {item.title}
                         </p>
                         <p className="text-[10px] font-bold text-slate-500 mt-0.5 leading-snug break-words">
-                          {locked ? item.unlockHint : `${'★'.repeat(item.stars)} ${item.metalNameMl}`}
+                          {locked ? item.unlockHint : `${'★'.repeat(item.stars)} ${item.tierLabel}`}
                         </p>
                       </div>
                     </button>
@@ -923,13 +954,13 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               </div>
             </div>
 
-            {/* Share, Download & Copy Link Actions */}
-            <div className="flex flex-wrap gap-2 pt-1">
+            {/* Streamlined Primary Actions: Share + Download + Subtle Copy Link Icon */}
+            <div className="flex items-center gap-2 pt-1">
               <button
                 type="button"
                 disabled={busy}
                 onClick={handleSocialShare}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
+                className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
                 <span>{busy ? 'തയ്യാറാക്കുന്നു...' : 'ഷെയർ ചെയ്യാം'}</span>
@@ -938,7 +969,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 type="button"
                 disabled={busy}
                 onClick={handleDownload}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
+                className="min-h-[44px] inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm font-extrabold shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 <span>ഡൗൺലോഡ്</span>
@@ -946,10 +977,11 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 text-xs font-extrabold cursor-pointer"
+                aria-label="ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യാം"
+                title="ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യാം"
+                className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-950 cursor-pointer shrink-0"
               >
-                <Copy className="w-3.5 h-3.5" />
-                <span>🔗 ഗെയിം ലിങ്ക് കോപ്പി ചെയ്യാം</span>
+                <Copy className="w-4 h-4" />
               </button>
             </div>
 
@@ -958,35 +990,19 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 ✅ {statusMsg}
               </p>
             )}
-
-            {onOpenSupport && (
-              <div className="pt-1 flex items-center justify-center sm:justify-start">
-                <button
-                  type="button"
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    onOpenSupport();
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Right: Crisp Zero-Clipping Metallic Game Badge Card Preview */}
-          <div className="lg:col-span-6 flex justify-center items-start">
+          {/* Crisp Zero-Clipping Metallic Game Badge Card Preview (Top on mobile, right on desktop) */}
+          <div className="order-1 lg:order-2 lg:col-span-6 flex justify-center items-start">
             <div
               className="w-full max-w-[368px] rounded-[28px] p-3 shadow-xl relative overflow-hidden"
               style={{
                 background: `linear-gradient(145deg, ${badge.frameStops[0]} 0%, ${badge.frameStops[1]} 50%, ${badge.frameStops[2]} 100%)`,
               }}
             >
-              {/* Crisp Inner Card (Never Clipped!) */}
+              {/* Crisp Inner Card (Never Clipped! Protected in Dark Mode via badge-preview-surface) */}
               <div
-                className="rounded-[20px] p-4 text-center relative overflow-hidden space-y-3"
+                className="badge-preview-surface rounded-[20px] p-4 text-center relative overflow-hidden space-y-3"
                 style={{
                   backgroundColor: badge.cardBg,
                   border: `2px solid ${badge.trimColor}`,
@@ -1013,7 +1029,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                       className="text-[10px] font-black tracking-wider"
                       style={{ color: badge.accentText }}
                     >
-                      {starGlyphs} {badge.metalNameEn} · {badge.tierLabel}
+                      {starGlyphs} {badge.metalNameMl} · {badge.tierLabel}
                     </p>
                     <p className="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5">
                       SKSSF ഗൈഡ് ഗെയിം
@@ -1093,9 +1109,9 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                   </p>
                 </div>
 
-                {/* XP, Rank & Daily Streak Strip */}
+                {/* Clean XP, Stage & Daily Streak Strip (Never duplicates badge title!) */}
                 <div
-                  className="relative z-10 py-1.5 px-3 rounded-xl text-[11px] font-extrabold text-slate-900 tabular-nums flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5"
+                  className="relative z-10 py-1.5 px-3 rounded-xl text-[11px] font-extrabold text-slate-900 tabular-nums flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5"
                   style={{
                     backgroundColor: badge.stripBg,
                     border: `1px solid ${badge.stripBorder}`,
@@ -1103,10 +1119,11 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                 >
                   <span className="inline-flex items-center gap-1">
                     <Award className="w-3.5 h-3.5 shrink-0" style={{ color: badge.accentText }} />
-                    {xp} XP · {cleanRank}
+                    {xp} XP • {badge.tierLabel}
                   </span>
                   {streakDays > 0 && (
                     <span className="inline-flex items-center gap-0.5 text-amber-700">
+                      <span aria-hidden="true">•</span>
                       <Flame className="w-3.5 h-3.5 shrink-0" />
                       {streakDays} ദിവസം
                     </span>
@@ -1144,6 +1161,11 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
                     </p>
                   </div>
                 </div>
+
+                {/* Clear Game-Only Disclaimer */}
+                <p className="relative z-10 text-[10px] font-semibold text-slate-500 leading-snug pt-0.5">
+                  ഇതൊരു പഠന ഗെയിം ബാഡ്ജ് മാത്രമാണ് · ഔദ്യോഗിക അംഗത്വ രേഖയല്ല
+                </p>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight,
@@ -35,6 +35,11 @@ export function scrollToActiveQuiz(): void {
   const el = document.querySelector<HTMLElement>('[data-lesson-quiz="true"]');
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  // If called from Screen 1 ('play'), switch smoothly to Study/Quiz tab
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('skssf:go-to-study'));
   }
 }
 
@@ -89,6 +94,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   const [shakeTick, setShakeTick] = useState(0);
   const [isOpen, setIsOpen] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const resultRef = useRef<HTMLDivElement | null>(null);
   const [optionOrder, setOptionOrder] = useState<number[]>(() =>
     createShuffledOrder(quiz?.options.length ?? 3)
   );
@@ -117,7 +123,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
   const correctOptionText = quiz.options[quiz.correctIdx] ?? '';
   const finalNextLabel = nextLessonLabel.includes('സാക്ഷ്യപത്രം')
     ? nextLessonLabel
-    : 'അടുത്ത പാഠം (Next Storyline & Game)';
+    : 'അടുത്ത പാഠത്തിലേക്ക്';
 
   // Mandatory lesson check: quiz stays locked until user confirms the lesson drawer (unless already answered or no drawer exists)
   const lessonUnlocked = isAnswered || !hasLessonDrawerOnPage || isLessonConfirmed(lessonId);
@@ -138,14 +144,21 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
       const nextLives = Math.max(0, lives - 1);
       if (nextLives > 0) {
         narrator.speak(
-          `തിരഞ്ഞെടുത്ത ഉത്തരം ശരിയല്ല! ഒരു ഹൃദയം പൊട്ടി. ശരിയായ ഉത്തരം ഇതാണ്: ${correctOptionText}. ${quiz.explanation}`
+          `സാരമില്ല! ശരിയായ ഉത്തരം ഇതാണ്: ${correctOptionText}. ${quiz.explanation}`
         );
       } else {
         narrator.speak(
-          `തിരഞ്ഞെടുത്ത ഉത്തരം ശരിയല്ല! ശരിയായ ഉത്തരം: ${correctOptionText}. 3 ഹൃദയങ്ങളും നഷ്ടമായി — ഇനി ഒന്നാമത്തെ പാഠം മുതൽ വീണ്ടും തുടങ്ങാം!`
+          `സാരമില്ല! ശരിയായ ഉത്തരം: ${correctOptionText}. ചെറിയൊരു ആവർത്തനത്തിലൂടെ ഹൃദയം തിരിച്ചുപിടിച്ച് നമുക്ക് മുന്നേറാം!`
         );
       }
     }
+
+    // Smoothly bring feedback & Next Lesson button into viewport on mobile
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
   };
 
   return (
@@ -271,7 +284,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                 }}
                 aria-label="ക്വിസ് വിവരണം"
                 title="ക്വിസ് വിവരണം"
-                className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer transition-colors"
+                className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 cursor-pointer transition-colors"
               >
                 <Info className="w-4 h-4" />
               </button>
@@ -418,6 +431,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                   {/* PASSED FEEDBACK + NEXT LESSON BUTTON */}
                   {isPassed && (
                     <motion.div
+                      ref={resultRef}
                       initial={{ opacity: 0, scale: 0.96, y: 6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       className="rounded-2xl p-3.5 border-2 border-emerald-300 bg-white text-emerald-950 space-y-2.5"
@@ -440,7 +454,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                             onNextLesson();
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm transition-transform active:scale-98 cursor-pointer"
+                          className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm transition-transform active:scale-98 cursor-pointer"
                         >
                           <span>{finalNextLabel}</span>
                           <ArrowRight className="w-4 h-4" />
@@ -452,12 +466,13 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                   {/* WRONG ANSWER */}
                   {isWrongAnswered && (
                     <motion.div
+                      ref={resultRef}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-2xl p-3.5 border-2 border-rose-300 bg-white space-y-2.5 shadow-xs"
+                      className="rounded-2xl p-3.5 border-2 border-amber-300 bg-white space-y-2.5 shadow-xs"
                     >
-                      <p className="text-xs sm:text-sm font-extrabold text-rose-700">
-                        ❌ ശരിയല്ല! 💔 ({lives}/{maxLives})
+                      <p className="text-xs sm:text-sm font-extrabold text-amber-900">
+                        💛 സാരമില്ല! ശരിയായ ഉത്തരം നോക്കാം ({lives}/{maxLives})
                       </p>
                       <div className="rounded-xl bg-emerald-50 border border-emerald-300 px-3 py-2 space-y-1">
                         <p className="text-xs sm:text-sm font-extrabold text-emerald-900">
@@ -476,7 +491,7 @@ export const LessonCheckQuiz: React.FC<LessonCheckQuizProps> = ({
                             onNextLesson();
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           }}
-                          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm cursor-pointer"
+                          className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold border-b-4 border-emerald-950 shadow-sm cursor-pointer"
                         >
                           <span>{finalNextLabel}</span>
                           <ArrowRight className="w-4 h-4" />

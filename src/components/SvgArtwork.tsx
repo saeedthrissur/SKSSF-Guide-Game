@@ -5,9 +5,9 @@ interface ImageFlagProps {
 }
 
 export const OFFICIAL_FLAG_ASSETS = {
-  samastha: './assets/aistudio/image_376c67eb.png',
-  skssf: './assets/aistudio/image_26225796.png',
-  sksbv: './assets/aistudio/image_6f3b1f1a.png',
+  samastha: './assets/illustrations/image_376c67eb.png',
+  skssf: './assets/illustrations/image_26225796.png',
+  sksbv: './assets/illustrations/image_6f3b1f1a.png',
 } as const;
 
 export const OfficialSamasthaFlagImg: React.FC<ImageFlagProps> = ({
@@ -18,6 +18,8 @@ export const OfficialSamasthaFlagImg: React.FC<ImageFlagProps> = ({
     alt="സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ (SKJU) ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
+    loading="lazy"
+    decoding="async"
   />
 );
 
@@ -29,6 +31,8 @@ export const OfficialSkssfFlagImg: React.FC<ImageFlagProps> = ({
     alt="SKSSF ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
+    loading="lazy"
+    decoding="async"
   />
 );
 
@@ -40,6 +44,8 @@ export const OfficialSksbvFlagImg: React.FC<ImageFlagProps> = ({
     alt="SKSBV ഔദ്യോഗിക പതാക"
     className={`object-contain rounded-lg ${className}`}
     referrerPolicy="no-referrer"
+    loading="lazy"
+    decoding="async"
   />
 );
 
@@ -47,10 +53,12 @@ export const OfficialSkimvbLogoImg: React.FC<ImageFlagProps> = ({
   className = 'w-28 h-28 mx-auto',
 }) => (
   <img
-    src="./assets/aistudio/image_e03981e1.png"
+    src="./assets/illustrations/image_e03981e1.png"
     alt="SKIMVB ഔദ്യോഗിക ലോഗോ"
     className={`object-contain ${className}`}
     referrerPolicy="no-referrer"
+    loading="lazy"
+    decoding="async"
   />
 );
 
@@ -225,16 +233,16 @@ export const AuthenticFlagCanvas: React.FC<AuthenticVectorFlagProps> = ({
           <g>
             <rect x="0" y="0" width="118" height="126" fill={cantonColor} />
             <g transform="translate(61, 65)">
-              {/* Bold Crescent Moon opening toward upper-left with crisp white fill & soft gold edge */}
+              {/* Bold Crescent Moon opening toward upper-left flagpole with crisp white fill & soft gold edge */}
               <path
-                d="M 10,-26 A 28,28 0 1,0 26,10 A 22,22 0 1,1 10,-26 Z"
+                d="M 10.6,-23.6 A 28,28 0 1,1 -25.7,6.9 A 25,25 0 1,0 10.6,-23.6 Z"
                 fill="#FFFFFF"
                 stroke="#FDE047"
                 strokeWidth="1.2"
               />
-              {/* 5-Pointed Star nestled cleanly inside the crescent */}
+              {/* 5-Pointed Star nestled cleanly inside the upper-left crescent opening */}
               <polygon
-                points="-7,-19 -4,-11 4,-11 -2,-6 0,2 -7,-3 -14,2 -12,-6 -18,-11 -10,-11"
+                points="-6.7,-18.8 -3.9,-11.1 4.3,-10.9 -2.2,-5.9 0.1,2.0 -6.7,-2.6 -13.4,2.0 -11.1,-5.9 -17.6,-10.9 -9.4,-11.1"
                 fill="#FFFFFF"
                 stroke="#FDE047"
                 strokeWidth="0.9"

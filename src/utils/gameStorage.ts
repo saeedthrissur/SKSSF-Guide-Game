@@ -1,3 +1,5 @@
+import { sanitizeFinalPlayerText, sanitizePlayerText } from './sanitize';
+
 export interface QuizAnswerRecord {
   selectedIdx: number;
   isCorrect: boolean;
@@ -49,6 +51,8 @@ export interface DailyAndProfileState {
   streakDays: number;
   bestStreak: number;
   lastActiveDate: string;
+  lastStreakEarnedDate?: string;
+  lastRealTimestamp?: number;
   todayDate: string;
   todayLessonsCount: number;
   todayQuizzesCorrect: number;
@@ -105,6 +109,7 @@ const DAILY_KEY = 'skssf_guide_daily_v1';
 const AUDIO_KEY = 'skssf_guide_audio_v3';
 const BACKUP_V1_PREFIX = 'SKSSF-BK1:';
 const BACKUP_V2_PREFIX = 'SKSSF-BK2:';
+const BACKUP_V3_PREFIX = 'SKSSF-BK3:';
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 export function getLocalDateKey(date = new Date()): string {
@@ -271,7 +276,7 @@ function sanitizeRunHistory(raw: unknown): RunHistoryEntry[] {
       totalLessons:
         typeof item.totalLessons === 'number' && Number.isFinite(item.totalLessons)
           ? Math.max(1, Math.round(item.totalLessons))
-          : 52,
+          : 62,
       quizzesAnswered:
         typeof item.quizzesAnswered === 'number' && Number.isFinite(item.quizzesAnswered)
           ? Math.max(0, Math.round(item.quizzesAnswered))
@@ -329,14 +334,16 @@ export function clearRunHistory(): void {
 function createDefaultDailyState(): DailyAndProfileState {
   const today = getLocalDateKey();
   return {
-    streakDays: 1,
-    bestStreak: 1,
+    streakDays: 0,
+    bestStreak: 0,
     lastActiveDate: today,
+    lastStreakEarnedDate: '',
+    lastRealTimestamp: Date.now(),
     todayDate: today,
     todayLessonsCount: 0,
     todayQuizzesCorrect: 0,
     todaySpecialGameDone: false,
-    streakHistoryDates: [today],
+    streakHistoryDates: [],
     completedDailyGameDates: [],
     dailyGameBestScore: 0,
     claimedMissionsToday: [],
@@ -375,24 +382,46 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
 
   const lockedCert =
     typeof rawProfile.lockedCertificateName === 'string'
-      ? rawProfile.lockedCertificateName.trim().slice(0, 60)
+      ? sanitizeFinalPlayerText(rawProfile.lockedCertificateName, 40)
       : '';
 
   const cleanProfile: UnitProfile = {
-    playerName: typeof rawProfile.playerName === 'string' ? rawProfile.playerName.slice(0, 60) : '',
-    unitName: typeof rawProfile.unitName === 'string' ? rawProfile.unitName.slice(0, 60) : '',
-    mekhalaName: typeof rawProfile.mekhalaName === 'string' ? rawProfile.mekhalaName.slice(0, 60) : '',
+    playerName:
+      typeof rawProfile.playerName === 'string'
+        ? sanitizePlayerText(rawProfile.playerName, 40)
+        : '',
+    unitName:
+      typeof rawProfile.unitName === 'string'
+        ? sanitizePlayerText(rawProfile.unitName, 45)
+        : '',
+    mekhalaName:
+      typeof rawProfile.mekhalaName === 'string'
+        ? sanitizePlayerText(rawProfile.mekhalaName, 45)
+        : '',
     ...(lockedCert ? { lockedCertificateName: lockedCert } : {}),
   };
 
-  const prevLastActive = typeof p.lastActiveDate === 'string' ? p.lastActiveDate : today;
+  const nowTs = Date.now();
+  const prevRealTs =
+    typeof p.lastRealTimestamp === 'number' && Number.isFinite(p.lastRealTimestamp)
+      ? p.lastRealTimestamp
+      : nowTs;
+  const clockTamperedBackward = nowTs + 60_000 < prevRealTs;
+
+  const prevEarnedDate =
+    typeof p.lastStreakEarnedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.lastStreakEarnedDate)
+      ? p.lastStreakEarnedDate
+      : typeof p.lastActiveDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.lastActiveDate)
+      ? p.lastActiveDate
+      : '';
+
   let streakDays =
-    typeof p.streakDays === 'number' && Number.isFinite(p.streakDays) && p.streakDays >= 1
-      ? Math.min(3650, Math.round(p.streakDays))
-      : 1;
+    typeof p.streakDays === 'number' && Number.isFinite(p.streakDays) && p.streakDays >= 0
+      ? Math.min(365, Math.round(p.streakDays))
+      : 0;
   let bestStreak =
-    typeof p.bestStreak === 'number' && Number.isFinite(p.bestStreak) && p.bestStreak >= 1
-      ? Math.min(3650, Math.round(p.bestStreak))
+    typeof p.bestStreak === 'number' && Number.isFinite(p.bestStreak) && p.bestStreak >= 0
+      ? Math.min(365, Math.round(p.bestStreak))
       : streakDays;
 
   let todayLessonsCount =
@@ -412,22 +441,18 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
       ? Math.max(0, Math.round(p.dailyGameBestScore))
       : 0;
 
-  if (prevLastActive !== today) {
-    // New local day: update streak and reset daily mission counters
-    streakDays = prevLastActive === yesterday ? streakDays + 1 : 1;
-    bestStreak = Math.max(bestStreak, streakDays);
-    todayLessonsCount = 0;
-    todayQuizzesCorrect = 0;
-    claimedMissionsToday = [];
-  } else if (p.todayDate !== today) {
+  // Never auto-increment streakDays on mere app open!
+  // Only reset streakDays to 0 if more than 1 full calendar day passed since last genuine activity.
+  if (!clockTamperedBackward && prevEarnedDate && prevEarnedDate < yesterday) {
+    streakDays = 0;
+  }
+
+  if (p.todayDate !== today && !clockTamperedBackward) {
     todayLessonsCount = 0;
     todayQuizzesCorrect = 0;
     claimedMissionsToday = [];
   }
 
-  const streakHistoryDates = rawHistory.includes(today)
-    ? rawHistory
-    : [...rawHistory, today].slice(-60);
   const todaySpecialGameDone =
     completedDailyGameDates.includes(today) ||
     (p.todayDate === today && Boolean(p.todaySpecialGameDone));
@@ -435,16 +460,68 @@ function sanitizeDailyState(raw: unknown): DailyAndProfileState {
   return {
     streakDays,
     bestStreak: Math.max(bestStreak, streakDays),
-    lastActiveDate: today,
-    todayDate: today,
+    lastActiveDate: clockTamperedBackward ? (p.lastActiveDate || today) : today,
+    lastStreakEarnedDate: prevEarnedDate,
+    lastRealTimestamp: Math.max(prevRealTs, nowTs),
+    todayDate: clockTamperedBackward ? (p.todayDate || today) : today,
     todayLessonsCount,
     todayQuizzesCorrect,
     todaySpecialGameDone,
-    streakHistoryDates,
+    streakHistoryDates: rawHistory,
     completedDailyGameDates,
     dailyGameBestScore,
     claimedMissionsToday,
     profile: cleanProfile,
+  };
+}
+
+/**
+ * Increments daily streak ONLY upon genuine learning activity
+ * (completing >=1 lesson, answering >=1 quiz correctly, or finishing today's daily game),
+ * guarded by a monotonic timestamp check to prevent system-clock streak forging.
+ */
+export function recordGenuineDailyActivity(prev: DailyAndProfileState): DailyAndProfileState {
+  const nowTs = Date.now();
+  const today = getLocalDateKey();
+  const yesterday = getYesterdayDateKey();
+  const lastTs = prev.lastRealTimestamp ?? 0;
+
+  // Guard 1: Reject backward device clock jumps
+  if (nowTs + 60_000 < lastTs) {
+    return prev;
+  }
+  // Guard 2: Already earned today's streak credit
+  if (prev.lastStreakEarnedDate === today) {
+    return {
+      ...prev,
+      lastRealTimestamp: Math.max(lastTs, nowTs),
+    };
+  }
+  // Guard 3: Reject rapid synthetic date stepping (< 4 hours real elapsed time between different calendar dates)
+  const earnedPrev = prev.lastStreakEarnedDate || '';
+  const MIN_REAL_GAP_MS = 4 * 60 * 60 * 1000;
+  if (earnedPrev && earnedPrev !== today && lastTs > 0 && nowTs - lastTs < MIN_REAL_GAP_MS && prev.streakDays >= 2) {
+    return {
+      ...prev,
+      lastRealTimestamp: Math.max(lastTs, nowTs),
+    };
+  }
+
+  const nextStreak = earnedPrev === yesterday ? Math.min(365, prev.streakDays + 1) : 1;
+  const nextBest = Math.max(prev.bestStreak, nextStreak);
+  const nextHistory = (prev.streakHistoryDates || []).includes(today)
+    ? prev.streakHistoryDates || []
+    : [...(prev.streakHistoryDates || []), today].slice(-60);
+
+  return {
+    ...prev,
+    streakDays: nextStreak,
+    bestStreak: nextBest,
+    lastActiveDate: today,
+    lastStreakEarnedDate: today,
+    lastRealTimestamp: Math.max(lastTs, nowTs),
+    todayDate: today,
+    streakHistoryDates: nextHistory,
   };
 }
 
@@ -475,6 +552,28 @@ export function saveDailyAndProfileState(state: DailyAndProfileState): void {
 export function getLockedCertificateName(): string {
   const daily = loadDailyAndProfileState();
   return daily.profile.lockedCertificateName?.trim() || '';
+}
+
+export function lockCertificateName(name: string, unitName?: string): DailyAndProfileState {
+  const daily = loadDailyAndProfileState();
+  const existingLocked = daily.profile.lockedCertificateName?.trim();
+  const cleanName = existingLocked || sanitizeFinalPlayerText(name, 40);
+  if (!cleanName) return daily;
+  const cleanUnit =
+    typeof unitName === 'string' && unitName.trim()
+      ? sanitizeFinalPlayerText(unitName, 45)
+      : daily.profile.unitName;
+  const next: DailyAndProfileState = {
+    ...daily,
+    profile: {
+      ...daily.profile,
+      playerName: cleanName,
+      unitName: cleanUnit,
+      lockedCertificateName: cleanName,
+    },
+  };
+  saveDailyAndProfileState(next);
+  return next;
 }
 
 // ==================== PIN + NAME PROTECTED PROGRESS BACKUP & RESTORE (SKSSF-BK2) ====================
@@ -764,6 +863,248 @@ export function importProgressBackupCode(rawInput: string, pin: string): Restore
       restoredXp: cleanGame?.xp ?? 0,
       restoredStreak: cleanDaily.streakDays,
     };
+  } catch {
+    return {
+      ok: false,
+      error: 'തെറ്റായ 4 അക്ക PIN നമ്പർ അല്ലെങ്കിൽ അപൂർണ്ണമായ ബാക്കപ്പ് കോഡ്. വീണ്ടും പരിശോധിക്കുക.',
+    };
+  }
+}
+
+async function deriveAesGcmKey(pin: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(`SKSSF-GUIDE-BK3::${pin}`),
+    'PBKDF2',
+    false,
+    ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+function applyRestoredBackupBundle(decoded: Partial<BackupBundleV2>): RestoreBackupResult {
+  const cleanOwnerName = (decoded.ownerName || '').trim().slice(0, 60);
+  const cleanGame = decoded.game ? sanitizeSavedGameState(decoded.game) : null;
+  const cleanHistory = sanitizeRunHistory(decoded.history);
+  const cleanDaily = sanitizeDailyState(decoded.daily);
+  cleanDaily.profile = {
+    ...cleanDaily.profile,
+    playerName: cleanOwnerName,
+    lockedCertificateName: cleanOwnerName,
+  };
+
+  if (cleanGame) {
+    saveGameState(cleanGame);
+    try {
+      const serializedIds = JSON.stringify(cleanGame.completedLessonIds);
+      localStorage.setItem('skssf_guide_completed_lessons_v1', serializedIds);
+      localStorage.setItem('skssf_confirmed_lessons_v1', serializedIds);
+    } catch {
+      // Ignore
+    }
+  }
+
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(cleanHistory));
+  } catch {
+    // Ignore
+  }
+
+  saveDailyAndProfileState(cleanDaily);
+
+  if (
+    decoded.soundPack === 'classic' ||
+    decoded.soundPack === 'oud_warm' ||
+    decoded.soundPack === 'crystal_bell'
+  ) {
+    try {
+      const prevAudio = localStorage.getItem(AUDIO_KEY);
+      const parsedAudio = prevAudio ? JSON.parse(prevAudio) : {};
+      localStorage.setItem(
+        AUDIO_KEY,
+        JSON.stringify({ ...parsedAudio, soundPack: decoded.soundPack })
+      );
+    } catch {
+      // Ignore
+    }
+  }
+
+  return {
+    ok: true,
+    restoredName: cleanOwnerName,
+    restoredLessons: cleanGame?.completedLessonIds.length ?? 0,
+    restoredXp: cleanGame?.xp ?? 0,
+    restoredStreak: cleanDaily.streakDays,
+  };
+}
+
+export async function exportProgressBackupCodeAsync(
+  learnerName: string,
+  pin: string
+): Promise<ExportBackupResult> {
+  const cleanPin = pin.trim();
+  if (!/^\d{4}$/.test(cleanPin)) {
+    return {
+      ok: false,
+      error: '4 അക്ക രഹസ്യ PIN നമ്പർ നൽകുക (ഉദാ: 4829).',
+    };
+  }
+
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return exportProgressBackupCode(learnerName, cleanPin);
+  }
+
+  const daily = loadDailyAndProfileState();
+  const lockedExisting = daily.profile.lockedCertificateName?.trim();
+  const cleanName = (lockedExisting || learnerName.trim()).slice(0, 60);
+
+  if (cleanName.length < 2) {
+    return {
+      ok: false,
+      error: 'ബാക്കപ്പ് സുരക്ഷിതമാക്കാൻ നിങ്ങളുടെ പേര് നൽകുക (കുറഞ്ഞത് 2 അക്ഷരം).',
+    };
+  }
+
+  const updatedDaily: DailyAndProfileState = {
+    ...daily,
+    profile: {
+      ...daily.profile,
+      playerName: cleanName,
+      ...(lockedExisting ? { lockedCertificateName: lockedExisting } : {}),
+    },
+  };
+  saveDailyAndProfileState(updatedDaily);
+
+  let soundPack: string | undefined;
+  try {
+    const audioRaw = localStorage.getItem(AUDIO_KEY);
+    if (audioRaw) {
+      const audioObj = JSON.parse(audioRaw) as { soundPack?: string };
+      if (typeof audioObj.soundPack === 'string') {
+        soundPack = audioObj.soundPack;
+      }
+    }
+  } catch {
+    // Ignore
+  }
+
+  const game = loadSavedGameState();
+  const history = loadRunHistory();
+  const exportedAt = Date.now();
+  const sig = fnv1aHex(
+    `${cleanPin}|${cleanName}|${exportedAt}|${game?.xp ?? 0}|${game?.completedLessonIds.length ?? 0}`
+  );
+
+  const bundle: BackupBundleV2 = {
+    v: 2,
+    exportedAt,
+    ownerName: cleanName,
+    sig,
+    game,
+    history,
+    daily: updatedDaily,
+    soundPack,
+  };
+
+  try {
+    const salt = new Uint8Array(new ArrayBuffer(16));
+    const iv = new Uint8Array(new ArrayBuffer(12));
+    crypto.getRandomValues(salt);
+    crypto.getRandomValues(iv);
+    const aesKey = await deriveAesGcmKey(cleanPin, salt);
+    const plainBytes = new TextEncoder().encode(JSON.stringify(bundle));
+    const cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, plainBytes);
+    const cipherBytes = new Uint8Array(cipherBuf);
+    return {
+      ok: true,
+      ownerName: cleanName,
+      code: `${BACKUP_V3_PREFIX}${bytesToBase64(salt)}:${bytesToBase64(iv)}:${bytesToBase64(cipherBytes)}`,
+    };
+  } catch {
+    return exportProgressBackupCode(learnerName, cleanPin);
+  }
+}
+
+export async function importProgressBackupCodeAsync(
+  rawInput: string,
+  pin: string
+): Promise<RestoreBackupResult> {
+  const trimmed = rawInput.trim();
+  const cleanPin = pin.trim();
+
+  if (trimmed.includes(BACKUP_V2_PREFIX) && !trimmed.includes(BACKUP_V3_PREFIX)) {
+    return importProgressBackupCode(trimmed, cleanPin);
+  }
+  if (trimmed.includes(BACKUP_V1_PREFIX) && !trimmed.includes(BACKUP_V3_PREFIX)) {
+    return importProgressBackupCode(trimmed, cleanPin);
+  }
+
+  const bk3Match = trimmed.match(/SKSSF-BK3:[A-Za-z0-9+/=\s]+:[A-Za-z0-9+/=\s]+:[A-Za-z0-9+/=\s]+/);
+  if (!bk3Match) {
+    return {
+      ok: false,
+      error: 'തെറ്റായ ബാക്കപ്പ് കോഡാണ്. SKSSF-BK3: അല്ലെങ്കിൽ SKSSF-BK2: എന്ന് തുടങ്ങുന്ന മുഴുവൻ കോഡും ഒട്ടിക്കുക.',
+    };
+  }
+
+  if (!/^\d{4}$/.test(cleanPin)) {
+    return {
+      ok: false,
+      error: 'ബാക്കപ്പ് ഉണ്ടാക്കിയപ്പോൾ നൽകിയ 4 അക്ക PIN നമ്പർ നൽകുക.',
+    };
+  }
+
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return {
+      ok: false,
+      error: 'ഈ ബ്രൗസറിൽ SKSSF-BK3 എൻക്രിപ്ഷൻ പിന്തുണയില്ല — സുരക്ഷിത HTTPS ബ്രൗസർ ഉപയോഗിക്കുക.',
+    };
+  }
+
+  try {
+    const body = bk3Match[0].slice(BACKUP_V3_PREFIX.length).replace(/\s+/g, '');
+    const parts = body.split(':');
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2] || parts[2].length > 90000) {
+      return { ok: false, error: 'ബാക്കപ്പ് കോഡ് അപൂർണ്ണമാണ് അല്ലെങ്കിൽ തകരാറുള്ളതാണ്.' };
+    }
+    const rawSalt = base64ToBytes(parts[0]);
+    const rawIv = base64ToBytes(parts[1]);
+    const rawCipher = base64ToBytes(parts[2]);
+
+    const salt = new Uint8Array(new ArrayBuffer(rawSalt.length));
+    salt.set(rawSalt);
+    const iv = new Uint8Array(new ArrayBuffer(rawIv.length));
+    iv.set(rawIv);
+    const cipher = new Uint8Array(new ArrayBuffer(rawCipher.length));
+    cipher.set(rawCipher);
+
+    const aesKey = await deriveAesGcmKey(cleanPin, salt);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, cipher);
+    const decodedText = new TextDecoder().decode(new Uint8Array(plainBuf));
+    const decoded = JSON.parse(decodedText) as Partial<BackupBundleV2>;
+
+    if (
+      !decoded ||
+      typeof decoded !== 'object' ||
+      decoded.v !== 2 ||
+      typeof decoded.ownerName !== 'string' ||
+      decoded.ownerName.trim().length < 2
+    ) {
+      return { ok: false, error: 'തെറ്റായ 4 അക്ക PIN അല്ലെങ്കിൽ തകരാറുള്ള ബാക്കപ്പ് കോഡ്!' };
+    }
+
+    return applyRestoredBackupBundle(decoded);
   } catch {
     return {
       ok: false,

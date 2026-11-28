@@ -87,4 +87,10 @@ export const VOICE_GEMINI_MANIFEST: Record<string, string> = {
   v_f1e9ba0d6995e26d: './assets/voice-gemini/v_f1e9ba0d6995e26d.mp3',
   v_f2a336445a7c88b6: './assets/voice-gemini/v_f2a336445a7c88b6.mp3',
   v_f60a9b37a567eaf6: './assets/voice-gemini/v_f60a9b37a567eaf6.mp3',
+  // Spelling-standardized aliases pointing to existing pre-generated clips
+  v_31129a6079d8b557: './assets/voice-gemini/v_16362da6503b48e4.mp3',
+  v_b77e96c5eb8766ed: './assets/voice-gemini/v_054b836dc7a8e808.mp3',
+  v_d7ba7d62b11c00b0: './assets/voice-gemini/v_05ca031a4c8e4777.mp3',
+  v_b107e1e47d8895b8: './assets/voice-gemini/v_c104ea5693ba9913.mp3',
+  v_53e9f4870eed50b4: './assets/voice-gemini/v_b454a02ff628f2e5.mp3',
 };

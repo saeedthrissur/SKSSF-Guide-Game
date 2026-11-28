@@ -178,7 +178,7 @@ type SceneGameConfig =
 const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = {
   p0_creator: {
     engine: 'tree_rain_garden',
-    title: '🕌 പള്ളിയുടെയും അൽബിർ മദ്‌റസയുടെയും പൂന്തോട്ടം നനയ്ക്കാം!',
+    title: '🕌 പള്ളിയുടെയും അൽബിർ മദ്രസയുടെയും പൂന്തോട്ടം നനയ്ക്കാം!',
     subtitle: 'നീങ്ങുന്ന വെള്ളം നനയ്ക്കുന്ന ജഗ്ഗ് (🫖) കൃത്യമായി ചെടിക്ക് മുകളിൽ എത്തുമ്പോൾ മാത്രം 💧 അമർത്തൂ — വെള്ളം തറയിൽ പാഴാക്കിയാൽ കളി ഔട്ട് ആകും!',
     toolEmoji: '🫖',
     actionLabel: '💧',
@@ -192,9 +192,9 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'flower',
-        label: '2. മദ്‌റസ പൂച്ചെടി',
+        label: '2. മദ്രസ പൂച്ചെടി',
         bloomEmoji: '🌺',
-        message: 'അൽബിർ മദ്‌റസ പൂന്തോട്ടത്തിലെ പൂച്ചെടി മനോഹരമായി വിരിഞ്ഞു!',
+        message: 'അൽബിർ മദ്രസ പൂന്തോട്ടത്തിലെ പൂച്ചെടി മനോഹരമായി വിരിഞ്ഞു!',
       },
       {
         id: 'fruit',
@@ -203,7 +203,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         message: 'ഒരു തുള്ളി പോലും പാഴാക്കാതെ നനച്ചപ്പോൾ മധുരപ്പഴങ്ങൾ നിറഞ്ഞ മരം വളർന്നു!',
       },
     ],
-    doneMessage: '🌳 മാഷാ അല്ലാഹ്! ഒരു തുള്ളി വെള്ളം പോലും പാഴാക്കാതെ പള്ളിയും മദ്‌റസയും പൂന്തോട്ടമാക്കി! (+25 XP)',
+    doneMessage: '🌳 മാഷാ അല്ലാഹ്! ഒരു തുള്ളി വെള്ളം പോലും പാഴാക്കാതെ പള്ളിയും മദ്രസയും പൂന്തോട്ടമാക്കി! (+25 XP)',
   },
   p0_prophet: {
     engine: 'road_vehicle_drive',
@@ -247,7 +247,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         label: '1. ശുദ്ധമായ അഖീദ അടിത്തറ',
         color: '#065F46',
         accent: '#A7F3D0',
-        note: 'അഹ്‌ലുസ്സുന്നത്തി വൽ ജമാഅത്തിന്റെ ഉറച്ച വിശ്വാസ അടിത്തറ ഉറപ്പിച്ചു!',
+        note: 'അഹ്ലുസ്സുന്നത്തി വൽ ജമാഅത്തിന്റെ ഉറച്ച വിശ്വാസ അടിത്തറ ഉറപ്പിച്ചു!',
       },
       {
         id: 'madhhab',
@@ -435,7 +435,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
   },
   l1_cosmic: {
     engine: 'tree_rain_garden',
-    title: '🕌 മദ്‌റസ പൂന്തോട്ടം — ജലസംരക്ഷണ ദൃഷ്ടാന്തം!',
+    title: '🕌 മദ്രസ പൂന്തോട്ടം — ജലസംരക്ഷണ ദൃഷ്ടാന്തം!',
     subtitle: 'വെള്ളം അല്ലാഹുവിന്റെ വലിയ അനുഗ്രഹമാണ്! നീങ്ങുന്ന ജഗ്ഗ് കൃത്യമായി ചെടികൾക്ക് മുകളിൽ എത്തുമ്പോൾ മാത്രം നനയ്ക്കൂ — വെള്ളം പാഴാക്കിയാൽ ഔട്ട്!',
     toolEmoji: '🫖',
     actionLabel: '💧',
@@ -449,7 +449,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
       },
       {
         id: 'c_palm',
-        label: '2. മദ്‌റസ തെങ്ങിൻതൈ',
+        label: '2. മദ്രസ തെങ്ങിൻതൈ',
         bloomEmoji: '🌴',
         message: 'സൂര്യപ്രകാശവും ശുദ്ധജലവും ചേർന്ന് തെങ്ങിൻതൈ മനോഹരമായി വളർന്നു!',
       },
@@ -460,7 +460,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
         message: 'വെള്ളം പാഴാക്കാതെ സംരക്ഷിച്ചപ്പോൾ പള്ളിമുറ്റം മുഴുവൻ പൂത്തുലഞ്ഞു!',
       },
     ],
-    doneMessage: '🌿 അടിപൊളി! ജലസംരക്ഷണത്തോടെ പള്ളി–മദ്‌റസ പൂന്തോട്ടം മനോഹരമായി വളർത്തി! (+25 XP)',
+    doneMessage: '🌿 അടിപൊളി! ജലസംരക്ഷണത്തോടെ പള്ളി–മദ്രസ പൂന്തോട്ടം മനോഹരമായി വളർത്തി! (+25 XP)',
   },
   l1_roots: {
     engine: 'ship_harbor_sail',
@@ -633,7 +633,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
   },
   l3_scrolls: {
     engine: 'tree_rain_garden',
-    title: '🕌 പള്ളി & മദ്‌റസ സൽസ്വഭാവ പൂന്തോട്ടം നനയ്ക്കാം!',
+    title: '🕌 പള്ളി & മദ്രസ സൽസ്വഭാവ പൂന്തോട്ടം നനയ്ക്കാം!',
     subtitle: 'വെള്ളം നനയ്ക്കുന്ന ജഗ്ഗ് (🫖) കൃത്യമായി വാടിയ ചെടിക്ക് മുകളിൽ എത്തുമ്പോൾ മാത്രം ഒഴിക്കൂ — തറയിൽ വെള്ളം പാഴാക്കിയാൽ കളി ഔട്ട്!',
     toolEmoji: '🫖',
     actionLabel: '💧',
@@ -778,7 +778,7 @@ const SCENE_GAME_CONFIGS: Partial<Record<MiniGameLessonKey, SceneGameConfig>> = 
     kitEmoji: '📦',
     pads: [
       { id: 'pj1', emoji: '🕌', shortLabel: 'മഹല്ല് പള്ളി', label: 'മഹല്ല് പള്ളി മുറ്റം', note: 'മഹല്ല് പള്ളിയിൽ ജുമുഅ അറിയിപ്പും നോട്ടീസും എത്തിച്ചു!' },
-      { id: 'pj2', emoji: '🏫', shortLabel: 'മദ്‌റസ ഹാൾ', label: 'മദ്‌റസ പഠന ഹാൾ', note: 'SKSBV വിദ്യാർത്ഥികൾക്ക് പഠന കിറ്റും നോട്ട്ബുക്കുകളും നൽകി!' },
+      { id: 'pj2', emoji: '🏫', shortLabel: 'മദ്രസ ഹാൾ', label: 'മദ്രസ പഠന ഹാൾ', note: 'SKSBV വിദ്യാർത്ഥികൾക്ക് പഠന കിറ്റും നോട്ട്ബുക്കുകളും നൽകി!' },
       { id: 'pj3', emoji: '🏠', shortLabel: 'യൂണിറ്റ് ഓഫീസ്', label: 'SKSSF യൂണിറ്റ് ഓഫീസ്', note: 'യൂണിറ്റ് അസംബ്ലിക്ക് വേണ്ട എല്ലാ ഒരുക്കങ്ങളും പൂർത്തിയാക്കി!' },
     ],
     doneMessage: '🚁 മനോഹരം! എന്റെ യൂണിറ്റിലെ മൂന്ന് കേന്ദ്രങ്ങളിലും കൃത്യമായി എയർഡ്രോപ്പ് പൂർത്തിയാക്കി! (+25 XP)',

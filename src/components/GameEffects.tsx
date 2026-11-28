@@ -11,16 +11,17 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  Download,
   Flame,
   Gift,
   Info,
-  Languages,
   Lock,
   Moon,
   MousePointerClick,
   Music,
   Play,
   RotateCcw,
+  Scale,
   Settings,
   Share2,
   ShieldCheck,
@@ -48,18 +49,19 @@ import {
   displayPrefs,
   DisplayPrefsSnapshot,
   FONT_LEVEL_META,
-  TRANSLATE_LANGUAGES,
 } from '../utils/displayPrefs';
 import {
   DAILY_MISSIONS,
   DailyAndProfileState,
-  exportProgressBackupCode,
-  importProgressBackupCode,
+  exportProgressBackupCodeAsync,
+  importProgressBackupCodeAsync,
   loadDailyAndProfileState,
   RunHistoryEntry,
   UnitProfile,
 } from '../utils/gameStorage';
 import { getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
+import { sanitizeFinalPlayerText, sanitizePlayerText } from '../utils/sanitize';
+import { usePWAInstall } from '../utils/usePWAInstall';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
 import { useLessonFlow } from '../utils/lessonFlowContext';
 import { scrollDirectToQuiz } from './LessonCheckQuiz';
@@ -459,6 +461,7 @@ export const SettingsModal: React.FC<{
   onClearAllData?: () => Promise<void> | void;
   onRestoreBackup?: () => void;
   onOpenSupport?: () => void;
+  onOpenLegal?: () => void;
 }> = ({
   isOpen,
   onClose,
@@ -467,10 +470,12 @@ export const SettingsModal: React.FC<{
   onClearAllData,
   onRestoreBackup,
   onOpenSupport,
+  onOpenLegal,
 }) => {
   const [snd, setSnd] = useState<SoundStateSnapshot>(sound.getSnapshot());
   const [nav, setNav] = useState<NarratorState>(narrator.getState());
   const [disp, setDisp] = useState<DisplayPrefsSnapshot>(displayPrefs.getSnapshot());
+  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [openSection, setOpenSection] = useState<SettingsSectionId | null>(null);
   const [copiedMode, setCopiedMode] = useState<'link' | 'embed' | 'backup' | null>(null);
   const [confirmAction, setConfirmAction] = useState<'reset' | 'clear_all' | null>(null);
@@ -482,6 +487,7 @@ export const SettingsModal: React.FC<{
   const [restorePin, setRestorePin] = useState('');
   const [generatedBackupCode, setGeneratedBackupCode] = useState<string | null>(null);
   const [backupFeedback, setBackupFeedback] = useState<{ ok: boolean; text: string } | null>(null);
+  const [iosInstallHint, setIosInstallHint] = useState(false);
 
   useEffect(() => {
     const u1 = sound.subscribe(setSnd);
@@ -555,8 +561,6 @@ export const SettingsModal: React.FC<{
   };
 
   const fontMeta = FONT_LEVEL_META[disp.fontLevel];
-  const currentLangLabel =
-    TRANSLATE_LANGUAGES.find((l) => l.code === disp.language)?.nativeLabel || 'മലയാളം';
   const soundSummary = `${snd.muted ? 'മ്യൂട്ട് (OFF)' : 'ശബ്ദം ON'} · കഥാകാരൻ ${
     nav.enabled ? `${snd.narratorPct}%` : 'OFF'
   }${
@@ -571,11 +575,11 @@ export const SettingsModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5"
+      className="fixed inset-0 z-[110] bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-5 overflow-y-auto overscroll-contain"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-3.5"
+        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto overscroll-contain my-auto p-4 sm:p-6 space-y-3.5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -596,17 +600,17 @@ export const SettingsModal: React.FC<{
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-2.5">
-          {/* 1. Display, 5-Level Font Size & Language */}
+          {/* 1. Display & 5-Level Font Size */}
           <SettingsAccordionSection
-            title="ഡിസ്പ്ലേ & ഭാഷ"
-            subtitle={`${disp.darkMode ? 'ഡാർക്ക് മോഡ്' : 'ലൈറ്റ് മോഡ്'} · അക്ഷരം ${fontMeta.label} · ${currentLangLabel}`}
+            title="ഡിസ്പ്ലേ & അക്ഷരവലുപ്പം"
+            subtitle={`${disp.darkMode ? 'ഡാർക്ക് മോഡ്' : 'ലൈറ്റ് മോഡ്'} · അക്ഷരം ${fontMeta.label}`}
             icon={
               disp.darkMode ? (
                 <Moon className="w-4 h-4 text-amber-600" />
@@ -711,46 +715,43 @@ export const SettingsModal: React.FC<{
               </div>
             </div>
 
-            {/* Language Change (Google Translate) */}
-            <div className="p-3 rounded-xl bg-white border border-slate-200 space-y-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-slate-900">
-                  <Languages className="w-4 h-4 text-emerald-700 shrink-0" />
-                  <span>ഭാഷ മാറ്റാം (Google Translate)</span>
+            {/* Offline PWA App Install Option */}
+            {!isInstalled && (isInstallable || isIOS) && (
+              <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-extrabold text-emerald-950">
+                      📲 ഫോണിൽ ആപ്പായി ഇൻസ്റ്റാൾ ചെയ്യാം
+                    </p>
+                    <p className="text-[11px] text-emerald-800 leading-snug">
+                      ഹോം സ്ക്രീനിൽ വെച്ച് ഓഫ്‌ലൈനിലും വേഗത്തിൽ കളിക്കാം
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      sound.unlockAudio();
+                      sound.playPop();
+                      if (isInstallable) {
+                        await install();
+                      } else if (isIOS) {
+                        setIosInstallHint((v) => !v);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shrink-0 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{isInstallable ? 'ആപ്പ് ഇൻസ്റ്റാൾ' : 'iPhone നിർദ്ദേശം'}</span>
+                  </button>
                 </div>
-                <span className="text-[10px] font-bold text-slate-500">
-                  ഇഷ്ട ഭാഷയിൽ വായിക്കാം
-                </span>
+                {iosInstallHint && isIOS && (
+                  <p className="text-[11px] font-bold text-emerald-950 bg-white border border-emerald-200 rounded-lg px-2.5 py-2 leading-relaxed">
+                    Safari-യിൽ താഴെയുള്ള <strong>Share (↑)</strong> ബട്ടൺ തൊട്ട്{' '}
+                    <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
+                  </p>
+                )}
               </div>
-              <div className="flex flex-wrap gap-1.5 notranslate">
-                {TRANSLATE_LANGUAGES.map((lang) => {
-                  const active = disp.language === lang.code;
-                  return (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      onClick={() => {
-                        sound.unlockAudio();
-                        sound.playClick();
-                        displayPrefs.setLanguage(lang.code);
-                      }}
-                      className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border transition-colors cursor-pointer ${
-                        active
-                          ? 'bg-emerald-700 text-white border-emerald-800 shadow-2xs'
-                          : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'
-                      }`}
-                    >
-                      {lang.nativeLabel}
-                    </button>
-                  );
-                })}
-              </div>
-              {disp.language !== 'ml' && (
-                <p className="text-[11px] font-semibold text-emerald-800 leading-snug">
-                  Google Translate വഴി പേജ് വിവർത്തനം ചെയ്യുന്നു. പഴയ മലയാളത്തിലേക്ക് മടങ്ങാൻ ‘മലയാളം (Original)’ തൊടുക.
-                </p>
-              )}
-            </div>
+            )}
           </SettingsAccordionSection>
 
           {/* 2. All Sound & Background Audio Controls Together */}
@@ -1249,9 +1250,9 @@ export const SettingsModal: React.FC<{
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
                   sound.unlockAudio();
-                  const res = exportProgressBackupCode(lockedOwnerName || backupName, exportPin);
+                  const res = await exportProgressBackupCodeAsync(lockedOwnerName || backupName, exportPin);
                   if (res.ok && res.code) {
                     setGeneratedBackupCode(res.code);
                     copyText(res.code, 'backup');
@@ -1268,7 +1269,7 @@ export const SettingsModal: React.FC<{
                     });
                   }
                 }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
               >
                 {copiedMode === 'backup' ? (
                   <>
@@ -1310,7 +1311,7 @@ export const SettingsModal: React.FC<{
                     setBackupInput(e.target.value);
                     setBackupFeedback(null);
                   }}
-                  placeholder="SKSSF-BK2:... കോഡ് ഒട്ടിക്കുക"
+                  placeholder="SKSSF-BK3:... / SKSSF-BK2:... കോഡ് ഒട്ടിക്കുക"
                   aria-label="ബാക്കപ്പ് കോഡ് ഒട്ടിക്കുക"
                   className="sm:col-span-6 min-w-0 px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-emerald-600"
                 />
@@ -1330,9 +1331,9 @@ export const SettingsModal: React.FC<{
                 />
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     sound.unlockAudio();
-                    const res = importProgressBackupCode(backupInput, restorePin);
+                    const res = await importProgressBackupCodeAsync(backupInput, restorePin);
                     if (res.ok) {
                       sound.reloadPrefsFromStorage();
                       sound.playUnlock();
@@ -1356,7 +1357,7 @@ export const SettingsModal: React.FC<{
                     }
                   }}
                   disabled={!backupInput.trim() || restorePin.length !== 4}
-                  className="sm:col-span-3 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 text-xs font-extrabold shrink-0 cursor-pointer"
+                  className="sm:col-span-3 px-3.5 py-2.5 min-h-[40px] rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 text-xs font-extrabold shrink-0 cursor-pointer"
                 >
                   തിരിച്ചെടുക്കുക
                 </button>
@@ -1499,14 +1500,10 @@ export const SettingsModal: React.FC<{
             </SettingsAccordionSection>
           )}
 
-          {/* 6. About This App & Hadiya Support */}
+          {/* 6. About This App, Privacy/Terms & Hadiya Support */}
           <SettingsAccordionSection
-            title={onOpenSupport ? 'ആപ്പിനെക്കുറിച്ച് & ഹദിയ' : 'ആപ്പിനെക്കുറിച്ച് (About)'}
-            subtitle={
-              onOpenSupport
-                ? 'ഗൈഡ് ഗെയിം വിവരണം · 🎁 ഒരു ഹദിയ നൽകാം'
-                : 'ഗൈഡ് ഗെയിം · Guide Game വിവരണം'
-            }
+            title="ആപ്പിനെക്കുറിച്ച്, സ്വകാര്യത & ഹദിയ"
+            subtitle="ഗൈഡ് ഗെയിം വിവരണം · സ്വകാര്യതാ നയം & കോപ്പിറൈറ്റ്"
             icon={<Info className="w-4 h-4" />}
             isOpen={openSection === 'about'}
             onToggle={() => toggleSection('about')}
@@ -1526,6 +1523,21 @@ export const SettingsModal: React.FC<{
             <p className="text-[11px] sm:text-xs text-slate-700 leading-relaxed">
               കുട്ടികൾ മുതൽ മുതിർന്നവർ വരെ എല്ലാവർക്കും ലളിതമായ ഭാഷയിലും കളികളിലൂടെയും സമസ്തയുടെ ചരിത്രവും SKSSF-ന്റെ ദൗത്യങ്ങളും പഠിക്കാനുള്ള സംവേദനാത്മക പഠന വേദിയാണ് <strong>ഗൈഡ് ഗെയിം (Guide Game)</strong>.
             </p>
+            {onOpenLegal && (
+              <button
+                type="button"
+                onClick={() => {
+                  sound.unlockAudio();
+                  sound.playClick();
+                  onClose();
+                  onOpenLegal();
+                }}
+                className="w-full min-h-[40px] inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-emerald-50 border border-emerald-300 text-emerald-950 text-xs font-extrabold transition-colors cursor-pointer"
+              >
+                <Scale className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>സ്വകാര്യതാ നയം, നിബന്ധനകൾ &amp; കോപ്പിറൈറ്റ്</span>
+              </button>
+            )}
             {onOpenSupport && (
               <div className="pt-2 border-t border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] font-semibold text-emerald-900/80">
@@ -1538,7 +1550,7 @@ export const SettingsModal: React.FC<{
                     sound.playClick();
                     onOpenSupport();
                   }}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 min-h-[38px] px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-amber-300 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
                 >
                   <span>🎁 ഒരു ഹദിയ നൽകാം</span>
                 </button>
@@ -2299,9 +2311,10 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
               onClick={() => scrollAndRun(onPrev)}
               title={prevLabel}
               aria-label={prevLabel}
-              className="w-10 h-9 rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 flex items-center justify-center transition-colors"
+              className="min-h-[40px] px-2.5 sm:px-3 rounded-xl border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 text-xs font-extrabold transition-colors cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 shrink-0" />
+              <span>മുമ്പത്തെ</span>
             </button>
           )}
 
@@ -2313,7 +2326,7 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
             }}
             title="മുകളിലേക്ക്"
             aria-label="മുകളിലേക്ക്"
-            className="w-9 h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 flex items-center justify-center transition-colors shrink-0"
+            className="min-w-[40px] min-h-[40px] rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
           >
             <ArrowUp className="w-4 h-4" />
           </button>
@@ -2333,13 +2346,13 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
             onClick={() => scrollAndRun(onNext)}
             title={nextLabel}
             aria-label={`അടുത്തത്: ${nextLabel}`}
-            className={`inline-flex items-center justify-center gap-1 px-4 h-9 rounded-xl border-b-2 text-sm font-extrabold shadow-sm transition-all ${
+            className={`inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 min-h-[40px] rounded-xl border-b-2 text-xs sm:text-sm font-extrabold shadow-sm transition-all cursor-pointer ${
               nextIsWorldAdvance
                 ? 'border-amber-600 bg-amber-400 hover:bg-amber-300 text-slate-950'
                 : 'border-emerald-950 bg-emerald-700 hover:bg-emerald-800 text-white'
             }`}
           >
-            <span>{nextIsWorldAdvance ? '🏆' : '▶'}</span>
+            <span>{nextIsWorldAdvance ? '🏆 അടുത്ത തലം' : 'അടുത്തത്'}</span>
             <ArrowRight className="w-4 h-4 shrink-0" />
           </motion.button>
         ) : (
@@ -2356,10 +2369,10 @@ export const LessonStepperNav: React.FC<LessonStepperNavProps> = ({
               }}
               aria-label={missingActionLabel || 'ക്വിസ് ഉത്തരം നൽകൂ'}
               title={missingActionLabel || 'ക്വിസ് ഉത്തരം നൽകൂ'}
-              className="inline-flex items-center justify-center gap-1 px-3 h-9 rounded-xl border border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-extrabold transition-colors"
+              className="inline-flex items-center justify-center gap-1.5 px-3 min-h-[40px] rounded-xl border border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-950 text-xs font-extrabold transition-colors cursor-pointer"
             >
               <span>🔒</span>
-              <span>❓</span>
+              <span>ക്വിസ് എഴുതൂ</span>
             </button>
           )
         )}
@@ -2458,7 +2471,7 @@ export const EASTER_EGG_ITEMS: EasterEggItem[] = [
       cardTitle: 'സമസ്തയുടെ പിറവി',
       sealCode: 'SAMASTHA · 1926',
       eventSummary:
-        'കോഴിക്കോട് ടൗൺഹാളിൽ വെച്ച് വരക്കൽ മുല്ലക്കോയ തങ്ങൾ സ്ഥാപക പ്രസിഡന്റായും പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്‌ലിയാർ അധ്യക്ഷനായും സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ രൂപീകൃതമായി.',
+        'കോഴിക്കോട് ടൗൺഹാളിൽ വെച്ച് വരക്കൽ മുല്ലക്കോയ തങ്ങൾ സ്ഥാപക പ്രസിഡന്റായും പാങ്ങിൽ അഹമ്മദ് കുട്ടി മുസ്ലിയാർ അധ്യക്ഷനായും സമസ്ത കേരള ജംഇയ്യത്തുൽ ഉലമ രൂപീകൃതമായി.',
       quote: '“പാരമ്പര്യ വിജ്ഞാനവും സത്യവിശ്വാസവും തലമുറകളിലേക്ക് കൈമാറുന്ന മഹത്തായ പ്രസ്ഥാനം.”',
     },
   },
@@ -2543,7 +2556,7 @@ export const EASTER_EGG_ITEMS: EasterEggItem[] = [
       cardTitle: 'സത്യധാര & 17 സബ് വിങ്ങുകൾ',
       sealCode: 'SKSSF · GLOBAL',
       eventSummary:
-        'സത്യധാര ദൈ്വവാരികയിലൂടെ അക്ഷര വെളിച്ചം പകർന്നും വിഖായ, സഹചാരി, ട്രെൻഡ്, ഇബാദ്, സൈബർ വിംഗ് തുടങ്ങിയ 17 ഉപസമിതികളിലൂടെ ആഗോള സേവനം നയിച്ചും SKSSF മുന്നേറുന്നു.',
+        'സത്യധാര ദ്വൈവാരികയിലൂടെ അക്ഷര വെളിച്ചം പകർന്നും വിഖായ, സഹചാരി, ട്രെൻഡ്, ഇബാദ്, സൈബർ വിംഗ് തുടങ്ങിയ 17 ഉപസമിതികളിലൂടെ ആഗോള സേവനം നയിച്ചും SKSSF മുന്നേറുന്നു.',
       quote: '“അറിവ് വിനയത്തിലേക്കും വിനയം നിസ്വാർത്ഥ സേവനത്തിലേക്കും നയിക്കട്ടെ.”',
     },
   },
@@ -2620,13 +2633,13 @@ export const SurpriseGiftChestModal: React.FC<SurpriseGiftModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
+      className="fixed inset-0 z-[110] bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.92, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl border-2 border-amber-400 max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl"
+        className="bg-white rounded-3xl border-2 border-amber-400 max-w-2xl w-full max-h-[85vh] overflow-y-auto overscroll-contain my-auto p-5 space-y-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -2646,7 +2659,7 @@ export const SurpriseGiftChestModal: React.FC<SurpriseGiftModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 cursor-pointer"
             aria-label="അടയ്ക്കുക"
           >
             <X className="w-5 h-5" />
@@ -2813,12 +2826,15 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
   const profile = dailyState?.profile ?? { playerName: '', unitName: '', mekhalaName: '' };
   const cleanBadgeName =
     rank.replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/gu, '').trim() || 'വിജ്ഞാനാന്വേഷി';
-  const unitLine = [profile.unitName.trim(), profile.mekhalaName.trim()].filter(Boolean).join(' · ');
+  const cleanPlayerName = sanitizeFinalPlayerText(profile.playerName, 40);
+  const cleanUnitName = sanitizeFinalPlayerText(profile.unitName, 45);
+  const cleanMekhalaName = sanitizeFinalPlayerText(profile.mekhalaName, 45);
+  const unitLine = [cleanUnitName, cleanMekhalaName].filter(Boolean).join(' · ');
   const challengeShareText = [
     unitLine
       ? `🏆 ഞാൻ ${unitLine} യൂണിറ്റിൽ നിന്ന് SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanBadgeName}" പദവി നേടി!`
       : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanBadgeName}" പദവി നേടി!`,
-    profile.playerName.trim() ? `👤 പേര്: ${profile.playerName.trim()}` : null,
+    cleanPlayerName ? `🏷️ പേര്: ${cleanPlayerName}` : null,
     `📚 പാഠങ്ങൾ: ${completedLessonsCount}/${totalLessonsCount} · ⭐ ${xp} XP${dailyState ? ` · 🔥 ${dailyState.streakDays} ദിവസം` : ''}`,
     `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
   ]
@@ -2828,13 +2844,13 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
+      className="fixed inset-0 z-[110] bg-slate-950/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto overscroll-contain"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 space-y-5"
+        className="bg-white rounded-3xl border-2 border-emerald-300 shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto overscroll-contain my-auto p-5 sm:p-6 space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200">
@@ -2844,7 +2860,7 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
             </div>
             <div className="min-w-0">
               <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
-                സ്കോർ &amp; പുരോഗതി റിപ്പോർട്ട്
+                എന്റെ പഠന പുരോഗതി
               </h2>
               <p className="text-xs text-emerald-800 font-bold">
                 ഈ ബ്രൗസറിൽ തനിയെ സേവ് ആകുന്നു · ശ്രമം #{runNumber}
@@ -2855,7 +2871,7 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="അടയ്ക്കുക"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 shrink-0"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center shrink-0 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -2992,27 +3008,36 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-700 leading-relaxed">
-              നിങ്ങളുടെ യൂണിറ്റും മേഖലയും രേഖപ്പെടുത്തി സ്വന്തം സ്കോർ കാർഡ് വാട്‌സ്ആപ്പ് ഗ്രൂപ്പിൽ പങ്കുവെച്ച് കൂട്ടുകാരുമായി സ്കോർ താരതമ്യം ചെയ്യാം. (വിവരങ്ങൾ ഈ ഫോണിൽ മാത്രമേ സൂക്ഷിക്കൂ.)
+              നിങ്ങളുടെ യൂണിറ്റും മേഖലയും രേഖപ്പെടുത്തി സ്വന്തം സ്കോർ കാർഡ് വാട്സ്ആപ്പ് ഗ്രൂപ്പിൽ പങ്കുവെച്ച് കൂട്ടുകാരുമായി സ്കോർ താരതമ്യം ചെയ്യാം. (വിവരങ്ങൾ ഈ ഫോണിൽ മാത്രമേ സൂക്ഷിക്കൂ.)
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <input
                 type="text"
+                maxLength={40}
                 value={profile.playerName}
-                onChange={(e) => onUpdateUnitProfile({ playerName: e.target.value })}
+                onChange={(e) =>
+                  onUpdateUnitProfile({ playerName: sanitizePlayerText(e.target.value, 40) })
+                }
                 placeholder="നിങ്ങളുടെ പേര്"
                 className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
               />
               <input
                 type="text"
+                maxLength={45}
                 value={profile.unitName}
-                onChange={(e) => onUpdateUnitProfile({ unitName: e.target.value })}
+                onChange={(e) =>
+                  onUpdateUnitProfile({ unitName: sanitizePlayerText(e.target.value, 45) })
+                }
                 placeholder="യൂണിറ്റ് (ഉദാ: അഞ്ചങ്ങാടി)"
                 className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
               />
               <input
                 type="text"
+                maxLength={45}
                 value={profile.mekhalaName}
-                onChange={(e) => onUpdateUnitProfile({ mekhalaName: e.target.value })}
+                onChange={(e) =>
+                  onUpdateUnitProfile({ mekhalaName: sanitizePlayerText(e.target.value, 45) })
+                }
                 placeholder="മേഖല / ജില്ല"
                 className="px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-600"
               />

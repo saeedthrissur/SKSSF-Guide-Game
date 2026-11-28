@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Award, Camera, Copy, Download, Lock, Printer, Share2, ShieldAlert, Trash2, Trophy } from 'lucide-react';
 import { sound } from '../utils/sound';
 import { copyAppShareLink, generateAppQrDataUrl, getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
-import { loadDailyAndProfileState } from '../utils/gameStorage';
+import { loadDailyAndProfileState, lockCertificateName } from '../utils/gameStorage';
+import { sanitizeFinalPlayerText, sanitizePlayerText } from '../utils/sanitize';
 import { ALL_LESSONS } from '../utils/lessonTracker';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
 
@@ -97,17 +98,26 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   completedLessonsCount = ALL_LESSONS.length,
 }) => {
   const initialDaily = loadDailyAndProfileState();
-  const lockedName = initialDaily.profile.lockedCertificateName?.trim() || '';
+  const [lockedName, setLockedName] = useState(
+    () => initialDaily.profile.lockedCertificateName?.trim() || ''
+  );
 
   const [recipientName, setRecipientName] = useState(
-    lockedName || initialDaily.profile.playerName || ''
+    () =>
+      initialDaily.profile.lockedCertificateName?.trim() ||
+      sanitizePlayerText(initialDaily.profile.playerName || '', 40)
   );
-  const [unitName, setUnitName] = useState(initialDaily.profile.unitName || '');
+  const [unitName, setUnitName] = useState(() =>
+    sanitizePlayerText(initialDaily.profile.unitName || '', 45)
+  );
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [generated, setGenerated] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [pendingLockAction, setPendingLockAction] = useState<
+    'generate' | 'download' | 'share' | 'print' | null
+  >(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const appUrl = getAppShareUrl();
 
@@ -166,16 +176,17 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const cleanRank = cleanCertificateLabel(rank) || 'വിജ്ഞാനാന്വേഷി';
   const cleanBadges = Array.from(new Set(badges.map(cleanCertificateLabel).filter(Boolean)));
 
-  const effectiveName = lockedName || recipientName.trim();
+  const effectiveName = lockedName || sanitizeFinalPlayerText(recipientName, 40);
+  const cleanUnit = sanitizeFinalPlayerText(unitName, 45);
   const displayName = effectiveName || 'നിങ്ങളുടെ പേര്';
-  const displayUnit = unitName.trim() || 'യൂണിറ്റ് / നാട്';
-  const savedMekhala = initialDaily.profile.mekhalaName?.trim() || '';
-  const unitChallengeOrigin = [unitName.trim(), savedMekhala].filter(Boolean).join(' · ');
+  const displayUnit = cleanUnit || 'യൂണിറ്റ് / നാട്';
+  const savedMekhala = sanitizeFinalPlayerText(initialDaily.profile.mekhalaName || '', 45);
+  const unitChallengeOrigin = [cleanUnit, savedMekhala].filter(Boolean).join(' · ');
   const unitChallengeText = [
     unitChallengeOrigin
       ? `🏆 ഞാൻ ${unitChallengeOrigin} യൂണിറ്റിൽ നിന്ന് SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`
       : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`,
-    effectiveName ? `👤 ${effectiveName}` : null,
+    effectiveName ? `🏷️ ${effectiveName}` : null,
     `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
   ]
     .filter(Boolean)
@@ -190,16 +201,29 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
   const CERTIFICATE_DISCLAIMER =
     'ഇതൊരു വിജ്ഞാനപ്രദമായ ഓൺലൈൻ ക്വിസ്/ഗെയിം വിജയത്തിന്റെ പ്രശംസാപത്രം മാത്രമാണ്; സംഘടനയുടെ ഔദ്യോഗിക അംഗത്വ രേഖയല്ല.';
 
-  const handleGenerate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!effectiveName) return;
+  const finalizeGenerate = () => {
     sound.playUnlock();
     setGenerated(true);
     setShareNote(
       isPreviewOnly
         ? `ഇത് പ്രിവ്യൂ മാത്രമാണ് — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർത്താലേ പ്രശംസാപത്രം ഡൗൺലോഡ് ചെയ്യാൻ പറ്റൂ.`
-        : 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.'
+        : 'പേര് ചേർത്തു! ഇനി താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം അല്ലെങ്കിൽ വാട്സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.'
     );
+  };
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!effectiveName) {
+      sound.playError();
+      setShareNote('ആദ്യം നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യൂ.');
+      return;
+    }
+    if (!isPreviewOnly && !lockedName) {
+      sound.playClick();
+      setPendingLockAction('generate');
+      return;
+    }
+    finalizeGenerate();
   };
 
   const buildCertificateCanvas = async (): Promise<HTMLCanvasElement | null> => {
@@ -445,12 +469,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     return canvas;
   };
 
-  const handleDownloadPng = async () => {
-    if (isPreviewOnly) {
-      sound.playError();
-      setShareNote(`പ്രിവ്യൂവിൽ ഡൗൺലോഡ് പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
-      return;
-    }
+  const runDownloadPng = async () => {
     setDownloading(true);
     setShareNote(null);
     sound.playSuccess();
@@ -467,12 +486,26 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     }
   };
 
-  const handleShareSocial = async () => {
+  const handleDownloadPng = async () => {
     if (isPreviewOnly) {
       sound.playError();
-      setShareNote(`പ്രിവ്യൂവിൽ ഷെയർ പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
+      setShareNote(`പ്രിവ്യൂവിൽ ഡൗൺലോഡ് പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
       return;
     }
+    if (!effectiveName) {
+      sound.playError();
+      setShareNote('ഡൗൺലോഡ് ചെയ്യുന്നതിന് മുമ്പ് നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യൂ.');
+      return;
+    }
+    if (!lockedName) {
+      sound.playClick();
+      setPendingLockAction('download');
+      return;
+    }
+    await runDownloadPng();
+  };
+
+  const runShareSocial = async () => {
     setDownloading(true);
     setShareNote(null);
     sound.playSuccess();
@@ -510,12 +543,31 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       link.href = canvas.toDataURL('image/png');
       link.click();
       await copyAppShareLink();
-      setShareNote('സർട്ടിഫിക്കറ്റ് സേവ് ആയി, ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്‌സ്ആപ്പിൽ അയക്കാം.');
+      setShareNote('സർട്ടിഫിക്കറ്റ് സേവ് ആയി, ലിങ്ക് കോപ്പിയും ചെയ്തു — ഇനി വാട്സ്ആപ്പിൽ അയക്കാം.');
     } catch {
       setShareNote('ഷെയർ മാറ്റിവെച്ചു — വേണമെങ്കിൽ താഴെ നിന്ന് ഡൗൺലോഡ് ചെയ്യാം.');
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleShareSocial = async () => {
+    if (isPreviewOnly) {
+      sound.playError();
+      setShareNote(`പ്രിവ്യൂവിൽ ഷെയർ പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
+      return;
+    }
+    if (!effectiveName) {
+      sound.playError();
+      setShareNote('ഷെയർ ചെയ്യുന്നതിന് മുമ്പ് നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യൂ.');
+      return;
+    }
+    if (!lockedName) {
+      sound.playClick();
+      setPendingLockAction('share');
+      return;
+    }
+    await runShareSocial();
   };
 
   const handleCopyAppLink = async () => {
@@ -534,8 +586,38 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       setShareNote(`പ്രിവ്യൂവിൽ പ്രിന്റ് പറ്റില്ല — ${ALL_LESSONS.length} പാഠങ്ങളും കളിച്ച് തീർക്കൂ!`);
       return;
     }
+    if (!effectiveName) {
+      sound.playError();
+      setShareNote('പ്രിന്റ് ചെയ്യുന്നതിന് മുമ്പ് നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യൂ.');
+      return;
+    }
+    if (!lockedName) {
+      sound.playClick();
+      setPendingLockAction('print');
+      return;
+    }
     sound.playClick();
     window.print();
+  };
+
+  const confirmAndLockName = async () => {
+    if (!effectiveName || !pendingLockAction) return;
+    const action = pendingLockAction;
+    const res = lockCertificateName(effectiveName, cleanUnit);
+    const finalLocked = res.profile.lockedCertificateName?.trim() || effectiveName;
+    setLockedName(finalLocked);
+    setRecipientName(finalLocked);
+    setPendingLockAction(null);
+    if (action === 'generate') {
+      finalizeGenerate();
+    } else if (action === 'download') {
+      await runDownloadPng();
+    } else if (action === 'share') {
+      await runShareSocial();
+    } else if (action === 'print') {
+      sound.playClick();
+      window.print();
+    }
   };
 
   return (
@@ -549,7 +631,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ്
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 mt-0.5 leading-relaxed">
-            പേരും നാടും (വേണമെങ്കിൽ ഫോട്ടോയും) ചേർത്ത് നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ് ഫോണിൽ സേവ് ചെയ്യാം, വാട്‌സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.
+            പേരും നാടും (വേണമെങ്കിൽ ഫോട്ടോയും) ചേർത്ത് നിങ്ങളുടെ സർട്ടിഫിക്കറ്റ് ഫോണിൽ സേവ് ചെയ്യാം, വാട്സ്ആപ്പിൽ ഷെയർ ചെയ്യാം.
           </p>
         </div>
       </div>
@@ -579,7 +661,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             <span>1. നിങ്ങളുടെ പേര്</span>
             {lockedName && (
               <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-800">
-                <Lock className="w-3 h-3" /> ബാക്കപ്പ് ലോക്ക്
+                <Lock className="w-3 h-3" /> പേര് ലോക്ക് ചെയ്തു
               </span>
             )}
           </label>
@@ -587,10 +669,14 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
             id="cert-name"
             type="text"
             required
+            maxLength={40}
             readOnly={Boolean(lockedName)}
             value={lockedName || recipientName}
             onChange={(e) => {
-              if (!lockedName) setRecipientName(e.target.value);
+              if (!lockedName) {
+                setRecipientName(sanitizePlayerText(e.target.value, 40));
+                setPendingLockAction(null);
+              }
             }}
             placeholder="ഉദാ: മുഹമ്മദ് അമീൻ കെ."
             className={`w-full px-3.5 py-2.5 rounded-xl border text-sm text-slate-900 focus:outline-none ${
@@ -601,7 +687,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           />
           {lockedName && (
             <p className="text-[10px] font-bold text-emerald-800 mt-1">
-              🔒 ബാക്കപ്പിൽ നിന്ന് എടുത്ത പേരായതിനാൽ ഇവിടെ പേര് മാറ്റാൻ പറ്റില്ല.
+              🔒 സുരക്ഷയ്ക്കായി ഈ പ്രശംസാപത്രത്തിലെ പേര് സ്ഥിരമായി ലോക്ക് ചെയ്തിരിക്കുന്നു.
             </p>
           )}
         </div>
@@ -616,8 +702,9 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
           <input
             id="cert-unit"
             type="text"
+            maxLength={45}
             value={unitName}
-            onChange={(e) => setUnitName(e.target.value)}
+            onChange={(e) => setUnitName(sanitizePlayerText(e.target.value, 45))}
             placeholder="ഉദാ: നിങ്ങളുടെ നാട് / യൂണിറ്റ്"
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:border-emerald-700"
           />
@@ -626,12 +713,43 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
         <div className="md:col-span-3">
           <button
             type="submit"
-            className="w-full py-2.5 px-4 rounded-xl bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 transition-colors whitespace-nowrap"
+            className="w-full min-h-[42px] py-2.5 px-4 rounded-xl bg-emerald-700 text-white text-sm font-extrabold hover:bg-emerald-800 transition-colors whitespace-nowrap cursor-pointer"
           >
             സർട്ടിഫിക്കറ്റ് കാണാം
           </button>
         </div>
       </form>
+
+      {pendingLockAction && !lockedName && !isPreviewOnly && (
+        <div
+          role="alert"
+          className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 space-y-2.5 shadow-xs"
+        >
+          <p className="text-xs sm:text-sm font-extrabold text-amber-950 leading-relaxed">
+            🔒 ശ്രദ്ധിക്കുക: ഒരിക്കൽ ഔദ്യോഗിക പ്രശംസാപത്രം തയ്യാറാക്കിയാൽ{' '}
+            <span className="underline">“{effectiveName}”</span> എന്ന പേര് സ്ഥിരമായി ലോക്ക് ആകും. പേരിൽ അക്ഷരത്തെറ്റില്ലെന്ന് ഉറപ്പാണോ?
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={confirmAndLockName}
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold cursor-pointer"
+            >
+              ✅ അതെ, പേര് ലോക്ക് ചെയ്ത് തുടരാം
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sound.playClick();
+                setPendingLockAction(null);
+              }}
+              className="min-h-[40px] px-4 py-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 text-slate-800 text-xs sm:text-sm font-bold cursor-pointer"
+            >
+              ✏️ പേര് തിരുത്താം
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Photo Upload Bar */}
       <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex flex-wrap items-center justify-between gap-2.5">

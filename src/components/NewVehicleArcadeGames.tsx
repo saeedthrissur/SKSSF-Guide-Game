@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { sound } from '../utils/sound';
 import { narrator } from '../utils/narrator';
-import { useGameFullscreen } from './GameFullscreenShell';
+import { useGameFullscreen, useGameStagePaused } from './GameFullscreenShell';
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 
@@ -69,6 +69,7 @@ export const AirplaneSicFlightGame: React.FC<{
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
   const isFullscreen = useGameFullscreen();
+  const stagePaused = useGameStagePaused();
   const [phase, setPhase] = useState<'runway' | 'takeoff' | 'cruise' | 'landing' | 'landed'>('runway');
   const [planeLane, setPlaneLane] = useState<0 | 1 | 2>(1);
   const [hubIdx, setHubIdx] = useState(0);
@@ -137,11 +138,16 @@ export const AirplaneSicFlightGame: React.FC<{
 
   // Runway Takeoff Animation
   useEffect(() => {
-    if (phase !== 'takeoff' || failed) return;
+    if (phase !== 'takeoff' || failed || stagePaused) return;
     let raf = 0;
     let last = performance.now();
     let prog = 0;
     const tick = (now: number) => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        last = now;
+        raf = window.requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       prog += dt * 78;
@@ -161,15 +167,20 @@ export const AirplaneSicFlightGame: React.FC<{
     };
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [phase, failed, config.hubs]);
+  }, [phase, failed, stagePaused, config.hubs]);
 
   // Smooth 60fps Sky Cruise Loop
   useEffect(() => {
-    if (phase !== 'cruise' || failed) return;
+    if (phase !== 'cruise' || failed || stagePaused) return;
     let raf = 0;
     let last = performance.now();
 
     const tick = (now: number) => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        last = now;
+        raf = window.requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
       const s = stateRef.current;
@@ -281,7 +292,7 @@ export const AirplaneSicFlightGame: React.FC<{
 
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [phase, failed, config.hubs, config.arrivalAirport]);
+  }, [phase, failed, stagePaused, config.hubs, config.arrivalAirport]);
 
   const handleTakeoff = () => {
     sound.unlockAudio();
@@ -619,6 +630,7 @@ export const HelicopterRescueDropGame: React.FC<{
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
   const isFullscreen = useGameFullscreen();
+  const stagePaused = useGameStagePaused();
   const [heliX, setHeliX] = useState(110);
   const [birdX, setBirdX] = useState(500);
   const [delivered, setDelivered] = useState<number[]>([]);
@@ -656,10 +668,15 @@ export const HelicopterRescueDropGame: React.FC<{
   }, [resetSignal, config.title]);
 
   useEffect(() => {
-    if (allDone || failed || dropping) return;
+    if (allDone || failed || dropping || stagePaused) return;
     let raf = 0;
     let last = performance.now();
     const tick = (now: number) => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        last = now;
+        raf = window.requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
 
@@ -689,7 +706,7 @@ export const HelicopterRescueDropGame: React.FC<{
     };
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [allDone, failed, dropping]);
+  }, [allDone, failed, dropping, stagePaused]);
 
   const hoveredPad = padXs.findIndex((px) => Math.abs(heliX - px) <= 46);
   const birdBlocking = Math.abs(heliX - birdX) <= 48;
@@ -956,6 +973,7 @@ export const BalloonPopArcadeGame: React.FC<{
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
   const isFullscreen = useGameFullscreen();
+  const stagePaused = useGameStagePaused();
   const [poppedIds, setPoppedIds] = useState<string[]>([]);
   const [balloons, setBalloons] = useState<ActiveBalloon[]>([]);
   const [shields, setShields] = useState(3);
@@ -1021,11 +1039,16 @@ export const BalloonPopArcadeGame: React.FC<{
   }, [resetSignal, config.title]);
 
   useEffect(() => {
-    if (allDone || failed) return;
+    if (allDone || failed || stagePaused) return;
     let raf = 0;
     let last = performance.now();
 
     const tick = (now: number) => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        last = now;
+        raf = window.requestAnimationFrame(tick);
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
 
@@ -1045,7 +1068,7 @@ export const BalloonPopArcadeGame: React.FC<{
 
     raf = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(raf);
-  }, [allDone, failed]);
+  }, [allDone, failed, stagePaused]);
 
   const handlePop = (b: ActiveBalloon) => {
     sound.unlockAudio();
@@ -1231,6 +1254,7 @@ export const TagoreHallPassGateGame: React.FC<{
   onWin: () => void;
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
+  const stagePaused = useGameStagePaused();
   const [idx, setIdx] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -1259,8 +1283,9 @@ export const TagoreHallPassGateGame: React.FC<{
   const failed = Boolean(failReason);
 
   useEffect(() => {
-    if (!started || done || failed) return;
+    if (!started || done || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
@@ -1271,7 +1296,7 @@ export const TagoreHallPassGateGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, done, failed]);
+  }, [started, done, failed, stagePaused]);
 
   const current = config.guests[idx];
 
@@ -1438,6 +1463,7 @@ export const TrendCareerCompassGame: React.FC<{
   onWin: () => void;
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
+  const stagePaused = useGameStagePaused();
   const [idx, setIdx] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(35);
@@ -1466,8 +1492,9 @@ export const TrendCareerCompassGame: React.FC<{
   const failed = Boolean(failReason);
 
   useEffect(() => {
-    if (!started || done || failed) return;
+    if (!started || done || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
@@ -1478,7 +1505,7 @@ export const TrendCareerCompassGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, done, failed]);
+  }, [started, done, failed, stagePaused]);
 
   const student = config.students[idx];
 
@@ -1632,6 +1659,7 @@ export const GreenCampusSortGame: React.FC<{
   onWin: () => void;
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
+  const stagePaused = useGameStagePaused();
   const [idx, setIdx] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(28);
@@ -1660,8 +1688,9 @@ export const GreenCampusSortGame: React.FC<{
   const failed = Boolean(failReason);
 
   useEffect(() => {
-    if (!started || done || failed) return;
+    if (!started || done || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
@@ -1672,7 +1701,7 @@ export const GreenCampusSortGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, done, failed]);
+  }, [started, done, failed, stagePaused]);
 
   const current = config.items[idx];
 
@@ -1831,6 +1860,7 @@ export const OrganetChainGame: React.FC<{
   onWin: () => void;
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
+  const stagePaused = useGameStagePaused();
   const [step, setStep] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(26);
@@ -1859,8 +1889,9 @@ export const OrganetChainGame: React.FC<{
   const failed = Boolean(failReason);
 
   useEffect(() => {
-    if (!started || done || failed) return;
+    if (!started || done || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
@@ -1871,7 +1902,7 @@ export const OrganetChainGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, done, failed]);
+  }, [started, done, failed, stagePaused]);
 
   // Deterministic shuffled display of real nodes + decoys
   const options = [
@@ -2059,6 +2090,7 @@ export const SargalayamSpotlightGame: React.FC<{
   onWin: () => void;
   resetSignal: number;
 }> = ({ config, onWin, resetSignal }) => {
+  const stagePaused = useGameStagePaused();
   const [idx, setIdx] = useState(0);
   const [shields, setShields] = useState(3);
   const [timeLeft, setTimeLeft] = useState(30);
@@ -2087,8 +2119,9 @@ export const SargalayamSpotlightGame: React.FC<{
   const failed = Boolean(failReason);
 
   useEffect(() => {
-    if (!started || done || failed) return;
+    if (!started || done || failed || stagePaused) return;
     const id = window.setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTimeLeft((t) => {
         if (t <= 1) {
           sound.playError();
@@ -2099,7 +2132,7 @@ export const SargalayamSpotlightGame: React.FC<{
       });
     }, 1000);
     return () => window.clearInterval(id);
-  }, [started, done, failed]);
+  }, [started, done, failed, stagePaused]);
 
   const act = config.acts[idx];
 
