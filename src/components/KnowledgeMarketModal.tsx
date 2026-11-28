@@ -18,6 +18,7 @@ import {
   useEcosystem,
 } from '../utils/ecosystemStore';
 import { ALL_LESSONS } from '../utils/lessonTracker';
+import { containsAbusiveLanguage, sanitizeFinalPlayerText } from '../utils/sanitize';
 import { copyTextToClipboard, getWhatsAppShareHref } from '../utils/shareLink';
 import { sound } from '../utils/sound';
 import { DiamondGemSvg, GoldCoinSvg, SilverCoinSvg } from './CurrencyIcons';
@@ -135,6 +136,12 @@ export const KnowledgeMarketModal: React.FC<KnowledgeMarketModalProps> = ({
 
   const handleCreateGift = async () => {
     sound.unlockAudio();
+    if (giftNote.trim() && containsAbusiveLanguage(giftNote)) {
+      sound.playError();
+      setNotice({ ok: false, text: 'മാന്യമായ ആശംസാ സന്ദേശം നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).' });
+      return;
+    }
+    const cleanGiftNote = sanitizeFinalPlayerText(giftNote, 80);
     const lessonObj = ALL_LESSONS.find((l) => l.id === giftLessonId);
     const res = createRecipientLockedGift({
       toUserId: giftToId,
@@ -142,7 +149,7 @@ export const KnowledgeMarketModal: React.FC<KnowledgeMarketModalProps> = ({
       amount: giftKind === 'lesson_unlock' ? 1 : giftAmount,
       lessonId: giftKind === 'lesson_unlock' ? giftLessonId : undefined,
       lessonTitle: giftKind === 'lesson_unlock' ? lessonObj?.title : undefined,
-      note: giftNote,
+      note: cleanGiftNote,
     });
     if (!res.ok || !res.code || !res.url) {
       sound.playError();
@@ -739,11 +746,19 @@ export const KnowledgeMarketModal: React.FC<KnowledgeMarketModalProps> = ({
 
                 {generatedGift && (
                   <div className="rounded-2xl border-2 border-amber-300 bg-white p-3.5 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-300 text-amber-950 text-[11px] font-black">
+                        🎁 ഗിഫ്റ്റ് വൗച്ചർ QR
+                      </span>
+                      <span className="text-[11px] font-bold text-slate-600">
+                        {giftToId} ഐഡിയിലുള്ള സുഹൃത്തിന് മാത്രം സ്കാൻ ചെയ്ത് സ്വീകരിക്കാം
+                      </span>
+                    </div>
                     <div className="flex flex-col sm:flex-row items-center gap-3">
                       {generatedGift.qr && (
                         <img
                           src={generatedGift.qr}
-                          alt="സമ്മാന QR കോഡ്"
+                          alt="ഗിഫ്റ്റ് വൗച്ചർ QR കോഡ്"
                           className="w-28 h-28 rounded-xl border border-emerald-200 shrink-0"
                         />
                       )}

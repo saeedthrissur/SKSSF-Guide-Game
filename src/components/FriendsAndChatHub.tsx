@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
   AlertTriangle,
+  Ban,
   BookOpen,
   Check,
   Copy,
   Link2,
   MessageCircle,
+  RotateCcw,
   Shield,
   ShieldCheck,
   Sparkles,
-  Trash2,
   UserPlus,
   Users,
   X,
@@ -28,6 +29,7 @@ import {
   ChatDockWidgetMessage,
 } from '../utils/ecosystemCrypto';
 import { ecosystemSyncAdapter, useEcosystem } from '../utils/ecosystemStore';
+import { containsAbusiveLanguage, sanitizeFinalPlayerText } from '../utils/sanitize';
 import { copyTextToClipboard, getWhatsAppShareHref } from '../utils/shareLink';
 import { sound } from '../utils/sound';
 
@@ -55,7 +57,8 @@ export const FriendsAndChatHubModal: React.FC<FriendsAndChatHubModalProps> = ({
     ledgerHead,
     markHubVisited,
     addVerifiedFriend,
-    removeFriend,
+    blockAndRemoveUser,
+    unblockUser,
     updateDisplayNameWithRules,
     updateHandle,
     configureMasterProfileLink,
@@ -180,9 +183,15 @@ export const FriendsAndChatHubModal: React.FC<FriendsAndChatHubModalProps> = ({
       });
       return;
     }
+    if (friendNameInput.trim() && containsAbusiveLanguage(friendNameInput)) {
+      sound.playError();
+      setNotice({ ok: false, text: 'മാന്യമായ പേര് നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).' });
+      return;
+    }
+    const cleanFriendName = sanitizeFinalPlayerText(friendNameInput, 40) || raw;
     const res = addVerifiedFriend({
       userId: raw,
-      displayName: friendNameInput.trim() || raw,
+      displayName: cleanFriendName,
     });
     if (res.ok) {
       sound.playUnlock();
@@ -288,36 +297,46 @@ export const FriendsAndChatHubModal: React.FC<FriendsAndChatHubModalProps> = ({
           {/* TAB 1: VERIFIED FRIENDS LIST & INVITES */}
           {tab === 'friends' && (
             <div className="space-y-4">
-              {/* My Shareable Friend ID Card */}
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3.5 flex flex-col sm:flex-row items-center gap-3">
-                {myCardQr && (
-                  <img
-                    src={myCardQr}
-                    alt="എന്റെ വെരിഫൈഡ് QR"
-                    className="w-24 h-24 rounded-xl border border-emerald-300 bg-white p-1 shrink-0"
-                  />
-                )}
-                <div className="min-w-0 flex-1 space-y-1.5 text-center sm:text-left">
-                  <p className="text-xs font-black text-emerald-950">എന്റെ 4-ടയർ യൂസർ ഐഡി</p>
-                  <p className="text-sm font-mono font-black text-emerald-800">{state.identity.userId}</p>
-                  <p className="text-[11px] font-bold text-slate-600">
-                    ഹാൻഡിൽ: {state.identity.handle} · വെരിഫിക്കേഷൻ ടയർ: {state.identity.verificationTier}/3
-                  </p>
-                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const ok = await copyTextToClipboard(state.identity.userId);
-                        if (ok) {
-                          setCopiedId(true);
-                          window.setTimeout(() => setCopiedId(false), 2000);
-                        }
-                      }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-700 text-white text-xs font-bold cursor-pointer"
-                    >
-                      {copiedId ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedId ? 'കോപ്പി ചെയ്തു' : 'ഐഡി കോപ്പി'}</span>
-                    </button>
+              {/* My Shareable Friend ID Card with Color-Coded Profile QR Badge */}
+              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/60 p-3.5 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-800 text-white text-[11px] font-black">
+                    🪪 പ്രൊഫൈൽ ഐഡി QR
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-800">
+                    സുഹൃത്തുക്കളെ ചേർക്കാനും സമ്മാനം സ്വീകരിക്കാനും ഇത് കാണിക്കാം
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  {myCardQr && (
+                    <img
+                      src={myCardQr}
+                      alt="എന്റെ പ്രൊഫൈൽ ഐഡി QR"
+                      className="w-24 h-24 rounded-xl border border-emerald-300 bg-white p-1 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1 space-y-1.5 text-center sm:text-left">
+                    <p className="text-xs font-black text-emerald-950">എന്റെ 4-ടയർ യൂസർ ഐഡി</p>
+                    <p className="text-sm font-mono font-black text-emerald-800">{state.identity.userId}</p>
+                    <p className="text-[11px] font-bold text-slate-600">
+                      ഹാൻഡിൽ: {state.identity.handle} · വെരിഫിക്കേഷൻ ടയർ: {state.identity.verificationTier}/3
+                    </p>
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const ok = await copyTextToClipboard(state.identity.userId);
+                          if (ok) {
+                            setCopiedId(true);
+                            window.setTimeout(() => setCopiedId(false), 2000);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
+                      >
+                        {copiedId ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedId ? 'കോപ്പി ചെയ്തു' : 'ഐഡി കോപ്പി'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -399,17 +418,47 @@ export const FriendsAndChatHubModal: React.FC<FriendsAndChatHubModalProps> = ({
                         </a>
                         <button
                           type="button"
-                          onClick={() => removeFriend(f.userId)}
-                          aria-label="നീക്കം ചെയ്യുക"
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                          onClick={() => {
+                            sound.playClick();
+                            const res = blockAndRemoveUser(f.userId);
+                            setNotice({ ok: true, text: res.message });
+                          }}
+                          className="inline-flex items-center gap-1 min-h-[36px] px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-black cursor-pointer"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Ban className="w-3.5 h-3.5 shrink-0" />
+                          <span>ബ്ലോക്ക് / നീക്കം</span>
                         </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
+
+              {/* Blocked Users Safety List */}
+              {state.social.blockedUserIds.length > 0 && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-3 space-y-2">
+                  <p className="text-xs font-black text-rose-950 flex items-center gap-1.5">
+                    <Ban className="w-3.5 h-3.5 text-rose-600" />
+                    <span>ബ്ലോക്ക് ചെയ്ത ഐഡികൾ ({state.social.blockedUserIds.length})</span>
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {state.social.blockedUserIds.map((bid) => (
+                      <button
+                        key={bid}
+                        type="button"
+                        onClick={() => {
+                          unblockUser(bid);
+                          setNotice({ ok: true, text: `✅ ${bid} അൺബ്ലോക്ക് ചെയ്തു.` });
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-[11px] font-mono font-bold text-slate-700 hover:border-emerald-400 cursor-pointer"
+                      >
+                        <span>{bid}</span>
+                        <RotateCcw className="w-3 h-3 text-emerald-700" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Verified Friend Invite (+1 Diamond both after 3 lessons) */}
               <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 space-y-2.5">

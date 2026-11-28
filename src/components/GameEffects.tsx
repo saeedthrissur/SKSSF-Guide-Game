@@ -59,7 +59,12 @@ import {
   RunHistoryEntry,
   UnitProfile,
 } from '../utils/gameStorage';
-import { getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
+import {
+  getAppShareUrl,
+  getWhatsAppShareHref,
+  isLocalFileProtocol,
+  LOCAL_FILE_SHARE_NOTICE_ML,
+} from '../utils/shareLink';
 import { sanitizeFinalPlayerText, sanitizePlayerText } from '../utils/sanitize';
 import { usePWAInstall } from '../utils/usePWAInstall';
 import { OfficialSamasthaFlagImg, OfficialSkssfFlagImg } from './SvgArtwork';
@@ -715,8 +720,8 @@ export const SettingsModal: React.FC<{
               </div>
             </div>
 
-            {/* Offline PWA App Install Option */}
-            {!isInstalled && (isInstallable || isIOS) && (
+            {/* Offline PWA App Install Option (Universal Cross-Browser) */}
+            {!isInstalled && (
               <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -734,20 +739,20 @@ export const SettingsModal: React.FC<{
                       sound.playPop();
                       if (isInstallable) {
                         await install();
-                      } else if (isIOS) {
+                      } else {
                         setIosInstallHint((v) => !v);
                       }
                     }}
                     className="inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-extrabold shrink-0 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>{isInstallable ? 'ആപ്പ് ഇൻസ്റ്റാൾ' : 'iPhone നിർദ്ദേശം'}</span>
+                    <span>{isInstallable ? 'ആപ്പ് ഇൻസ്റ്റാൾ' : 'ഇൻസ്റ്റാൾ നിർദ്ദേശം'}</span>
                   </button>
                 </div>
-                {iosInstallHint && isIOS && (
+                {iosInstallHint && !isInstallable && (
                   <p className="text-[11px] font-bold text-emerald-950 bg-white border border-emerald-200 rounded-lg px-2.5 py-2 leading-relaxed">
-                    Safari-യിൽ താഴെയുള്ള <strong>Share (↑)</strong> ബട്ടൺ തൊട്ട്{' '}
-                    <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
+                    നിങ്ങളുടെ ബ്രൗസറിന്റെ <strong>മെനു (⋮ / ⋯)</strong> അല്ലെങ്കിൽ <strong>Share</strong> ഓപ്ഷനിൽ തൊട്ട്{' '}
+                    <strong>“Install App”</strong> അല്ലെങ്കിൽ <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ഓഫ്‌ലൈൻ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
                   </p>
                 )}
               </div>
@@ -2836,7 +2841,7 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
       : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanBadgeName}" പദവി നേടി!`,
     cleanPlayerName ? `🏷️ പേര്: ${cleanPlayerName}` : null,
     `📚 പാഠങ്ങൾ: ${completedLessonsCount}/${totalLessonsCount} · ⭐ ${xp} XP${dailyState ? ` · 🔥 ${dailyState.streakDays} ദിവസം` : ''}`,
-    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
+    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ →`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -3054,6 +3059,11 @@ export const ScoreComparisonModal: React.FC<ScoreComparisonModalProps> = ({
                 <span>യൂണിറ്റ് ചലഞ്ച് ഷെയർ ചെയ്യാം (Challenge Your Unit)</span>
               </a>
             </div>
+            {isLocalFileProtocol() && (
+              <p className="text-[11px] font-bold text-amber-950 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 leading-snug">
+                {LOCAL_FILE_SHARE_NOTICE_ML}
+              </p>
+            )}
           </div>
         )}
 

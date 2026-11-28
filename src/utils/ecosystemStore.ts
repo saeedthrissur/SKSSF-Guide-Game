@@ -22,7 +22,7 @@ import {
   verifySignedInviteMilestoneCode,
 } from './ecosystemCrypto';
 import { getLocalDateKey, loadDailyAndProfileState, saveDailyAndProfileState } from './gameStorage';
-import { sanitizeFinalPlayerText } from './sanitize';
+import { containsAbusiveLanguage, sanitizeFinalPlayerText } from './sanitize';
 
 // ==================== TYPES ====================
 
@@ -186,10 +186,15 @@ export interface EcosystemState {
   };
   social: {
     friends: VerifiedFriend[];
+    blockedUserIds: string[];
     burnedGiftIds: string[];
     giftDateKey: string;
     giftsSentToday: number;
     giftsReceivedToday: number;
+    duelRewardDateKey: string;
+    duelRewardsToday: number;
+    duelCreateDateKey: string;
+    duelsCreatedToday: number;
     giftedLessonIds: string[];
     invitedByUserId?: string;
     invitedByName?: string;
@@ -285,6 +290,8 @@ export const ANTI_INFLATION_CAPS = {
   MAX_DIAMOND_FROM_LESSONS: 25,
   MAX_GIFTS_SENT_PER_DAY: 2,
   MAX_GIFTS_RECEIVED_PER_DAY: 2,
+  MAX_DUEL_REWARDS_PER_DAY: 3,
+  MAX_DUEL_LINKS_PER_DAY: 8,
   MAX_SPEED_REPLAYS_PER_DAY: 5,
   COOLDOWN_AFTER_LESSONS: 5,
   COOLDOWN_DURATION_MS: 60 * 60 * 1000, // 1 hour
@@ -438,11 +445,11 @@ export const PASS_14_TIERS: PassTierDef[] = [
 
 export const SNAKES_AND_LADDERS_NODES: SnakesAndLaddersNode[] = [
   { lessonIndex: 3, type: 'ladder', targetIndex: 6, labelMl: '🪜 വിജ്ഞാന കോണി (+3)', descriptionMl: 'സമസ്ത ചരിത്രം വേഗത്തിൽ കയറി അടുത്ത ഘട്ടത്തിലേക്ക്!' },
-  { lessonIndex: 11, type: 'snake', targetIndex: 9, labelMl: '🐍 റിവിഷൻ പാമ്പ് (-2)', descriptionMl: 'അദബ് മറന്നാൽ റിവിഷൻ ചെയ്യാൻ 2 പടി താഴേക്ക്!' },
+  { lessonIndex: 11, type: 'snake', targetIndex: 9, labelMl: '🌀 റിവിഷൻ ലൂപ്പ് (-2)', descriptionMl: 'അദബ് മറന്നാൽ റിവിഷൻ ചെയ്യാൻ 2 പടി താഴേക്ക്!' },
   { lessonIndex: 17, type: 'ladder', targetIndex: 21, labelMl: '🪜 യൂണിറ്റ് കോണി (+4)', descriptionMl: 'POV യാത്ര പൂർത്തിയാക്കി യൂണിറ്റ് തലത്തിലേക്ക് കുതിക്കാം!' },
-  { lessonIndex: 27, type: 'snake', targetIndex: 24, labelMl: '🐍 പരീക്ഷണ പാമ്പ് (-3)', descriptionMl: 'കമ്മിറ്റി ഘടന ഉറപ്പിക്കാൻ ചെറിയ റിവിഷൻ!' },
+  { lessonIndex: 27, type: 'snake', targetIndex: 24, labelMl: '🌀 പരീക്ഷണ വളവ് (-3)', descriptionMl: 'കമ്മിറ്റി ഘടന ഉറപ്പിക്കാൻ ചെറിയ റിവിഷൻ!' },
   { lessonIndex: 34, type: 'ladder', targetIndex: 38, labelMl: '🪜 17-വിംഗ് കോണി (+4)', descriptionMl: '17 ഉപവിഭാഗങ്ങൾ അറിഞ്ഞ് ജില്ലാ തലത്തിലേക്ക്!' },
-  { lessonIndex: 45, type: 'snake', targetIndex: 42, labelMl: '🐍 സൈബർ കെണി (-3)', descriptionMl: 'വ്യാജ വാർത്തയിൽ വീഴാതെ സൈബർ മര്യാദ ഉറപ്പിക്കൂ!' },
+  { lessonIndex: 45, type: 'snake', targetIndex: 42, labelMl: '🌀 സൈബർ റിവിഷൻ (-3)', descriptionMl: 'വ്യാജ വാർത്തയിൽ വീഴാതെ സൈബർ മര്യാദ ഉറപ്പിക്കൂ!' },
   { lessonIndex: 52, type: 'ladder', targetIndex: 56, labelMl: '🪜 ദർസ് വിജ്ഞാന കോണി (+4)', descriptionMl: 'ത്വലബയും കിതാബ് അറിവും നിങ്ങളെ മുന്നോട്ട് നയിക്കുന്നു!' },
 ];
 
@@ -812,10 +819,15 @@ export function createFreshEcosystemState(initialDisplayName?: string): Ecosyste
     },
     social: {
       friends: [],
+      blockedUserIds: [],
       burnedGiftIds: [],
       giftDateKey: today,
       giftsSentToday: 0,
       giftsReceivedToday: 0,
+      duelRewardDateKey: today,
+      duelRewardsToday: 0,
+      duelCreateDateKey: today,
+      duelsCreatedToday: 0,
       giftedLessonIds: [],
       claimedInviteCodes: [],
     },
@@ -994,7 +1006,16 @@ export function loadEcosystemState(): EcosystemState {
         giftDateKey: today,
         giftsSentToday: sameGiftDay ? parsed.social?.giftsSentToday ?? 0 : 0,
         giftsReceivedToday: sameGiftDay ? parsed.social?.giftsReceivedToday ?? 0 : 0,
+        duelRewardDateKey: today,
+        duelRewardsToday:
+          parsed.social?.duelRewardDateKey === today ? parsed.social?.duelRewardsToday ?? 0 : 0,
+        duelCreateDateKey: today,
+        duelsCreatedToday:
+          parsed.social?.duelCreateDateKey === today ? parsed.social?.duelsCreatedToday ?? 0 : 0,
         friends: Array.isArray(parsed.social?.friends) ? parsed.social.friends : [],
+        blockedUserIds: Array.isArray(parsed.social?.blockedUserIds)
+          ? parsed.social.blockedUserIds.slice(-200)
+          : [],
         burnedGiftIds: Array.isArray(parsed.social?.burnedGiftIds)
           ? parsed.social.burnedGiftIds.slice(-300)
           : [],
@@ -1136,6 +1157,14 @@ export interface EcosystemContextValue {
     seasonalScore?: number;
   }) => EcosystemActionResult;
   removeFriend: (userId: string) => void;
+  blockAndRemoveUser: (userId: string) => EcosystemActionResult;
+  unblockUser: (userId: string) => void;
+  recordMultiplayerDuelReward: (
+    silver: number,
+    gold: number,
+    meta: string
+  ) => EcosystemActionResult;
+  consumeDuelChallengeQuota: () => EcosystemActionResult;
   createRecipientLockedGift: (params: {
     toUserId: string;
     kind: 'silver' | 'gold' | 'diamond' | 'lesson_unlock';
@@ -1596,6 +1625,12 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateDisplayNameWithRules = useCallback(
     (newName: string, usePaidRenamePass = false): EcosystemActionResult => {
+      if (containsAbusiveLanguage(newName)) {
+        return {
+          ok: false,
+          message: 'മാന്യവും അനുയോജ്യവുമായ പേര് നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).',
+        };
+      }
       const clean = sanitizeFinalPlayerText(newName, 40);
       if (clean.length < 2) {
         return { ok: false, message: 'കുറഞ്ഞത് 2 അക്ഷരമുള്ള ശരിയായ പേര് നൽകുക.' };
@@ -1747,6 +1782,12 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 
   const updateHandle = useCallback((rawHandle: string): EcosystemActionResult => {
+    if (containsAbusiveLanguage(rawHandle)) {
+      return {
+        ok: false,
+        message: 'മാന്യമായ യൂസർനെയിം നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).',
+      };
+    }
     const clean = sanitizeHandle(rawHandle);
     if (!clean) {
       return {
@@ -1900,6 +1941,15 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (cleanId === state.identity.userId) {
         return { ok: false, message: 'സ്വന്തം ഐഡി സുഹൃത്തായി ചേർക്കാൻ കഴിയില്ല.' };
       }
+      if (state.social.blockedUserIds.includes(cleanId)) {
+        return {
+          ok: false,
+          message: 'ഈ ഐഡി നിങ്ങൾ ബ്ലോക്ക് ചെയ്ത പട്ടികയിലാണ്. ചേർക്കാൻ ആദ്യം അൺബ്ലോക്ക് ചെയ്യുക.',
+        };
+      }
+      if (containsAbusiveLanguage(friend.displayName)) {
+        return { ok: false, message: 'മാന്യമായ പേര് നൽകുക.' };
+      }
       const cleanName = sanitizeFinalPlayerText(friend.displayName, 40) || cleanId;
       const cleanHandle = sanitizeHandle(friend.handle || '') || `@${cleanId.slice(-4).toLowerCase()}`;
       setState((prev) => {
@@ -1925,7 +1975,7 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
       return { ok: true, message: `✅ ${cleanName} (${cleanId}) വെരിഫൈഡ് സുഹൃത്തുക്കളിൽ ചേർത്തു!` };
     },
-    [state.identity.userId]
+    [state.identity.userId, state.social.blockedUserIds]
   );
 
   const removeFriend = useCallback((userId: string) => {
@@ -1937,6 +1987,112 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       },
     }));
   }, []);
+
+  const blockAndRemoveUser = useCallback((userId: string): EcosystemActionResult => {
+    const cleanId = userId.trim().toUpperCase();
+    if (!cleanId) return { ok: false, message: 'ഐഡി ലഭ്യമല്ല.' };
+    setState((prev) => ({
+      ...prev,
+      social: {
+        ...prev.social,
+        friends: prev.social.friends.filter((f) => f.userId !== cleanId),
+        blockedUserIds: Array.from(new Set([...prev.social.blockedUserIds, cleanId])).slice(-200),
+      },
+    }));
+    return {
+      ok: true,
+      message: `🚫 ${cleanId} ബ്ലോക്ക് ചെയ്തു നീക്കം ചെയ്തു. ഈ ഐഡിയിൽ നിന്നുള്ള ഡ്യുവലുകളും സമ്മാനങ്ങളും ഇനി തടയും.`,
+    };
+  }, []);
+
+  const unblockUser = useCallback((userId: string) => {
+    const cleanId = userId.trim().toUpperCase();
+    setState((prev) => ({
+      ...prev,
+      social: {
+        ...prev.social,
+        blockedUserIds: prev.social.blockedUserIds.filter((id) => id !== cleanId),
+      },
+    }));
+  }, []);
+
+  const recordMultiplayerDuelReward = useCallback(
+    (silver: number, gold: number, meta: string): EcosystemActionResult => {
+      const today = getLocalDateKey();
+      const countToday =
+        state.social.duelRewardDateKey === today ? state.social.duelRewardsToday : 0;
+      if (countToday >= ANTI_INFLATION_CAPS.MAX_DUEL_REWARDS_PER_DAY) {
+        return {
+          ok: false,
+          message: `ഇന്നത്തെ പരമാവധി ${ANTI_INFLATION_CAPS.MAX_DUEL_REWARDS_PER_DAY} ഡ്യുവൽ നാണയ സമ്മാനങ്ങൾ നേടിക്കഴിഞ്ഞു. പരിശീലനത്തിനായി തുടർന്നും കളിക്കാം!`,
+        };
+      }
+      const mult = boostInfo.is2xActive ? 2 : 1;
+      const dS = Math.max(0, Math.round(silver)) * mult;
+      const dG = Math.max(0, Math.round(gold)) * mult;
+      setState((prev) => {
+        const curToday =
+          prev.social.duelRewardDateKey === today ? prev.social.duelRewardsToday : 0;
+        if (curToday >= ANTI_INFLATION_CAPS.MAX_DUEL_REWARDS_PER_DAY) return prev;
+        const nextLedger = appendLedgerBlock(prev.ledger, {
+          action: 'multiplayer_duel_reward',
+          deltaSilver: dS,
+          deltaGold: dG,
+          deltaDiamond: 0,
+          deltaXp: 0,
+          meta,
+        });
+        return {
+          ...prev,
+          wallet: {
+            ...prev.wallet,
+            silver: prev.wallet.silver + dS,
+            gold: prev.wallet.gold + dG,
+          },
+          social: {
+            ...prev.social,
+            duelRewardDateKey: today,
+            duelRewardsToday: curToday + 1,
+          },
+          ledger: nextLedger,
+        };
+      });
+      return {
+        ok: true,
+        message: `🏆 ഡ്യുവൽ സമ്മാനം ലഭിച്ചു: ${dS > 0 ? `+${dS} വെള്ളി` : ''}${
+          dS > 0 && dG > 0 ? ', ' : ''
+        }${dG > 0 ? `+${dG} സ്വർണ്ണം` : ''} (${countToday + 1}/${
+          ANTI_INFLATION_CAPS.MAX_DUEL_REWARDS_PER_DAY
+        } ഇന്നത്തെ പരിധി).`,
+      };
+    },
+    [state.social.duelRewardDateKey, state.social.duelRewardsToday, boostInfo.is2xActive]
+  );
+
+  const consumeDuelChallengeQuota = useCallback((): EcosystemActionResult => {
+    const today = getLocalDateKey();
+    const createdToday =
+      state.social.duelCreateDateKey === today ? state.social.duelsCreatedToday : 0;
+    if (createdToday >= ANTI_INFLATION_CAPS.MAX_DUEL_LINKS_PER_DAY) {
+      return {
+        ok: false,
+        message: `സ്പാം തടയാൻ ദിവസേന പരമാവധി ${ANTI_INFLATION_CAPS.MAX_DUEL_LINKS_PER_DAY} ചലഞ്ച് ലിങ്കുകൾ മാത്രമേ സൃഷ്ടിക്കാനാകൂ.`,
+      };
+    }
+    setState((prev) => {
+      const curToday =
+        prev.social.duelCreateDateKey === today ? prev.social.duelsCreatedToday : 0;
+      return {
+        ...prev,
+        social: {
+          ...prev.social,
+          duelCreateDateKey: today,
+          duelsCreatedToday: curToday + 1,
+        },
+      };
+    });
+    return { ok: true, message: 'ചലഞ്ച് ലിങ്ക് സൃഷ്ടിച്ചു.' };
+  }, [state.social.duelCreateDateKey, state.social.duelsCreatedToday]);
 
   const createRecipientLockedGift = useCallback(
     (params: {
@@ -2035,6 +2191,9 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return { ok: false, message: check.error || 'സമ്മാന കോഡ് സാധുവല്ല.' };
       }
       const v = check.voucher;
+      if (state.social.blockedUserIds.includes(v.fromUserId)) {
+        return { ok: false, message: 'ബ്ലോക്ക് ചെയ്ത ഉപയോക്താവിൽ നിന്നുള്ള സമ്മാന വൗച്ചർ തടഞ്ഞു.' };
+      }
       if (state.social.burnedGiftIds.includes(v.giftId)) {
         return { ok: false, message: 'ഈ സമ്മാന വൗച്ചർ ഇതിനകം ഉപയോഗിച്ചുകഴിഞ്ഞു (Single-Use Protection).' };
       }
@@ -2595,6 +2754,10 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       injectAuthorizedSlotAsset,
       addVerifiedFriend,
       removeFriend,
+      blockAndRemoveUser,
+      unblockUser,
+      recordMultiplayerDuelReward,
+      consumeDuelChallengeQuota,
       createRecipientLockedGift,
       redeemRecipientLockedGift,
       registerInvitedBy,
@@ -2634,6 +2797,10 @@ export const EcosystemProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       injectAuthorizedSlotAsset,
       addVerifiedFriend,
       removeFriend,
+      blockAndRemoveUser,
+      unblockUser,
+      recordMultiplayerDuelReward,
+      consumeDuelChallengeQuota,
       createRecipientLockedGift,
       redeemRecipientLockedGift,
       registerInvitedBy,

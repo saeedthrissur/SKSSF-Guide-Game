@@ -16,6 +16,10 @@ import {
 import { sound } from '../utils/sound';
 import { useLessonFlow } from '../utils/lessonFlowContext';
 import { getLessonThemeBrief } from './LessonAnimatedBanner';
+import {
+  GeometricOnboardingOverlay,
+  OnboardingHintReplayButton,
+} from './VisualOnboardingHint';
 
 const GameFullscreenContext = createContext<boolean>(false);
 
@@ -157,6 +161,45 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
   const [dismissedLandscapeFs, setDismissedLandscapeFs] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [replayKey, setReplayKey] = useState(0);
+  const [showGeoHint, setShowGeoHint] = useState(false);
+  const geoHintTimerRef = useRef<number | null>(null);
+
+  const triggerGeoHint = useCallback(() => {
+    if (geoHintTimerRef.current !== null) {
+      window.clearTimeout(geoHintTimerRef.current);
+    }
+    setShowGeoHint(true);
+    geoHintTimerRef.current = window.setTimeout(() => {
+      geoHintTimerRef.current = null;
+      setShowGeoHint(false);
+    }, 3200);
+  }, []);
+
+  const dismissGeoHint = useCallback(() => {
+    if (geoHintTimerRef.current !== null) {
+      window.clearTimeout(geoHintTimerRef.current);
+      geoHintTimerRef.current = null;
+    }
+    setShowGeoHint(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (geoHintTimerRef.current !== null) {
+        window.clearTimeout(geoHintTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Trigger a clean 3-second pure-geometric visual cue whenever a game opens/replays (skip for Lesson 1 which has its own tailored tray-to-slot geometric demo)
+  useEffect(() => {
+    if (!isExpanded && !isFullscreen) {
+      dismissGeoHint();
+      return;
+    }
+    if (activeLessonId === 'prologue_curiosity' || isGameDone) return;
+    triggerGeoHint();
+  }, [isExpanded, isFullscreen, replayKey, activeLessonId, isGameDone, triggerGeoHint, dismissGeoHint]);
 
   // Unified 1-click launch + 1.5s win-grace hold & victory/defeat stage overlays
   const [showWinOverlay, setShowWinOverlay] = useState(false);
@@ -467,7 +510,10 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
         </div>
       )}
 
-      <div className={`relative rounded-2xl overflow-hidden ${fullscreenLayout ? 'flex-1 min-h-0' : ''}`}>
+      <div
+        onPointerDown={dismissGeoHint}
+        className={`relative rounded-2xl overflow-hidden ${fullscreenLayout ? 'flex-1 min-h-0' : ''}`}
+      >
         {/* Underlying live game screen (blurs smoothly behind Victory / Defeat overlays) */}
         <div
           className={`transition-all duration-300 ${
@@ -476,6 +522,15 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
         >
           <React.Fragment key={replayKey}>{children}</React.Fragment>
         </div>
+
+        {/* Non-blocking 3-Second Pure-Geometric Visual Onboarding Hint (Zero Human/Hand Figures) */}
+        {!shouldBlurGame && !winGracePending && (
+          <GeometricOnboardingOverlay
+            visible={showGeoHint}
+            variant="stage"
+            cueLabel="തൊട്ട് കളിക്കാം"
+          />
+        )}
 
         {/* Portal Host for GameDefeatBurstOverlay (ALWAYS centered over the SAME blurred screen!) */}
         <div
@@ -728,6 +783,15 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {activeLessonId !== 'prologue_curiosity' && (
+                    <OnboardingHintReplayButton
+                      dark
+                      onClick={() => {
+                        sound.playClick();
+                        triggerGeoHint();
+                      }}
+                    />
+                  )}
                   <button
                     type="button"
                     onClick={handleReplay}
@@ -812,6 +876,14 @@ export const GameFullscreenShell: React.FC<GameFullscreenShellProps> = ({
               </button>
 
               <div className="flex items-center gap-1.5 shrink-0">
+                {activeLessonId !== 'prologue_curiosity' && (
+                  <OnboardingHintReplayButton
+                    onClick={() => {
+                      sound.playClick();
+                      triggerGeoHint();
+                    }}
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => {

@@ -390,7 +390,7 @@ export const FloatingPageNavigator: React.FC<{ visible?: boolean }> = ({ visible
                 transition={{ repeat: Infinity, duration: 1.1 }}
                 className="text-sm shrink-0"
               >
-                👉
+                →
               </motion.span>
               <span className="text-[11px] font-extrabold text-emerald-950 leading-snug">
                 {nextLabel}

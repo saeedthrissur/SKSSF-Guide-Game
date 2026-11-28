@@ -1093,7 +1093,7 @@ const MadrasaLanternSweepGame: React.FC<{
                   : 'opacity-0 pointer-events-none bg-black border-transparent'
               }`}
             >
-              <span className="text-2xl">{lit ? '🌟✅' : `${art.emoji} 👆`}</span>
+              <span className="text-2xl">{lit ? '🌟✅' : `${art.emoji} ✨`}</span>
             </motion.button>
           );
         })}
@@ -1231,7 +1231,7 @@ const VintageLandlineBroadcastGame: React.FC<{
     text: string;
   }>({
     tone: 'info',
-    text: '👆 നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
+    text: '✨ നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
   });
   const [connectedIdx, setConnectedIdx] = useState<number | null>(null);
   const [activeArt, setActiveArt] = useState<EraArtifactItem | null>(null);
@@ -1430,7 +1430,7 @@ const VintageLandlineBroadcastGame: React.FC<{
     } else {
       setStatusBanner({
         tone: 'info',
-        text: `👆 “${digit}” അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കിയ ശേഷമേ വിരൽ വിടാവൂ!`,
+        text: `✨ “${digit}” അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കിയ ശേഷമേ വിരൽ വിടാവൂ!`,
       });
       animateSpringReturn(Math.max(20, accumulated), null);
     }
@@ -1488,7 +1488,7 @@ const VintageLandlineBroadcastGame: React.FC<{
     setHitStop(false);
     setStatusBanner({
       tone: 'info',
-      text: '👆 നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
+      text: '✨ നമ്പറിൽ വിരൽ അമർത്തിപ്പിടിച്ച് വലത്തോട്ട് സ്റ്റോപ്പ് (🛑) വരെ കറക്കി വിടൂ!',
     });
   };
 

@@ -1,8 +1,25 @@
 import QRCode from 'qrcode';
 import type { LessonDescriptor } from './lessonTracker';
 
+export const LOCAL_FILE_SHARE_NOTICE_ML =
+  'ℹ️ നിങ്ങൾ ഇപ്പോൾ ഫയൽ (file://) രൂപത്തിലാണ് തുറന്നിരിക്കുന്നത്. സുഹൃത്തുക്കൾക്ക് തുറക്കാൻ കഴിയുന്ന ഷെയർ ലിങ്ക് ലഭിക്കാൻ വെബ്സൈറ്റ് (HTTPS) വിലാസത്തിലൂടെ തുറക്കുക.';
+
+/** Returns true ONLY when opened directly from local disk via file:// */
+export function isLocalFileProtocol(): boolean {
+  if (typeof window === 'undefined' || !window.location) return false;
+  return (
+    window.location.protocol === 'file:' ||
+    window.location.origin === 'null' ||
+    !window.location.origin
+  );
+}
+
+/** Dynamically resolves the live hosted origin + pathname (GitHub Pages, Codeberg, IPFS, custom domain). */
 export function getAppShareUrl(): string {
-  if (typeof window === 'undefined') return '';
+  if (typeof window === 'undefined' || !window.location) return '';
+  if (isLocalFileProtocol()) {
+    return window.location.href.split(/[?#]/)[0];
+  }
   const cleanPath = window.location.pathname.replace(/\/lesson\/[^/]+\/?$/i, '/');
   return `${window.location.origin}${cleanPath}`;
 }

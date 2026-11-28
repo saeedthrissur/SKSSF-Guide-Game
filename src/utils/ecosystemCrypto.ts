@@ -124,11 +124,17 @@ export function isAuthorizedAppId(value: string): value is AuthorizedAppId {
 
 export function getDynamicOrigin(): string {
   if (typeof window === 'undefined' || !window.location) return 'local-offline';
-  return window.location.origin || 'local-offline';
+  if (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') {
+    return 'local-offline';
+  }
+  return window.location.origin;
 }
 
 export function getDynamicBaseUrl(): string {
   if (typeof window === 'undefined' || !window.location) return '';
+  if (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null') {
+    return window.location.href.split(/[?#]/)[0];
+  }
   const cleanPath = window.location.pathname.replace(/\/lesson\/[^/]+\/?$/i, '/');
   return `${window.location.origin}${cleanPath}`;
 }

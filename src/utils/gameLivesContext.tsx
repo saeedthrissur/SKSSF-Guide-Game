@@ -103,7 +103,7 @@ export const HeaderHeartsBar: React.FC = () => {
     <div
       aria-label={`ബാക്കി ജീവൻ: ${lives}/${maxLives}`}
       title={`ക്വിസ് ജീവൻ: ${lives}/${maxLives} (3 ഹൃദയവും കഴിഞ്ഞാൽ 2 റിവിഷൻ ചോദ്യങ്ങളിലൂടെ ഹൃദയം തിരിച്ചുപിടിക്കാം)`}
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl border-2 transition-colors shrink-0 ${
+      className={`inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-1 rounded-xl border-2 box-border transition-colors shrink-0 ${
         lives <= 1
           ? 'bg-rose-100 border-rose-400 shadow-xs'
           : 'bg-rose-50/90 border-rose-200'
@@ -139,12 +139,12 @@ export const HeaderHeartsBar: React.FC = () => {
                 ? { duration: 2.2, repeat: Infinity, delay: idx * 0.28 }
                 : { duration: 0.2 }
             }
-            className="relative flex items-center justify-center"
+            className="relative flex items-center justify-center shrink-0"
           >
             {isAlive ? (
-              <WholeHeartSvg className="w-5 h-5 sm:w-5.5 sm:h-5.5 drop-shadow-xs" />
+              <WholeHeartSvg className="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-xs" />
             ) : (
-              <BrokenHeartSvg className="w-5 h-5 sm:w-5.5 sm:h-5.5 opacity-85" />
+              <BrokenHeartSvg className="w-4 h-4 sm:w-5 sm:h-5 opacity-85" />
             )}
           </motion.div>
         );

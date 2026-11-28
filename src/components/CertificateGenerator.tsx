@@ -187,7 +187,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
       ? `🏆 ഞാൻ ${unitChallengeOrigin} യൂണിറ്റിൽ നിന്ന് SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`
       : `🏆 ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${cleanRank}" പദവി നേടി! (${xp} XP)`,
     effectiveName ? `🏷️ ${effectiveName}` : null,
-    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ 👉`,
+    `നിങ്ങളുടെ യൂണിറ്റിൽ നിന്ന് ആർക്കൊക്കെ ഇത് നേടാനാകും? കളിച്ചു നോക്കൂ →`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -509,7 +509,7 @@ export const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({
     setDownloading(true);
     setShareNote(null);
     sound.playSuccess();
-    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിം മുഴുവൻ കളിച്ച് സർട്ടിഫിക്കറ്റ് നേടി! (${xp} XP)\nനിങ്ങളും ഒന്ന് കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
+    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിം മുഴുവൻ കളിച്ച് സർട്ടിഫിക്കറ്റ് നേടി! (${xp} XP)\nനിങ്ങളും ഒന്ന് കളിച്ചു നോക്കൂ → ${appUrl}`;
     try {
       const canvas = await buildCertificateCanvas();
       if (!canvas) return;

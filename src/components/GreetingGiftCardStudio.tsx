@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import QRCode from 'qrcode';
 import { Download, Gift, Share2, Sparkles, X } from 'lucide-react';
 import { useEcosystem } from '../utils/ecosystemStore';
+import { containsAbusiveLanguage, sanitizeFinalPlayerText } from '../utils/sanitize';
 import { getAppShareUrl, getWhatsAppShareHref } from '../utils/shareLink';
 import { sound } from '../utils/sound';
 
@@ -81,6 +82,13 @@ export const GreetingGiftCardStudioModal: React.FC<{
 
   const handleExportCard = async () => {
     sound.unlockAudio();
+    if (containsAbusiveLanguage(toName) || containsAbusiveLanguage(customMessage)) {
+      sound.playError();
+      setStatusMsg('മാന്യമായ പേരും ആശംസാ സന്ദേശവും നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).');
+      return;
+    }
+    const safeToName = sanitizeFinalPlayerText(toName, 35);
+    const safeCustomMsg = sanitizeFinalPlayerText(customMessage, 120);
     let qrTargetUrl = getAppShareUrl();
     let giftLabel = '';
 
@@ -143,14 +151,14 @@ export const GreetingGiftCardStudioModal: React.FC<{
       ctx.font = 'bold 46px sans-serif';
       ctx.fillText(tpl.headingMl, 450, 345);
 
-      if (toName.trim()) {
+      if (safeToName) {
         ctx.fillStyle = '#FDE68A';
         ctx.font = 'bold 30px sans-serif';
-        ctx.fillText(`പ്രിയപ്പെട്ട ${toName.trim()}-ന്,`, 450, 415);
+        ctx.fillText(`പ്രിയപ്പെട്ട ${safeToName}-ന്,`, 450, 415);
       }
 
       // Wrap message text
-      const bodyText = customMessage.trim() || tpl.duaMl;
+      const bodyText = safeCustomMsg || tpl.duaMl;
       ctx.fillStyle = '#ECFDF5';
       ctx.font = '24px sans-serif';
       const words = bodyText.split(' ');
@@ -167,6 +175,13 @@ export const GreetingGiftCardStudioModal: React.FC<{
         }
       }
       if (line) ctx.fillText(line, 450, y);
+
+      // Color-coded QR Title Badge above QR Box
+      ctx.fillStyle = attachGift ? '#F59E0B' : '#10B981';
+      ctx.fillRect(295, 622, 310, 38);
+      ctx.fillStyle = '#0F172A';
+      ctx.font = 'bold 19px sans-serif';
+      ctx.fillText(attachGift ? '🎁 ഗിഫ്റ്റ് വൗച്ചർ QR' : '💌 ആശംസാ & ഗെയിം QR', 450, 648);
 
       // QR Box
       try {
@@ -358,7 +373,7 @@ export const GreetingGiftCardStudioModal: React.FC<{
             </button>
             <a
               href={getWhatsAppShareHref(
-                `${tpl.headingMl} — ${customMessage.trim() || tpl.duaMl}\nസ്നേഹപൂർവ്വം, ${senderName}`,
+                `${tpl.headingMl} — ${sanitizeFinalPlayerText(customMessage, 120) || tpl.duaMl}\nസ്നേഹപൂർവ്വം, ${senderName}`,
                 shareUrl
               )}
               target="_blank"

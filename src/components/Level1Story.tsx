@@ -825,7 +825,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                     {p.slot === 'canton' ? '🌙' : p.slot === 'mosque' ? '🕌' : '🟩'}
                   </span>
                   <span className="text-xs font-extrabold">
-                    {isSelected ? p.label : placed ? '✓' : '👆'}
+                    {isSelected ? p.label : placed ? '✓' : '✦'}
                   </span>
                 </button>
               );
@@ -1422,7 +1422,7 @@ export const Level1Story: React.FC<Level1StoryProps> = ({
                           </h3>
                         </div>
                         <p className="text-xs text-center font-bold text-emerald-800">
-                          👆 ടാപ്പ് ചെയ്യൂ ✨
+                          ✦ ടാപ്പ് ചെയ്യൂ ✨
                         </p>
                       </div>
 

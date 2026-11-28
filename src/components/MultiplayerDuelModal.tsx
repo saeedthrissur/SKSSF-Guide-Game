@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
-import { Check, Copy, Share2, Swords, Trophy, Users, X } from 'lucide-react';
+import { Ban, Check, Copy, Share2, Swords, Trophy, Users, X } from 'lucide-react';
 import { LESSON_QUIZZES } from '../data/lessonQuizzes';
 import {
   createSignedDuelLink,
   SignedDuelChallenge,
   verifySignedDuelPayload,
 } from '../utils/ecosystemCrypto';
-import { useEcosystem } from '../utils/ecosystemStore';
+import { ANTI_INFLATION_CAPS, useEcosystem } from '../utils/ecosystemStore';
+import { containsAbusiveLanguage, sanitizeFinalPlayerText } from '../utils/sanitize';
 import { copyTextToClipboard, getWhatsAppShareHref } from '../utils/shareLink';
 import { sound } from '../utils/sound';
 
@@ -39,9 +40,16 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
   incomingDuelCode,
   onClearIncomingDuel,
 }) => {
-  const { state, markHubVisited, transactCurrency } = useEcosystem();
+  const {
+    state,
+    markHubVisited,
+    recordMultiplayerDuelReward,
+    consumeDuelChallengeQuota,
+    blockAndRemoveUser,
+  } = useEcosystem();
   const [mode, setMode] = useState<'pass_play' | 'whatsapp_duel'>('pass_play');
   const [notice, setNotice] = useState<string | null>(null);
+  const [ppRewardNotice, setPpRewardNotice] = useState<string | null>(null);
 
   // Pass & Play state
   const [p1Name, setP1Name] = useState(state.identity.displayName || 'കളിക്കാരൻ 1');
@@ -76,6 +84,11 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
     if (isOpen && incomingDuelCode) {
       const check = verifySignedDuelPayload(incomingDuelCode);
       if (check.valid && check.duel) {
+        if (state.social.blockedUserIds.includes(check.duel.challengerId)) {
+          setNotice('🚫 ബ്ലോക്ക് ചെയ്ത ഉപയോക്താവിൽ നിന്നുള്ള ഡ്യുവൽ ചലഞ്ച് തടഞ്ഞു.');
+          onClearIncomingDuel?.();
+          return;
+        }
         setMode('whatsapp_duel');
         setIncomingDuel(check.duel);
         setDuelQuestions(pickFiveQuestionIds(check.duel.questionIds));
@@ -86,7 +99,7 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
         onClearIncomingDuel?.();
       }
     }
-  }, [isOpen, incomingDuelCode, onClearIncomingDuel]);
+  }, [isOpen, incomingDuelCode, onClearIncomingDuel, state.social.blockedUserIds]);
 
   const activePpQuiz = useMemo(() => LESSON_QUIZZES[ppQuestions[ppIdx]], [ppQuestions, ppIdx]);
   const activeDuelQuiz = useMemo(
@@ -98,6 +111,17 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
 
   const startPassAndPlay = () => {
     sound.unlockAudio();
+    if (containsAbusiveLanguage(p1Name) || containsAbusiveLanguage(p2Name)) {
+      sound.playError();
+      setNotice('മാന്യമായ പേരുകൾ നൽകുക (അനാവശ്യ വാക്കുകൾ അനുവദിക്കില്ല).');
+      return;
+    }
+    const clean1 = sanitizeFinalPlayerText(p1Name, 24) || 'കളിക്കാരൻ 1';
+    const clean2 = sanitizeFinalPlayerText(p2Name, 24) || 'കളിക്കാരൻ 2';
+    setP1Name(clean1);
+    setP2Name(clean2);
+    setNotice(null);
+    setPpRewardNotice(null);
     sound.playPop();
     setPpQuestions(pickFiveQuestionIds());
     setPpIdx(0);
@@ -124,11 +148,8 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
       if (ok) setP2Score(nextP2);
       if (ppIdx + 1 >= ppQuestions.length) {
         setPpPhase('result');
-        transactCurrency({
-          action: 'multiplayer_pass_play_finish',
-          deltaSilver: 15,
-          meta: `${p1Score}v${nextP2}`,
-        });
+        const rewardRes = recordMultiplayerDuelReward(15, 0, `pass_play:${p1Score}v${nextP2}`);
+        setPpRewardNotice(rewardRes.message);
       } else {
         setPpIdx((i) => i + 1);
       }
@@ -137,6 +158,20 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
 
   const startNewWhatsAppDuel = (opponent?: SignedDuelChallenge) => {
     sound.unlockAudio();
+    if (opponent && state.social.blockedUserIds.includes(opponent.challengerId)) {
+      sound.playError();
+      setNotice('🚫 ബ്ലോക്ക് ചെയ്ത ഉപയോക്താവിൽ നിന്നുള്ള ഡ്യുവൽ ചലഞ്ച് തടഞ്ഞു.');
+      return;
+    }
+    if (!opponent) {
+      const quota = consumeDuelChallengeQuota();
+      if (!quota.ok) {
+        sound.playError();
+        setNotice(quota.message);
+        return;
+      }
+    }
+    setNotice(null);
     sound.playPop();
     setIncomingDuel(opponent ?? null);
     setDuelQuestions(pickFiveQuestionIds(opponent?.questionIds));
@@ -162,12 +197,12 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
       const elapsed = Math.max(1, Math.round((Date.now() - duelStartTs) / 1000));
       setDuelElapsedSec(elapsed);
       setDuelPhase('done');
-      transactCurrency({
-        action: 'multiplayer_duel_complete',
-        deltaSilver: nextScore * 5,
-        deltaGold: nextScore >= 4 ? 5 : 0,
-        meta: `score:${nextScore}/5`,
-      });
+      const rewardRes = recordMultiplayerDuelReward(
+        nextScore * 5,
+        nextScore >= 4 ? 5 : 0,
+        `wa_duel:${nextScore}/5`
+      );
+      setNotice(rewardRes.message);
       if (!incomingDuel) {
         const created = createSignedDuelLink({
           challengerId: state.identity.userId,
@@ -343,7 +378,9 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
                       <p className="text-2xl font-black text-amber-900">{p2Score}/5</p>
                     </div>
                   </div>
-                  <p className="text-xs font-bold text-emerald-800">+15 വെള്ളി നാണയം ബോണസ് ലഭിച്ചു!</p>
+                  <p className="text-xs font-bold text-emerald-800">
+                    {ppRewardNotice || `ദിവസേന ${ANTI_INFLATION_CAPS.MAX_DUEL_REWARDS_PER_DAY} ഡ്യുവൽ വരെ നാണയ സമ്മാനം നേടാം.`}
+                  </p>
                   <button
                     type="button"
                     onClick={() => setPpPhase('setup')}
@@ -412,10 +449,29 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
 
               {duelPhase === 'playing' && activeDuelQuiz && (
                 <div className="rounded-2xl border-2 border-emerald-300 bg-white p-4 space-y-3">
-                  <div className="flex items-center justify-between text-xs font-black text-emerald-800">
-                    <span>
-                      {incomingDuel ? `⚔️ എതിരാളി: ${incomingDuel.challengerName}` : '⚔️ നിങ്ങളുടെ ഡ്യുവൽ റൗണ്ട്'}
-                    </span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-black text-emerald-800">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {incomingDuel
+                          ? `⚔️ എതിരാളി: ${sanitizeFinalPlayerText(incomingDuel.challengerName, 28)}`
+                          : '⚔️ നിങ്ങളുടെ ഡ്യുവൽ റൗണ്ട്'}
+                      </span>
+                      {incomingDuel && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const res = blockAndRemoveUser(incomingDuel.challengerId);
+                            setIncomingDuel(null);
+                            setDuelPhase('menu');
+                            setNotice(res.message);
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-black cursor-pointer"
+                        >
+                          <Ban className="w-3 h-3" />
+                          <span>ബ്ലോക്ക് / നീക്കം</span>
+                        </button>
+                      )}
+                    </div>
                     <span>ചോദ്യം {duelIdx + 1} / 5 · സ്കോർ: {duelScore}</span>
                   </div>
                   <p className="text-sm font-black text-slate-900 leading-snug">
@@ -466,6 +522,21 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
                           </p>
                         </div>
                       </div>
+                      <div className="flex justify-center pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const res = blockAndRemoveUser(incomingDuel.challengerId);
+                            setIncomingDuel(null);
+                            setDuelPhase('menu');
+                            setNotice(res.message);
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[11px] font-black cursor-pointer"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>🚫 ഈ ഉപയോക്താവിനെ ബ്ലോക്ക് / നീക്കം ചെയ്യുക</span>
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <>
@@ -473,19 +544,28 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
                         നിങ്ങളുടെ സ്കോർ: {duelScore}/5 ({duelElapsedSec} സെക്കൻഡ്)!
                       </p>
                       {generatedDuel && (
-                        <div className="rounded-2xl bg-white border border-emerald-200 p-3 flex flex-col sm:flex-row items-center gap-3 text-left">
-                          {generatedDuel.qr && (
-                            <img
-                              src={generatedDuel.qr}
-                              alt="ഡ്യുവൽ QR"
-                              className="w-24 h-24 rounded-xl border border-emerald-200 shrink-0"
-                            />
-                          )}
-                          <div className="min-w-0 flex-1 space-y-2">
-                            <p className="text-xs font-bold text-slate-700">
-                              ഈ സൈൻ ചെയ്ത ചലഞ്ച് ലിങ്ക് സുഹൃത്തിന് അയച്ച് സ്കോർ മറികടക്കാൻ വെല്ലുവിളിക്കൂ!
-                            </p>
-                            <div className="flex flex-wrap gap-2">
+                        <div className="rounded-2xl bg-white border-2 border-emerald-200 p-3.5 space-y-2.5 text-left">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-300 text-amber-950 text-[11px] font-black">
+                              ⚔️ ഡ്യുവൽ ചലഞ്ച് QR
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-600">
+                              സുഹൃത്തിന് സ്കാൻ ചെയ്ത് ഇതേ 5 ചോദ്യങ്ങൾ കളിക്കാം
+                            </span>
+                          </div>
+                          <div className="flex flex-col sm:flex-row items-center gap-3">
+                            {generatedDuel.qr && (
+                              <img
+                                src={generatedDuel.qr}
+                                alt="ഡ്യുവൽ ചലഞ്ച് QR"
+                                className="w-24 h-24 rounded-xl border border-emerald-200 shrink-0"
+                              />
+                            )}
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <p className="text-xs font-bold text-slate-700">
+                                ഈ സൈൻ ചെയ്ത ചലഞ്ച് ലിങ്ക് സുഹൃത്തിന് അയച്ച് സ്കോർ മറികടക്കാൻ വെല്ലുവിളിക്കൂ!
+                              </p>
+                              <div className="flex flex-wrap gap-2">
                               <a
                                 href={getWhatsAppShareHref(
                                   `⚔️ SKSSF ഗൈഡ് ഗെയിം 5-ചോദ്യ ഡ്യുവൽ! ഞാൻ ${duelScore}/5 (${duelElapsedSec}s) നേടി — നിങ്ങൾക്ക് എന്നെ തോൽപ്പിക്കാനാകുമോ?`,
@@ -511,6 +591,7 @@ export const MultiplayerDuelModal: React.FC<MultiplayerDuelModalProps> = ({
                                 {copiedDuel ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                                 <span>{copiedDuel ? 'കോപ്പി ചെയ്തു' : 'കോഡ് കോപ്പി'}</span>
                               </button>
+                              </div>
                             </div>
                           </div>
                         </div>

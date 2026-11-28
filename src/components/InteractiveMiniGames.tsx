@@ -7,6 +7,10 @@ import { GameFullscreenShell, useGameFullscreen, useGameStagePaused } from './Ga
 import { GameDefeatBurstOverlay, GameShatterLives } from './GameLivesHud';
 import { OFFICIAL_WING_LOGOS } from '../data/officialLogos';
 import { OFFICIAL_FLAG_ASSETS } from './SvgArtwork';
+import {
+  GeometricOnboardingOverlay,
+  OnboardingHintReplayButton,
+} from './VisualOnboardingHint';
 
 /* ============================================================================
  * 1. OPENING INTERACTIVE ACTIVITY: SKSSF ANNOUNCEMENT VEHICLE + ROUTE PUZZLE
@@ -336,8 +340,50 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
   const flagWaveGradId = `jeep-flag-wave-${rawUid}`;
   const activePuzzle = JEEP_ROUTE_PUZZLES[puzzleIdx];
 
+  // 3-Second Pure-Geometric Visual Onboarding Hint (auto-dismisses after 3.2s or on first touch)
+  const [showVisualGuide, setShowVisualGuide] = useState(true);
+  const guideTimerRef = useRef<number | null>(null);
+
+  const replayVisualGuide = () => {
+    if (guideTimerRef.current !== null) {
+      window.clearTimeout(guideTimerRef.current);
+    }
+    setShowVisualGuide(true);
+    guideTimerRef.current = window.setTimeout(() => {
+      guideTimerRef.current = null;
+      setShowVisualGuide(false);
+    }, 3200);
+  };
+
+  const dismissVisualGuide = () => {
+    if (guideTimerRef.current !== null) {
+      window.clearTimeout(guideTimerRef.current);
+      guideTimerRef.current = null;
+    }
+    setShowVisualGuide(false);
+  };
+
+  useEffect(() => {
+    if (allPlaced || missionDone) {
+      dismissVisualGuide();
+      return;
+    }
+    replayVisualGuide();
+    return () => {
+      if (guideTimerRef.current !== null) {
+        window.clearTimeout(guideTimerRef.current);
+      }
+    };
+  }, [allPlaced, missionDone]);
+
+  // Road waypoint completion progress (0..3: Start -> Madrasa -> Market -> Finish)
+  const routeStageIdx = missionDone ? 3 : allPlaced ? (puzzleIdx >= 1 ? 2 : 1) : placedCount >= 2 ? 1 : 0;
+
   return (
-    <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-300 bg-gradient-to-b from-slate-900 via-emerald-950/5 to-white shadow-lg">
+    <div
+      onPointerDown={dismissVisualGuide}
+      className="relative rounded-3xl overflow-hidden border-2 border-emerald-300 bg-gradient-to-b from-slate-900 via-emerald-950/5 to-white shadow-lg"
+    >
       {/* Dignified Header */}
       <div className="px-4 py-2.5 bg-gradient-to-r from-slate-900 via-emerald-900 to-teal-900 text-white flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -350,6 +396,15 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {!allPlaced && !missionDone && (
+            <OnboardingHintReplayButton
+              dark
+              onClick={() => {
+                sound.playClick();
+                replayVisualGuide();
+              }}
+            />
+          )}
           <button
             type="button"
             onClick={playVoiceIntro}
@@ -452,15 +507,32 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
             ))}
           </motion.svg>
 
-          {/* 3D Tilted Perspective Asphalt Highway Deck */}
+          {/* Unmistakable Starting Flag (Left) & Destination Finish Flag (Right) Beacons */}
+          <div className="pointer-events-none absolute top-2.5 left-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-950/90 border-2 border-emerald-400 text-emerald-200 text-[10px] sm:text-[11px] font-black shadow-[0_0_12px_rgba(16,185,129,0.55)]">
+            <span aria-hidden="true">🚩</span>
+            <span>തുടക്കം</span>
+          </div>
           <div
-            className="absolute inset-x-0 bottom-0 h-[86px] sm:h-[98px] overflow-hidden border-t-4 border-emerald-800"
+            className={`pointer-events-none absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2.5 py-1 rounded-full border-2 text-[10px] sm:text-[11px] font-black transition-all ${
+              missionDone
+                ? 'bg-amber-400 border-white text-slate-950 shadow-[0_0_16px_rgba(251,191,36,0.9)] scale-105'
+                : 'bg-slate-950/90 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.55)]'
+            }`}
+          >
+            <span aria-hidden="true">🏁</span>
+            <span>{missionDone ? 'ലക്ഷ്യം നേടി!' : 'ലക്ഷ്യം'}</span>
+          </div>
+
+          {/* 3D Tilted Perspective High-Contrast Asphalt Highway Deck */}
+          <div
+            className="absolute inset-x-0 bottom-0 h-[96px] sm:h-[108px] overflow-hidden border-t-4 border-emerald-400"
             style={{
-              background: 'linear-gradient(180deg, #1E293B 0%, #334155 38%, #1E293B 100%)',
-              boxShadow: 'inset 0 10px 18px rgba(0,0,0,0.45)',
+              background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 42%, #0F172A 100%)',
+              boxShadow:
+                'inset 0 10px 18px rgba(0,0,0,0.5), 0 -2px 14px rgba(16,185,129,0.45)',
             }}
           >
-            {/* Moving Guardrail Posts along top shoulder */}
+            {/* Glowing Emerald Shoulder Beacons along top edge */}
             <motion.div
               animate={{ x: [0, -64] }}
               transition={{
@@ -471,11 +543,14 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
               className="flex items-center gap-12 pt-1 px-2 w-[160%]"
             >
               {Array.from({ length: 24 }).map((_, i) => (
-                <div key={i} className="w-4 h-1.5 rounded-xs bg-amber-300/80 shrink-0 shadow-xs" />
+                <div
+                  key={i}
+                  className="w-5 h-1.5 rounded-xs bg-emerald-300 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
+                />
               ))}
             </motion.div>
 
-            {/* Receding High-Speed Asphalt Lane Stripes */}
+            {/* Receding High-Contrast Luminous Gold Asphalt Lane Stripes */}
             <motion.div
               animate={{ x: [0, -88] }}
               transition={{
@@ -483,22 +558,67 @@ const AnnouncementVehicleInner: React.FC<AnnouncementVehicleInnerProps> = ({
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="flex items-center gap-10 pt-7 sm:pt-8 px-4 w-[180%]"
+              className="flex items-center gap-10 pt-5 sm:pt-6 px-4 w-[180%]"
             >
               {Array.from({ length: 24 }).map((_, i) => (
                 <div
                   key={i}
-                  className="w-12 h-2 rounded-xs bg-amber-400/95 shrink-0"
+                  className="w-12 h-2 rounded-xs bg-amber-300 shrink-0 shadow-[0_0_10px_rgba(251,191,36,0.85)]"
                   style={{ transform: 'skewX(-28deg)' }}
                 />
               ))}
             </motion.div>
-            <div className="absolute inset-x-0 bottom-1.5 h-1 bg-white/45" />
+
+            {/* High-Contrast Illuminated Road Route & Landmark Waypoints Strip */}
+            <div className="absolute inset-x-2 bottom-1.5 z-20 rounded-xl bg-slate-950/88 border border-emerald-400/70 px-2.5 py-1 flex items-center justify-between gap-1 shadow-[0_0_12px_rgba(16,185,129,0.4)]">
+              {[
+                { idx: 0, icon: '🚩', label: 'തുടക്കം' },
+                { idx: 1, icon: '🕌', label: 'മദ്രസ' },
+                { idx: 2, icon: '🏪', label: 'മാർക്കറ്റ്' },
+                { idx: 3, icon: '🏁', label: 'ലക്ഷ്യം' },
+              ].map((wp, i, arr) => {
+                const reached = routeStageIdx >= wp.idx;
+                const active = routeStageIdx === wp.idx;
+                return (
+                  <React.Fragment key={wp.label}>
+                    <div
+                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black whitespace-nowrap transition-all ${
+                        active
+                          ? 'bg-amber-400 text-slate-950 shadow-[0_0_10px_rgba(251,191,36,0.85)]'
+                          : reached
+                          ? 'bg-emerald-500/25 text-emerald-200 border border-emerald-400/70'
+                          : 'text-slate-300'
+                      }`}
+                    >
+                      <span aria-hidden="true">{wp.icon}</span>
+                      <span>{wp.label}</span>
+                    </div>
+                    {i < arr.length - 1 && (
+                      <div
+                        aria-hidden="true"
+                        className={`flex-1 h-1 rounded-full min-w-[10px] transition-all ${
+                          routeStageIdx > wp.idx
+                            ? 'bg-gradient-to-r from-emerald-400 to-amber-300 shadow-[0_0_8px_rgba(52,211,153,0.85)]'
+                            : 'bg-slate-700'
+                        }`}
+                      />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
           </div>
+
+          {/* 3-Second Pure-Geometric Visual Onboarding Overlay (Zero Human/Hand Figures) */}
+          <GeometricOnboardingOverlay
+            visible={showVisualGuide && !allPlaced && !missionDone && !failed}
+            variant="vehicle"
+            cueLabel="താഴെ നിന്ന് തൊട്ട് മുകളിൽ വയ്ക്കാം"
+          />
 
           {/* Realistic 3D-Shaded SKSSF Campaign Vehicle */}
           <div
-            className={`relative z-10 mb-1 sm:mb-2 ${
+            className={`relative z-10 mb-5 sm:mb-6 ${
               isFullscreen
                 ? 'w-[350px] sm:w-[530px] h-[235px] sm:h-[290px]'
                 : 'w-[315px] sm:w-[455px] h-[215px] sm:h-[250px]'
@@ -2067,22 +2187,22 @@ export const ViqayaRescueVehicleActivity: React.FC<{
               transformOrigin: '50% 85%',
             }}
           >
-            {/* Side Green Shoulders + Downward-Moving Roadside Guard Markers */}
+            {/* Side Green Shoulders + Bright Glowing Emerald/Gold Roadside Guard Markers */}
             <div
-              className="absolute inset-y-0 left-0 w-7 bg-emerald-800 border-r-2 border-amber-300/80 animate-road-scroll-down"
+              className="absolute inset-y-0 left-0 w-7 bg-emerald-800 border-r-2 border-amber-300 shadow-[2px_0_12px_rgba(251,191,36,0.55)] animate-road-scroll-down"
               style={{
                 backgroundImage:
-                  'repeating-linear-gradient(to bottom, rgba(254,243,199,0.75) 0px, rgba(254,243,199,0.75) 10px, transparent 10px, transparent 48px)',
+                  'repeating-linear-gradient(to bottom, rgba(253,224,71,0.95) 0px, rgba(253,224,71,0.95) 12px, transparent 12px, transparent 48px)',
                 backgroundSize: '100% 48px',
                 animationDuration: roadAnimDuration,
                 animationPlayState: roadRunning ? 'running' : 'paused',
               }}
             />
             <div
-              className="absolute inset-y-0 right-0 w-7 bg-emerald-800 border-l-2 border-amber-300/80 animate-road-scroll-down"
+              className="absolute inset-y-0 right-0 w-7 bg-emerald-800 border-l-2 border-amber-300 shadow-[-2px_0_12px_rgba(251,191,36,0.55)] animate-road-scroll-down"
               style={{
                 backgroundImage:
-                  'repeating-linear-gradient(to bottom, rgba(254,243,199,0.75) 0px, rgba(254,243,199,0.75) 10px, transparent 10px, transparent 48px)',
+                  'repeating-linear-gradient(to bottom, rgba(253,224,71,0.95) 0px, rgba(253,224,71,0.95) 12px, transparent 12px, transparent 48px)',
                 backgroundSize: '100% 48px',
                 animationDuration: roadAnimDuration,
                 animationPlayState: roadRunning ? 'running' : 'paused',
@@ -2101,22 +2221,22 @@ export const ViqayaRescueVehicleActivity: React.FC<{
               }}
             />
 
-            {/* Two Bold Dashed Yellow Highway Lane Dividers Scrolling Downward */}
+            {/* Two Bold Luminous Gold Highway Lane Dividers Scrolling Downward */}
             <div
-              className="absolute inset-y-0 left-[35.5%] w-1.5 -translate-x-1/2 pointer-events-none animate-road-scroll-down"
+              className="absolute inset-y-0 left-[35.5%] w-1.5 -translate-x-1/2 pointer-events-none animate-road-scroll-down drop-shadow-[0_0_6px_rgba(250,204,21,0.85)]"
               style={{
                 backgroundImage:
-                  'repeating-linear-gradient(to bottom, rgba(250,204,21,0.92) 0px, rgba(250,204,21,0.92) 22px, transparent 22px, transparent 48px)',
+                  'repeating-linear-gradient(to bottom, rgba(253,224,71,0.98) 0px, rgba(253,224,71,0.98) 22px, transparent 22px, transparent 48px)',
                 backgroundSize: '100% 48px',
                 animationDuration: roadAnimDuration,
                 animationPlayState: roadRunning ? 'running' : 'paused',
               }}
             />
             <div
-              className="absolute inset-y-0 left-[64.5%] w-1.5 -translate-x-1/2 pointer-events-none animate-road-scroll-down"
+              className="absolute inset-y-0 left-[64.5%] w-1.5 -translate-x-1/2 pointer-events-none animate-road-scroll-down drop-shadow-[0_0_6px_rgba(250,204,21,0.85)]"
               style={{
                 backgroundImage:
-                  'repeating-linear-gradient(to bottom, rgba(250,204,21,0.92) 0px, rgba(250,204,21,0.92) 22px, transparent 22px, transparent 48px)',
+                  'repeating-linear-gradient(to bottom, rgba(253,224,71,0.98) 0px, rgba(253,224,71,0.98) 22px, transparent 22px, transparent 48px)',
                 backgroundSize: '100% 48px',
                 animationDuration: roadAnimDuration,
                 animationPlayState: roadRunning ? 'running' : 'paused',

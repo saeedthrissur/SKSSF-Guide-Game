@@ -385,18 +385,17 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
           </div>
         </div>
 
-        {/* Visual Snakes & Ladders + 45s Boss Challenges + Hidden Treasure Star #1 Strip */}
+        {/* Visual Ladders & Revision Loops + 45s Boss Challenges + Subtle Hidden Star */}
         <div className="pt-2.5 border-t border-slate-100 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-emerald-50/70 border border-emerald-200 px-3 py-2 text-[11px] font-bold text-emerald-950">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-black">🪜 പാമ്പും കോണിയും ബോർഡ്:</span>
+              <span className="font-black">🪜 ബോണസ് കോണിയും റിവിഷൻ ലൂപ്പും:</span>
               <span>🪜 ബോണസ് കോണി (മുന്നോട്ട് കുതിക്കാം)</span>
               <span>·</span>
-              <span>🐍 റിവിഷൻ പാമ്പ് (വീണ്ടും ഉറപ്പിക്കാം)</span>
+              <span>🌀 റിവിഷൻ ലൂപ്പ് (വീണ്ടും ഉറപ്പിക്കാം)</span>
             </div>
             <HiddenTreasureStar
               starId="star_map_vault"
-              hintLabel="മാപ്പിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
               onClaimed={onEcoToast}
             />
           </div>
@@ -571,6 +570,28 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                             {lesson.title}
                           </span>
                           <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                            {globalIdx === 0 && (
+                              <span
+                                className={`inline-flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                                  isCurrent
+                                    ? 'bg-amber-300 text-slate-950 border-amber-100'
+                                    : 'bg-emerald-100 text-emerald-950 border-emerald-400'
+                                }`}
+                              >
+                                🚩 തുടക്കം · START
+                              </span>
+                            )}
+                            {globalIdx === totalCount - 1 && (
+                              <span
+                                className={`inline-flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-md border ${
+                                  isCurrent
+                                    ? 'bg-amber-300 text-slate-950 border-amber-100'
+                                    : 'bg-amber-100 text-amber-950 border-amber-400'
+                                }`}
+                              >
+                                🏁 ലക്ഷ്യം · FINISH
+                              </span>
+                            )}
                             {slNode && (
                               <span
                                 title={slNode.descriptionMl}
@@ -586,7 +607,7 @@ export const AllLessonsMapPage: React.FC<AllLessonsMapPageProps> = ({
                               >
                                 {slNode.type === 'ladder'
                                   ? `🪜 കോണി → #${slNode.targetIndex + 1}`
-                                  : `🐍 റിവിഷൻ → #${slNode.targetIndex + 1}`}
+                                  : `🌀 റിവിഷൻ → #${slNode.targetIndex + 1}`}
                               </span>
                             )}
                             {isGifted && !isDone && (

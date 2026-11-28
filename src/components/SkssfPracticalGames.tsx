@@ -1740,7 +1740,7 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
     sound.unlockAudio();
     if (failed || won || placed.includes(shelfId)) return;
     if (!selectedBookId) {
-      setFeedback('👆 ആദ്യം താഴത്തെ മേശയിൽ നിന്ന് ഒരു കിതാബ് തിരഞ്ഞെടുക്കൂ!');
+      setFeedback('✨ ആദ്യം താഴത്തെ മേശയിൽ നിന്ന് ഒരു കിതാബ് തിരഞ്ഞെടുക്കൂ!');
       return;
     }
     if (selectedBookId !== shelfId) {
@@ -1890,7 +1890,7 @@ export const IslamicLibraryShelfGame: React.FC<PracticalGameProps> = ({
                   onClick={() => {
                     sound.playClick();
                     setSelectedBookId(book.id);
-                    setFeedback(`👆 തിരഞ്ഞെടുത്തു: ${book.label} — ഇനി മുകളിലെ ശരിയായ തട്ടിൽ തൊടൂ!`);
+                    setFeedback(`✨ തിരഞ്ഞെടുത്തു: ${book.label} — ഇനി മുകളിലെ ശരിയായ തട്ടിൽ തൊടൂ!`);
                   }}
                   className={`px-2.5 py-2 rounded-xl border-2 text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer ${
                     done
@@ -1979,7 +1979,7 @@ export const MajlisAgendaNoticeGame: React.FC<PracticalGameProps> = ({
     sound.unlockAudio();
     if (failed || won || assigned[slot.id]) return;
     if (!selectedPerson) {
-      setMsg('👆 ആദ്യം താഴെ നിന്ന് ഒരു വ്യക്തിയെ തിരഞ്ഞെടുക്കൂ!');
+      setMsg('✨ ആദ്യം താഴെ നിന്ന് ഒരു വ്യക്തിയെ തിരഞ്ഞെടുക്കൂ!');
       return;
     }
     if (selectedPerson !== slot.expectedPerson) {

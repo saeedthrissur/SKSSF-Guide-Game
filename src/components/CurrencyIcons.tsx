@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Store, Zap } from 'lucide-react';
+import { Globe, Sparkles, Store, Zap } from 'lucide-react';
 import { useEcosystem } from '../utils/ecosystemStore';
 import { sound } from '../utils/sound';
 
@@ -103,6 +103,8 @@ export const CrownStarSvg: React.FC<{ filled?: boolean; className?: string }> = 
 interface WalletHudBarProps {
   xp: number;
   onOpenMarket: () => void;
+  onOpenEcosystemHub?: () => void;
+  unvisitedHubsCount?: number;
   hasUnvisitedMarket?: boolean;
   onMilestoneToast?: (msg: string) => void;
 }
@@ -110,6 +112,8 @@ interface WalletHudBarProps {
 export const WalletHudBar: React.FC<WalletHudBarProps> = ({
   xp,
   onOpenMarket,
+  onOpenEcosystemHub,
+  unvisitedHubsCount = 0,
   hasUnvisitedMarket = false,
   onMilestoneToast,
 }) => {
@@ -177,9 +181,9 @@ export const WalletHudBar: React.FC<WalletHudBarProps> = ({
             sound.playClick();
             onOpenMarket();
           }}
-          className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] sm:text-xs font-black cursor-pointer transition-colors"
+          className="relative inline-flex items-center gap-1.5 min-h-[38px] px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] sm:text-xs font-black cursor-pointer transition-colors"
         >
-          <Store className="w-3.5 h-3.5" />
+          <Store className="w-3.5 h-3.5 shrink-0" />
           <span>വിജ്ഞാന മാർക്കറ്റ്</span>
           {hasUnvisitedMarket && (
             <span
@@ -188,17 +192,40 @@ export const WalletHudBar: React.FC<WalletHudBarProps> = ({
             />
           )}
         </button>
+
+        {onOpenEcosystemHub && (
+          <button
+            type="button"
+            onClick={() => {
+              sound.unlockAudio();
+              sound.playClick();
+              onOpenEcosystemHub();
+            }}
+            className="relative inline-flex items-center gap-1.5 min-h-[38px] px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-200 border border-amber-400/40 text-[11px] sm:text-xs font-black cursor-pointer transition-colors shadow-2xs"
+          >
+            <Globe className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span>ഇക്കോസിസ്റ്റം ഹബ്</span>
+            {unvisitedHubsCount > 0 && (
+              <span
+                aria-label={`${unvisitedHubsCount} പുതിയ വിഭാഗങ്ങൾ`}
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black leading-none"
+              >
+                {unvisitedHubsCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
-/** Hidden clickable treasure star (3 hidden across lessons/maps, +2 Diamonds each) */
+/** Subtle, spoiler-free hidden treasure star (3 hidden quietly across the app, +2 Diamonds each) */
 export const HiddenTreasureStar: React.FC<{
   starId: string;
   hintLabel?: string;
   onClaimed?: (msg: string) => void;
-}> = ({ starId, hintLabel = 'ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം', onClaimed }) => {
+}> = ({ starId, onClaimed }) => {
   const { state, claimHiddenStar } = useEcosystem();
   const alreadyFound = state.progression.foundHiddenStars.includes(starId);
   if (alreadyFound) return null;
@@ -212,12 +239,10 @@ export const HiddenTreasureStar: React.FC<{
         const res = claimHiddenStar(starId);
         if (onClaimed) onClaimed(res.message);
       }}
-      title={hintLabel}
-      aria-label={hintLabel}
-      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-black shadow-2xs transition-transform active:scale-95 cursor-pointer"
+      aria-label="നിഗൂഢ തിളക്കം"
+      className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-amber-300/60 bg-amber-50/70 hover:bg-amber-100 text-amber-500 hover:text-amber-600 opacity-75 hover:opacity-100 transition-all active:scale-90 cursor-pointer"
     >
-      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-      <span>✨ +2</span>
+      <Sparkles className="w-3.5 h-3.5" />
     </button>
   );
 };

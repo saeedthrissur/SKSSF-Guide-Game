@@ -741,7 +741,7 @@ export const ShareableBadgeStudio: React.FC<ShareableBadgeStudioProps> = ({
     setBusy(true);
     setStatusMsg(null);
     sound.playSuccess();
-    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${badge.title}" (${badge.metalNameMl}) നേടി! (${xp} XP)\nനിങ്ങളും കളിച്ചു നോക്കൂ 👉 ${appUrl}`;
+    const shareCaption = `ഞാൻ SKSSF ഗൈഡ് ഗെയിമിൽ "${badge.title}" (${badge.metalNameMl}) നേടി! (${xp} XP)\nനിങ്ങളും കളിച്ചു നോക്കൂ → ${appUrl}`;
     try {
       const canvas = await renderBadgeCanvas();
       const blob = await new Promise<Blob | null>((resolve) =>

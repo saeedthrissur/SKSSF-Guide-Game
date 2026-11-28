@@ -2507,7 +2507,7 @@ const MetallicScratchCard: React.FC<{
 
       {!revealed ? (
         <div className="flex items-center justify-between text-xs font-extrabold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5">
-          <span>👆 സ്വർണ്ണ ഫോയിൽ വിരൽ കൊണ്ട് ഉരച്ച് അടിയിലെ സമ്മാനം കാണൂ!</span>
+          <span>✨ സ്വർണ്ണ ഫോയിൽ വിരൽ കൊണ്ട് ഉരച്ച് അടിയിലെ സമ്മാനം കാണൂ!</span>
           <span className="tabular-nums text-emerald-800">{pct}%</span>
         </div>
       ) : (
@@ -2578,7 +2578,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
     sound.unlockAudio();
     if (failed || won || cardRevealed || doneIds.includes(slotId)) return;
     if (!itemId) {
-      setMsg('👆 ആദ്യം താഴത്തെ ട്രേയിൽ നിന്ന് ഒരു സാധനം തൊടൂ!');
+      setMsg('✨ ആദ്യം താഴത്തെ ട്രേയിൽ നിന്ന് ഒരു സാധനം തൊടൂ!');
       return;
     }
     if (!started) setStarted(true);
@@ -2721,7 +2721,7 @@ export const TrophyGiftPackGame: React.FC<HandsOnGameProps> = ({
                       return;
                     }
                     setSelected(item.id);
-                    setMsg(`👆 തിരഞ്ഞെടുത്തു: ${item.emoji} ${item.label} — ഇനി മുകളിലെ ശരിയായ സമ്മാനത്തിൽ തൊടൂ!`);
+                    setMsg(`✨ തിരഞ്ഞെടുത്തു: ${item.emoji} ${item.label} — ഇനി മുകളിലെ ശരിയായ സമ്മാനത്തിൽ തൊടൂ!`);
                   }}
                   className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                     done

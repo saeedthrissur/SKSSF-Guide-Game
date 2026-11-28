@@ -132,7 +132,7 @@ const GrandFinaleVaultModal = lazy(() =>
   }))
 );
 import { EcosystemProvider, GuidedHubId, useEcosystem } from './utils/ecosystemStore';
-import { GoldCoinSvg, HiddenTreasureStar, WalletHudBar } from './components/CurrencyIcons';
+import { DiamondGemSvg, GoldCoinSvg, HiddenTreasureStar, WalletHudBar } from './components/CurrencyIcons';
 import { EcosystemChatDockSlot } from './components/FriendsAndChatHub';
 import { getTodaySpecialGame } from './components/DailyChallengeModal';
 import {
@@ -194,6 +194,8 @@ import {
   getAppShareUrl,
   getLessonShareUrl,
   getWhatsAppShareHref,
+  isLocalFileProtocol,
+  LOCAL_FILE_SHARE_NOTICE_ML,
   resolveLessonFromUrl,
   syncLessonUrl,
 } from './utils/shareLink';
@@ -282,16 +284,23 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
   onOpenDailyChallenge,
   onOpenSupport,
 }) => {
+  const { state: ecoState } = useEcosystem();
   const hasSavedProgress = xp > 0 || completedCount > 0;
   const [heroImgFailed, setHeroImgFailed] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [localFileNotice, setLocalFileNotice] = useState(false);
   const todaySpecial = getTodaySpecialGame();
+  const progressPct = Math.round((completedCount / Math.max(1, totalLessons)) * 100);
 
   const handleQuickShare = async () => {
     sound.unlockAudio();
     sound.playClick();
+    if (isLocalFileProtocol()) {
+      setLocalFileNotice(true);
+      return;
+    }
     const shareUrl = getAppShareUrl();
-    const shareText = `SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്? ${ALL_LESSONS.length} പാഠങ്ങളും ഗെയിമുകളും കളിച്ച് സാക്ഷ്യപത്രം നേടാം!`;
+    const shareText = `SKSSF ഗൈഡ് ഗെയിം — ${ALL_LESSONS.length} ദൗത്യങ്ങളും മിനി-ഗെയിമുകളും കളിച്ച് സ്വർണ്ണവും വജ്രവും സാക്ഷ്യപത്രവും നേടാം!`;
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
         await navigator.share({
@@ -312,164 +321,202 @@ const WelcomeIntroScreen: React.FC<WelcomeIntroScreenProps> = ({
   };
 
   return (
-    <section className="max-w-3xl mx-auto py-3 sm:py-6">
-      <div className="rounded-3xl border border-emerald-200 bg-white shadow-sm overflow-hidden">
-        {/* Top Hero Band — Unified Emerald Green + Warm Amber with Measured Scrim */}
-        <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 px-5 sm:px-8 py-6 sm:py-8 text-white border-b-4 border-amber-400 overflow-hidden">
+    <section className="max-w-3xl mx-auto py-2 sm:py-5">
+      <div className="rounded-3xl border-2 border-emerald-300 bg-white shadow-md overflow-hidden">
+        {/* Top Game-First Hero Band — Crisp Title, Zero Text Wall, Live Coins/Diamonds & Start-to-Finish Flag Route */}
+        <div className="relative bg-gradient-to-br from-emerald-950 via-emerald-900 to-slate-950 px-5 sm:px-7 py-5 sm:py-7 text-white border-b-4 border-amber-400 overflow-hidden">
           {!heroImgFailed && (
             <img
               src="./assets/og-guide-game.jpg"
-              alt="SKSSF ഗൈഡ് ഗെയിം പഠന ബാനർ"
+              alt="SKSSF ഗൈഡ് ഗെയിം"
               referrerPolicy="no-referrer"
               onError={() => setHeroImgFailed(true)}
-              className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-25"
+              className="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-20"
             />
           )}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-950/92 via-emerald-950/82 to-emerald-900/75"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-950/92 via-emerald-950/84 to-slate-950/78"
           />
-          <div className="relative z-10">
-            <p className="text-xs font-extrabold tracking-wide text-amber-300 mb-2">
-              വിജ്ഞാനം · വിനയം · സേവനം
-            </p>
-            <h1
-              className="text-xl sm:text-3xl font-black leading-snug text-white"
-              style={{ textWrap: 'balance' }}
-            >
-              SKSSF ഗൈഡ് ഗെയിം — നമ്മൾ ആരാണ്? നമ്മുടെ ദൗത്യങ്ങൾ എന്ത്?
-            </h1>
-            <p className="mt-3 text-sm sm:text-base text-emerald-50/95 leading-relaxed">
-              സമസ്ത കേരള സുന്നി സ്റ്റുഡന്റ്‌സ് ഫെഡറേഷന്റെ (SKSSF) ചരിത്രവും ഘടനയും 17 ഉപവിഭാഗങ്ങളുടെ ദൗത്യങ്ങളും ചെറു ഗെയിമുകളിലൂടെയും ക്വിസ്സുകളിലൂടെയും ലളിതമായി പഠിക്കാനുള്ള ഇന്ററാക്ടീവ് പോർട്ടലാണിത്. യൂണിറ്റ് തലം മുതൽ ഗ്ലോബൽ തലം വരെയുള്ള {totalLessons} പാഠങ്ങൾ പൂർത്തിയാക്കി നിങ്ങളുടെ പേരിലുള്ള ആദർശ വിജ്ഞാന പ്രതിഭ പ്രശംസാപത്രം നേടാം.
-            </p>
+          <div className="relative z-10 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-black tracking-wide shadow-xs">
+                <Gamepad2 className="w-3.5 h-3.5" />
+                <span>SKSSF ഗൈഡ് ഗെയിം · {totalLessons} ദൗത്യങ്ങൾ</span>
+              </span>
+              <span className="text-[11px] font-extrabold text-emerald-200 tracking-wide">
+                വിജ്ഞാനം · വിനയം · സേവനം
+              </span>
+            </div>
+
+            <div>
+              <h1
+                className="text-xl sm:text-3xl font-black leading-snug text-white"
+                style={{ textWrap: 'balance' }}
+              >
+                🎮 കളിച്ചു ജയിക്കാം — വിജ്ഞാന യാത്ര!
+              </h1>
+              <p className="mt-1.5 text-xs sm:text-sm text-emerald-100/95 font-bold leading-snug">
+                മിനി-ഗെയിമുകൾ കളിച്ച് സ്വർണ്ണവും വജ്രവും നേടി 62/62 കിരീടവും സാക്ഷ്യപത്രവും സ്വന്തമാക്കൂ!
+              </p>
+            </div>
+
+            {/* Live Game Wallet & Mission HUD Strip */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-xl bg-white/10 border border-amber-300/40 px-2.5 py-2 flex items-center gap-2">
+                <GoldCoinSvg className="w-6 h-6 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-amber-200 leading-none">സ്വർണ്ണം</p>
+                  <p className="text-sm sm:text-base font-black text-white tabular-nums mt-0.5">
+                    {ecoState.wallet.gold}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/10 border border-sky-300/40 px-2.5 py-2 flex items-center gap-2">
+                <DiamondGemSvg className="w-6 h-6 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-sky-200 leading-none">വജ്രം</p>
+                  <p className="text-sm sm:text-base font-black text-white tabular-nums mt-0.5">
+                    {ecoState.wallet.diamond}
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/10 border border-emerald-300/40 px-2.5 py-2 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-emerald-500/30 border border-emerald-300/60 flex items-center justify-center text-xs font-black text-amber-300 shrink-0">
+                  🏆
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-emerald-200 leading-none">ദൗത്യങ്ങൾ</p>
+                  <p className="text-sm sm:text-base font-black text-white tabular-nums mt-0.5">
+                    {completedCount}/{totalLessons}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Start Flag -> Finish Flag Mission Route Preview (Zero Reading Needed) */}
+            <div className="rounded-2xl bg-slate-950/75 border border-emerald-400/60 px-3 py-2.5 space-y-2 shadow-inner">
+              <div className="flex items-center justify-between gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-[10px] sm:text-[11px] font-black shadow-[0_0_10px_rgba(16,185,129,0.7)] shrink-0">
+                  🚩 തുടക്കം · പാഠം 1
+                </span>
+                <div className="flex-1 flex items-center gap-1 px-1">
+                  <div className="h-2 flex-1 rounded-full bg-slate-800 overflow-hidden border border-emerald-500/40">
+                    <div
+                      style={{ width: `${Math.max(8, progressPct)}%` }}
+                      className="h-full bg-gradient-to-r from-emerald-400 via-amber-300 to-amber-400 rounded-full transition-all duration-300"
+                    />
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] sm:text-[11px] font-black shadow-[0_0_10px_rgba(251,191,36,0.7)] shrink-0">
+                  🏁 ലക്ഷ്യം · 62/62
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-extrabold text-emerald-100/90 px-0.5">
+                <span>🚐 പ്രചാരണ വാഹനം</span>
+                <span className="text-amber-300">→</span>
+                <span>🏛️ 17 വിങ്ങുകൾ</span>
+                <span className="text-amber-300">→</span>
+                <span>👑 കിരീടം & സാക്ഷ്യപത്രം</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Visual 2-Step Flow Preview + Primary CTA */}
-        <div className="p-5 sm:p-8 space-y-6">
-          <div className="space-y-3">
-            <p className="text-xs font-extrabold text-slate-500 tracking-wide">
-              ഓരോ പാഠത്തിന്റെയും പഠനരീതി
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] items-center gap-3">
-              {/* Step 1 Preview */}
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 flex items-start gap-3">
-                <span className="w-9 h-9 rounded-xl bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Gamepad2 className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-emerald-950">
-                    1. സ്റ്റോറി ലൈൻ + ഗെയിം
-                  </p>
-                  <p className="text-xs text-slate-700 leading-relaxed mt-0.5">
-                    പാഠത്തിന്റെ ചെറു കഥ മനസ്സിലാക്കി രസകരമായ ഗെയിം കളിക്കാം.
-                  </p>
-                </div>
-              </div>
-
-              {/* Connector Arrow */}
-              <div className="flex items-center justify-center text-emerald-700">
-                <ArrowRight className="w-5 h-5 rotate-90 sm:rotate-0" />
-              </div>
-
-              {/* Step 2 Preview */}
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 flex items-start gap-3">
-                <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
-                  <BookOpen className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900">
-                    2. പാഠം + ക്വിസ്
-                  </p>
-                  <p className="text-xs text-slate-700 leading-relaxed mt-0.5">
-                    പാഠക്കുറിപ്പ് വായിച്ച് ക്വിസ്സിൽ ഉത്തരം നൽകി അടുത്ത പാഠം തുറക്കാം.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Returning User Progress Notice */}
+        {/* Primary Game Actions + Level Map + Daily Challenge */}
+        <div className="p-4 sm:p-6 space-y-4">
+          {/* Returning User Progress Strip */}
           {hasSavedProgress && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 tabular-nums">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold text-emerald-950 tabular-nums">
               <span>
-                നിലവിലെ പുരോഗതി: {completedCount}/{totalLessons} പാഠങ്ങൾ
-                {activeLessonTitle ? ` · അടുത്തത്: ${activeLessonTitle}` : ''}
+                🎯 അടുത്ത ദൗത്യം: {activeLessonTitle || `പാഠം ${completedCount + 1}`}
               </span>
-              <span className="text-emerald-700">{xp} XP</span>
+              <span className="text-emerald-700">{xp} XP · {progressPct}%</span>
             </div>
           )}
 
-          {/* Primary CTA */}
-          <div className="space-y-3">
+          {/* Primary Play Mission CTA + Level Map CTA */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2.5">
             <button
               type="button"
               onClick={onStartJourney}
-              className="w-full min-h-[54px] px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-sm border-b-4 border-emerald-950 flex items-center justify-center gap-2.5 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
+              className="w-full min-h-[56px] px-5 py-3.5 rounded-2xl bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 active:scale-[0.99] text-white font-black text-base sm:text-lg shadow-md border-b-4 border-emerald-950 ring-2 ring-amber-300/60 flex items-center justify-center gap-2 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
-              <span>പഠനം തുടങ്ങാം</span>
+              <span>
+                {hasSavedProgress
+                  ? '🎮 വിജ്ഞാന യാത്ര തുടരാം · Play Mission'
+                  : '🎮 വിജ്ഞാന യാത്ര തുടങ്ങാം · Play Mission'}
+              </span>
               <ArrowRight className="w-5 h-5 shrink-0" />
             </button>
 
-            {/* Daily Streak & Today's Special Game Strip */}
-            <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50/60 to-white px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
-                  <Flame className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-black text-slate-900 leading-snug">
-                    🔥 {streakDays} ദിവസം സ്ട്രീക്ക് · {todaySpecial.dayName} സ്പെഷ്യൽ: {todaySpecial.emoji} {todaySpecial.title}
-                  </p>
-                  <p className="text-[11px] font-semibold text-slate-600 leading-snug">
-                    {todaySpecialGameDone
-                      ? '✅ ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിം പൂർത്തിയാക്കി · മറ്റു ദിവസത്തെ ഗെയിമുകളും പരിശീലിക്കാം'
-                      : 'ഓരോ ദിവസവും പുതിയ സ്പെഷ്യൽ ഗെയിം കളിച്ച് +35 ബോണസ് XP നേടാം!'}
-                  </p>
-                </div>
+            <button
+              type="button"
+              onClick={onOpenAllLessons}
+              className="min-h-[52px] px-4 py-3 rounded-2xl bg-amber-100 hover:bg-amber-200 border-2 border-amber-400 text-amber-950 font-black text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            >
+              <span aria-hidden="true">🗺️</span>
+              <span>ലെവൽ മാപ്പ് ({totalLessons})</span>
+            </button>
+          </div>
+
+          {/* Daily Streak & Today's Special Game Strip */}
+          <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50/60 to-white px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="w-9 h-9 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0">
+                <Flame className="w-5 h-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs font-black text-slate-900 leading-snug">
+                  🔥 {streakDays} ദിവസം സ്ട്രീക്ക് · {todaySpecial.emoji} {todaySpecial.title}
+                </p>
+                <p className="text-[11px] font-semibold text-slate-600 leading-snug">
+                  {todaySpecialGameDone
+                    ? '✅ ഇന്നത്തെ സ്പെഷ്യൽ ഗെയിം പൂർത്തിയാക്കി!'
+                    : 'ഇന്നത്തെ ബോണസ് ഗെയിം കളിച്ച് +35 XP നേടാം!'}
+                </p>
               </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenDailyChallenge}
+              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shrink-0 cursor-pointer transition-colors"
+            >
+              {todaySpecialGameDone ? 'സ്ട്രീക്ക് കാണാം' : 'ബോണസ് കളിക്കാം'}
+            </button>
+          </div>
+
+          {localFileNotice && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-950 leading-snug">
+              {LOCAL_FILE_SHARE_NOTICE_ML}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
+            <span>❤️ 3 ഹൃദയങ്ങൾ · 17 വിങ്ങുകൾ · 🏆 സാക്ഷ്യപത്രം</span>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <button
                 type="button"
-                onClick={onOpenDailyChallenge}
-                className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shrink-0 cursor-pointer transition-colors"
+                onClick={onOpenBadgeStudio}
+                className="text-amber-700 hover:text-amber-900 underline underline-offset-4 font-extrabold cursor-pointer"
               >
-                {todaySpecialGameDone ? 'സ്ട്രീക്ക് കാണാം' : 'ഇന്നത്തെ ഗെയിം കളിക്കാം'}
+                ഫോട്ടോ ബാഡ്ജ്
               </button>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-bold text-slate-600">
-              <span>{totalLessons} പാഠങ്ങൾ · 3 ഹൃദയങ്ങൾ · 17 ഉപവിഭാഗങ്ങൾ · സാക്ഷ്യപത്രം</span>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <button
-                  type="button"
-                  onClick={onOpenAllLessons}
-                  className="text-emerald-800 hover:text-emerald-950 underline underline-offset-4 font-extrabold cursor-pointer"
-                >
-                  എല്ലാ പാഠങ്ങളും കാണാം
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenBadgeStudio}
-                  className="text-amber-700 hover:text-amber-900 underline underline-offset-4 font-extrabold cursor-pointer"
-                >
-                  ഫോട്ടോ ബാഡ്ജ്
-                </button>
-                <button
-                  type="button"
-                  onClick={handleQuickShare}
-                  className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-900 underline underline-offset-4 font-extrabold cursor-pointer"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>{shareCopied ? 'ലിങ്ക് കോപ്പി ചെയ്തു!' : 'ലിങ്ക് ഷെയർ ചെയ്യാം'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenSupport}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-extrabold transition-colors cursor-pointer"
-                >
-                  <span>🎁 ഒരു ഹദിയ നൽകാം</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleQuickShare}
+                className="inline-flex items-center gap-1 text-slate-700 hover:text-emerald-900 underline underline-offset-4 font-extrabold cursor-pointer"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                <span>{shareCopied ? 'ലിങ്ക് കോപ്പി ചെയ്തു!' : 'ലിങ്ക് ഷെയർ ചെയ്യാം'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={onOpenSupport}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-950 font-extrabold transition-colors cursor-pointer"
+              >
+                <span>🎁 ഒരു ഹദിയ നൽകാം</span>
+              </button>
             </div>
           </div>
         </div>
@@ -575,6 +622,10 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
     if (!activeLesson) return;
     sound.unlockAudio();
     sound.playClick();
+    if (isLocalFileProtocol()) {
+      setShareBoxOpen(true);
+      return;
+    }
     const url = getLessonShareUrl(activeLesson.id);
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
@@ -704,34 +755,41 @@ const LessonWorkspaceFrame: React.FC<LessonWorkspaceFrameProps> = ({
           </div>
 
           {shareBoxOpen && lessonShareUrl && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
-              <input
-                type="text"
-                readOnly
-                value={lessonShareUrl}
-                onFocus={(e) => e.currentTarget.select()}
-                aria-label="പാഠത്തിന്റെ ഡയറക്ട് ലിങ്ക്"
-                className="flex-1 min-w-[180px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700"
-              />
-              <a
-                href={getWhatsAppShareHref(
-                  `പാഠം ${lessonIdx + 1}: ${activeLesson.title} — SKSSF ഗൈഡ് ഗെയിമിൽ പഠിക്കൂ!`,
-                  lessonShareUrl
-                )}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold whitespace-nowrap"
-              >
-                WhatsApp
-              </a>
-              <button
-                type="button"
-                onClick={() => setShareBoxOpen(false)}
-                aria-label="അടയ്ക്കുക"
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+            <div className="space-y-1.5 pt-1 border-t border-slate-100">
+              {isLocalFileProtocol() && (
+                <p className="text-[11px] font-bold text-amber-950 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 leading-snug">
+                  {LOCAL_FILE_SHARE_NOTICE_ML}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <input
+                  type="text"
+                  readOnly
+                  value={lessonShareUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="പാഠത്തിന്റെ ഡയറക്ട് ലിങ്ക്"
+                  className="flex-1 min-w-[180px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-700"
+                />
+                <a
+                  href={getWhatsAppShareHref(
+                    `പാഠം ${lessonIdx + 1}: ${activeLesson.title} — SKSSF ഗൈഡ് ഗെയിമിൽ പഠിക്കൂ!`,
+                    lessonShareUrl
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-extrabold whitespace-nowrap"
+                >
+                  WhatsApp
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShareBoxOpen(false)}
+                  aria-label="അടയ്ക്കുക"
+                  className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
 
@@ -898,6 +956,7 @@ function AppInner() {
   const [footerIosHint, setFooterIosHint] = useState<boolean>(false);
 
   // Ecosystem & Gamification Hub Modals
+  const [ecosystemHubOpen, setEcosystemHubOpen] = useState<boolean>(false);
   const [marketOpen, setMarketOpen] = useState<boolean>(false);
   const [albumOpen, setAlbumOpen] = useState<boolean>(false);
   const [pass14Open, setPass14Open] = useState<boolean>(false);
@@ -989,9 +1048,10 @@ function AppInner() {
   }, [ecoState.progression.cooldownUntil, cooldownOpen, devUnlocked]);
 
   const isOnline = useOnlineStatus();
-  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
+  const { isInstallable, isInstalled, install } = usePWAInstall();
 
   const isAnyModalOpen =
+    ecosystemHubOpen ||
     settingsOpen ||
     scoreModalOpen ||
     dailyModalOpen ||
@@ -1825,11 +1885,13 @@ function AppInner() {
             <GuideGameBrandLogo size="sm" />
           </button>
 
-          <div className="flex flex-nowrap items-center justify-end gap-1 sm:gap-1.5 min-w-0 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) */}
+          <div className="flex flex-nowrap items-center justify-end gap-1 sm:gap-1.5 min-w-0">
+            {/* ALWAYS-VISIBLE TOP 3 HEARTS (❤️ ❤️ ❤️) — pinned outside scroll container so border never clips on 359px screens */}
             <div className="shrink-0">
               <HeaderHeartsBar />
             </div>
+
+            <div className="flex flex-nowrap items-center gap-1 sm:gap-1.5 min-w-0 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
             <button
               type="button"
@@ -1942,6 +2004,7 @@ function AppInner() {
                 <Volume2 className="w-4 h-4 text-emerald-700" />
               )}
             </button>
+            </div>
           </div>
         </div>
       </header>
@@ -1995,115 +2058,20 @@ function AppInner() {
           </div>
         )}
 
-        {/* Metallic Currency Wallet HUD + 6-Hub Guided Exploration Strip */}
-        <div className="mb-3 space-y-2">
+        {/* Clean Metallic Currency Wallet HUD + Single Executive Ecosystem Hub Trigger */}
+        <div className="mb-3">
           <WalletHudBar
             xp={xp}
             onOpenMarket={() => setMarketOpen(true)}
+            onOpenEcosystemHub={() => setEcosystemHubOpen(true)}
+            unvisitedHubsCount={
+              (['album', 'pass14', 'multiplayer', 'verifier', 'friends'] as GuidedHubId[]).filter(
+                (h) => !ecoState.exploration.visitedHubs.includes(h)
+              ).length
+            }
             hasUnvisitedMarket={!ecoState.exploration.visitedHubs.includes('market')}
             onMilestoneToast={showEcoToast}
           />
-
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {(
-              [
-                {
-                  id: 'album' as GuidedHubId,
-                  label: 'പൈതൃക ആൽബം',
-                  icon: <ScrollText className="w-3.5 h-3.5 text-amber-700" />,
-                  onClick: () => setAlbumOpen(true),
-                },
-                {
-                  id: 'pass14' as GuidedHubId,
-                  label: '14-ദിന യാത്ര',
-                  icon: <Sparkles className="w-3.5 h-3.5 text-emerald-700" />,
-                  onClick: () => setPass14Open(true),
-                },
-                {
-                  id: 'multiplayer' as GuidedHubId,
-                  label: '2P മത്സരം',
-                  icon: <Swords className="w-3.5 h-3.5 text-indigo-700" />,
-                  onClick: () => setMultiplayerOpen(true),
-                },
-                {
-                  id: 'verifier' as GuidedHubId,
-                  label: 'QR വെരിഫയർ',
-                  icon: <QrCode className="w-3.5 h-3.5 text-sky-700" />,
-                  onClick: () => setVerifierOpen(true),
-                },
-                {
-                  id: 'friends' as GuidedHubId,
-                  label: 'കൂട്ടുകാർ & ദർസ്',
-                  icon: <Users className="w-3.5 h-3.5 text-emerald-800" />,
-                  onClick: () => setFriendsOpen(true),
-                },
-              ] as const
-            ).map((hub) => {
-              const unvisited = !ecoState.exploration.visitedHubs.includes(hub.id);
-              return (
-                <button
-                  key={hub.id}
-                  type="button"
-                  onClick={() => {
-                    sound.unlockAudio();
-                    sound.playClick();
-                    hub.onClick();
-                  }}
-                  className="relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-slate-800 text-[11px] font-extrabold whitespace-nowrap shrink-0 cursor-pointer shadow-2xs transition-colors"
-                >
-                  {hub.icon}
-                  <span>{hub.label}</span>
-                  {unvisited && (
-                    <span
-                      aria-label="പുതിയ വിഭാഗം"
-                      className="w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white"
-                    />
-                  )}
-                </button>
-              );
-            })}
-
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playPop();
-                setSeasonalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-950 text-[11px] font-black whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Calendar className="w-3.5 h-3.5 text-amber-700" />
-              <span>{activeSeasonal.isLiveWindow ? '🔴 സീസണൽ ലൈവ്' : 'വാർഷിക ദിനങ്ങൾ'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                sound.unlockAudio();
-                sound.playPop();
-                setGreetingStudioOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 text-[11px] font-extrabold whitespace-nowrap shrink-0 cursor-pointer"
-            >
-              <Gift className="w-3.5 h-3.5 text-emerald-700" />
-              <span>ആശംസാ കാർഡ്</span>
-            </button>
-
-            {(canonicalCompletedCount >= ALL_LESSONS.length || devUnlocked) && (
-              <button
-                type="button"
-                onClick={() => {
-                  sound.unlockAudio();
-                  sound.playUnlock();
-                  setGrandFinaleOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900 hover:bg-emerald-800 text-amber-300 text-[11px] font-black whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Crown className="w-3.5 h-3.5" />
-                <span>62/62 വോൾട്ട്</span>
-              </button>
-            )}
-          </div>
         </div>
 
         {!showIntro && showResumeToast && (
@@ -2153,7 +2121,6 @@ function AppInner() {
             <div className="flex justify-end">
               <HiddenTreasureStar
                 starId="star_welcome_banner"
-                hintLabel="സ്വാഗത പേജിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
                 onClaimed={showEcoToast}
               />
             </div>
@@ -2202,7 +2169,7 @@ function AppInner() {
                 title: `${activeMilestone} പാഠങ്ങൾ പൂർത്തിയാക്കി!`,
                 badgePreset: 'starter_member',
               };
-              const shareText = `🏆 SKSSF ഗൈഡ് ഗെയിമിൽ ഞാൻ "${meta.title}" (${activeMilestone}/${ALL_LESSONS.length} പാഠങ്ങൾ · ${xp} XP · ${currentRank})! നിങ്ങളും കളിച്ചു പഠിക്കൂ 👉`;
+              const shareText = `🏆 SKSSF ഗൈഡ് ഗെയിമിൽ ഞാൻ "${meta.title}" (${activeMilestone}/${ALL_LESSONS.length} പാഠങ്ങൾ · ${xp} XP · ${currentRank})! നിങ്ങളും കളിച്ചു പഠിക്കൂ →`;
               const whatsappHref = getWhatsAppShareHref(shareText, getAppShareUrl());
               return (
                 <div className="mb-3 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -2855,6 +2822,194 @@ function AppInner() {
         </Suspense>
       )}
 
+      {/* EXECUTIVE ECOSYSTEM HUB DRAWER / SHEET */}
+      {ecosystemHubOpen && (
+        <div
+          className="fixed inset-0 z-[110] bg-slate-950/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto overscroll-contain"
+          role="dialog"
+          aria-modal="true"
+          aria-label="ഇക്കോസിസ്റ്റം ഹബ്"
+          onClick={() => setEcosystemHubOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-2xl max-h-[88vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl border-t-2 sm:border-2 border-amber-400/70 bg-white shadow-2xl overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 px-5 py-4 text-white border-b-4 border-amber-400 flex items-center justify-between gap-3 sticky top-0 z-10">
+              <div className="min-w-0">
+                <p className="text-[11px] font-extrabold text-amber-300 font-mono truncate">
+                  {ecoState.identity.userId} · {ecoState.identity.handle} · 100% ഓഫ്‌ലൈൻ-ഫസ്റ്റ്
+                </p>
+                <h2 className="text-base sm:text-lg font-black">
+                  🌐 ഇക്കോസിസ്റ്റം ഹബ് (Ecosystem Hub)
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEcosystemHubOpen(false)}
+                aria-label="അടയ്ക്കുക"
+                className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 space-y-3.5">
+              <p className="text-xs font-semibold text-slate-600 leading-relaxed">
+                എല്ലാ വിജ്ഞാന വിഭാഗങ്ങളും, QR സ്കാനറും, വെരിഫൈഡ് സുഹൃത്തുക്കളും, 2-പ്ലെയർ മത്സരങ്ങളും ഒരൊറ്റ സ്ഥലത്ത് നിന്ന് എളുപ്പത്തിൽ തുറക്കാം.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {[
+                  {
+                    id: 'market' as GuidedHubId,
+                    title: 'വിജ്ഞാന മാർക്കറ്റ്',
+                    desc: 'നാണയ വിനിമയം, സ്റ്റോർ & സമ്മാന വൗച്ചറുകൾ',
+                    icon: <Store className="w-5 h-5 text-emerald-700" />,
+                    accent: 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50',
+                    onClick: () => setMarketOpen(true),
+                  },
+                  {
+                    id: 'album' as GuidedHubId,
+                    title: 'പൈതൃക ആൽബം',
+                    desc: `12 ചരിത്ര കാർഡുകൾ & നിഗൂഢ നക്ഷത്രങ്ങൾ (${ecoState.progression.foundHiddenStars.length}/3)`,
+                    icon: <ScrollText className="w-5 h-5 text-amber-700" />,
+                    accent: 'border-amber-200 bg-amber-50/50 hover:bg-amber-50',
+                    onClick: () => setAlbumOpen(true),
+                  },
+                  {
+                    id: 'pass14' as GuidedHubId,
+                    title: '14-ദിന വിജ്ഞാന യാത്ര',
+                    desc: '10 ടയർ മൈൽസ്റ്റോൺ സമ്മാനങ്ങളും വജ്രങ്ങളും',
+                    icon: <Sparkles className="w-5 h-5 text-emerald-700" />,
+                    accent: 'border-emerald-200 bg-slate-50/80 hover:bg-emerald-50/60',
+                    onClick: () => setPass14Open(true),
+                  },
+                  {
+                    id: 'multiplayer' as GuidedHubId,
+                    title: '2P സുഹൃത്ത് മത്സരം',
+                    desc: 'ഒരേ ഫോണിലോ WhatsApp ചലഞ്ചായോ 5-ചോദ്യ ഡ്യുവൽ',
+                    icon: <Swords className="w-5 h-5 text-indigo-700" />,
+                    accent: 'border-indigo-200 bg-indigo-50/40 hover:bg-indigo-50',
+                    onClick: () => setMultiplayerOpen(true),
+                  },
+                  {
+                    id: 'verifier' as GuidedHubId,
+                    title: 'QR സ്കാനർ & ബാക്കപ്പ്',
+                    desc: 'ക്യാമറ/ഗാലറി QR പരിശോധന, ഹാഷ് ചെയിൻ, PIN ബാക്കപ്പ്',
+                    icon: <QrCode className="w-5 h-5 text-sky-700" />,
+                    accent: 'border-sky-200 bg-sky-50/50 hover:bg-sky-50',
+                    onClick: () => setVerifierOpen(true),
+                  },
+                  {
+                    id: 'friends' as GuidedHubId,
+                    title: 'കൂട്ടുകാർ, പ്രൊഫൈൽ & ദർസ്',
+                    desc: '4-ടയർ ഐഡി, സുഹൃത്തുക്കൾ, ബ്ലോക്ക് സുരക്ഷ & ദർസ് ഹബ്',
+                    icon: <Users className="w-5 h-5 text-emerald-800" />,
+                    accent: 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50',
+                    onClick: () => setFriendsOpen(true),
+                  },
+                ].map((item) => {
+                  const unvisited = !ecoState.exploration.visitedHubs.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        sound.unlockAudio();
+                        sound.playClick();
+                        setEcosystemHubOpen(false);
+                        item.onClick();
+                      }}
+                      className={`relative rounded-2xl border-2 p-3.5 text-left flex items-start gap-3 transition-all cursor-pointer ${item.accent}`}
+                    >
+                      <span className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs">
+                        {item.icon}
+                      </span>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
+                          <span className="truncate">{item.title}</span>
+                          {unvisited && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[9px] font-black shrink-0">
+                              പുതിയത്
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-[11px] font-semibold text-slate-600 leading-snug">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playPop();
+                    setEcosystemHubOpen(false);
+                    setSeasonalOpen(true);
+                  }}
+                  className="rounded-2xl border-2 border-amber-300 bg-amber-50/70 hover:bg-amber-100/70 p-3.5 text-left flex items-start gap-3 transition-all cursor-pointer"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-white border border-amber-200 flex items-center justify-center shrink-0 shadow-2xs">
+                    <Calendar className="w-5 h-5 text-amber-700" />
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p className="text-xs sm:text-sm font-black text-amber-950">
+                      {activeSeasonal.isLiveWindow ? '🔴 സീസണൽ ലൈവ് ചാലഞ്ച്' : 'വാർഷിക സീസണൽ ദിനങ്ങൾ'}
+                    </p>
+                    <p className="text-[11px] font-semibold text-slate-700 leading-snug">
+                      ഫെബ്രുവരി 19, റമദാൻ, നബിദിനം &amp; പ്രത്യേക ക്വിസുകൾ
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playPop();
+                    setEcosystemHubOpen(false);
+                    setGreetingStudioOpen(true);
+                  }}
+                  className="rounded-2xl border-2 border-emerald-300 bg-emerald-50/60 hover:bg-emerald-100/60 p-3.5 text-left flex items-start gap-3 transition-all cursor-pointer"
+                >
+                  <span className="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center shrink-0 shadow-2xs">
+                    <Gift className="w-5 h-5 text-emerald-700" />
+                  </span>
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <p className="text-xs sm:text-sm font-black text-emerald-950">
+                      ആശംസാ &amp; ഗിഫ്റ്റ് കാർഡ് സ്റ്റുഡിയോ
+                    </p>
+                    <p className="text-[11px] font-semibold text-slate-700 leading-snug">
+                      ഈദ്, റമദാൻ, വിജയാശംസാ കാർഡുകൾ + സമ്മാന QR
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {(canonicalCompletedCount >= ALL_LESSONS.length || devUnlocked) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    sound.unlockAudio();
+                    sound.playUnlock();
+                    setEcosystemHubOpen(false);
+                    setGrandFinaleOpen(true);
+                  }}
+                  className="w-full min-h-[46px] px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-amber-800 text-amber-200 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                >
+                  <Crown className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span>🏆 62/62 ഗ്രാൻഡ് ഫിനാലെ വോൾട്ട് തുറക്കാം</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AUTHORIZED APP-SK-CHAT-04 PLUGIN DOCK SLOT */}
       <EcosystemChatDockSlot />
 
@@ -2874,7 +3029,7 @@ function AppInner() {
             <Scale className="w-3.5 h-3.5" />
             <span>സ്വകാര്യത, നിബന്ധനകൾ &amp; കോപ്പിറൈറ്റ്</span>
           </button>
-          {!isInstalled && (isInstallable || isIOS) && (
+          {!isInstalled && (
             <>
               <span aria-hidden="true">·</span>
               <button
@@ -2884,7 +3039,7 @@ function AppInner() {
                   sound.playPop();
                   if (isInstallable) {
                     await install();
-                  } else if (isIOS) {
+                  } else {
                     setFooterIosHint((v) => !v);
                   }
                 }}
@@ -2913,14 +3068,13 @@ function AppInner() {
           )}
           <HiddenTreasureStar
             starId="star_footer_vault"
-            hintLabel="അടിക്കുറിപ്പിൽ ഒളിഞ്ഞിരിക്കുന്ന നിധി നക്ഷത്രം (+2 വജ്രങ്ങൾ)"
             onClaimed={showEcoToast}
           />
         </p>
-        {footerIosHint && isIOS && !isInstalled && (
-          <p className="max-w-md mx-auto text-[11px] font-bold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-            Safari-യിൽ താഴെയുള്ള <strong>Share (↑)</strong> തൊട്ട്{' '}
-            <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ഓഫ്‌ലൈൻ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
+        {footerIosHint && !isInstallable && !isInstalled && (
+          <p className="max-w-md mx-auto text-[11px] font-bold text-emerald-950 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2 leading-relaxed">
+            നിങ്ങളുടെ ബ്രൗസറിന്റെ <strong>മെനു (⋮ / ⋯)</strong> അല്ലെങ്കിൽ <strong>Share</strong> ഓപ്ഷനിൽ തൊട്ട്{' '}
+            <strong>“Install App”</strong> അല്ലെങ്കിൽ <strong>“Add to Home Screen”</strong> തിരഞ്ഞെടുത്താൽ ഓഫ്‌ലൈൻ ആപ്പായി ഇൻസ്റ്റാൾ ആകും.
           </p>
         )}
       </footer>
